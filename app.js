@@ -1,4 +1,3 @@
-
 // ==================================================
 // 小象文教機構｜成績管理系統
 // 完整 App.js
@@ -334,10 +333,17 @@ async function loadCurrentProfile() {
 function renderDashboard() {
 
   const roleNames = {
-    admin: "管理員",
-    teacher: "老師",
+    admin: "管理者",
     parent: "家長"
   };
+
+  // 本系統只開放管理者與家長兩種身分
+  if (!["admin", "parent"].includes(currentProfile.role)) {
+    alert("此帳號身分未開放使用，請聯絡管理者。");
+    db.auth.signOut();
+    loginPage();
+    return;
+  }
 
   document.body.innerHTML = `
     <main class="dashboard">
@@ -386,7 +392,7 @@ function renderDashboard() {
 }
 
 // ==================================================
-// 8. 管理員／老師畫面
+// 8. 管理者畫面
 // ==================================================
 
 function staffView() {
@@ -490,8 +496,7 @@ function staffView() {
     <!-- 三、學生成績登錄 -->
 
     <section class="panel">
-
-      <h2>三、學生成績登錄</h2>
+          <h2>三、學生成績登錄</h2>
 
       <form id="scoreForm">
 
@@ -512,8 +517,6 @@ function staffView() {
           required
         ></select>
 
-
-        <!-- 範圍放在科目及成績之前 -->
 
         <label>科目範圍</label>
 
@@ -675,7 +678,7 @@ function parentView() {
 }
 
 // ==================================================
-// 10. 載入管理員／老師資料
+// 10. 載入管理者資料
 // ==================================================
 
 async function loadStaffData() {
@@ -781,6 +784,7 @@ async function loadStaffData() {
                 <th>考試場次</th>
                 <th>開始日期</th>
                 <th>結束日期</th>
+                ${isAdmin ? "<th>操作</th>" : ""}
               </tr>
             </thead>
 
@@ -791,6 +795,21 @@ async function loadStaffData() {
                   <td>${escapeHTML(e.title)}</td>
                   <td>${escapeHTML(e.start_date)}</td>
                   <td>${escapeHTML(e.end_date)}</td>
+                  ${
+                    isAdmin
+                      ? `
+                        <td>
+                          <button
+                            type="button"
+                            class="danger"
+                            onclick="deleteExam('${escapeHTML(e.id)}')"
+                          >
+                            刪除場次
+                          </button>
+                        </td>
+                      `
+                      : ""
+                  }
                 </tr>
               `).join("")}
 
@@ -834,13 +853,13 @@ async function loadStaffData() {
     examOptions || `<option value="">目前沒有考試場次</option>`;
 
 
-  // 管理員登入紀錄
+  // 管理者登入紀錄
 
   if (isAdmin) {
     await loadLoginEvents();
   } else {
     document.getElementById("loginList").textContent =
-      "僅管理員可以查看家長登入紀錄。";
+      "僅管理者可以查看家長登入紀錄。";
   }
 
 
@@ -893,7 +912,7 @@ async function deleteStudent(studentId) {
 
   // 前端權限檢查
   if (currentProfile?.role !== "admin") {
-    alert("只有管理員可以刪除學生。");
+    alert("只有管理者可以刪除學生。");
     return;
   }
 
@@ -974,7 +993,6 @@ async function deleteStudent(studentId) {
   await loadStaffData();
 
 }
-
 // ==================================================
 // 13. 建立考試場次
 // ==================================================
@@ -1022,7 +1040,73 @@ async function addExam(event) {
 }
 
 // ==================================================
-// 14. 儲存學生成績
+// 14. 刪除周考場次及該場次成績（僅管理者）
+// ==================================================
+
+async function deleteExam(examId) {
+
+  if (currentProfile?.role !== "admin") {
+    alert("只有管理者可以刪除周考場次。");
+    return;
+  }
+
+  const exam = examsCache.find(e => e.id === examId);
+
+  if (!exam) {
+    alert("找不到這個考試場次。");
+    return;
+  }
+
+  const confirmed = confirm(
+    `確定要刪除「${exam.title}」嗎？\n\n` +
+    "此操作會一併刪除這個場次的所有學生各科成績。\n" +
+    "刪除後無法直接復原，請確認。"
+  );
+
+  if (!confirmed) return;
+
+  showMessage("正在刪除周考場次及相關成績……");
+
+  // 先刪除該場次所有成績，避免資料庫外鍵限制
+  const { error: scoreError } = await db
+    .from("scores")
+    .delete()
+    .eq("exam_id", examId);
+
+  if (scoreError) {
+    showMessage(
+      "刪除該場次成績失敗：" + scoreError.message,
+      "error"
+    );
+    return;
+  }
+
+  // 再刪除考試場次
+  const { error: examError } = await db
+    .from("exams")
+    .delete()
+    .eq("id", examId);
+
+  if (examError) {
+    showMessage(
+      "刪除考試場次失敗：" + examError.message,
+      "error"
+    );
+    return;
+  }
+
+  overviewRows = [];
+
+  showMessage(
+    `「${exam.title}」及該場次所有成績已刪除。`,
+    "success"
+  );
+
+  await loadStaffData();
+}
+
+// ==================================================
+// 15. 儲存學生成績
 // ==================================================
 
 async function saveScore(event) {
@@ -1339,7 +1423,7 @@ function renderOverviewTable() {
 async function deleteScore(studentId, subject) {
 
   if (currentProfile?.role !== "admin") {
-    alert("只有管理員可以刪除成績。");
+    alert("只有管理者可以刪除成績。");
     return;
   }
 
@@ -1444,7 +1528,6 @@ function exportOverviewCSV() {
 
   URL.revokeObjectURL(url);
 }
-
 // ==================================================
 // 20. 綁定家長與學生
 // ==================================================
@@ -1522,7 +1605,7 @@ async function bindGuardian(event) {
 }
 
 // ==================================================
-// 21. 管理員查看家長登入紀錄
+// 21. 管理者查看家長登入紀錄
 // ==================================================
 
 async function loadLoginEvents() {
@@ -1583,24 +1666,77 @@ async function loadLoginEvents() {
     return;
   }
 
-  // 統計登入次數
-
+  // 統計每位家長的登入次數及最後登入時間
   const loginCounts = {};
+  const lastLogin = {};
 
   parentEvents.forEach(e => {
     loginCounts[e.user_id] =
       (loginCounts[e.user_id] || 0) + 1;
-  });
 
-  const lastLogin = {};
-
-  parentEvents.forEach(e => {
+    // events 已依時間由新到舊排序，因此第一次遇到的就是最後登入時間
     if (!lastLogin[e.user_id]) {
       lastLogin[e.user_id] = e.created_at;
     }
   });
 
   const parentIds = Object.keys(loginCounts);
+
+  // 查詢每位家長所綁定的學生
+  const { data: guardianLinks, error: guardianError } = await db
+    .from("guardian_students")
+    .select("guardian_id,student_id")
+    .in("guardian_id", parentIds);
+
+  if (guardianError) {
+    area.textContent =
+      "讀取家長綁定資料失敗：" + guardianError.message;
+    return;
+  }
+
+  const studentIds = [
+    ...new Set((guardianLinks || []).map(link => link.student_id))
+  ];
+
+  let students = [];
+
+  if (studentIds.length > 0) {
+    const { data: studentData, error: studentError } = await db
+      .from("students")
+      .select("id,full_name")
+      .in("id", studentIds);
+
+    if (studentError) {
+      area.textContent =
+        "讀取學生姓名失敗：" + studentError.message;
+      return;
+    }
+
+    students = studentData || [];
+  }
+
+  const studentMap = {};
+
+  students.forEach(student => {
+    studentMap[student.id] = student.full_name;
+  });
+
+  // 將同一位家長綁定的學生姓名整理在一起
+  const guardianStudentNames = {};
+
+  (guardianLinks || []).forEach(link => {
+    const studentName = studentMap[link.student_id];
+
+    if (!studentName) return;
+
+    if (!guardianStudentNames[link.guardian_id]) {
+      guardianStudentNames[link.guardian_id] = [];
+    }
+
+    if (!guardianStudentNames[link.guardian_id].includes(studentName)) {
+      guardianStudentNames[link.guardian_id].push(studentName);
+    }
+  });
 
   area.innerHTML = `
 
@@ -1610,7 +1746,7 @@ async function loadLoginEvents() {
 
         <thead>
           <tr>
-            <th>家長帳號</th>
+            <th>學生姓名</th>
             <th>登入次數</th>
             <th>最後登入時間</th>
           </tr>
@@ -1620,16 +1756,16 @@ async function loadLoginEvents() {
 
           ${parentIds.map(id => {
 
-            const p = profileMap[id];
+            const names = guardianStudentNames[id] || [];
 
             return `
               <tr>
                 <td>
                   ${escapeHTML(
-                    p.display_name || p.email || "未設定"
+                    names.length > 0
+                      ? names.join("、")
+                      : "尚未綁定學生"
                   )}
-                  <br>
-                  <small>${escapeHTML(p.email || "")}</small>
                 </td>
 
                 <td>${loginCounts[id]}</td>
@@ -1865,3 +2001,4 @@ async function initializeApp() {
 }
 
 initializeApp();
+
