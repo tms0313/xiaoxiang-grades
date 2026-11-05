@@ -354,12 +354,15 @@ function renderDashboard() {
           <h1>小象文教機構｜成績管理系統</h1>
 
           <div class="user-info">
-            ${escapeHTML(
-              currentProfile.display_name ||
-              currentProfile.email
-            )}
-            ・${roleNames[currentProfile.role] || "使用者"}
-          </div>
+  ${
+    currentProfile.role === "parent"
+      ? "親愛的家長，您好！"
+      : escapeHTML(
+          currentProfile.display_name ||
+          currentProfile.email
+        ) + "・" + (roleNames[currentProfile.role] || "使用者")
+  }
+</div>
         </div>
 
         <button id="logoutBtn" class="secondary">
