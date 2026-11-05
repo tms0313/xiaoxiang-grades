@@ -1,5 +1,5 @@
 
-const SUPABASE_URL = "https://ckvjrxzmdrlrwvtvsoop.supabase.co/rest/v1/";
+const SUPABASE_URL = "https://ckvjrxzmdrlrwvtvsoop.supabase.co";
 
 const SUPABASE_ANON_KEY = "sb_publishable_sOL__dToUUk58TIZLX-kqw_lF9dLtQ_";
 
