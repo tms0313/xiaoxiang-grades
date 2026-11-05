@@ -470,10 +470,13 @@ async function addExam(event) {
 }
 
 async function saveScore(event) {
+  
+async function saveScore(event) {
   event.preventDefault();
 
   const form = new FormData(event.target);
   const score = Number(form.get("score"));
+  const scope = (form.get("scope") || "").trim();
 
   if (!Number.isFinite(score) || score < 0 || score > 100) {
     showMessage("成績必須介於 0 到 100 分。", "error");
@@ -484,6 +487,7 @@ async function saveScore(event) {
     student_id: form.get("student_id"),
     exam_id: form.get("exam_id"),
     subject: form.get("subject"),
+    scope,
     score
   };
 
@@ -496,154 +500,6 @@ async function saveScore(event) {
     return;
   }
 
-  showMessage("成績儲存成功！", "success");
+  showMessage("成績與考試範圍儲存成功！", "success");
   event.target.reset();
 }
-
-async function bindGuardian(event) {
-  event.preventDefault();
-
-  const form = new FormData(event.target);
-  const email = form.get("email").trim().toLowerCase();
-  const studentId = form.get("student_id");
-
-  const { data: guardian, error: findError } = await db
-    .from("profiles")
-    .select("id,email")
-    .eq("email", email)
-    .maybeSingle();
-
-  if (findError || !guardian) {
-    showMessage(
-      "找不到這個家長帳號。請確認已先建立帳號，且電子郵件正確。",
-      "error"
-    );
-    return;
-  }
-
-  const { error } = await db.from("guardian_students").upsert({
-    guardian_id: guardian.id,
-    student_id: studentId
-  });
-
-  if (error) {
-    showMessage("綁定失敗：" + error.message, "error");
-    return;
-  }
-
-  showMessage("家長與學生綁定成功！", "success");
-  event.target.reset();
-}
-
-async function loadLoginEvents() {
-  const { data, error } = await db
-    .from("login_events")
-    .select("id,user_id,created_at,profiles(email,display_name)")
-    .order("created_at", { ascending: false })
-    .limit(100);
-
-  const area = document.getElementById("loginList");
-
-  if (error) {
-    area.textContent = "讀取登入紀錄失敗：" + error.message;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    area.textContent = "目前尚無登入紀錄。";
-    return;
-  }
-
-  const counts = {};
-  data.forEach(item => {
-    counts[item.user_id] = (counts[item.user_id] || 0) + 1;
-  });
-
-  area.innerHTML = `
-    <table>
-      <tr><th>家長帳號</th><th>登入次數（最近100筆）</th><th>最近登入時間</th></tr>
-      ${data.filter((item, index, arr) =>
-        arr.findIndex(x => x.user_id === item.user_id) === index
-      ).map(item => `
-        <tr>
-          <td>${escapeHTML(item.profiles?.email || "未知帳號")}</td>
-          <td>${counts[item.user_id]}</td>
-          <td>${escapeHTML(new Date(item.created_at).toLocaleString("zh-TW"))}</td>
-        </tr>
-      `).join("")}
-    </table>
-  `;
-}
-
-async function loadParentScores() {
-  const area = document.getElementById("parentScores");
-
-  const { data: links, error: linkError } = await db
-    .from("guardian_students")
-    .select("student_id,students(id,student_code,full_name,class_name)");
-
-  if (linkError) {
-    area.textContent = "讀取學生資料失敗：" + linkError.message;
-    return;
-  }
-
-  if (!links || links.length === 0) {
-    area.textContent = "目前尚未綁定學生資料，請聯絡補習班老師。";
-    return;
-  }
-
-  let html = "";
-
-  for (const link of links) {
-    const student = link.students;
-    if (!student) continue;
-
-    const { data: scores, error } = await db
-      .from("scores")
-      .select("id,subject,score,created_at,exams(title,start_date,end_date)")
-      .eq("student_id", student.id)
-      .order("created_at", { ascending: false });
-
-    html += `
-      <h3>
-        ${escapeHTML(student.class_name)}｜
-        ${escapeHTML(student.full_name)}
-      </h3>
-    `;
-
-    if (error) {
-      html += `<p class="error">成績讀取失敗：${escapeHTML(error.message)}</p>`;
-      continue;
-    }
-
-    if (!scores || scores.length === 0) {
-      html += `<p class="notice">目前尚無成績紀錄。</p>`;
-      continue;
-    }
-
-    html += `
-      <table>
-        <tr><th>考試場次</th><th>科目</th><th>成績</th></tr>
-        ${scores.map(s => `
-          <tr>
-            <td>${escapeHTML(s.exams?.title || "未命名場次")}</td>
-            <td>${escapeHTML(s.subject)}</td>
-            <td>${escapeHTML(s.score)} 分</td>
-          </tr>
-        `).join("")}
-      </table>
-    `;
-  }
-
-  area.innerHTML = html || "目前沒有可顯示的學生資料。";
-}
-
-async function logout() {
-  await db.auth.signOut();
-  currentUser = null;
-  currentProfile = null;
-  loginPage();
-}
-
-// 初始登入畫面
-loginPage();
