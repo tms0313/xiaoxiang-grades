@@ -1,14 +1,14 @@
 
-// ========================================
+// ==================================================
 // 小象文教機構｜成績管理系統
-// 完整版 app.js
-// ========================================
+// 完整 App.js
+// ==================================================
 
 const db = supabaseClient;
 
-// ========================================
-// 頁面樣式
-// ========================================
+// ==================================================
+// 1. 畫面樣式
+// ==================================================
 
 const style = document.createElement("style");
 
@@ -20,139 +20,145 @@ style.textContent = `
   padding: 28px;
   border-radius: 16px;
   box-shadow: 0 8px 30px rgba(0,0,0,.08);
+  box-sizing: border-box;
 }
 
 .dashboard h1 {
-  color:#17365d;
-  margin-bottom:8px;
+  color: #17365d;
+  margin-bottom: 8px;
 }
 
 .dashboard h2 {
-  color:#17365d;
-  border-bottom:2px solid #d9b66f;
-  padding-bottom:10px;
-  margin-top:10px;
+  color: #17365d;
+  border-bottom: 2px solid #d9b66f;
+  padding-bottom: 10px;
 }
 
 .dashboard .topbar {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .dashboard .user-info {
-  color:#666;
-  font-size:14px;
+  color: #666;
+  font-size: 14px;
 }
 
 .dashboard button {
-  background:#17365d;
-  color:white;
-  border:0;
-  border-radius:7px;
-  padding:10px 16px;
-  cursor:pointer;
-  margin:4px 4px 4px 0;
+  background: #17365d;
+  color: white;
+  border: 0;
+  border-radius: 7px;
+  padding: 10px 16px;
+  cursor: pointer;
+  margin: 4px 4px 4px 0;
 }
 
 .dashboard button:hover {
-  opacity:.88;
+  opacity: .88;
 }
 
 .dashboard button.secondary {
-  background:#777;
+  background: #777;
+}
+
+.dashboard button.danger {
+  background: #b42318;
+  padding: 7px 12px;
+  font-size: 13px;
 }
 
 .dashboard input,
 .dashboard select {
-  width:100%;
-  padding:11px;
-  margin:6px 0 14px;
-  border:1px solid #ccc;
-  border-radius:7px;
-  box-sizing:border-box;
+  width: 100%;
+  padding: 11px;
+  margin: 6px 0 14px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  box-sizing: border-box;
 }
 
 .dashboard label {
-  display:block;
-  font-weight:600;
+  display: block;
+  font-weight: 600;
 }
 
 .dashboard .panel {
-  background:#f7f9fc;
-  padding:18px;
-  border-radius:10px;
-  margin-top:18px;
+  background: #f7f9fc;
+  padding: 18px;
+  border-radius: 10px;
+  margin-top: 18px;
 }
 
 .dashboard table {
-  width:100%;
-  border-collapse:collapse;
-  margin-top:12px;
-  background:white;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  background: white;
 }
 
 .dashboard th,
 .dashboard td {
-  border:1px solid #ddd;
-  padding:10px;
-  text-align:left;
-  white-space:nowrap;
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .dashboard th {
-  background:#edf1f7;
-  color:#17365d;
+  background: #edf1f7;
+  color: #17365d;
 }
 
 .dashboard .notice {
-  color:#666;
-  font-size:14px;
+  color: #666;
+  font-size: 14px;
 }
 
 .dashboard .success {
-  color:#187344;
+  color: #187344;
 }
 
 .dashboard .error {
-  color:#b42318;
+  color: #b42318;
 }
 
 .dashboard .form-grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
 }
 
-.dashboard .table-wrap {
-  width:100%;
-  overflow-x:auto;
+.dashboard .table-scroll {
+  overflow-x: auto;
+  width: 100%;
 }
 
 @media(max-width:600px) {
   .dashboard {
-    padding:16px;
-    margin:12px auto;
+    padding: 16px;
+    margin: 12px auto;
   }
 
   .dashboard table {
-    font-size:13px;
+    font-size: 13px;
   }
 
   .dashboard th,
   .dashboard td {
-    padding:7px;
+    padding: 7px;
   }
 }
 `;
 
 document.head.appendChild(style);
 
-// ========================================
-// 全域變數
-// ========================================
+// ==================================================
+// 2. 全域變數
+// ==================================================
 
 let currentUser = null;
 let currentProfile = null;
@@ -161,10 +167,11 @@ let studentsCache = [];
 let examsCache = [];
 
 let overviewRows = [];
+let overviewExamId = "";
 
-// ========================================
-// 共用函式
-// ========================================
+// ==================================================
+// 3. 共用函式
+// ==================================================
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -181,18 +188,32 @@ function showMessage(message, type = "") {
 
   if (area) {
     area.textContent = message;
-    area.className = "notice " + type;
+    area.className = type || "notice";
   }
 }
 
-// ========================================
-// 登入畫面
-// ========================================
+function formatDate(dateString) {
+  if (!dateString) return "";
+
+  const date = new Date(dateString + "T00:00:00");
+
+  return (
+    String(date.getMonth() + 1).padStart(2, "0") +
+    "月" +
+    String(date.getDate()).padStart(2, "0") +
+    "日"
+  );
+}
+
+// ==================================================
+// 4. 登入畫面
+// ==================================================
 
 function loginPage() {
   document.body.innerHTML = `
     <main class="login-page">
       <section class="login-card">
+
         <div class="logo">小象</div>
 
         <p class="school-name">
@@ -234,33 +255,38 @@ function loginPage() {
         </form>
 
         <footer>© 小象文教機構 七堵校區</footer>
+
       </section>
     </main>
   `;
 
-  document
-    .getElementById("loginForm")
+  document.getElementById("loginForm")
     .addEventListener("submit", login);
 }
 
-// ========================================
-// 登入處理
-// ========================================
+// ==================================================
+// 5. 登入處理
+// ==================================================
 
 async function login(event) {
   event.preventDefault();
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+  const email =
+    document.getElementById("email").value.trim();
 
-  const message = document.getElementById("message");
+  const password =
+    document.getElementById("password").value;
+
+  const message =
+    document.getElementById("message");
 
   message.textContent = "登入中，請稍候……";
 
-  const { data, error } = await db.auth.signInWithPassword({
-    email,
-    password
-  });
+  const { data, error } =
+    await db.auth.signInWithPassword({
+      email,
+      password
+    });
 
   if (error) {
     message.textContent = "登入失敗：" + error.message;
@@ -269,39 +295,44 @@ async function login(event) {
 
   currentUser = data.user;
 
-  const { data: profile, error: profileError } = await db
+  await loadCurrentProfile();
+}
+
+// ==================================================
+// 6. 讀取登入者資料
+// ==================================================
+
+async function loadCurrentProfile() {
+
+  const { data: profile, error } = await db
     .from("profiles")
     .select("id,email,display_name,role")
     .eq("id", currentUser.id)
     .single();
 
-  if (profileError || !profile) {
-    message.textContent = "無法讀取帳號權限，請聯絡管理員。";
+  if (error || !profile) {
+    alert("無法讀取帳號權限，請聯絡管理員。");
     await db.auth.signOut();
+    loginPage();
     return;
   }
 
   currentProfile = profile;
 
   // 記錄登入時間
-  const { error: loginError } = await db
-    .from("login_events")
-    .insert({
-      user_id: currentUser.id
-    });
-
-  if (loginError) {
-    console.error("登入紀錄寫入失敗：", loginError.message);
-  }
+  await db.from("login_events").insert({
+    user_id: currentUser.id
+  });
 
   renderDashboard();
 }
 
-// ========================================
-// 登入後主畫面
-// ========================================
+// ==================================================
+// 7. 主畫面
+// ==================================================
 
 function renderDashboard() {
+
   const roleNames = {
     admin: "管理員",
     teacher: "老師",
@@ -318,7 +349,8 @@ function renderDashboard() {
 
           <div class="user-info">
             ${escapeHTML(
-              currentProfile.display_name || currentProfile.email
+              currentProfile.display_name ||
+              currentProfile.email
             )}
             ・${roleNames[currentProfile.role] || "使用者"}
           </div>
@@ -343,8 +375,7 @@ function renderDashboard() {
     </main>
   `;
 
-  document
-    .getElementById("logoutBtn")
+  document.getElementById("logoutBtn")
     .addEventListener("click", logout);
 
   if (currentProfile.role === "parent") {
@@ -354,11 +385,14 @@ function renderDashboard() {
   }
 }
 
-// ========================================
-// 管理員及老師畫面
-// ========================================
+// ==================================================
+// 8. 管理員／老師畫面
+// ==================================================
 
 function staffView() {
+
+  const isAdmin = currentProfile.role === "admin";
+
   return `
 
     <!-- 一、學生資料管理 -->
@@ -373,6 +407,7 @@ function staffView() {
 
           <div>
             <label>學生姓名</label>
+
             <input
               name="full_name"
               required
@@ -382,6 +417,7 @@ function staffView() {
 
           <div>
             <label>學生編號</label>
+
             <input
               name="student_code"
               required
@@ -422,6 +458,7 @@ function staffView() {
 
           <div>
             <label>開始日期</label>
+
             <input
               type="date"
               name="start_date"
@@ -431,6 +468,7 @@ function staffView() {
 
           <div>
             <label>結束日期</label>
+
             <input
               type="date"
               name="end_date"
@@ -465,6 +503,7 @@ function staffView() {
           required
         ></select>
 
+
         <label>選擇考試場次</label>
 
         <select
@@ -473,7 +512,20 @@ function staffView() {
           required
         ></select>
 
-        <label>科目</label>
+
+        <!-- 範圍放在科目及成績之前 -->
+
+        <label>科目範圍</label>
+
+        <input
+          type="text"
+          name="scope"
+          placeholder="例如：第三課～第五課"
+          required
+        >
+
+
+        <label>考試科目</label>
 
         <select name="subject" required>
           <option value="國文">國文</option>
@@ -481,21 +533,15 @@ function staffView() {
           <option value="自然">自然</option>
         </select>
 
-        <label>考試範圍</label>
 
-        <input
-          type="text"
-          name="scope"
-          placeholder="例如：第三課～第五課"
-        >
-
-        <label>成績（0～100）</label>
+        <label>考試成績（0～100）</label>
 
         <input
           type="number"
           name="score"
           min="0"
           max="100"
+          step="0.1"
           required
         >
 
@@ -532,11 +578,17 @@ function staffView() {
 
       </div>
 
-      <button type="button" id="queryOverviewBtn">
+      <button
+        type="button"
+        id="queryOverviewBtn"
+      >
         查詢全班成績
       </button>
 
-      <button type="button" id="exportOverviewBtn">
+      <button
+        type="button"
+        id="exportOverviewBtn"
+      >
         匯出 Excel CSV
       </button>
 
@@ -600,9 +652,9 @@ function staffView() {
   `;
 }
 
-// ========================================
-// 家長畫面
-// ========================================
+// ==================================================
+// 9. 家長畫面
+// ==================================================
 
 function parentView() {
   return `
@@ -622,9 +674,9 @@ function parentView() {
   `;
 }
 
-// ========================================
-// 載入管理資料
-// ========================================
+// ==================================================
+// 10. 載入管理員／老師資料
+// ==================================================
 
 async function loadStaffData() {
 
@@ -642,7 +694,6 @@ async function loadStaffData() {
   ]);
 
   if (studentResult.error || examResult.error) {
-
     showMessage(
       "讀取資料失敗：" +
       (
@@ -651,74 +702,108 @@ async function loadStaffData() {
       ),
       "error"
     );
-
     return;
   }
 
   studentsCache = studentResult.data || [];
   examsCache = examResult.data || [];
 
-  // 學生列表
+  // 學生名單
+
+  const isAdmin = currentProfile.role === "admin";
 
   document.getElementById("studentList").innerHTML =
     studentsCache.length
-
       ? `
-        <div class="table-wrap">
+        <div class="table-scroll">
+
           <table>
 
-            <tr>
-              <th>編號</th>
-              <th>姓名</th>
-              <th>班級</th>
-            </tr>
-
-            ${studentsCache.map(s => `
+            <thead>
               <tr>
-                <td>${escapeHTML(s.student_code)}</td>
-                <td>${escapeHTML(s.full_name)}</td>
-                <td>${escapeHTML(s.class_name)}</td>
+                <th>編號</th>
+                <th>姓名</th>
+                <th>班級</th>
+                ${isAdmin ? "<th>操作</th>" : ""}
               </tr>
-            `).join("")}
+            </thead>
+
+            <tbody>
+
+              ${studentsCache.map(s => `
+                <tr>
+
+                  <td>${escapeHTML(s.student_code)}</td>
+
+                  <td>${escapeHTML(s.full_name)}</td>
+
+                  <td>${escapeHTML(s.class_name)}</td>
+
+                  ${
+                    isAdmin
+                      ? `
+                        <td>
+                          <button
+                            type="button"
+                            class="danger"
+                            onclick="deleteStudent('${escapeHTML(s.id)}')"
+                          >
+                            刪除學生
+                          </button>
+                        </td>
+                      `
+                      : ""
+                  }
+
+                </tr>
+              `).join("")}
+
+            </tbody>
 
           </table>
+
         </div>
       `
-
       : `<p class="notice">目前尚未建立學生資料。</p>`;
 
 
-  // 考試場次列表
+  // 考試場次清單
 
   document.getElementById("examList").innerHTML =
     examsCache.length
-
       ? `
-        <div class="table-wrap">
+        <div class="table-scroll">
+
           <table>
 
-            <tr>
-              <th>考試場次</th>
-              <th>開始日期</th>
-              <th>結束日期</th>
-            </tr>
-
-            ${examsCache.map(e => `
+            <thead>
               <tr>
-                <td>${escapeHTML(e.title)}</td>
-                <td>${escapeHTML(e.start_date)}</td>
-                <td>${escapeHTML(e.end_date)}</td>
+                <th>考試場次</th>
+                <th>開始日期</th>
+                <th>結束日期</th>
               </tr>
-            `).join("")}
+            </thead>
+
+            <tbody>
+
+              ${examsCache.map(e => `
+                <tr>
+                  <td>${escapeHTML(e.title)}</td>
+                  <td>${escapeHTML(e.start_date)}</td>
+                  <td>${escapeHTML(e.end_date)}</td>
+                </tr>
+              `).join("")}
+
+            </tbody>
 
           </table>
+
         </div>
       `
-
       : `<p class="notice">目前尚未建立考試場次。</p>`;
 
 
-  // 學生下拉選單
+  // 學生選單
 
   const studentOptions = studentsCache.map(s => `
     <option value="${escapeHTML(s.id)}">
@@ -727,7 +812,7 @@ async function loadStaffData() {
   `).join("");
 
 
-  // 考試下拉選單
+  // 考試場次選單
 
   const examOptions = examsCache.map(e => `
     <option value="${escapeHTML(e.id)}">
@@ -745,70 +830,43 @@ async function loadStaffData() {
   document.getElementById("scoreExam").innerHTML =
     examOptions || `<option value="">請先建立考試場次</option>`;
 
-
-  // 全校成績總覽考試場次
-
-  const overviewExam = document.getElementById("overviewExam");
-
-  if (overviewExam) {
-    overviewExam.innerHTML =
-      examOptions || `<option value="">目前沒有考試場次</option>`;
-  }
+  document.getElementById("overviewExam").innerHTML =
+    examOptions || `<option value="">目前沒有考試場次</option>`;
 
 
-  // 管理員查看登入紀錄
+  // 管理員登入紀錄
 
-  if (currentProfile.role === "admin") {
-
-    loadLoginEvents();
-
+  if (isAdmin) {
+    await loadLoginEvents();
   } else {
-
     document.getElementById("loginList").textContent =
       "僅管理員可以查看家長登入紀錄。";
-
   }
 
 
   // 表單事件
 
-  document.getElementById("studentForm")
-    .addEventListener("submit", addStudent);
-
-  document.getElementById("examForm")
-    .addEventListener("submit", addExam);
-
-  document.getElementById("scoreForm")
-    .addEventListener("submit", saveScore);
-
-  document.getElementById("bindForm")
-    .addEventListener("submit", bindGuardian);
-
-
-  // 成績總覽按鈕
+  document.getElementById("studentForm").onsubmit = addStudent;
+  document.getElementById("examForm").onsubmit = addExam;
+  document.getElementById("scoreForm").onsubmit = saveScore;
+  document.getElementById("bindForm").onsubmit = bindGuardian;
 
   setupOverviewControls();
-
 }
 
-// ========================================
-// 新增學生
-// ========================================
+// ==================================================
+// 11. 新增學生
+// ==================================================
 
 async function addStudent(event) {
-
   event.preventDefault();
 
   const form = new FormData(event.target);
 
   const record = {
-
     full_name: form.get("full_name").trim(),
-
     student_code: form.get("student_code").trim(),
-
     class_name: form.get("class_name")
-
   };
 
   const { error } = await db
@@ -816,12 +874,7 @@ async function addStudent(event) {
     .insert(record);
 
   if (error) {
-
-    showMessage(
-      "新增學生失敗：" + error.message,
-      "error"
-    );
-
+    showMessage("新增學生失敗：" + error.message, "error");
     return;
   }
 
@@ -830,15 +883,103 @@ async function addStudent(event) {
   event.target.reset();
 
   await loadStaffData();
+}
+
+// ==================================================
+// 12. 刪除學生及相關資料
+// ==================================================
+
+async function deleteStudent(studentId) {
+
+  // 前端權限檢查
+  if (currentProfile?.role !== "admin") {
+    alert("只有管理員可以刪除學生。");
+    return;
+  }
+
+  const student = studentsCache.find(
+    s => s.id === studentId
+  );
+
+  if (!student) {
+    alert("找不到這位學生的資料。");
+    return;
+  }
+
+  const confirmed = confirm(
+    `確定要刪除學生「${student.full_name}」嗎？\n\n` +
+    "此操作會一併刪除：\n" +
+    "1. 該學生所有考試成績\n" +
+    "2. 該學生的家長綁定資料\n" +
+    "3. 學生名單資料\n\n" +
+    "刪除後無法直接復原，請確認。"
+  );
+
+  if (!confirmed) return;
+
+  showMessage("正在刪除學生資料……");
+
+  // 先刪除該學生所有成績
+
+  const { error: scoreError } = await db
+    .from("scores")
+    .delete()
+    .eq("student_id", studentId);
+
+  if (scoreError) {
+    showMessage(
+      "刪除學生成績失敗：" + scoreError.message,
+      "error"
+    );
+    return;
+  }
+
+  // 再刪除家長綁定
+
+  const { error: guardianError } = await db
+    .from("guardian_students")
+    .delete()
+    .eq("student_id", studentId);
+
+  if (guardianError) {
+    showMessage(
+      "刪除家長綁定失敗：" + guardianError.message,
+      "error"
+    );
+    return;
+  }
+
+  // 最後刪除學生
+
+  const { error: studentError } = await db
+    .from("students")
+    .delete()
+    .eq("id", studentId);
+
+  if (studentError) {
+    showMessage(
+      "刪除學生失敗：" + studentError.message,
+      "error"
+    );
+    return;
+  }
+
+  overviewRows = [];
+
+  showMessage(
+    `學生「${student.full_name}」及相關資料已刪除。`,
+    "success"
+  );
+
+  await loadStaffData();
 
 }
 
-// ========================================
-// 建立考試場次
-// ========================================
+// ==================================================
+// 13. 建立考試場次
+// ==================================================
 
 async function addExam(event) {
-
   event.preventDefault();
 
   const form = new FormData(event.target);
@@ -847,22 +988,9 @@ async function addExam(event) {
   const end = form.get("end_date");
 
   if (end < start) {
-
-    showMessage(
-      "結束日期不能早於開始日期。",
-      "error"
-    );
-
+    showMessage("結束日期不能早於開始日期。", "error");
     return;
   }
-
-  const formatDate = date => {
-
-    const d = new Date(date + "T00:00:00");
-
-    return `${String(d.getMonth() + 1).padStart(2, "0")}月${String(d.getDate()).padStart(2, "0")}日`;
-
-  };
 
   const title =
     `${formatDate(start)}～${formatDate(end)}周考`;
@@ -870,22 +998,16 @@ async function addExam(event) {
   const { error } = await db
     .from("exams")
     .insert({
-
       title,
-
       start_date: start,
-
       end_date: end
-
     });
 
   if (error) {
-
     showMessage(
       "建立考試場次失敗：" + error.message,
       "error"
     );
-
     return;
   }
 
@@ -897,45 +1019,36 @@ async function addExam(event) {
   event.target.reset();
 
   await loadStaffData();
-
 }
 
-// ========================================
-// 儲存學生成績
-// ========================================
+// ==================================================
+// 14. 儲存學生成績
+// ==================================================
 
 async function saveScore(event) {
-
   event.preventDefault();
 
   const form = new FormData(event.target);
 
   const score = Number(form.get("score"));
-
   const scope = (form.get("scope") || "").trim();
 
+  if (!scope) {
+    showMessage("請輸入科目範圍。", "error");
+    return;
+  }
+
   if (!Number.isFinite(score) || score < 0 || score > 100) {
-
-    showMessage(
-      "成績必須介於 0 到 100 分。",
-      "error"
-    );
-
+    showMessage("成績必須介於 0 到 100 分。", "error");
     return;
   }
 
   const record = {
-
     student_id: form.get("student_id"),
-
     exam_id: form.get("exam_id"),
-
     subject: form.get("subject"),
-
     scope,
-
     score
-
   };
 
   const { error } = await db
@@ -945,302 +1058,24 @@ async function saveScore(event) {
     });
 
   if (error) {
-
     showMessage(
       "成績儲存失敗：" + error.message,
       "error"
     );
-
     return;
   }
 
   showMessage(
-    "成績與考試範圍儲存成功！",
+    "科目範圍及成績儲存成功！",
     "success"
   );
 
   event.target.reset();
-
 }
 
-// ========================================
-// 家長帳號綁定
-// ========================================
-
-async function bindGuardian(event) {
-
-  event.preventDefault();
-
-  const form = new FormData(event.target);
-
-  const email = form.get("email").trim().toLowerCase();
-
-  const studentId = form.get("student_id");
-
-  // 搜尋家長帳號
-
-  const { data: profiles, error: profileError } = await db
-    .from("profiles")
-    .select("id,email,role")
-    .eq("email", email);
-
-  if (profileError) {
-
-    showMessage(
-      "搜尋家長帳號失敗：" + profileError.message,
-      "error"
-    );
-
-    return;
-  }
-
-  if (!profiles || profiles.length === 0) {
-
-    showMessage(
-      "找不到此電子郵件的帳號，請先建立家長帳號。",
-      "error"
-    );
-
-    return;
-  }
-
-  const guardian = profiles[0];
-
-  if (guardian.role !== "parent") {
-
-    showMessage(
-      "此帳號不是家長帳號，無法進行綁定。",
-      "error"
-    );
-
-    return;
-  }
-
-  // 建立家長與學生的關聯
-
-  const { error } = await db
-    .from("guardian_students")
-    .upsert({
-
-      guardian_id: guardian.id,
-
-      student_id: studentId
-
-    }, {
-      onConflict: "guardian_id,student_id",
-      ignoreDuplicates: true
-    });
-
-  if (error) {
-
-    showMessage(
-      "綁定失敗：" + error.message,
-      "error"
-    );
-
-    return;
-  }
-
-  showMessage(
-    "家長與學生綁定成功！",
-    "success"
-  );
-
-  event.target.reset();
-
-}
-
-// ========================================
-// 家長登入紀錄
-// ========================================
-
-async function loadLoginEvents() {
-
-  const area = document.getElementById("loginList");
-
-  if (!area) return;
-
-  const { data: events, error } = await db
-    .from("login_events")
-    .select("id,user_id,created_at")
-    .order("created_at", { ascending: false })
-    .limit(100);
-
-  if (error) {
-
-    area.textContent =
-      "讀取登入紀錄失敗：" + error.message;
-
-    return;
-  }
-
-  if (!events || events.length === 0) {
-
-    area.textContent = "目前尚無登入紀錄。";
-
-    return;
-  }
-
-  const userIds = [
-    ...new Set(events.map(e => e.user_id))
-  ];
-
-  const { data: profiles, error: profileError } = await db
-    .from("profiles")
-    .select("id,email,display_name,role")
-    .in("id", userIds);
-
-  if (profileError) {
-
-    area.textContent =
-      "讀取帳號資料失敗：" + profileError.message;
-
-    return;
-  }
-
-  const profileMap = {};
-
-  (profiles || []).forEach(p => {
-    profileMap[p.id] = p;
-  });
-
-  const parentEvents = events.filter(e =>
-    profileMap[e.user_id]?.role === "parent"
-  );
-
-  if (parentEvents.length === 0) {
-
-    area.textContent = "目前尚無家長登入紀錄。";
-
-    return;
-  }
-
-  area.innerHTML = `
-    <div class="table-wrap">
-      <table>
-
-        <tr>
-          <th>家長帳號</th>
-          <th>登入時間</th>
-        </tr>
-
-        ${parentEvents.map(e => {
-
-          const profile = profileMap[e.user_id];
-
-          return `
-            <tr>
-              <td>
-                ${escapeHTML(
-                  profile.display_name || profile.email
-                )}
-              </td>
-
-              <td>
-                ${escapeHTML(
-                  new Date(e.created_at).toLocaleString("zh-TW")
-                )}
-              </td>
-            </tr>
-          `;
-
-        }).join("")}
-
-      </table>
-    </div>
-  `;
-
-}
-
-// ========================================
-// 家長查詢成績
-// ========================================
-
-async function loadParentScores() {
-
-  const area = document.getElementById("parentScores");
-
-  const { data: scores, error } = await db
-    .from("scores")
-    .select(`
-      id,
-      subject,
-      score,
-      scope,
-      created_at,
-      students(full_name,class_name),
-      exams(title,start_date,end_date)
-    `)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-
-    area.textContent =
-      "讀取成績失敗：" + error.message;
-
-    return;
-  }
-
-  if (!scores || scores.length === 0) {
-
-    area.textContent =
-      "目前尚無成績資料，或尚未綁定學生。";
-
-    return;
-  }
-
-  area.innerHTML = `
-    <div class="table-wrap">
-      <table>
-
-        <tr>
-          <th>學生</th>
-          <th>班級</th>
-          <th>考試場次</th>
-          <th>科目</th>
-          <th>考試範圍</th>
-          <th>成績</th>
-        </tr>
-
-        ${scores.map(s => `
-          <tr>
-
-            <td>
-              ${escapeHTML(s.students?.full_name || "")}
-            </td>
-
-            <td>
-              ${escapeHTML(s.students?.class_name || "")}
-            </td>
-
-            <td>
-              ${escapeHTML(s.exams?.title || "")}
-            </td>
-
-            <td>
-              ${escapeHTML(s.subject)}
-            </td>
-
-            <td>
-              ${escapeHTML(s.scope || "未填寫")}
-            </td>
-
-            <td>
-              <strong>${escapeHTML(s.score)}</strong>
-            </td>
-
-          </tr>
-        `).join("")}
-
-      </table>
-    </div>
-  `;
-
-}
-
-// ========================================
-// 全校成績總覽：按鈕設定
-// ========================================
+// ==================================================
+// 15. 全校成績總覽按鈕
+// ==================================================
 
 function setupOverviewControls() {
 
@@ -1251,22 +1086,17 @@ function setupOverviewControls() {
     document.getElementById("exportOverviewBtn");
 
   if (queryBtn) {
-
     queryBtn.onclick = queryOverviewScores;
-
   }
 
   if (exportBtn) {
-
     exportBtn.onclick = exportOverviewCSV;
-
   }
-
 }
 
-// ========================================
-// 全校成績總覽：查詢
-// ========================================
+// ==================================================
+// 16. 查詢全校成績
+// ==================================================
 
 async function queryOverviewScores() {
 
@@ -1280,13 +1110,13 @@ async function queryOverviewScores() {
     document.getElementById("overviewResult");
 
   if (!examId) {
-
     resultArea.textContent = "請先建立考試場次。";
-
     return;
   }
 
   resultArea.textContent = "正在讀取成績……";
+
+  overviewExamId = examId;
 
   // 取得指定班級學生
 
@@ -1297,26 +1127,21 @@ async function queryOverviewScores() {
     .order("student_code");
 
   if (studentError) {
-
     resultArea.textContent =
       "讀取學生資料失敗：" + studentError.message;
-
     return;
   }
 
   if (!students || students.length === 0) {
-
     overviewRows = [];
-
     resultArea.textContent =
       "這個班級目前沒有學生資料。";
-
     return;
   }
 
   const studentIds = students.map(s => s.id);
 
-  // 取得該場考試成績
+  // 取得這場考試的所有成績
 
   const { data: scores, error: scoreError } = await db
     .from("scores")
@@ -1325,10 +1150,8 @@ async function queryOverviewScores() {
     .in("student_id", studentIds);
 
   if (scoreError) {
-
     resultArea.textContent =
       "讀取成績失敗：" + scoreError.message;
-
     return;
   }
 
@@ -1344,43 +1167,34 @@ async function queryOverviewScores() {
 
   });
 
-  // 整理所有學生資料
-
   overviewRows = students.map(student => {
 
     const records = scoreMap[student.id] || {};
 
     return {
-
+      id: student.id,
       student_code: student.student_code,
-
       full_name: student.full_name,
-
       class_name: student.class_name,
 
       chinese: records["國文"]?.score ?? "",
-
       chinese_scope: records["國文"]?.scope || "",
 
       english: records["英文"]?.score ?? "",
-
       english_scope: records["英文"]?.scope || "",
 
       science: records["自然"]?.score ?? "",
-
       science_scope: records["自然"]?.scope || ""
-
     };
 
   });
 
   renderOverviewTable();
-
 }
 
-// ========================================
-// 全校成績總覽：顯示表格
-// ========================================
+// ==================================================
+// 17. 顯示全校成績總覽
+// ==================================================
 
 function renderOverviewTable() {
 
@@ -1388,18 +1202,18 @@ function renderOverviewTable() {
     document.getElementById("overviewResult");
 
   if (!overviewRows.length) {
-
     resultArea.textContent =
-      "目前沒有可顯示的成績。";
-
+      "目前沒有可顯示的學生資料。";
     return;
   }
+
+  const isAdmin = currentProfile.role === "admin";
 
   resultArea.innerHTML = `
 
     <p>共 ${overviewRows.length} 位學生</p>
 
-    <div class="table-wrap">
+    <div class="table-scroll">
 
       <table>
 
@@ -1408,12 +1222,15 @@ function renderOverviewTable() {
           <tr>
             <th>學生編號</th>
             <th>學生姓名</th>
-            <th>國文</th>
+
             <th>國文範圍</th>
-            <th>英文</th>
+            <th>國文成績</th>
+
             <th>英文範圍</th>
-            <th>自然</th>
+            <th>英文成績</th>
+
             <th>自然範圍</th>
+            <th>自然成績</th>
           </tr>
 
         </thead>
@@ -1428,34 +1245,78 @@ function renderOverviewTable() {
 
               <td>${escapeHTML(s.full_name)}</td>
 
-              <td>
-                ${escapeHTML(
-                  s.chinese === "" ? "—" : s.chinese
-                )}
-              </td>
+              <td>${escapeHTML(s.chinese_scope || "—")}</td>
 
               <td>
-                ${escapeHTML(s.chinese_scope || "—")}
+                ${
+                  s.chinese === ""
+                    ? "—"
+                    : escapeHTML(s.chinese)
+                }
+
+                ${
+                  isAdmin && s.chinese !== ""
+                    ? `
+                      <button
+                        type="button"
+                        class="danger"
+                        onclick="deleteScore('${escapeHTML(s.id)}','國文')"
+                      >
+                        刪除
+                      </button>
+                    `
+                    : ""
+                }
               </td>
 
-              <td>
-                ${escapeHTML(
-                  s.english === "" ? "—" : s.english
-                )}
-              </td>
+
+              <td>${escapeHTML(s.english_scope || "—")}</td>
 
               <td>
-                ${escapeHTML(s.english_scope || "—")}
+                ${
+                  s.english === ""
+                    ? "—"
+                    : escapeHTML(s.english)
+                }
+
+                ${
+                  isAdmin && s.english !== ""
+                    ? `
+                      <button
+                        type="button"
+                        class="danger"
+                        onclick="deleteScore('${escapeHTML(s.id)}','英文')"
+                      >
+                        刪除
+                      </button>
+                    `
+                    : ""
+                }
               </td>
 
-              <td>
-                ${escapeHTML(
-                  s.science === "" ? "—" : s.science
-                )}
-              </td>
+
+              <td>${escapeHTML(s.science_scope || "—")}</td>
 
               <td>
-                ${escapeHTML(s.science_scope || "—")}
+                ${
+                  s.science === ""
+                    ? "—"
+                    : escapeHTML(s.science)
+                }
+
+                ${
+                  isAdmin && s.science !== ""
+                    ? `
+                      <button
+                        type="button"
+                        class="danger"
+                        onclick="deleteScore('${escapeHTML(s.id)}','自然')"
+                      >
+                        刪除
+                      </button>
+                    `
+                    : ""
+                }
               </td>
 
             </tr>
@@ -1469,85 +1330,105 @@ function renderOverviewTable() {
     </div>
 
   `;
-
 }
 
-// ========================================
-// 全校成績總覽：匯出 CSV
-// ========================================
+// ==================================================
+// 18. 刪除單科成績
+// ==================================================
+
+async function deleteScore(studentId, subject) {
+
+  if (currentProfile?.role !== "admin") {
+    alert("只有管理員可以刪除成績。");
+    return;
+  }
+
+  const student = overviewRows.find(
+    s => s.id === studentId
+  );
+
+  if (!student) {
+    alert("找不到學生資料。");
+    return;
+  }
+
+  const confirmed = confirm(
+    `確定要刪除「${student.full_name}」的「${subject}」成績嗎？\n\n` +
+    "只會刪除此場考試的這一科成績，不會影響其他科目。"
+  );
+
+  if (!confirmed) return;
+
+  const { error } = await db
+    .from("scores")
+    .delete()
+    .eq("student_id", studentId)
+    .eq("exam_id", overviewExamId)
+    .eq("subject", subject);
+
+  if (error) {
+    showMessage(
+      "刪除成績失敗：" + error.message,
+      "error"
+    );
+    return;
+  }
+
+  showMessage(
+    `${student.full_name} 的 ${subject} 成績已刪除。`,
+    "success"
+  );
+
+  await queryOverviewScores();
+}
+
+// ==================================================
+// 19. 匯出 CSV（Excel 可開啟）
+// ==================================================
 
 function exportOverviewCSV() {
 
   if (!overviewRows.length) {
-
     alert("請先查詢成績，再進行匯出。");
-
     return;
   }
 
   const headers = [
-
     "班級",
-
     "學生編號",
-
     "學生姓名",
-
-    "國文",
-
     "國文範圍",
-
-    "英文",
-
+    "國文成績",
     "英文範圍",
-
-    "自然",
-
-    "自然範圍"
-
+    "英文成績",
+    "自然範圍",
+    "自然成績"
   ];
 
   const rows = overviewRows.map(s => [
-
     s.class_name,
-
     s.student_code,
-
     s.full_name,
-
-    s.chinese,
-
     s.chinese_scope,
-
-    s.english,
-
+    s.chinese,
     s.english_scope,
-
-    s.science,
-
-    s.science_scope
-
+    s.english,
+    s.science_scope,
+    s.science
   ]);
 
   const csvCell = value =>
     `"${String(value ?? "").replace(/"/g, '""')}"`;
 
   const csv = "\uFEFF" + [
-
     headers,
-
     ...rows
-
   ].map(row =>
-
     row.map(csvCell).join(",")
-
   ).join("\r\n");
 
   const blob = new Blob([csv], {
-
     type: "text/csv;charset=utf-8;"
-
   });
 
   const url = URL.createObjectURL(blob);
@@ -1555,43 +1436,432 @@ function exportOverviewCSV() {
   const link = document.createElement("a");
 
   link.href = url;
-
   link.download = "小象成績總覽.csv";
 
   document.body.appendChild(link);
-
   link.click();
-
   link.remove();
 
   URL.revokeObjectURL(url);
+}
+
+// ==================================================
+// 20. 綁定家長與學生
+// ==================================================
+
+async function bindGuardian(event) {
+  event.preventDefault();
+
+  const form = new FormData(event.target);
+
+  const email =
+    form.get("email").trim().toLowerCase();
+
+  const studentId =
+    form.get("student_id");
+
+  // 依電子郵件尋找家長帳號
+
+  const { data: profiles, error: profileError } = await db
+    .from("profiles")
+    .select("id,email,role")
+    .ilike("email", email);
+
+  if (profileError) {
+    showMessage(
+      "查詢家長帳號失敗：" + profileError.message,
+      "error"
+    );
+    return;
+  }
+
+  const guardian = (profiles || []).find(
+    p => (p.email || "").toLowerCase() === email
+  );
+
+  if (!guardian) {
+    showMessage(
+      "找不到這個家長帳號，請先在 Supabase 建立帳號。",
+      "error"
+    );
+    return;
+  }
+
+  if (guardian.role !== "parent") {
+    showMessage(
+      "此帳號不是家長帳號，無法進行綁定。",
+      "error"
+    );
+    return;
+  }
+
+  // 建立家長與學生關係
+
+  const { error } = await db
+    .from("guardian_students")
+    .insert({
+      guardian_id: guardian.id,
+      student_id: studentId
+    });
+
+  if (error) {
+    if (error.code === "23505") {
+      showMessage("這位家長已經綁定該學生。", "error");
+    } else {
+      showMessage(
+        "綁定失敗：" + error.message,
+        "error"
+      );
+    }
+    return;
+  }
+
+  showMessage("家長與學生綁定成功！", "success");
+
+  event.target.reset();
+}
+
+// ==================================================
+// 21. 管理員查看家長登入紀錄
+// ==================================================
+
+async function loadLoginEvents() {
+
+  if (currentProfile?.role !== "admin") {
+    return;
+  }
+
+  const area = document.getElementById("loginList");
+
+  if (!area) return;
+
+  area.textContent = "正在讀取登入紀錄……";
+
+  const { data: events, error } = await db
+    .from("login_events")
+    .select("user_id,created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    area.textContent =
+      "讀取登入紀錄失敗：" + error.message;
+    return;
+  }
+
+  if (!events || events.length === 0) {
+    area.textContent = "目前尚無登入紀錄。";
+    return;
+  }
+
+  const userIds = [
+    ...new Set(events.map(e => e.user_id))
+  ];
+
+  const { data: profiles, error: profileError } = await db
+    .from("profiles")
+    .select("id,email,display_name,role")
+    .in("id", userIds);
+
+  if (profileError) {
+    area.textContent =
+      "讀取帳號資料失敗：" + profileError.message;
+    return;
+  }
+
+  const profileMap = {};
+
+  (profiles || []).forEach(p => {
+    profileMap[p.id] = p;
+  });
+
+  const parentEvents = events.filter(e => {
+    return profileMap[e.user_id]?.role === "parent";
+  });
+
+  if (parentEvents.length === 0) {
+    area.textContent = "目前尚無家長登入紀錄。";
+    return;
+  }
+
+  // 統計登入次數
+
+  const loginCounts = {};
+
+  parentEvents.forEach(e => {
+    loginCounts[e.user_id] =
+      (loginCounts[e.user_id] || 0) + 1;
+  });
+
+  const lastLogin = {};
+
+  parentEvents.forEach(e => {
+    if (!lastLogin[e.user_id]) {
+      lastLogin[e.user_id] = e.created_at;
+    }
+  });
+
+  const parentIds = Object.keys(loginCounts);
+
+  area.innerHTML = `
+
+    <div class="table-scroll">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>家長帳號</th>
+            <th>登入次數</th>
+            <th>最後登入時間</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          ${parentIds.map(id => {
+
+            const p = profileMap[id];
+
+            return `
+              <tr>
+                <td>
+                  ${escapeHTML(
+                    p.display_name || p.email || "未設定"
+                  )}
+                  <br>
+                  <small>${escapeHTML(p.email || "")}</small>
+                </td>
+
+                <td>${loginCounts[id]}</td>
+
+                <td>
+                  ${escapeHTML(
+                    new Date(lastLogin[id]).toLocaleString("zh-TW")
+                  )}
+                </td>
+              </tr>
+            `;
+
+          }).join("")}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  `;
+}
+
+// ==================================================
+// 22. 家長查詢成績
+// ==================================================
+
+async function loadParentScores() {
+
+  const area = document.getElementById("parentScores");
+
+  if (!area) return;
+
+  area.textContent = "正在讀取成績……";
+
+  // 先取得此家長綁定的學生
+
+  const { data: links, error: linkError } = await db
+    .from("guardian_students")
+    .select("student_id")
+    .eq("guardian_id", currentUser.id);
+
+  if (linkError) {
+    area.textContent =
+      "讀取學生綁定資料失敗：" + linkError.message;
+    return;
+  }
+
+  if (!links || links.length === 0) {
+    area.textContent = "目前尚未綁定學生資料。";
+    return;
+  }
+
+  const studentIds = links.map(link => link.student_id);
+
+  // 取得學生資料
+
+  const { data: students, error: studentError } = await db
+    .from("students")
+    .select("id,student_code,full_name,class_name")
+    .in("id", studentIds);
+
+  if (studentError) {
+    area.textContent =
+      "讀取學生資料失敗：" + studentError.message;
+    return;
+  }
+
+  // 取得成績
+
+  const { data: scores, error: scoreError } = await db
+    .from("scores")
+    .select("student_id,exam_id,subject,score,scope")
+    .in("student_id", studentIds);
+
+  if (scoreError) {
+    area.textContent =
+      "讀取成績失敗：" + scoreError.message;
+    return;
+  }
+
+  // 取得考試場次
+
+  const examIds = [
+    ...new Set((scores || []).map(s => s.exam_id))
+  ];
+
+  let exams = [];
+
+  if (examIds.length > 0) {
+
+    const { data: examData, error: examError } = await db
+      .from("exams")
+      .select("id,title,start_date,end_date")
+      .in("id", examIds)
+      .order("start_date", { ascending: false });
+
+    if (examError) {
+      area.textContent =
+        "讀取考試場次失敗：" + examError.message;
+      return;
+    }
+
+    exams = examData || [];
+  }
+
+  const examMap = {};
+
+  exams.forEach(e => {
+    examMap[e.id] = e;
+  });
+
+  // 顯示各學生歷史成績
+
+  area.innerHTML = students.map(student => {
+
+    const studentScores = (scores || []).filter(
+      s => s.student_id === student.id
+    );
+
+    const studentExamIds = [
+      ...new Set(studentScores.map(s => s.exam_id))
+    ];
+
+    const studentExams = studentExamIds
+      .map(id => examMap[id])
+      .filter(Boolean)
+      .sort((a, b) =>
+        b.start_date.localeCompare(a.start_date)
+      );
+
+    return `
+
+      <section class="panel">
+
+        <h3>
+          ${escapeHTML(student.class_name)}
+          ｜${escapeHTML(student.full_name)}
+        </h3>
+
+        ${
+          studentExams.length === 0
+            ? `<p class="notice">目前尚無成績資料。</p>`
+            : studentExams.map(exam => {
+
+                const examScores = studentScores.filter(
+                  s => s.exam_id === exam.id
+                );
+
+                return `
+
+                  <h4>${escapeHTML(exam.title)}</h4>
+
+                  <div class="table-scroll">
+
+                    <table>
+
+                      <thead>
+                        <tr>
+                          <th>科目</th>
+                          <th>考試範圍</th>
+                          <th>成績</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+
+                        ${examScores.map(s => `
+                          <tr>
+                            <td>${escapeHTML(s.subject)}</td>
+                            <td>${escapeHTML(s.scope || "—")}</td>
+                            <td>${escapeHTML(s.score)}</td>
+                          </tr>
+                        `).join("")}
+
+                      </tbody>
+
+                    </table>
+
+                  </div>
+
+                `;
+
+              }).join("")
+        }
+
+      </section>
+
+    `;
+
+  }).join("");
 
 }
 
-// ========================================
-// 登出
-// ========================================
+// ==================================================
+// 23. 登出
+// ==================================================
 
 async function logout() {
 
   await db.auth.signOut();
 
   currentUser = null;
-
   currentProfile = null;
 
   studentsCache = [];
-
   examsCache = [];
 
   overviewRows = [];
 
   loginPage();
-
 }
 
-// ========================================
-// 啟動網站
-// ========================================
+// ==================================================
+// 24. 網站啟動
+// ==================================================
 
-loginPage();
+async function initializeApp() {
+
+  const { data, error } = await db.auth.getSession();
+
+  if (error) {
+    loginPage();
+    return;
+  }
+
+  if (data.session?.user) {
+    currentUser = data.session.user;
+    await loadCurrentProfile();
+  } else {
+    loginPage();
+  }
+}
+
+initializeApp();
