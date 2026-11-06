@@ -2,6 +2,7 @@
 /* ==================================================
    小象文教機構｜七堵校區成績管理系統
    完整 App.js
+
    管理員：admin
    家長：parent
 
@@ -16,6 +17,10 @@
    scores 唯一索引：
    student_id, exam_id, subject, scope
 
+   本版本整合：
+   1. 家長忘記密碼提示
+   2. 成績總覽單筆成績刪除
+   3. 原有系統功能完整保留
    ================================================== */
 
 "use strict";
@@ -63,6 +68,7 @@ function escapeHtml(value) {
 
 function showMessage(message, type) {
   const box = $("systemMessage");
+
   if (!box) {
     alert(message);
     return;
@@ -100,9 +106,11 @@ function isGrade3Class(className) {
 
 function scoreClass(score, className) {
   if (isGrade3Class(className)) return "";
+
   if (score !== null && score !== undefined && Number(score) < 60) {
     return "low-score";
   }
+
   return "";
 }
 
@@ -168,7 +176,6 @@ function makeSelectOptions(items, valueField, labelField, selectedValue) {
 
 // ==================================================
 // 2. 畫面樣式
-//    使用一般字串，不使用反引號模板字串
 // ==================================================
 
 const style = document.createElement("style");
@@ -192,6 +199,7 @@ style.textContent = [
   ".btn-success { background:#27845b; }",
   ".btn-small { padding:6px 10px; font-size:13px; margin:2px; }",
   ".login-card .btn { width:100%; padding:13px; }",
+  ".forgot-password { margin-top:18px; padding:13px; border-radius:8px; background:#f1f5f9; color:#526477; font-size:14px; line-height:1.8; text-align:center; }",
   ".system-message { display:none; padding:12px 15px; border-radius:8px; margin-bottom:16px; background:#fff3cd; color:#765b13; }",
   ".system-message.error { background:#fde8e8; color:#a32626; }",
   ".system-message.success { background:#e3f5e9; color:#20683d; }",
@@ -261,6 +269,12 @@ function loginPage() {
           "</div>" +
           "<button class='btn' type='submit' id='loginButton'>登入系統</button>" +
         "</form>" +
+        "<div class='forgot-password'>" +
+          "<strong>忘記密碼了嗎？</strong><br>" +
+          "請聯絡小象文教機構管理員索取臨時密碼。<br>" +
+          "管理員確認身分後，會透過 LINE 提供臨時密碼。<br>" +
+          "登入後，請記得修改自己的密碼。" +
+        "</div>" +
       "</div>" +
     "</div>" +
     "<div class='footer'>© 小象文教機構 七堵校區</div>";
@@ -486,12 +500,13 @@ function renderAdminTab() {
 
 // ==================================================
 // 7. 成績總覽
+//    新增單筆成績刪除
 // ==================================================
 
 function renderOverview() {
   const content = $("adminContent");
 
-  const rows = scoresCache.map(function (score) {
+  function buildOverviewRow(score) {
     const student = studentsCache.find(function (item) {
       return item.id === score.student_id;
     });
@@ -525,9 +540,16 @@ function renderOverview() {
         "<td>" + escapeHtml(score.subject) + "</td>" +
         "<td>" + escapeHtml(score.scope || "—") + "</td>" +
         "<td>" + resultText + "</td>" +
+        "<td>" +
+          "<button class='btn btn-danger btn-small' data-delete-score='" +
+          escapeHtml(score.id) +
+          "'>刪除</button>" +
+        "</td>" +
       "</tr>"
     );
-  }).join("");
+  }
+
+  const rows = scoresCache.map(buildOverviewRow).join("");
 
   content.innerHTML =
     "<h2 class='section-title'>成績總覽</h2>" +
@@ -541,8 +563,19 @@ function renderOverview() {
     "</div>" +
     "<div class='table-wrap'>" +
       "<table>" +
-        "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績</th></tr></thead>" +
-        "<tbody id='overviewRows'>" + rows + "</tbody>" +
+        "<thead><tr>" +
+          "<th>考試區間</th>" +
+          "<th>班級</th>" +
+          "<th>編號</th>" +
+          "<th>姓名</th>" +
+          "<th>科目</th>" +
+          "<th>考試範圍</th>" +
+          "<th>成績</th>" +
+          "<th>操作</th>" +
+        "</tr></thead>" +
+        "<tbody id='overviewRows'>" +
+          (rows || "<tr><td colspan='8' class='empty'>目前沒有成績資料</td></tr>") +
+        "</tbody>" +
       "</table>" +
     "</div>";
 
@@ -564,43 +597,99 @@ function renderOverview() {
         );
     });
 
-    $("overviewRows").innerHTML = filtered.map(function (score) {
-      const student = studentsCache.find(function (item) {
-        return item.id === score.student_id;
-      });
-
-      const exam = examsCache.find(function (item) {
-        return item.id === score.exam_id;
-      });
-
-      const grade3 = isGrade3Class(student.class_name);
-      const resultText = grade3
-        ? "答對 " + escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
-          " 題　" + escapeHtml(score.grade_level || "—")
-        : escapeHtml(score.score == null ? "—" : score.score);
-
-      return (
-        "<tr>" +
-          "<td>" + escapeHtml(formatDateRange(exam)) + "</td>" +
-          "<td>" + escapeHtml(student.class_name) + "</td>" +
-          "<td>" + escapeHtml(student.student_code) + "</td>" +
-          "<td>" + escapeHtml(student.full_name) + "</td>" +
-          "<td>" + escapeHtml(score.subject) + "</td>" +
-          "<td>" + escapeHtml(score.scope || "—") + "</td>" +
-          "<td class='" + scoreClass(score.score, student.class_name) + "'>" + resultText + "</td>" +
-        "</tr>"
-      );
-    }).join("") || "<tr><td colspan='7' class='empty'>沒有符合的成績資料</td></tr>";
+    $("overviewRows").innerHTML =
+      filtered.map(buildOverviewRow).join("") ||
+      "<tr><td colspan='8' class='empty'>沒有符合的成績資料</td></tr>";
   }
 
   $("overviewSearch").addEventListener("input", filterRows);
   $("overviewClass").addEventListener("change", filterRows);
 
   $("overviewRefresh").addEventListener("click", async function () {
+    try {
+      await loadAdminData();
+      renderOverview();
+      showMessage("成績資料已更新。", "success");
+    } catch (error) {
+      showMessage("更新成績失敗：" + error.message, "error");
+    }
+  });
+
+  content.addEventListener("click", async function (event) {
+    const button = event.target.closest("[data-delete-score]");
+
+    if (!button) return;
+
+    await deleteScore(button.dataset.deleteScore);
+  });
+}
+
+// ==================================================
+// 7-1. 刪除單筆成績
+// ==================================================
+
+async function deleteScore(scoreId) {
+  const score = scoresCache.find(function (item) {
+    return String(item.id) === String(scoreId);
+  });
+
+  if (!score) {
+    showMessage("找不到這筆成績資料，請重新整理。", "error");
+    return;
+  }
+
+  const student = studentsCache.find(function (item) {
+    return item.id === score.student_id;
+  });
+
+  const exam = examsCache.find(function (item) {
+    return item.id === score.exam_id;
+  });
+
+  if (!student || !exam) {
+    showMessage("無法確認學生或考試資料，請重新整理。", "error");
+    return;
+  }
+
+  const resultText = isGrade3Class(student.class_name)
+    ? "答對 " + (score.correct_count == null ? "—" : score.correct_count) +
+      " 題，等級：" + (score.grade_level || "—")
+    : "分數：" + (score.score == null ? "—" : score.score);
+
+  const confirmed = confirm(
+    "確定要刪除以下這筆成績嗎？\n\n" +
+    "學生：" + student.full_name + "\n" +
+    "班級：" + student.class_name + "\n" +
+    "考試：" + exam.title + "\n" +
+    "科目：" + score.subject + "\n" +
+    "考試範圍：" + (score.scope || "—") + "\n" +
+    "成績：" + resultText + "\n\n" +
+    "注意：只會刪除這一筆成績，其他科目及考試成績不受影響。\n" +
+    "此操作無法復原。"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const result = await db
+      .from("scores")
+      .delete()
+      .eq("id", scoreId);
+
+    if (result.error) throw result.error;
+
     await loadAdminData();
     renderOverview();
-    showMessage("成績資料已更新。", "success");
-  });
+
+    showMessage(
+      "已成功刪除「" + student.full_name + "」的「" +
+      score.subject + "」成績。",
+      "success"
+    );
+
+  } catch (error) {
+    showMessage("刪除成績失敗：" + error.message, "error");
+  }
 }
 
 // ==================================================
