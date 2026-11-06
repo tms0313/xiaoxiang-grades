@@ -1,15 +1,18 @@
+```javascript
 // ==================================================
 // 小象文教機構｜成績管理系統
 // 完整 App.js
 // 版本：
 // 1. 家長密碼管理
 // 2. 最近三次週考
-// 3. 重複成績覆蓋確認
+// 3. 相同考試範圍重複成績覆蓋確認
 // 4. 修改學生資料（保留成績及家長綁定）
 // 5. 多場次成績 CSV 匯出
-// 6. 新增數學科目
-// 7. 成績登錄順序：科目 → 科目範圍 → 成績
-// 8. 低於 60 分以紅色粗體顯示
+// 6. 國文、英文、數學、自然四科
+// 7. 國一、國二：一般數字成績，低於 60 紅色粗體
+// 8. 國三：答對題數＋模擬考等級，不判斷 60 分
+// 9. 同一科目可登錄多個不同考試範圍
+// 10. 總覽、家長頁、CSV 均支援多範圍及國三等級
 // ==================================================
 
 const db = supabaseClient;
@@ -115,7 +118,6 @@ style.textContent = `
 .dashboard .success { color: #187344; }
 .dashboard .error { color: #b42318; }
 
-/* 未滿 60 分 */
 .dashboard .low-score {
   color: #b42318;
   font-weight: 700;
@@ -179,6 +181,20 @@ style.textContent = `
   height: 18px;
   margin: 0;
   flex-shrink: 0;
+}
+
+.dashboard .score-record {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  white-space: normal;
+}
+
+.dashboard .score-record:last-child { border-bottom: 0; }
+
+.dashboard .grade-level {
+  color: #17365d;
+  font-weight: 700;
+  font-size: 16px;
 }
 
 .login-page {
@@ -275,6 +291,18 @@ let examsCache = [];
 let overviewRows = [];
 let overviewExamId = "";
 
+const SUBJECTS = ["國文", "英文", "數學", "自然"];
+
+const GRADE_LEVELS = [
+  "A++",
+  "A+",
+  "A",
+  "B++",
+  "B+",
+  "B",
+  "C"
+];
+
 // ==================================================
 // 3. 共用函式
 // ==================================================
@@ -311,13 +339,33 @@ function formatDate(dateString) {
   );
 }
 
-// 成績低於 60 分時加入紅色字體
-function scoreClass(score) {
+function scoreClass(score, className) {
+  if (className === "國三班") return "";
+
   if (score === "" || score === null || score === undefined) {
     return "";
   }
 
   return Number(score) < 60 ? "low-score" : "";
+}
+
+function isGrade3Class(className) {
+  return className === "國三班";
+}
+
+function getStudentById(studentId) {
+  return studentsCache.find(s => s.id === studentId);
+}
+
+function renderGradeOptions(selectedValue = "") {
+  return `
+    <option value="">請選擇等級</option>
+    ${GRADE_LEVELS.map(level => `
+      <option value="${level}" ${selectedValue === level ? "selected" : ""}>
+        ${level}
+      </option>
+    `).join("")}
+  `;
 }
 
 // ==================================================
@@ -329,11 +377,8 @@ function loginPage() {
     <main class="login-page">
       <section class="login-card">
         <div class="logo">小象</div>
-
         <p class="school-name">小象文教機構・七堵校區</p>
-
         <h1>成績管理系統</h1>
-
         <p class="subtitle">學生學習紀錄與成績查詢平台</p>
 
         <form id="loginForm">
@@ -502,7 +547,6 @@ function renderDashboard() {
 
 function staffView() {
   return `
-
     <section class="panel">
       <h2>一、學生資料管理</h2>
 
@@ -534,7 +578,6 @@ function staffView() {
       <div id="studentList"></div>
     </section>
 
-
     <section class="panel">
       <h2>二、周考場次管理</h2>
 
@@ -557,9 +600,12 @@ function staffView() {
       <div id="examList"></div>
     </section>
 
-
     <section class="panel">
       <h2>三、學生成績登錄</h2>
+
+      <p class="notice">
+        國一、國二輸入一般成績；國三輸入答對題數及模擬考等級。
+      </p>
 
       <form id="scoreForm">
         <label>選擇學生</label>
@@ -569,7 +615,7 @@ function staffView() {
         <select name="exam_id" id="scoreExam" required></select>
 
         <label>考試科目</label>
-        <select name="subject" required>
+        <select name="subject" id="scoreSubject" required>
           <option value="國文">國文</option>
           <option value="英文">英文</option>
           <option value="數學">數學</option>
@@ -584,20 +630,38 @@ function staffView() {
           required
         >
 
-        <label>考試成績（0～100）</label>
-        <input
-          type="number"
-          name="score"
-          min="0"
-          max="100"
-          step="0.1"
-          required
-        >
+        <div id="normalScoreFields">
+          <label>考試成績（0～100 分）</label>
+          <input
+            type="number"
+            name="score"
+            id="scoreInput"
+            min="0"
+            max="100"
+            step="0.1"
+          >
+        </div>
+
+        <div id="grade3ScoreFields" style="display:none;">
+          <label>答對題數</label>
+          <input
+            type="number"
+            name="correct_count"
+            id="correctCountInput"
+            min="0"
+            step="1"
+            placeholder="例如：31"
+          >
+
+          <label>模擬考等級</label>
+          <select name="grade_level" id="gradeLevelInput">
+            ${renderGradeOptions()}
+          </select>
+        </div>
 
         <button type="submit">儲存成績</button>
       </form>
     </section>
-
 
     <section class="panel">
       <h2>四、全校成績總覽</h2>
@@ -633,8 +697,8 @@ function staffView() {
       <h3>多場次成績匯出</h3>
 
       <p class="notice">
-        選擇班級後，可一次勾選多個週考場次，
-        系統會將所有場次成績整理在同一份 CSV 檔案。
+        選擇班級後，可一次勾選多個週考場次。
+        國三會匯出答對題數及模擬考等級。
       </p>
 
       <label>選擇匯出班級</label>
@@ -667,13 +731,7 @@ function staffView() {
       <button type="button" id="exportOverviewBtn">
         匯出所選場次 Excel CSV
       </button>
-
-      <p class="notice">
-        匯出內容包含學生編號、姓名、各次週考及各科範圍與成績。
-        即使學生某次週考沒有成績，也會保留該筆資料。
-      </p>
     </section>
-
 
     <section class="panel">
       <h2>五、家長帳號綁定</h2>
@@ -693,7 +751,6 @@ function staffView() {
         <button type="submit">綁定家長與學生</button>
       </form>
     </section>
-
 
     <section class="panel">
       <h2>六、家長密碼管理</h2>
@@ -716,12 +773,10 @@ function staffView() {
       <div id="temporaryPasswordArea"></div>
     </section>
 
-
     <section class="panel">
       <h2>七、家長登入紀錄</h2>
       <div id="loginList"></div>
     </section>
-
   `;
 }
 
@@ -784,7 +839,42 @@ function parentView() {
 }
 
 // ==================================================
-// 10. 載入管理者資料
+// 10. 成績輸入欄位依學生年級切換
+// ==================================================
+
+function setupScoreInputMode() {
+  const studentSelect = document.getElementById("scoreStudent");
+  const normalFields = document.getElementById("normalScoreFields");
+  const grade3Fields = document.getElementById("grade3ScoreFields");
+
+  const scoreInput = document.getElementById("scoreInput");
+  const correctInput = document.getElementById("correctCountInput");
+  const gradeInput = document.getElementById("gradeLevelInput");
+
+  if (!studentSelect) return;
+
+  function updateMode() {
+    const student = getStudentById(studentSelect.value);
+    const isGrade3 = isGrade3Class(student?.class_name);
+
+    normalFields.style.display = isGrade3 ? "none" : "block";
+    grade3Fields.style.display = isGrade3 ? "block" : "none";
+
+    scoreInput.required = !isGrade3;
+    correctInput.required = isGrade3;
+    gradeInput.required = isGrade3;
+
+    scoreInput.disabled = isGrade3;
+    correctInput.disabled = !isGrade3;
+    gradeInput.disabled = !isGrade3;
+  }
+
+  studentSelect.addEventListener("change", updateMode);
+  updateMode();
+}
+
+// ==================================================
+// 11. 載入管理者資料
 // ==================================================
 
 async function loadStaffData() {
@@ -836,17 +926,13 @@ async function loadStaffData() {
                       type="button"
                       class="edit-btn"
                       onclick="editStudent('${escapeHTML(s.id)}')"
-                    >
-                      修改
-                    </button>
+                    >修改</button>
 
                     <button
                       type="button"
                       class="danger"
                       onclick="deleteStudent('${escapeHTML(s.id)}')"
-                    >
-                      刪除學生
-                    </button>
+                    >刪除學生</button>
                   </td>
                 </tr>
               `).join("")}
@@ -881,9 +967,7 @@ async function loadStaffData() {
                       type="button"
                       class="danger"
                       onclick="deleteExam('${escapeHTML(e.id)}')"
-                    >
-                      刪除場次
-                    </button>
+                    >刪除場次</button>
                   </td>
                 </tr>
               `).join("")}
@@ -918,6 +1002,7 @@ async function loadStaffData() {
     examOptions || `<option value="">目前沒有考試場次</option>`;
 
   renderExportExamOptions();
+  setupScoreInputMode();
 
   if (currentProfile.role === "admin") {
     await Promise.all([
@@ -935,7 +1020,7 @@ async function loadStaffData() {
 }
 
 // ==================================================
-// 11. 修改學生資料
+// 12. 修改學生資料
 // ==================================================
 
 function editStudent(studentId) {
@@ -952,7 +1037,6 @@ function editStudent(studentId) {
   }
 
   const oldForm = document.getElementById("editStudentForm");
-
   if (oldForm) oldForm.remove();
 
   const editBox = document.createElement("div");
@@ -966,20 +1050,12 @@ function editStudent(studentId) {
       <div class="form-grid">
         <div>
           <label>學生姓名</label>
-          <input
-            name="full_name"
-            value="${escapeHTML(student.full_name)}"
-            required
-          >
+          <input name="full_name" value="${escapeHTML(student.full_name)}" required>
         </div>
 
         <div>
           <label>學生編號</label>
-          <input
-            name="student_code"
-            value="${escapeHTML(student.student_code)}"
-            required
-          >
+          <input name="student_code" value="${escapeHTML(student.student_code)}" required>
         </div>
 
         <div>
@@ -993,14 +1069,12 @@ function editStudent(studentId) {
       </div>
 
       <button type="submit">儲存修改</button>
-
-      <button type="button" class="secondary" id="cancelEditStudentBtn">
-        取消
-      </button>
+      <button type="button" class="secondary" id="cancelEditStudentBtn">取消</button>
     </form>
 
     <p class="notice">
       修改學生基本資料不會刪除原有成績，也不會解除家長綁定。
+      若更改年級，之後成績畫面會依目前班級顯示。
     </p>
   `;
 
@@ -1079,7 +1153,7 @@ async function updateStudent(event, studentId) {
 }
 
 // ==================================================
-// 12. 讀取家長帳號清單
+// 13. 讀取家長帳號清單
 // ==================================================
 
 async function loadParentAccounts() {
@@ -1119,12 +1193,11 @@ async function loadParentAccounts() {
   `;
 
   const button = document.getElementById("resetParentPasswordBtn");
-
   if (button) button.onclick = resetParentPassword;
 }
 
 // ==================================================
-// 13. 管理員重設家長密碼
+// 14. 管理員重設家長密碼
 // ==================================================
 
 async function resetParentPassword() {
@@ -1213,12 +1286,11 @@ async function resetParentPassword() {
 }
 
 // ==================================================
-// 14. 複製家長臨時密碼
+// 15. 複製家長臨時密碼
 // ==================================================
 
 async function copyTemporaryPassword() {
   const input = document.getElementById("temporaryPasswordValue");
-
   if (!input) return;
 
   try {
@@ -1244,7 +1316,7 @@ async function copyTemporaryPassword() {
 }
 
 // ==================================================
-// 15. 家長修改自己的密碼
+// 16. 家長修改自己的密碼
 // ==================================================
 
 async function changeParentPassword(event) {
@@ -1328,7 +1400,7 @@ async function changeParentPassword(event) {
 }
 
 // ==================================================
-// 16. 新增學生
+// 17. 新增學生
 // ==================================================
 
 async function addStudent(event) {
@@ -1366,14 +1438,13 @@ async function addStudent(event) {
   }
 
   showMessage("學生新增成功！", "success");
-
   event.target.reset();
 
   await loadStaffData();
 }
 
 // ==================================================
-// 17. 刪除學生及相關資料
+// 18. 刪除學生及相關資料
 // ==================================================
 
 async function deleteStudent(studentId) {
@@ -1443,7 +1514,7 @@ async function deleteStudent(studentId) {
 }
 
 // ==================================================
-// 18. 建立考試場次
+// 19. 建立考試場次
 // ==================================================
 
 async function addExam(event) {
@@ -1475,14 +1546,13 @@ async function addExam(event) {
   }
 
   showMessage("考試場次建立成功：" + title, "success");
-
   event.target.reset();
 
   await loadStaffData();
 }
 
 // ==================================================
-// 19. 刪除周考場次及該場次成績
+// 20. 刪除周考場次及該場次成績
 // ==================================================
 
 async function deleteExam(examId) {
@@ -1536,50 +1606,113 @@ async function deleteExam(examId) {
 }
 
 // ==================================================
-// 20. 儲存學生成績（重複輸入確認是否覆蓋）
+// 21. 儲存學生成績
 // ==================================================
 
 async function saveScore(event) {
   event.preventDefault();
 
+  if (currentProfile?.role !== "admin") {
+    showMessage("只有管理者可以登錄成績。", "error");
+    return;
+  }
+
   const form = new FormData(event.target);
-
-  const score = Number(form.get("score"));
-  const scope = String(form.get("scope") || "").trim();
-
-  if (!scope) {
-    showMessage("請輸入科目範圍。", "error");
-    return;
-  }
-
-  if (!Number.isFinite(score) || score < 0 || score > 100) {
-    showMessage("成績必須介於 0 到 100 分。", "error");
-    return;
-  }
 
   const studentId = form.get("student_id");
   const examId = form.get("exam_id");
   const subject = form.get("subject");
+  const scope = String(form.get("scope") || "").trim();
 
-  if (!studentId || !examId || !subject) {
-    showMessage("請完整選擇學生、考試場次及科目。", "error");
+  if (!studentId || !examId || !subject || !scope) {
+    showMessage("請完整選擇學生、考試場次、科目及考試範圍。", "error");
     return;
   }
 
-  const record = {
-    student_id: studentId,
-    exam_id: examId,
-    subject,
-    scope,
-    score
-  };
+  const student = getStudentById(studentId);
 
+  if (!student) {
+    showMessage("找不到學生資料，請重新整理頁面。", "error");
+    return;
+  }
+
+  const isGrade3 = isGrade3Class(student.class_name);
+
+  let record;
+
+  if (isGrade3) {
+    const correctCountText = String(
+      form.get("correct_count") ?? ""
+    ).trim();
+
+    const gradeLevel = String(
+      form.get("grade_level") || ""
+    ).trim();
+
+    if (correctCountText === "") {
+      showMessage("國三學生必須輸入答對題數。", "error");
+      return;
+    }
+
+    const correctCount = Number(correctCountText);
+
+    if (
+      !Number.isInteger(correctCount) ||
+      correctCount < 0
+    ) {
+      showMessage("答對題數必須是 0 或以上的整數。", "error");
+      return;
+    }
+
+    if (!GRADE_LEVELS.includes(gradeLevel)) {
+      showMessage("請選擇正確的模擬考等級。", "error");
+      return;
+    }
+
+    record = {
+      student_id: studentId,
+      exam_id: examId,
+      subject,
+      scope,
+      score: null,
+      correct_count: correctCount,
+      grade_level: gradeLevel
+    };
+
+  } else {
+    const scoreText = String(form.get("score") ?? "").trim();
+
+    if (scoreText === "") {
+      showMessage("請輸入考試成績。", "error");
+      return;
+    }
+
+    const score = Number(scoreText);
+
+    if (!Number.isFinite(score) || score < 0 || score > 100) {
+      showMessage("成績必須介於 0 到 100 分。", "error");
+      return;
+    }
+
+    record = {
+      student_id: studentId,
+      exam_id: examId,
+      subject,
+      scope,
+      score,
+      correct_count: null,
+      grade_level: null
+    };
+  }
+
+  // 只查詢相同學生、相同場次、相同科目、相同範圍
   const { data: existingScore, error: lookupError } = await db
     .from("scores")
-    .select("id,score,scope")
+    .select("id,score,scope,correct_count,grade_level")
     .eq("student_id", studentId)
     .eq("exam_id", examId)
     .eq("subject", subject)
+    .eq("scope", scope)
     .maybeSingle();
 
   if (lookupError) {
@@ -1590,19 +1723,25 @@ async function saveScore(event) {
   let saveError = null;
 
   if (existingScore) {
-    const student = studentsCache.find(s => s.id === studentId);
     const exam = examsCache.find(e => e.id === examId);
 
+    const oldResult = isGrade3
+      ? `${existingScore.correct_count ?? "未填"} 題／${existingScore.grade_level || "未填等級"}`
+      : `${existingScore.score ?? "未填"} 分`;
+
+    const newResult = isGrade3
+      ? `${record.correct_count} 題／${record.grade_level}`
+      : `${record.score} 分`;
+
     const confirmed = confirm(
-      `【成績已經存在】\n\n` +
-      `學生：${student?.full_name || "此學生"}\n` +
+      `【相同考試範圍已有成績】\n\n` +
+      `學生：${student.full_name}\n` +
       `考試：${exam?.title || "此考試場次"}\n` +
-      `科目：${subject}\n\n` +
-      `原考試範圍：${existingScore.scope || "未填寫"}\n` +
-      `新考試範圍：${scope}\n\n` +
-      `原成績：${existingScore.score} 分\n` +
-      `新成績：${score} 分\n\n` +
-      `是否確定要覆蓋原成績？`
+      `科目：${subject}\n` +
+      `範圍：${scope}\n\n` +
+      `原紀錄：${oldResult}\n` +
+      `新紀錄：${newResult}\n\n` +
+      `是否確定覆蓋原紀錄？`
     );
 
     if (!confirmed) {
@@ -1612,7 +1751,11 @@ async function saveScore(event) {
 
     const { error } = await db
       .from("scores")
-      .update({ scope, score })
+      .update({
+        score: record.score,
+        correct_count: record.correct_count,
+        grade_level: record.grade_level
+      })
       .eq("id", existingScore.id);
 
     saveError = error;
@@ -1631,15 +1774,20 @@ async function saveScore(event) {
   }
 
   showMessage(
-    existingScore ? "成績已成功覆蓋更新！" : "科目範圍及成績儲存成功！",
+    existingScore
+      ? "相同考試範圍的成績已成功覆蓋更新！"
+      : "新考試範圍及成績新增成功！",
     "success"
   );
 
   event.target.reset();
+
+  // 重設後重新依學生年級切換欄位
+  setupScoreInputMode();
 }
 
 // ==================================================
-// 21. 全校成績總覽按鈕
+// 22. 全校成績總覽按鈕
 // ==================================================
 
 function setupOverviewControls() {
@@ -1680,12 +1828,11 @@ function setupOverviewControls() {
 }
 
 // ==================================================
-// 22. 多場次匯出選項
+// 23. 多場次匯出選項
 // ==================================================
 
 function renderExportExamOptions() {
   const area = document.getElementById("exportExamList");
-
   if (!area) return;
 
   if (!examsCache.length) {
@@ -1726,7 +1873,7 @@ function updateExportExamCount() {
 }
 
 // ==================================================
-// 23. 查詢單場次成績
+// 24. 查詢單場次成績
 // ==================================================
 
 async function queryOverviewScores() {
@@ -1763,7 +1910,7 @@ async function queryOverviewScores() {
 
   const { data: scores, error: scoreError } = await db
     .from("scores")
-    .select("student_id,subject,score,scope")
+    .select("id,student_id,subject,score,scope,correct_count,grade_level")
     .eq("exam_id", examId)
     .in("student_id", studentIds);
 
@@ -1776,40 +1923,25 @@ async function queryOverviewScores() {
 
   (scores || []).forEach(s => {
     if (!scoreMap[s.student_id]) {
-      scoreMap[s.student_id] = {};
+      scoreMap[s.student_id] = [];
     }
 
-    scoreMap[s.student_id][s.subject] = s;
+    scoreMap[s.student_id].push(s);
   });
 
-  overviewRows = students.map(student => {
-    const records = scoreMap[student.id] || {};
-
-    return {
-      id: student.id,
-      student_code: student.student_code,
-      full_name: student.full_name,
-      class_name: student.class_name,
-
-      chinese: records["國文"]?.score ?? "",
-      chinese_scope: records["國文"]?.scope || "",
-
-      english: records["英文"]?.score ?? "",
-      english_scope: records["英文"]?.scope || "",
-
-      math: records["數學"]?.score ?? "",
-      math_scope: records["數學"]?.scope || "",
-
-      science: records["自然"]?.score ?? "",
-      science_scope: records["自然"]?.scope || ""
-    };
-  });
+  overviewRows = students.map(student => ({
+    id: student.id,
+    student_code: student.student_code,
+    full_name: student.full_name,
+    class_name: student.class_name,
+    scores: scoreMap[student.id] || []
+  }));
 
   renderOverviewTable();
 }
 
 // ==================================================
-// 24. 顯示單場次成績總覽
+// 25. 顯示單場次成績總覽
 // ==================================================
 
 function renderOverviewTable() {
@@ -1821,28 +1953,58 @@ function renderOverviewTable() {
   }
 
   const isAdmin = currentProfile.role === "admin";
+  const isGrade3 = overviewRows[0]?.class_name === "國三班";
 
-  // 顯示成績及刪除按鈕
-  function scoreCell(score, studentId, subject) {
-    if (score === "") return "—";
+  function renderSubjectRecords(student, subject) {
+    const records = student.scores
+      .filter(s => s.subject === subject)
+      .sort((a, b) => String(a.scope || "").localeCompare(String(b.scope || ""), "zh-TW"));
 
-    return `
-      <span class="${scoreClass(score)}">
-        ${escapeHTML(score)}
-      </span>
+    if (records.length === 0) {
+      return `<span class="notice">—</span>`;
+    }
 
-      ${
-        isAdmin
-          ? `
-            <button
-              type="button"
-              class="danger"
-              onclick="deleteScore('${escapeHTML(studentId)}','${subject}')"
-            >刪除</button>
-          `
-          : ""
-      }
-    `;
+    return records.map(record => {
+      const resultText = isGrade3
+        ? `
+          <div>
+            <strong>答對題數：</strong>
+            ${escapeHTML(record.correct_count ?? "—")} 題
+          </div>
+          <div>
+            <strong>模擬考等級：</strong>
+            <span class="grade-level">${escapeHTML(record.grade_level || "—")}</span>
+          </div>
+        `
+        : `
+          <div>
+            <strong>成績：</strong>
+            <span class="${scoreClass(record.score, student.class_name)}">
+              ${escapeHTML(record.score ?? "—")}
+            </span>
+            分
+          </div>
+        `;
+
+      return `
+        <div class="score-record">
+          <div><strong>範圍：</strong>${escapeHTML(record.scope || "未填寫")}</div>
+          ${resultText}
+
+          ${
+            isAdmin
+              ? `
+                <button
+                  type="button"
+                  class="danger"
+                  onclick="deleteScore('${escapeHTML(record.id)}')"
+                >刪除此筆</button>
+              `
+              : ""
+          }
+        </div>
+      `;
+    }).join("");
   }
 
   resultArea.innerHTML = `
@@ -1854,46 +2016,21 @@ function renderOverviewTable() {
           <tr>
             <th>學生編號</th>
             <th>學生姓名</th>
-
-            <th>國文科目</th>
-            <th>國文範圍</th>
-            <th>國文成績</th>
-
-            <th>英文科目</th>
-            <th>英文範圍</th>
-            <th>英文成績</th>
-
-            <th>數學科目</th>
-            <th>數學範圍</th>
-            <th>數學成績</th>
-
-            <th>自然科目</th>
-            <th>自然範圍</th>
-            <th>自然成績</th>
+            ${SUBJECTS.map(subject => `<th>${subject}（範圍及成績）</th>`).join("")}
           </tr>
         </thead>
 
         <tbody>
-          ${overviewRows.map(s => `
+          ${overviewRows.map(student => `
             <tr>
-              <td>${escapeHTML(s.student_code)}</td>
-              <td>${escapeHTML(s.full_name)}</td>
+              <td>${escapeHTML(student.student_code)}</td>
+              <td>${escapeHTML(student.full_name)}</td>
 
-              <td>國文</td>
-              <td>${escapeHTML(s.chinese_scope || "—")}</td>
-              <td>${scoreCell(s.chinese, s.id, "國文")}</td>
-
-              <td>英文</td>
-              <td>${escapeHTML(s.english_scope || "—")}</td>
-              <td>${scoreCell(s.english, s.id, "英文")}</td>
-
-              <td>數學</td>
-              <td>${escapeHTML(s.math_scope || "—")}</td>
-              <td>${scoreCell(s.math, s.id, "數學")}</td>
-
-              <td>自然</td>
-              <td>${escapeHTML(s.science_scope || "—")}</td>
-              <td>${scoreCell(s.science, s.id, "自然")}</td>
+              ${SUBJECTS.map(subject => `
+                <td style="min-width:190px;white-space:normal;">
+                  ${renderSubjectRecords(student, subject)}
+                </td>
+              `).join("")}
             </tr>
           `).join("")}
         </tbody>
@@ -1903,25 +2040,44 @@ function renderOverviewTable() {
 }
 
 // ==================================================
-// 25. 刪除單科成績
+// 26. 刪除單筆成績
 // ==================================================
 
-async function deleteScore(studentId, subject) {
+async function deleteScore(scoreId) {
   if (currentProfile?.role !== "admin") {
     alert("只有管理者可以刪除成績。");
     return;
   }
 
-  const student = overviewRows.find(s => s.id === studentId);
+  const student = overviewRows.find(s =>
+    s.scores.some(score => score.id === scoreId)
+  );
 
   if (!student) {
-    alert("找不到學生資料。");
+    alert("找不到這筆成績資料。");
     return;
   }
 
+  const targetScore = student.scores.find(
+    score => score.id === scoreId
+  );
+
+  if (!targetScore) {
+    alert("找不到指定的成績。");
+    return;
+  }
+
+  const resultText = student.class_name === "國三班"
+    ? `${targetScore.correct_count ?? "—"} 題／${targetScore.grade_level || "—"}`
+    : `${targetScore.score ?? "—"} 分`;
+
   const confirmed = confirm(
-    `確定要刪除「${student.full_name}」的「${subject}」成績嗎？\n\n` +
-    "只會刪除此場考試的這一科成績，不會影響其他科目。"
+    `確定要刪除這筆成績嗎？\n\n` +
+    `學生：${student.full_name}\n` +
+    `科目：${targetScore.subject}\n` +
+    `範圍：${targetScore.scope || "未填寫"}\n` +
+    `成績：${resultText}\n\n` +
+    "只會刪除這一筆成績。"
   );
 
   if (!confirmed) return;
@@ -1929,22 +2085,23 @@ async function deleteScore(studentId, subject) {
   const { error } = await db
     .from("scores")
     .delete()
-    .eq("student_id", studentId)
-    .eq("exam_id", overviewExamId)
-    .eq("subject", subject);
+    .eq("id", scoreId);
 
   if (error) {
     showMessage("刪除成績失敗：" + error.message, "error");
     return;
   }
 
-  showMessage(`${student.full_name} 的 ${subject} 成績已刪除。`, "success");
+  showMessage(
+    `${student.full_name} 的 ${targetScore.subject}（${targetScore.scope}）成績已刪除。`,
+    "success"
+  );
 
   await queryOverviewScores();
 }
 
 // ==================================================
-// 26. 多場次成績匯出 CSV
+// 27. 多場次成績匯出 CSV
 // ==================================================
 
 async function exportSelectedExamsCSV() {
@@ -1996,7 +2153,6 @@ async function exportSelectedExamsCSV() {
     const studentIds = students.map(s => s.id);
 
     let allScores = [];
-
     const batchSize = 200;
 
     for (let i = 0; i < studentIds.length; i += batchSize) {
@@ -2004,7 +2160,7 @@ async function exportSelectedExamsCSV() {
 
       const { data: scores, error: scoreError } = await db
         .from("scores")
-        .select("student_id,exam_id,subject,score,scope")
+        .select("student_id,exam_id,subject,score,scope,correct_count,grade_level")
         .in("student_id", batchIds)
         .in("exam_id", selectedExamIds);
 
@@ -2018,79 +2174,83 @@ async function exportSelectedExamsCSV() {
     const scoreMap = {};
 
     allScores.forEach(score => {
-      const key =
-        `${score.student_id}|${score.exam_id}|${score.subject}`;
+      const key = [
+        score.student_id,
+        score.exam_id,
+        score.subject
+      ].join("|");
 
-      scoreMap[key] = score;
+      if (!scoreMap[key]) {
+        scoreMap[key] = [];
+      }
+
+      scoreMap[key].push(score);
     });
-
-    // CSV 欄位：科目 → 範圍 → 成績
 
     const headers = [
       "週考區間",
       "班級",
       "學生編號",
       "學生姓名",
-
-      "國文科目",
-      "國文範圍",
-      "國文成績",
-
-      "英文科目",
-      "英文範圍",
-      "英文成績",
-
-      "數學科目",
-      "數學範圍",
-      "數學成績",
-
-      "自然科目",
-      "自然範圍",
-      "自然成績"
+      "科目",
+      "考試範圍",
+      "一般成績",
+      "答對題數",
+      "模擬考等級"
     ];
 
     const rows = [];
 
     students.forEach(student => {
       selectedExams.forEach(exam => {
-        const chinese = scoreMap[
-          `${student.id}|${exam.id}|國文`
-        ];
+        let hasAnyScore = false;
 
-        const english = scoreMap[
-          `${student.id}|${exam.id}|英文`
-        ];
+        SUBJECTS.forEach(subject => {
+          const key = [
+            student.id,
+            exam.id,
+            subject
+          ].join("|");
 
-        const math = scoreMap[
-          `${student.id}|${exam.id}|數學`
-        ];
+          const records = (scoreMap[key] || [])
+            .slice()
+            .sort((a, b) =>
+              String(a.scope || "").localeCompare(
+                String(b.scope || ""),
+                "zh-TW"
+              )
+            );
 
-        const science = scoreMap[
-          `${student.id}|${exam.id}|自然`
-        ];
+          records.forEach(record => {
+            hasAnyScore = true;
 
-        rows.push([
-          exam.title,
-          student.class_name,
-          student.student_code,
-          student.full_name,
+            rows.push([
+              exam.title,
+              student.class_name,
+              student.student_code,
+              student.full_name,
+              subject,
+              record.scope || "",
+              student.class_name === "國三班" ? "" : (record.score ?? ""),
+              student.class_name === "國三班" ? (record.correct_count ?? "") : "",
+              student.class_name === "國三班" ? (record.grade_level || "") : ""
+            ]);
+          });
+        });
 
-          "國文",
-          chinese?.scope || "",
-          chinese?.score ?? "",
-
-          "英文",
-          english?.scope || "",
-          english?.score ?? "",
-
-          "數學",
-          math?.scope || "",
-          math?.score ?? "",
-
-          "自然",
-          science?.scope || "",
-          science?.score ?? ""
-        ]);
+        if (!hasAnyScore) {
+          rows.push([
+            exam.title,
+            student.class_name,
+            student.student_code,
+            student.full_name,
+            "",
+            "",
+            "",
+            "",
+            ""
+          ]);
+        }
       });
     });
 
@@ -2109,10 +2269,10 @@ async function exportSelectedExamsCSV() {
     });
 
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
 
     const today = new Date();
+
     const dateText =
       today.getFullYear() +
       String(today.getMonth() + 1).padStart(2, "0") +
@@ -2129,7 +2289,7 @@ async function exportSelectedExamsCSV() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 
     showMessage(
-      `匯出成功！${className}，共 ${students.length} 位學生、${selectedExams.length} 個週考場次，已整理 ${rows.length} 筆資料。`,
+      `匯出成功！${className}，共 ${students.length} 位學生、${selectedExams.length} 個週考場次，已整理 ${rows.length} 列資料。`,
       "success"
     );
 
@@ -2142,7 +2302,7 @@ async function exportSelectedExamsCSV() {
 }
 
 // ==================================================
-// 27. 綁定家長與學生
+// 28. 綁定家長與學生
 // ==================================================
 
 async function bindGuardian(event) {
@@ -2197,12 +2357,11 @@ async function bindGuardian(event) {
   }
 
   showMessage("家長與學生綁定成功！", "success");
-
   event.target.reset();
 }
 
 // ==================================================
-// 28. 管理者查看家長登入紀錄
+// 29. 管理者查看家長登入紀錄
 // ==================================================
 
 async function loadLoginEvents() {
@@ -2309,7 +2468,6 @@ async function loadLoginEvents() {
 
   (guardianLinks || []).forEach(link => {
     const studentName = studentMap[link.student_id];
-
     if (!studentName) return;
 
     if (!guardianStudentNames[link.guardian_id]) {
@@ -2363,7 +2521,7 @@ async function loadLoginEvents() {
 }
 
 // ==================================================
-// 29. 家長查詢成績：每位學生只顯示最近三次週考
+// 30. 家長查詢成績：每位學生只顯示最近三次週考
 // ==================================================
 
 async function loadParentScores() {
@@ -2401,7 +2559,7 @@ async function loadParentScores() {
 
   const { data: scores, error: scoreError } = await db
     .from("scores")
-    .select("student_id,exam_id,subject,score,scope")
+    .select("id,student_id,exam_id,subject,score,scope,correct_count,grade_level")
     .in("student_id", studentIds);
 
   if (scoreError) {
@@ -2434,10 +2592,9 @@ async function loadParentScores() {
     examMap[e.id] = e;
   });
 
-  // 家長端科目順序
-  const subjectOrder = ["國文", "英文", "數學", "自然"];
-
   area.innerHTML = (students || []).map(student => {
+    const isGrade3 = isGrade3Class(student.class_name);
+
     const studentScores = (scores || []).filter(
       s => s.student_id === student.id
     );
@@ -2475,8 +2632,8 @@ async function loadParentScores() {
                 const examScores = studentScores
                   .filter(s => s.exam_id === exam.id)
                   .sort((a, b) => {
-                    const aIndex = subjectOrder.indexOf(a.subject);
-                    const bIndex = subjectOrder.indexOf(b.subject);
+                    const aIndex = SUBJECTS.indexOf(a.subject);
+                    const bIndex = SUBJECTS.indexOf(b.subject);
 
                     return (
                       (aIndex === -1 ? 99 : aIndex) -
@@ -2493,7 +2650,11 @@ async function loadParentScores() {
                         <tr>
                           <th>科目</th>
                           <th>考試範圍</th>
-                          <th>成績</th>
+                          ${
+                            isGrade3
+                              ? "<th>答對題數</th><th>模擬考等級</th>"
+                              : "<th>成績</th>"
+                          }
                         </tr>
                       </thead>
 
@@ -2502,11 +2663,25 @@ async function loadParentScores() {
                           <tr>
                             <td>${escapeHTML(s.subject)}</td>
                             <td>${escapeHTML(s.scope || "—")}</td>
-                            <td>
-                              <span class="${scoreClass(s.score)}">
-                                ${escapeHTML(s.score)}
-                              </span>
-                            </td>
+
+                            ${
+                              isGrade3
+                                ? `
+                                  <td>${escapeHTML(s.correct_count ?? "—")} 題</td>
+                                  <td>
+                                    <span class="grade-level">
+                                      ${escapeHTML(s.grade_level || "—")}
+                                    </span>
+                                  </td>
+                                `
+                                : `
+                                  <td>
+                                    <span class="${scoreClass(s.score, student.class_name)}">
+                                      ${escapeHTML(s.score ?? "—")}
+                                    </span>
+                                  </td>
+                                `
+                            }
                           </tr>
                         `).join("")}
                       </tbody>
@@ -2521,7 +2696,7 @@ async function loadParentScores() {
 }
 
 // ==================================================
-// 30. 登出
+// 31. 登出
 // ==================================================
 
 async function logout() {
@@ -2540,7 +2715,7 @@ async function logout() {
 }
 
 // ==================================================
-// 31. 網站啟動
+// 32. 網站啟動
 // ==================================================
 
 async function initializeApp() {
@@ -2560,3 +2735,4 @@ async function initializeApp() {
 }
 
 initializeApp();
+```
