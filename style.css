@@ -206,3 +206,39 @@ footer {
     font-size: 24px;
   }
 }
+
+/* ==============================
+   家長成績表格：固定欄位寬度
+============================== */
+
+.parent-score-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.parent-score-table th,
+.parent-score-table td {
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+/* 科目欄 */
+.parent-score-table th:nth-child(1),
+.parent-score-table td:nth-child(1) {
+  width: 18%;
+}
+
+/* 考試範圍欄 */
+.parent-score-table th:nth-child(2),
+.parent-score-table td:nth-child(2) {
+  width: 52%;
+}
+
+/* 成績欄 */
+.parent-score-table th:nth-child(3),
+.parent-score-table td:nth-child(3) {
+  width: 30%;
+  text-align: center;
+}
