@@ -17,11 +17,18 @@
 body {
   margin: 0;
   font-family:
-    -apple-system, BlinkMacSystemFont,
-    "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    -apple-system,
+    BlinkMacSystemFont,
+    "Noto Sans TC",
+    "Microsoft JhengHei",
+    sans-serif;
   color: var(--text);
   background: var(--background);
 }
+
+/* ==============================
+   登入頁面
+============================== */
 
 .login-page {
   min-height: 100vh;
@@ -29,8 +36,7 @@ body {
   justify-content: center;
   align-items: center;
   padding: 24px;
-  background:
-    linear-gradient(135deg, #102b49, #244b76);
+  background: linear-gradient(135deg, #102b49, #244b76);
 }
 
 .login-card {
@@ -43,20 +49,38 @@ body {
   text-align: center;
 }
 
+/* ==============================
+   小象圓形圖示
+============================== */
+
 .logo {
   width: 76px;
   height: 76px;
   margin: 0 auto 18px;
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   border-radius: 50%;
-  background: var(--navy);
-  color: var(--gold);
-  font-size: 27px;
-  font-weight: 800;
+  background-color: #17365d;
+
+  color: #e2c58e !important;
+  font-size: 27px !important;
+  font-weight: 800 !important;
   letter-spacing: 3px;
+
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+
+  visibility: visible !important;
+  opacity: 1 !important;
 }
+
+/* ==============================
+   標題文字
+============================== */
 
 .school-name {
   margin: 0 0 12px;
@@ -77,6 +101,10 @@ h1 {
   color: var(--muted);
   font-size: 14px;
 }
+
+/* ==============================
+   表單
+============================== */
 
 form {
   text-align: left;
@@ -105,6 +133,10 @@ input:focus {
   box-shadow: 0 0 0 3px rgba(36, 75, 118, 0.1);
 }
 
+/* ==============================
+   按鈕
+============================== */
+
 button {
   width: 100%;
   min-height: 48px;
@@ -127,6 +159,10 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* ==============================
+   訊息
+============================== */
+
 #message {
   min-height: 20px;
   margin-top: 14px;
@@ -134,6 +170,16 @@ button:disabled {
   font-size: 13px;
   text-align: center;
 }
+
+.notice {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* ==============================
+   頁尾
+============================== */
 
 footer {
   margin-top: 32px;
@@ -143,7 +189,10 @@ footer {
   font-size: 12px;
 }
 
-/* 手機版 */
+/* ==============================
+   手機版
+============================== */
+
 @media (max-width: 480px) {
   .login-page {
     padding: 16px;
