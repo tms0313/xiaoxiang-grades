@@ -1,4 +1,3 @@
-
 /* ==================================================
    小象文教機構｜成績管理系統
    完整 App.js
@@ -17,7 +16,10 @@
    本版本：
    1. 移除登入畫面及家長畫面的「七堵校區」
    2. 家長頁面最上方標題維持白色
-   3. 保留原有所有系統功能
+   3. 家長每週六晚上 20:00 開放當週成績
+   4. 家長成績表格固定欄寬，避免欄位左右位移
+   5. 家長考試標題只顯示日期區間＋週考
+   6. 保留原有所有系統功能
    ================================================== */
 
 "use strict";
@@ -94,6 +96,7 @@ function formatDateRange(exam) {
   }
 
   if (start === end || !exam.end_date) return start;
+
   return start + "～" + end;
 }
 
@@ -186,6 +189,7 @@ style.textContent = [
   "* { box-sizing:border-box; }",
   "button,input,select { font:inherit; }",
   "button { cursor:pointer; }",
+
   ".login-wrap { min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; }",
   ".login-card { width:min(420px,100%); background:#fff; padding:35px; border-radius:18px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
   ".login-card h1 { text-align:center; font-size:25px; margin:0 0 8px; color:#23466b; }",
@@ -193,6 +197,7 @@ style.textContent = [
   ".field { margin-bottom:16px; }",
   ".field label { display:block; font-weight:700; margin-bottom:7px; }",
   ".field input,.field select { width:100%; padding:12px; border:1px solid #ccd4df; border-radius:8px; background:#fff; }",
+
   ".btn { border:0; border-radius:8px; padding:10px 16px; background:#315d86; color:#fff; font-weight:700; }",
   ".btn:hover { filter:brightness(.94); }",
   ".btn-secondary { background:#64748b; }",
@@ -200,30 +205,46 @@ style.textContent = [
   ".btn-success { background:#27845b; }",
   ".btn-small { padding:6px 10px; font-size:13px; margin:2px; }",
   ".login-card .btn { width:100%; padding:13px; }",
+
   ".forgot-password { margin-top:18px; padding:13px; border-radius:8px; background:#f1f5f9; color:#526477; font-size:14px; line-height:1.8; text-align:center; }",
   ".system-message { display:none; padding:12px 15px; border-radius:8px; margin-bottom:16px; background:#fff3cd; color:#765b13; }",
   ".system-message.error { background:#fde8e8; color:#a32626; }",
   ".system-message.success { background:#e3f5e9; color:#20683d; }",
+
   ".topbar { background:#23466b; color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap; }",
   ".topbar h1 { font-size:20px; margin:0; color:#fff; }",
   ".topbar small { color:#fff; }",
+
   ".dashboard { width:min(1200px,94%); margin:30px auto; background:#fff; padding:28px; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
   ".tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; border-bottom:1px solid #e4e9ef; padding-bottom:15px; }",
   ".tab-btn { border:0; padding:10px 14px; border-radius:8px; background:#edf1f5; color:#34475b; font-weight:700; }",
   ".tab-btn.active { background:#315d86; color:#fff; }",
+
   ".section-title { font-size:21px; margin:0 0 18px; color:#23466b; }",
   ".toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:15px 0; align-items:center; }",
   ".toolbar input,.toolbar select { padding:9px; border:1px solid #ccd4df; border-radius:7px; }",
   ".form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }",
   ".panel { border:1px solid #e2e8ef; border-radius:12px; padding:18px; margin-bottom:18px; }",
   ".panel h3 { margin:0 0 15px; color:#315d86; }",
+
   ".table-wrap { overflow-x:auto; width:100%; }",
   "table { border-collapse:collapse; width:100%; min-width:650px; }",
   "th,td { border-bottom:1px solid #e7ebf0; padding:11px 10px; text-align:left; vertical-align:middle; }",
   "th { background:#f3f6f9; color:#40566d; white-space:nowrap; }",
   "tr:hover td { background:#fafbfd; }",
+
+  /* 家長成績表格：固定欄寬，避免每次考試欄位左右位移 */
+  ".parent-score-table { width:100%; min-width:560px; table-layout:fixed; }",
+  ".parent-score-table th:nth-child(1),.parent-score-table td:nth-child(1) { width:18%; }",
+  ".parent-score-table th:nth-child(2),.parent-score-table td:nth-child(2) { width:52%; }",
+  ".parent-score-table th:nth-child(3),.parent-score-table td:nth-child(3) { width:30%; }",
+  ".parent-score-table th:nth-child(1),.parent-score-table td:nth-child(1) { text-align:center; }",
+  ".parent-score-table th:nth-child(3),.parent-score-table td:nth-child(3) { text-align:center; }",
+  ".parent-score-table td { overflow-wrap:anywhere; word-break:break-word; }",
+  ".parent-score-table td:nth-child(3) { white-space:normal; }",
+
   ".low-score { color:#d32626; font-weight:800; }",
-  ".grade-tag { display:inline-block; padding:4px 9px; border-radius:6px; background:#e8eff8; color:#315d86; font-weight:800; }",
+  ".grade-tag { display:inline-block; padding:4px 9px; border-radius:6px; background:#e8eff8; color:#315d86; font-weight:800; white-space:nowrap; }",
   ".muted { color:#778494; font-size:13px; }",
   ".empty { padding:25px; text-align:center; color:#8491a0; }",
   ".loading-message { position:fixed; top:15px; right:15px; z-index:9999; background:#23466b; color:#fff; padding:12px 18px; border-radius:8px; box-shadow:0 3px 12px rgba(0,0,0,.2); }",
@@ -231,7 +252,16 @@ style.textContent = [
   ".student-card h3 { margin-top:0; color:#23466b; }",
   ".footer { text-align:center; color:#8995a2; padding:25px; font-size:13px; }",
   ".hidden { display:none !important; }",
-  "@media(max-width:600px) { .dashboard { width:96%; padding:15px; margin:15px auto; } .topbar { padding:14px; } .topbar h1 { font-size:17px; } .login-card { padding:24px; } .tabs { gap:5px; } .tab-btn { padding:8px 10px; font-size:13px; } }"
+
+  "@media(max-width:600px) {",
+  ".dashboard { width:96%; padding:15px; margin:15px auto; }",
+  ".topbar { padding:14px; }",
+  ".topbar h1 { font-size:17px; }",
+  ".login-card { padding:24px; }",
+  ".tabs { gap:5px; }",
+  ".tab-btn { padding:8px 10px; font-size:13px; }",
+  ".parent-score-table { min-width:520px; }",
+  "}"
 ].join("\n");
 
 document.head.appendChild(style);
@@ -1628,7 +1658,7 @@ async function renderParentDashboard() {
   }
 
   // ==========================================
-  // 台灣時間判斷：每週六晚上 18:00 開放當週成績
+  // 台灣時間判斷：每週六晚上 20:00 開放當週成績
   // ==========================================
 
   const now = new Date();
@@ -1679,10 +1709,10 @@ async function renderParentDashboard() {
   const mondayStr = monday.toISOString().slice(0, 10);
   const saturdayStr = saturday.toISOString().slice(0, 10);
 
-  // 週六 18:00 起開放，週日也維持開放
+  // 週六 20:00 起開放，週日也維持開放
   const currentWeekReleased =
     weekday === 0 ||
-    (weekday === 6 && taipeiHour >= 18);
+    (weekday === 6 && taipeiHour >= 20);
 
   // ==========================================
   // 取得考試資料
@@ -1798,7 +1828,12 @@ async function renderParentDashboard() {
       return (
         "<div class='panel'>" +
           "<h3>" + escapeHtml(formatDateRange(exam)) + " 週考</h3>" +
-          "<div class='table-wrap'><table>" +
+          "<div class='table-wrap'><table class='parent-score-table'>" +
+            "<colgroup>" +
+              "<col style='width:18%'>" +
+              "<col style='width:52%'>" +
+              "<col style='width:30%'>" +
+            "</colgroup>" +
             "<thead><tr><th>科目</th><th>考試範圍</th><th>成績</th></tr></thead>" +
             "<tbody>" +
               (scoreRows || "<tr><td colspan='3' class='empty'>本次尚無成績資料</td></tr>") +
@@ -1817,6 +1852,7 @@ async function renderParentDashboard() {
     );
   }).join("");
 }
+
 // ==================================================
 // 16. 家長自行修改密碼
 // ==================================================
