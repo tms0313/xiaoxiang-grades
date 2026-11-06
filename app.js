@@ -232,13 +232,11 @@ document.head.appendChild(style);
 // ==================================================
 
 function createRoot() {
-  let root = $("appRoot");
+  let root = document.createElement("div");
+  root.id = "appRoot";
 
-  if (!root) {
-    root = document.createElement("div");
-    root.id = "appRoot";
-    document.body.appendChild(root);
-  }
+  document.body.innerHTML = "";
+  document.body.appendChild(root);
 
   return root;
 }
