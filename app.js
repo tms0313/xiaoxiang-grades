@@ -7,6 +7,9 @@
 // 3. 重複成績覆蓋確認
 // 4. 修改學生資料（保留成績及家長綁定）
 // 5. 多場次成績 CSV 匯出
+// 6. 新增數學科目
+// 7. 成績登錄順序：科目 → 科目範圍 → 成績
+// 8. 低於 60 分以紅色粗體顯示
 // ==================================================
 
 const db = supabaseClient;
@@ -111,6 +114,12 @@ style.textContent = `
 .dashboard .notice { color: #666; font-size: 14px; }
 .dashboard .success { color: #187344; }
 .dashboard .error { color: #b42318; }
+
+/* 未滿 60 分 */
+.dashboard .low-score {
+  color: #b42318;
+  font-weight: 700;
+}
 
 .dashboard .form-grid {
   display: grid;
@@ -300,6 +309,15 @@ function formatDate(dateString) {
     String(date.getDate()).padStart(2, "0") +
     "日"
   );
+}
+
+// 成績低於 60 分時加入紅色字體
+function scoreClass(score) {
+  if (score === "" || score === null || score === undefined) {
+    return "";
+  }
+
+  return Number(score) < 60 ? "low-score" : "";
 }
 
 // ==================================================
@@ -550,6 +568,14 @@ function staffView() {
         <label>選擇考試場次</label>
         <select name="exam_id" id="scoreExam" required></select>
 
+        <label>考試科目</label>
+        <select name="subject" required>
+          <option value="國文">國文</option>
+          <option value="英文">英文</option>
+          <option value="數學">數學</option>
+          <option value="自然">自然</option>
+        </select>
+
         <label>科目範圍</label>
         <input
           type="text"
@@ -557,13 +583,6 @@ function staffView() {
           placeholder="例如：第三課～第五課"
           required
         >
-
-        <label>考試科目</label>
-        <select name="subject" required>
-          <option value="國文">國文</option>
-          <option value="英文">英文</option>
-          <option value="自然">自然</option>
-        </select>
 
         <label>考試成績（0～100）</label>
         <input
@@ -792,8 +811,6 @@ async function loadStaffData() {
   studentsCache = studentResult.data || [];
   examsCache = examResult.data || [];
 
-  // 學生名單：新增修改按鈕
-
   document.getElementById("studentList").innerHTML =
     studentsCache.length
       ? `
@@ -838,8 +855,6 @@ async function loadStaffData() {
         </div>
       `
       : `<p class="notice">目前尚未建立學生資料。</p>`;
-
-  // 考試場次清單
 
   document.getElementById("examList").innerHTML =
     examsCache.length
@@ -902,10 +917,8 @@ async function loadStaffData() {
   document.getElementById("overviewExam").innerHTML =
     examOptions || `<option value="">目前沒有考試場次</option>`;
 
-  // 多場次匯出選項
   renderExportExamOptions();
 
-  // 管理者資料
   if (currentProfile.role === "admin") {
     await Promise.all([
       loadLoginEvents(),
@@ -1784,6 +1797,9 @@ async function queryOverviewScores() {
       english: records["英文"]?.score ?? "",
       english_scope: records["英文"]?.scope || "",
 
+      math: records["數學"]?.score ?? "",
+      math_scope: records["數學"]?.scope || "",
+
       science: records["自然"]?.score ?? "",
       science_scope: records["自然"]?.scope || ""
     };
@@ -1806,6 +1822,29 @@ function renderOverviewTable() {
 
   const isAdmin = currentProfile.role === "admin";
 
+  // 顯示成績及刪除按鈕
+  function scoreCell(score, studentId, subject) {
+    if (score === "") return "—";
+
+    return `
+      <span class="${scoreClass(score)}">
+        ${escapeHTML(score)}
+      </span>
+
+      ${
+        isAdmin
+          ? `
+            <button
+              type="button"
+              class="danger"
+              onclick="deleteScore('${escapeHTML(studentId)}','${subject}')"
+            >刪除</button>
+          `
+          : ""
+      }
+    `;
+  }
+
   resultArea.innerHTML = `
     <p>共 ${overviewRows.length} 位學生</p>
 
@@ -1815,10 +1854,20 @@ function renderOverviewTable() {
           <tr>
             <th>學生編號</th>
             <th>學生姓名</th>
+
+            <th>國文科目</th>
             <th>國文範圍</th>
             <th>國文成績</th>
+
+            <th>英文科目</th>
             <th>英文範圍</th>
             <th>英文成績</th>
+
+            <th>數學科目</th>
+            <th>數學範圍</th>
+            <th>數學成績</th>
+
+            <th>自然科目</th>
             <th>自然範圍</th>
             <th>自然成績</th>
           </tr>
@@ -1830,53 +1879,21 @@ function renderOverviewTable() {
               <td>${escapeHTML(s.student_code)}</td>
               <td>${escapeHTML(s.full_name)}</td>
 
+              <td>國文</td>
               <td>${escapeHTML(s.chinese_scope || "—")}</td>
-              <td>
-                ${s.chinese === "" ? "—" : escapeHTML(s.chinese)}
-                ${
-                  isAdmin && s.chinese !== ""
-                    ? `
-                      <button
-                        type="button"
-                        class="danger"
-                        onclick="deleteScore('${escapeHTML(s.id)}','國文')"
-                      >刪除</button>
-                    `
-                    : ""
-                }
-              </td>
+              <td>${scoreCell(s.chinese, s.id, "國文")}</td>
 
+              <td>英文</td>
               <td>${escapeHTML(s.english_scope || "—")}</td>
-              <td>
-                ${s.english === "" ? "—" : escapeHTML(s.english)}
-                ${
-                  isAdmin && s.english !== ""
-                    ? `
-                      <button
-                        type="button"
-                        class="danger"
-                        onclick="deleteScore('${escapeHTML(s.id)}','英文')"
-                      >刪除</button>
-                    `
-                    : ""
-                }
-              </td>
+              <td>${scoreCell(s.english, s.id, "英文")}</td>
 
+              <td>數學</td>
+              <td>${escapeHTML(s.math_scope || "—")}</td>
+              <td>${scoreCell(s.math, s.id, "數學")}</td>
+
+              <td>自然</td>
               <td>${escapeHTML(s.science_scope || "—")}</td>
-              <td>
-                ${s.science === "" ? "—" : escapeHTML(s.science)}
-                ${
-                  isAdmin && s.science !== ""
-                    ? `
-                      <button
-                        type="button"
-                        class="danger"
-                        onclick="deleteScore('${escapeHTML(s.id)}','自然')"
-                      >刪除</button>
-                    `
-                    : ""
-                }
-              </td>
+              <td>${scoreCell(s.science, s.id, "自然")}</td>
             </tr>
           `).join("")}
         </tbody>
@@ -1962,8 +1979,6 @@ async function exportSelectedExamsCSV() {
   button.textContent = "正在整理成績……";
 
   try {
-    // 取得指定班級學生
-
     const { data: students, error: studentError } = await db
       .from("students")
       .select("id,student_code,full_name,class_name")
@@ -1980,11 +1995,8 @@ async function exportSelectedExamsCSV() {
 
     const studentIds = students.map(s => s.id);
 
-    // 取得所有勾選場次的成績
-
     let allScores = [];
 
-    // 分批查詢，避免一次傳入過多學生 ID
     const batchSize = 200;
 
     for (let i = 0; i < studentIds.length; i += batchSize) {
@@ -2003,8 +2015,6 @@ async function exportSelectedExamsCSV() {
       allScores = allScores.concat(scores || []);
     }
 
-    // 建立成績索引
-
     const scoreMap = {};
 
     allScores.forEach(score => {
@@ -2014,25 +2024,32 @@ async function exportSelectedExamsCSV() {
       scoreMap[key] = score;
     });
 
-    // CSV 欄位
+    // CSV 欄位：科目 → 範圍 → 成績
 
     const headers = [
       "週考區間",
       "班級",
       "學生編號",
       "學生姓名",
+
+      "國文科目",
       "國文範圍",
       "國文成績",
+
+      "英文科目",
       "英文範圍",
       "英文成績",
+
+      "數學科目",
+      "數學範圍",
+      "數學成績",
+
+      "自然科目",
       "自然範圍",
       "自然成績"
     ];
 
     const rows = [];
-
-    // 每位學生 × 每個場次各產生一列
-    // 即使沒有成績也保留該列
 
     students.forEach(student => {
       selectedExams.forEach(exam => {
@@ -2044,6 +2061,10 @@ async function exportSelectedExamsCSV() {
           `${student.id}|${exam.id}|英文`
         ];
 
+        const math = scoreMap[
+          `${student.id}|${exam.id}|數學`
+        ];
+
         const science = scoreMap[
           `${student.id}|${exam.id}|自然`
         ];
@@ -2053,17 +2074,25 @@ async function exportSelectedExamsCSV() {
           student.class_name,
           student.student_code,
           student.full_name,
+
+          "國文",
           chinese?.scope || "",
           chinese?.score ?? "",
+
+          "英文",
           english?.scope || "",
           english?.score ?? "",
+
+          "數學",
+          math?.scope || "",
+          math?.score ?? "",
+
+          "自然",
           science?.scope || "",
           science?.score ?? ""
         ]);
       });
     });
-
-    // CSV 文字處理
 
     const csvCell = value =>
       `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -2074,8 +2103,6 @@ async function exportSelectedExamsCSV() {
     ].map(row =>
       row.map(csvCell).join(",")
     ).join("\r\n");
-
-    // 建立下載檔案
 
     const blob = new Blob([csv], {
       type: "text/csv;charset=utf-8;"
@@ -2099,7 +2126,6 @@ async function exportSelectedExamsCSV() {
     link.click();
     link.remove();
 
-    // 延遲釋放下載網址
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 
     showMessage(
@@ -2408,6 +2434,9 @@ async function loadParentScores() {
     examMap[e.id] = e;
   });
 
+  // 家長端科目順序
+  const subjectOrder = ["國文", "英文", "數學", "自然"];
+
   area.innerHTML = (students || []).map(student => {
     const studentScores = (scores || []).filter(
       s => s.student_id === student.id
@@ -2443,9 +2472,17 @@ async function loadParentScores() {
           recentStudentExams.length === 0
             ? `<p class="notice">目前尚無成績資料。</p>`
             : recentStudentExams.map(exam => {
-                const examScores = studentScores.filter(
-                  s => s.exam_id === exam.id
-                );
+                const examScores = studentScores
+                  .filter(s => s.exam_id === exam.id)
+                  .sort((a, b) => {
+                    const aIndex = subjectOrder.indexOf(a.subject);
+                    const bIndex = subjectOrder.indexOf(b.subject);
+
+                    return (
+                      (aIndex === -1 ? 99 : aIndex) -
+                      (bIndex === -1 ? 99 : bIndex)
+                    );
+                  });
 
                 return `
                   <h4>${escapeHTML(exam.title)}</h4>
@@ -2465,7 +2502,11 @@ async function loadParentScores() {
                           <tr>
                             <td>${escapeHTML(s.subject)}</td>
                             <td>${escapeHTML(s.scope || "—")}</td>
-                            <td>${escapeHTML(s.score)}</td>
+                            <td>
+                              <span class="${scoreClass(s.score)}">
+                                ${escapeHTML(s.score)}
+                              </span>
+                            </td>
                           </tr>
                         `).join("")}
                       </tbody>
