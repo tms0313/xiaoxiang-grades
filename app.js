@@ -986,7 +986,7 @@ function renderStudents() {
         "<button class='btn btn-secondary' type='button' id='studentCancel'>清除</button>" +
       "</form>" +
     "</div>" +
-    "<div class='table-wrap'><table>" +
+    "<div class='table-wrap'><table class='parent-score-table'>" +
       "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>操作</th></tr></thead>" +
       "<tbody>" + (rows || "<tr><td colspan='4' class='empty'>尚無學生資料</td></tr>") + "</tbody>" +
     "</table></div>";
