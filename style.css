@@ -206,3 +206,75 @@ footer {
     font-size: 24px;
   }
 }
+
+/* ==============================
+   家長端成績表格固定對齊
+============================== */
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-wrap table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+/* 固定三個欄位寬度 */
+.table-wrap th:nth-child(1),
+.table-wrap td:nth-child(1) {
+  width: 18%;
+  text-align: center;
+}
+
+.table-wrap th:nth-child(2),
+.table-wrap td:nth-child(2) {
+  width: 52%;
+  text-align: left;
+}
+
+.table-wrap th:nth-child(3),
+.table-wrap td:nth-child(3) {
+  width: 30%;
+  text-align: center;
+}
+
+/* 表格內容垂直置中 */
+.table-wrap th,
+.table-wrap td {
+  vertical-align: middle;
+  padding: 12px 8px;
+  overflow-wrap: anywhere;
+}
+
+/* 成績數字及等級保持置中 */
+.table-wrap td:nth-child(3) {
+  white-space: normal;
+  text-align: center;
+}
+
+/* 手機版 */
+@media (max-width: 480px) {
+  .table-wrap th:nth-child(1),
+  .table-wrap td:nth-child(1) {
+    width: 20%;
+  }
+
+  .table-wrap th:nth-child(2),
+  .table-wrap td:nth-child(2) {
+    width: 45%;
+  }
+
+  .table-wrap th:nth-child(3),
+  .table-wrap td:nth-child(3) {
+    width: 35%;
+  }
+
+  .table-wrap th,
+  .table-wrap td {
+    padding: 10px 5px;
+    font-size: 13px;
+  }
+}
