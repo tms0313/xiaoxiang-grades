@@ -1,4 +1,3 @@
-
 /* ==================================================
    小象文教機構｜成績管理系統
    完整 App.js
@@ -22,7 +21,8 @@
    5. 家長考試標題只顯示日期區間＋週考
    6. 國三成績統一顯示「XX 題」或「XX 分」，移除「答對」
    7. 學生管理修改、刪除按鈕固定水平排列
-   8. 保留原有所有系統功能
+   8. 登入紀錄顯示管理員或連結學生姓名，不顯示家長帳號
+   9. 保留原有所有系統功能
    ================================================== */
 
 "use strict";
@@ -245,7 +245,6 @@ style.textContent = [
   ".parent-score-table td { overflow-wrap:anywhere; word-break:break-word; }",
   ".parent-score-table td:nth-child(3) { white-space:normal; }",
 
-  /* 學生管理專用表格：不再套用家長成績表格欄寬 */
   ".student-management-table { width:100%; min-width:620px; table-layout:fixed; }",
   ".student-management-table th:nth-child(1),.student-management-table td:nth-child(1) { width:18%; }",
   ".student-management-table th:nth-child(2),.student-management-table td:nth-child(2) { width:24%; }",
@@ -1473,53 +1472,107 @@ async function resetParentPassword(parentUserId) {
 }
 
 // ==================================================
-// 13. 家長登入紀錄
+// 13. 登入紀錄
 // ==================================================
 
 async function renderLoginLogs() {
   const content = $("adminContent");
 
   content.innerHTML =
-    "<h2 class='section-title'>家長登入紀錄</h2>" +
+    "<h2 class='section-title'>登入紀錄</h2>" +
     "<div class='empty'>正在讀取登入紀錄……</div>";
 
   try {
-    const result = await db
-      .from("login_events")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
+    // 同時讀取登入紀錄及所有使用者的角色資料
+    const results = await Promise.all([
+      db
+        .from("login_events")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200),
 
-    if (result.error) throw result.error;
+      db
+        .from("profiles")
+        .select("id, role")
+    ]);
 
-    const logs = result.data || [];
+    if (results[0].error) throw results[0].error;
+    if (results[1].error) throw results[1].error;
+
+    const logs = results[0].data || [];
+    const allProfiles = results[1].data || [];
 
     const rows = logs.map(function (log) {
-      const profile = profilesCache.find(function (item) {
-        return item.id === log.user_id;
+      // 找出登入者的角色
+      const profile = allProfiles.find(function (item) {
+        return String(item.id) === String(log.user_id);
       });
+
+      let loginIdentity = "未知帳號";
+
+      // 管理員直接顯示「管理員」
+      if (profile && profile.role === "admin") {
+        loginIdentity = "管理員";
+
+      } else {
+        // 家長直接顯示目前連結的學生姓名
+        const linkedStudents = guardianLinksCache
+          .filter(function (link) {
+            return String(link.guardian_id) === String(log.user_id);
+          })
+          .map(function (link) {
+            const student = studentsCache.find(function (item) {
+              return String(item.id) === String(link.student_id);
+            });
+
+            return student ? student.full_name : null;
+          })
+          .filter(Boolean);
+
+        // 去除重複姓名
+        const uniqueNames = Array.from(new Set(linkedStudents));
+
+        loginIdentity = uniqueNames.length > 0
+          ? uniqueNames.join("、")
+          : "尚未綁定學生";
+      }
 
       return (
         "<tr>" +
-          "<td>" + escapeHtml(profile ? (profile.display_name || profile.email) : "未知帳號") + "</td>" +
-          "<td>" + escapeHtml(profile ? profile.email : log.user_id) + "</td>" +
-          "<td>" + escapeHtml(log.created_at ? new Date(log.created_at).toLocaleString("zh-TW") : "—") + "</td>" +
+          "<td>" + escapeHtml(loginIdentity) + "</td>" +
+          "<td>" +
+            escapeHtml(
+              log.created_at
+                ? new Date(log.created_at).toLocaleString("zh-TW")
+                : "—"
+            ) +
+          "</td>" +
         "</tr>"
       );
     }).join("");
 
     content.innerHTML =
-      "<h2 class='section-title'>家長登入紀錄</h2>" +
+      "<h2 class='section-title'>登入紀錄</h2>" +
       "<p class='muted'>最近 200 筆登入紀錄。</p>" +
       "<div class='table-wrap'><table>" +
-        "<thead><tr><th>姓名</th><th>帳號</th><th>登入時間</th></tr></thead>" +
-        "<tbody>" + (rows || "<tr><td colspan='3' class='empty'>目前沒有登入紀錄</td></tr>") + "</tbody>" +
+        "<thead><tr>" +
+          "<th>登入身分</th>" +
+          "<th>登入時間</th>" +
+        "</tr></thead>" +
+        "<tbody>" +
+          (
+            rows ||
+            "<tr><td colspan='2' class='empty'>目前沒有登入紀錄</td></tr>"
+          ) +
+        "</tbody>" +
       "</table></div>";
 
   } catch (error) {
     content.innerHTML =
-      "<h2 class='section-title'>家長登入紀錄</h2>" +
-      "<p class='system-message error'>讀取失敗：" + escapeHtml(error.message) + "</p>";
+      "<h2 class='section-title'>登入紀錄</h2>" +
+      "<p class='system-message error'>讀取失敗：" +
+        escapeHtml(error.message) +
+      "</p>";
   }
 }
 
