@@ -1627,18 +1627,115 @@ async function renderParentDashboard() {
     return;
   }
 
+  // ==========================================
+  // 台灣時間判斷：每週六晚上 18:00 開放當週成績
+  // ==========================================
+
+  const now = new Date();
+
+  const taipeiDateParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(now);
+
+  const taipeiTimeParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Taipei",
+    hour: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(now);
+
+  const dateValues = {};
+
+  taipeiDateParts.forEach(function (part) {
+    dateValues[part.type] = part.value;
+  });
+
+  const taipeiHour = Number(
+    taipeiTimeParts.find(function (part) {
+      return part.type === "hour";
+    }).value
+  );
+
+  // 取得台灣當天日期
+  const taipeiDate = new Date(Date.UTC(
+    Number(dateValues.year),
+    Number(dateValues.month) - 1,
+    Number(dateValues.day)
+  ));
+
+  // 計算本週星期一
+  const weekday = taipeiDate.getUTCDay();
+  const mondayOffset = (weekday + 6) % 7;
+
+  const monday = new Date(taipeiDate);
+  monday.setUTCDate(monday.getUTCDate() - mondayOffset);
+
+  // 計算本週星期六
+  const saturday = new Date(monday);
+  saturday.setUTCDate(saturday.getUTCDate() + 5);
+
+  const mondayStr = monday.toISOString().slice(0, 10);
+  const saturdayStr = saturday.toISOString().slice(0, 10);
+
+  // 週六 18:00 起開放，週日也維持開放
+  const currentWeekReleased =
+    weekday === 0 ||
+    (weekday === 6 && taipeiHour >= 18);
+
+  // ==========================================
+  // 取得考試資料
+  // ==========================================
+
   const examResult = await db
     .from("exams")
     .select("*")
     .order("start_date", { ascending: false })
-    .limit(3);
+    .limit(50);
 
   if (examResult.error) throw examResult.error;
 
-  const recentExams = examResult.data || [];
+  const allExams = examResult.data || [];
+
+  // ==========================================
+  // 篩選當週考試
+  // ==========================================
+
+  const filteredExams = allExams.filter(function (exam) {
+    const examStart = String(
+      exam.start_date || exam.end_date || ""
+    ).slice(0, 10);
+
+    const examEnd = String(
+      exam.end_date || exam.start_date || ""
+    ).slice(0, 10);
+
+    // 判斷考試日期是否與本週一至週六重疊
+    const isCurrentWeekExam =
+      examStart !== "" &&
+      examEnd !== "" &&
+      examStart <= saturdayStr &&
+      examEnd >= mondayStr;
+
+    // 尚未開放時，排除當週考試
+    if (!currentWeekReleased && isCurrentWeekExam) {
+      return false;
+    }
+
+    return true;
+  });
+
+  // 只顯示最近三次考試
+  const recentExams = filteredExams.slice(0, 3);
+
   const examIds = recentExams.map(function (item) {
     return item.id;
   });
+
+  // ==========================================
+  // 查詢學生成績
+  // ==========================================
 
   let scores = [];
 
@@ -1653,6 +1750,10 @@ async function renderParentDashboard() {
 
     scores = scoreResult.data || [];
   }
+
+  // ==========================================
+  // 顯示家長端成績
+  // ==========================================
 
   $("parentScores").innerHTML = children.map(function (student) {
     const studentScores = scores.filter(function (score) {
@@ -1696,7 +1797,7 @@ async function renderParentDashboard() {
 
       return (
         "<div class='panel'>" +
-            "<h3>" + escapeHtml(formatDateRange(exam)) + " 週考</h3>" +
+          "<h3>" + escapeHtml(formatDateRange(exam)) + " 週考</h3>" +
           "<div class='table-wrap'><table>" +
             "<thead><tr><th>科目</th><th>考試範圍</th><th>成績</th></tr></thead>" +
             "<tbody>" +
@@ -1716,7 +1817,6 @@ async function renderParentDashboard() {
     );
   }).join("");
 }
-
 // ==================================================
 // 16. 家長自行修改密碼
 // ==================================================
