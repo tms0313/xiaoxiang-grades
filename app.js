@@ -1321,6 +1321,7 @@ function renderPasswords() {
   });
 }
 
+
 async function resetParentPassword(parentUserId) {
   if (!confirm("確定要重設這位家長的登入密碼？")) return;
 
@@ -1336,17 +1337,43 @@ async function resetParentPassword(parentUserId) {
 
     if (result.error) throw result.error;
 
-    const message =
-      result.data && result.data.message
-        ? result.data.message
-        : "已送出密碼重設要求。";
+    const data = result.data || {};
 
-    showMessage(message, "success");
+    if (!data.success || !data.temporaryPassword) {
+      throw new Error(data.error || "重設成功，但沒有取得臨時密碼。");
+    }
+
+    const temporaryPassword = data.temporaryPassword;
+
+    // 顯示臨時密碼
+    const copied = confirm(
+      "家長臨時密碼已重設成功！\n\n" +
+      "臨時密碼：\n" +
+      temporaryPassword +
+      "\n\n" +
+      "請先記下這組密碼，再透過 LINE 提供給家長。\n\n" +
+      "按「確定」複製臨時密碼。"
+    );
+
+    if (copied) {
+      try {
+        await navigator.clipboard.writeText(temporaryPassword);
+        showMessage("臨時密碼已複製，可以貼到 LINE 傳給家長。", "success");
+      } catch (copyError) {
+        showMessage(
+          "臨時密碼：" + temporaryPassword,
+          "success"
+        );
+      }
+    } else {
+      showMessage("臨時密碼已產生，請記下剛才顯示的密碼。", "success");
+    }
 
   } catch (error) {
     showMessage("密碼重設失敗：" + error.message, "error");
   }
 }
+
 
 // ==================================================
 // 13. 家長登入紀錄
