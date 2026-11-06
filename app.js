@@ -1,7 +1,12 @@
 // ==================================================
 // 小象文教機構｜成績管理系統
 // 完整 App.js
-// 版本：家長密碼管理＋最近三次週考＋重複成績覆蓋確認
+// 版本：
+// 1. 家長密碼管理
+// 2. 最近三次週考
+// 3. 重複成績覆蓋確認
+// 4. 修改學生資料（保留成績及家長綁定）
+// 5. 多場次成績 CSV 匯出
 // ==================================================
 
 const db = supabaseClient;
@@ -23,10 +28,7 @@ style.textContent = `
   box-sizing: border-box;
 }
 
-.dashboard h1 {
-  color: #17365d;
-  margin-bottom: 8px;
-}
+.dashboard h1 { color: #17365d; margin-bottom: 8px; }
 
 .dashboard h2 {
   color: #17365d;
@@ -42,10 +44,7 @@ style.textContent = `
   gap: 12px;
 }
 
-.dashboard .user-info {
-  color: #666;
-  font-size: 14px;
-}
+.dashboard .user-info { color: #666; font-size: 14px; }
 
 .dashboard button {
   background: #17365d;
@@ -57,21 +56,18 @@ style.textContent = `
   margin: 4px 4px 4px 0;
 }
 
-.dashboard button:hover {
-  opacity: .88;
-}
-
-.dashboard button:disabled {
-  opacity: .55;
-  cursor: not-allowed;
-}
-
-.dashboard button.secondary {
-  background: #777;
-}
+.dashboard button:hover { opacity: .88; }
+.dashboard button:disabled { opacity: .55; cursor: not-allowed; }
+.dashboard button.secondary { background: #777; }
 
 .dashboard button.danger {
   background: #b42318;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
+.dashboard button.edit-btn {
+  background: #3974a5;
   padding: 7px 12px;
   font-size: 13px;
 }
@@ -86,10 +82,7 @@ style.textContent = `
   box-sizing: border-box;
 }
 
-.dashboard label {
-  display: block;
-  font-weight: 600;
-}
+.dashboard label { display: block; font-weight: 600; }
 
 .dashboard .panel {
   background: #f7f9fc;
@@ -113,23 +106,11 @@ style.textContent = `
   white-space: nowrap;
 }
 
-.dashboard th {
-  background: #edf1f7;
-  color: #17365d;
-}
+.dashboard th { background: #edf1f7; color: #17365d; }
 
-.dashboard .notice {
-  color: #666;
-  font-size: 14px;
-}
-
-.dashboard .success {
-  color: #187344;
-}
-
-.dashboard .error {
-  color: #b42318;
-}
+.dashboard .notice { color: #666; font-size: 14px; }
+.dashboard .success { color: #187344; }
+.dashboard .error { color: #b42318; }
 
 .dashboard .form-grid {
   display: grid;
@@ -137,10 +118,7 @@ style.textContent = `
   gap: 12px;
 }
 
-.dashboard .table-scroll {
-  overflow-x: auto;
-  width: 100%;
-}
+.dashboard .table-scroll { overflow-x: auto; width: 100%; }
 
 .dashboard .password-result {
   background: #fff;
@@ -155,6 +133,43 @@ style.textContent = `
   font-weight: bold;
   letter-spacing: 1px;
   background: #fff;
+}
+
+.dashboard .edit-student-box {
+  background: #fff;
+  border: 1px solid #d9b66f;
+  padding: 14px;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.dashboard .export-exam-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 8px 0 14px;
+}
+
+.dashboard .export-exam-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: normal;
+  padding: 6px;
+  margin: 0;
+}
+
+.dashboard .export-exam-item input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .login-page {
@@ -183,15 +198,8 @@ style.textContent = `
   text-align: center;
 }
 
-.login-card .school-name {
-  text-align: center;
-  color: #777;
-}
-
-.login-card h1 {
-  text-align: center;
-  color: #17365d;
-}
+.login-card .school-name { text-align: center; color: #777; }
+.login-card h1 { text-align: center; color: #17365d; }
 
 .login-card .subtitle {
   text-align: center;
@@ -226,10 +234,7 @@ style.textContent = `
   cursor: pointer;
 }
 
-.login-card #message {
-  color: #b42318;
-  font-size: 14px;
-}
+.login-card #message { color: #b42318; font-size: 14px; }
 
 .login-card footer {
   text-align: center;
@@ -239,23 +244,10 @@ style.textContent = `
 }
 
 @media(max-width:600px) {
-  .dashboard {
-    padding: 16px;
-    margin: 12px auto;
-  }
-
-  .dashboard table {
-    font-size: 13px;
-  }
-
-  .dashboard th,
-  .dashboard td {
-    padding: 7px;
-  }
-
-  .login-card {
-    padding: 24px;
-  }
+  .dashboard { padding: 16px; margin: 12px auto; }
+  .dashboard table { font-size: 13px; }
+  .dashboard th, .dashboard td { padding: 7px; }
+  .login-card { padding: 24px; }
 }
 `;
 
@@ -318,23 +310,16 @@ function loginPage() {
   document.body.innerHTML = `
     <main class="login-page">
       <section class="login-card">
-
         <div class="logo">小象</div>
 
-        <p class="school-name">
-          小象文教機構・七堵校區
-        </p>
+        <p class="school-name">小象文教機構・七堵校區</p>
 
         <h1>成績管理系統</h1>
 
-        <p class="subtitle">
-          學生學習紀錄與成績查詢平台
-        </p>
+        <p class="subtitle">學生學習紀錄與成績查詢平台</p>
 
         <form id="loginForm">
-
           <label for="email">電子郵件</label>
-
           <input
             id="email"
             type="email"
@@ -344,7 +329,6 @@ function loginPage() {
           >
 
           <label for="password">登入密碼</label>
-
           <input
             id="password"
             type="password"
@@ -354,9 +338,7 @@ function loginPage() {
           >
 
           <button type="submit">登入系統</button>
-
           <p id="message" role="status"></p>
-
         </form>
 
         <p style="text-align:center;color:#777;font-size:13px;">
@@ -364,7 +346,6 @@ function loginPage() {
         </p>
 
         <footer>© 小象文教機構 七堵校區</footer>
-
       </section>
     </main>
   `;
@@ -380,22 +361,16 @@ function loginPage() {
 async function login(event) {
   event.preventDefault();
 
-  const email =
-    document.getElementById("email").value.trim();
-
-  const password =
-    document.getElementById("password").value;
-
-  const message =
-    document.getElementById("message");
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const message = document.getElementById("message");
 
   message.textContent = "登入中，請稍候……";
 
-  const { data, error } =
-    await db.auth.signInWithPassword({
-      email,
-      password
-    });
+  const { data, error } = await db.auth.signInWithPassword({
+    email,
+    password
+  });
 
   if (error) {
     message.textContent = "登入失敗：" + error.message;
@@ -403,7 +378,6 @@ async function login(event) {
   }
 
   currentUser = data.user;
-
   await loadCurrentProfile();
 }
 
@@ -412,7 +386,6 @@ async function login(event) {
 // ==================================================
 
 async function loadCurrentProfile() {
-
   const { data: profile, error } = await db
     .from("profiles")
     .select("id,email,display_name,role")
@@ -440,7 +413,6 @@ async function loadCurrentProfile() {
 // ==================================================
 
 function renderDashboard() {
-
   const roleNames = {
     admin: "管理者",
     parent: "家長"
@@ -455,9 +427,7 @@ function renderDashboard() {
 
   document.body.innerHTML = `
     <main class="dashboard">
-
       <div class="topbar">
-
         <div>
           <h1>小象文教機構｜成績管理系統</h1>
 
@@ -473,10 +443,7 @@ function renderDashboard() {
           </div>
         </div>
 
-        <button id="logoutBtn" class="secondary">
-          登出
-        </button>
-
+        <button id="logoutBtn" class="secondary">登出</button>
       </div>
 
       <p id="appMessage" class="notice"></p>
@@ -488,7 +455,6 @@ function renderDashboard() {
             : staffView()
         }
       </div>
-
     </main>
   `;
 
@@ -496,7 +462,6 @@ function renderDashboard() {
     .addEventListener("click", logout);
 
   if (currentProfile.role === "parent") {
-
     const passwordForm =
       document.getElementById("changePasswordForm");
 
@@ -508,7 +473,6 @@ function renderDashboard() {
     }
 
     loadParentScores();
-
   } else {
     loadStaffData();
   }
@@ -519,19 +483,13 @@ function renderDashboard() {
 // ==================================================
 
 function staffView() {
-
   return `
 
-    <!-- 一、學生資料管理 -->
-
     <section class="panel">
-
       <h2>一、學生資料管理</h2>
 
       <form id="studentForm">
-
         <div class="form-grid">
-
           <div>
             <label>學生姓名</label>
             <input name="full_name" required placeholder="請輸入學生姓名">
@@ -550,28 +508,20 @@ function staffView() {
               <option value="國三班">國三班</option>
             </select>
           </div>
-
         </div>
 
         <button type="submit">新增學生</button>
-
       </form>
 
       <div id="studentList"></div>
-
     </section>
 
 
-    <!-- 二、周考場次管理 -->
-
     <section class="panel">
-
       <h2>二、周考場次管理</h2>
 
       <form id="examForm">
-
         <div class="form-grid">
-
           <div>
             <label>開始日期</label>
             <input type="date" name="start_date" required>
@@ -581,26 +531,19 @@ function staffView() {
             <label>結束日期</label>
             <input type="date" name="end_date" required>
           </div>
-
         </div>
 
         <button type="submit">建立周考場次</button>
-
       </form>
 
       <div id="examList"></div>
-
     </section>
 
 
-    <!-- 三、學生成績登錄 -->
-
     <section class="panel">
-
       <h2>三、學生成績登錄</h2>
 
       <form id="scoreForm">
-
         <label>選擇學生</label>
         <select name="student_id" id="scoreStudent" required></select>
 
@@ -633,20 +576,16 @@ function staffView() {
         >
 
         <button type="submit">儲存成績</button>
-
       </form>
-
     </section>
 
 
-    <!-- 四、全校成績總覽 -->
-
     <section class="panel">
-
       <h2>四、全校成績總覽</h2>
 
-      <div class="form-grid">
+      <h3>單場次成績查詢</h3>
 
+      <div class="form-grid">
         <div>
           <label>選擇班級</label>
           <select id="overviewClass">
@@ -660,28 +599,64 @@ function staffView() {
           <label>選擇考試場次</label>
           <select id="overviewExam"></select>
         </div>
-
       </div>
 
       <button type="button" id="queryOverviewBtn">
         查詢全班成績
       </button>
 
-      <button type="button" id="exportOverviewBtn">
-        匯出 Excel CSV
-      </button>
-
       <div id="overviewResult">
         <p class="notice">請選擇班級及考試場次後查詢。</p>
       </div>
 
+      <hr style="margin:24px 0;border:0;border-top:1px solid #ddd;">
+
+      <h3>多場次成績匯出</h3>
+
+      <p class="notice">
+        選擇班級後，可一次勾選多個週考場次，
+        系統會將所有場次成績整理在同一份 CSV 檔案。
+      </p>
+
+      <label>選擇匯出班級</label>
+      <select id="exportClass">
+        <option value="國一班">國一班</option>
+        <option value="國二班">國二班</option>
+        <option value="國三班">國三班</option>
+      </select>
+
+      <label>選擇要匯出的週考場次</label>
+
+      <div>
+        <button type="button" class="secondary" id="selectAllExportExamsBtn">
+          全選場次
+        </button>
+
+        <button type="button" class="secondary" id="clearExportExamsBtn">
+          清除選取
+        </button>
+
+        <span id="exportExamCount" class="notice">
+          已選取 0 個場次
+        </span>
+      </div>
+
+      <div id="exportExamList" class="export-exam-list">
+        <p class="notice">正在載入考試場次……</p>
+      </div>
+
+      <button type="button" id="exportOverviewBtn">
+        匯出所選場次 Excel CSV
+      </button>
+
+      <p class="notice">
+        匯出內容包含學生編號、姓名、各次週考及各科範圍與成績。
+        即使學生某次週考沒有成績，也會保留該筆資料。
+      </p>
     </section>
 
 
-    <!-- 五、家長帳號綁定 -->
-
     <section class="panel">
-
       <h2>五、家長帳號綁定</h2>
 
       <p class="notice">
@@ -690,7 +665,6 @@ function staffView() {
       </p>
 
       <form id="bindForm">
-
         <label>家長電子郵件</label>
         <input type="email" name="email" required>
 
@@ -698,16 +672,11 @@ function staffView() {
         <select name="student_id" id="bindStudent" required></select>
 
         <button type="submit">綁定家長與學生</button>
-
       </form>
-
     </section>
 
 
-    <!-- 六、家長密碼管理 -->
-
     <section class="panel">
-
       <h2>六、家長密碼管理</h2>
 
       <p class="notice">
@@ -721,26 +690,17 @@ function staffView() {
         <option value="">正在讀取家長帳號……</option>
       </select>
 
-      <button
-        type="button"
-        id="resetParentPasswordBtn"
-      >
+      <button type="button" id="resetParentPasswordBtn">
         重設家長密碼
       </button>
 
       <div id="temporaryPasswordArea"></div>
-
     </section>
 
 
-    <!-- 七、家長登入紀錄 -->
-
     <section class="panel">
-
       <h2>七、家長登入紀錄</h2>
-
       <div id="loginList"></div>
-
     </section>
 
   `;
@@ -751,11 +711,8 @@ function staffView() {
 // ==================================================
 
 function parentView() {
-
   return `
-
     <section class="panel">
-
       <h2>孩子的學習成績</h2>
 
       <p class="notice">
@@ -763,17 +720,10 @@ function parentView() {
         每位學生顯示最近三次有成績的週考。
       </p>
 
-      <div id="parentScores">
-        正在讀取成績……
-      </div>
-
+      <div id="parentScores">正在讀取成績……</div>
     </section>
 
-
-    <!-- 家長自行修改密碼 -->
-
     <section class="panel">
-
       <h2>修改登入密碼</h2>
 
       <p class="notice">
@@ -782,9 +732,7 @@ function parentView() {
       </p>
 
       <form id="changePasswordForm">
-
         <label>目前密碼</label>
-
         <input
           type="password"
           name="currentPassword"
@@ -793,7 +741,6 @@ function parentView() {
         >
 
         <label>新密碼（至少 8 個字元）</label>
-
         <input
           type="password"
           name="newPassword"
@@ -803,7 +750,6 @@ function parentView() {
         >
 
         <label>確認新密碼</label>
-
         <input
           type="password"
           name="confirmPassword"
@@ -813,11 +759,8 @@ function parentView() {
         >
 
         <button type="submit">修改密碼</button>
-
       </form>
-
     </section>
-
   `;
 }
 
@@ -826,9 +769,7 @@ function parentView() {
 // ==================================================
 
 async function loadStaffData() {
-
   const [studentResult, examResult] = await Promise.all([
-
     db.from("students")
       .select("id,student_code,full_name,class_name")
       .order("class_name")
@@ -837,16 +778,12 @@ async function loadStaffData() {
     db.from("exams")
       .select("id,title,start_date,end_date")
       .order("start_date", { ascending: false })
-
   ]);
 
   if (studentResult.error || examResult.error) {
     showMessage(
       "讀取資料失敗：" +
-      (
-        studentResult.error?.message ||
-        examResult.error?.message
-      ),
+      (studentResult.error?.message || examResult.error?.message),
       "error"
     );
     return;
@@ -855,9 +792,7 @@ async function loadStaffData() {
   studentsCache = studentResult.data || [];
   examsCache = examResult.data || [];
 
-  const isAdmin = currentProfile.role === "admin";
-
-  // 學生名單
+  // 學生名單：新增修改按鈕
 
   document.getElementById("studentList").innerHTML =
     studentsCache.length
@@ -882,6 +817,14 @@ async function loadStaffData() {
                   <td>
                     <button
                       type="button"
+                      class="edit-btn"
+                      onclick="editStudent('${escapeHTML(s.id)}')"
+                    >
+                      修改
+                    </button>
+
+                    <button
+                      type="button"
                       class="danger"
                       onclick="deleteStudent('${escapeHTML(s.id)}')"
                     >
@@ -895,7 +838,6 @@ async function loadStaffData() {
         </div>
       `
       : `<p class="notice">目前尚未建立學生資料。</p>`;
-
 
   // 考試場次清單
 
@@ -936,24 +878,17 @@ async function loadStaffData() {
       `
       : `<p class="notice">目前尚未建立考試場次。</p>`;
 
-
-  // 學生選單
-
   const studentOptions = studentsCache.map(s => `
     <option value="${escapeHTML(s.id)}">
       ${escapeHTML(s.class_name)}｜${escapeHTML(s.full_name)}
     </option>
   `).join("");
 
-
-  // 考試場次選單
-
   const examOptions = examsCache.map(e => `
     <option value="${escapeHTML(e.id)}">
       ${escapeHTML(e.title)}
     </option>
   `).join("");
-
 
   document.getElementById("scoreStudent").innerHTML =
     studentOptions || `<option value="">請先新增學生</option>`;
@@ -967,18 +902,16 @@ async function loadStaffData() {
   document.getElementById("overviewExam").innerHTML =
     examOptions || `<option value="">目前沒有考試場次</option>`;
 
+  // 多場次匯出選項
+  renderExportExamOptions();
 
   // 管理者資料
-
-  if (isAdmin) {
+  if (currentProfile.role === "admin") {
     await Promise.all([
       loadLoginEvents(),
       loadParentAccounts()
     ]);
   }
-
-
-  // 表單事件
 
   document.getElementById("studentForm").onsubmit = addStudent;
   document.getElementById("examForm").onsubmit = addExam;
@@ -989,15 +922,157 @@ async function loadStaffData() {
 }
 
 // ==================================================
-// 11. 讀取家長帳號清單
+// 11. 修改學生資料
+// ==================================================
+
+function editStudent(studentId) {
+  if (currentProfile?.role !== "admin") {
+    alert("只有管理者可以修改學生資料。");
+    return;
+  }
+
+  const student = studentsCache.find(s => s.id === studentId);
+
+  if (!student) {
+    alert("找不到這位學生的資料。");
+    return;
+  }
+
+  const oldForm = document.getElementById("editStudentForm");
+
+  if (oldForm) oldForm.remove();
+
+  const editBox = document.createElement("div");
+  editBox.id = "editStudentForm";
+  editBox.className = "edit-student-box";
+
+  editBox.innerHTML = `
+    <h3>修改學生資料</h3>
+
+    <form id="updateStudentForm">
+      <div class="form-grid">
+        <div>
+          <label>學生姓名</label>
+          <input
+            name="full_name"
+            value="${escapeHTML(student.full_name)}"
+            required
+          >
+        </div>
+
+        <div>
+          <label>學生編號</label>
+          <input
+            name="student_code"
+            value="${escapeHTML(student.student_code)}"
+            required
+          >
+        </div>
+
+        <div>
+          <label>班級</label>
+          <select name="class_name" required>
+            <option value="國一班" ${student.class_name === "國一班" ? "selected" : ""}>國一班</option>
+            <option value="國二班" ${student.class_name === "國二班" ? "selected" : ""}>國二班</option>
+            <option value="國三班" ${student.class_name === "國三班" ? "selected" : ""}>國三班</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit">儲存修改</button>
+
+      <button type="button" class="secondary" id="cancelEditStudentBtn">
+        取消
+      </button>
+    </form>
+
+    <p class="notice">
+      修改學生基本資料不會刪除原有成績，也不會解除家長綁定。
+    </p>
+  `;
+
+  document.getElementById("studentList").appendChild(editBox);
+
+  document.getElementById("updateStudentForm").onsubmit =
+    event => updateStudent(event, studentId);
+
+  document.getElementById("cancelEditStudentBtn").onclick =
+    () => editBox.remove();
+
+  editBox.scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+}
+
+async function updateStudent(event, studentId) {
+  event.preventDefault();
+
+  if (currentProfile?.role !== "admin") {
+    showMessage("只有管理者可以修改學生資料。", "error");
+    return;
+  }
+
+  const form = new FormData(event.target);
+
+  const fullName = String(form.get("full_name") || "").trim();
+  const studentCode = String(form.get("student_code") || "").trim();
+  const className = form.get("class_name");
+
+  if (!fullName || !studentCode || !className) {
+    showMessage("請完整填寫學生資料。", "error");
+    return;
+  }
+
+  const validClasses = ["國一班", "國二班", "國三班"];
+
+  if (!validClasses.includes(className)) {
+    showMessage("班級資料不正確。", "error");
+    return;
+  }
+
+  const duplicate = studentsCache.find(s =>
+    s.id !== studentId &&
+    s.student_code.toLowerCase() === studentCode.toLowerCase()
+  );
+
+  if (duplicate) {
+    showMessage("這個學生編號已經被使用，請更換編號。", "error");
+    return;
+  }
+
+  const { error } = await db
+    .from("students")
+    .update({
+      full_name: fullName,
+      student_code: studentCode,
+      class_name: className
+    })
+    .eq("id", studentId);
+
+  if (error) {
+    showMessage("修改學生資料失敗：" + error.message, "error");
+    return;
+  }
+
+  overviewRows = [];
+
+  showMessage(
+    "學生資料修改成功！原有成績及家長綁定均已保留。",
+    "success"
+  );
+
+  await loadStaffData();
+}
+
+// ==================================================
+// 12. 讀取家長帳號清單
 // ==================================================
 
 async function loadParentAccounts() {
-
   if (currentProfile?.role !== "admin") return;
 
   const select = document.getElementById("resetParentSelect");
-
   if (!select) return;
 
   select.innerHTML =
@@ -1010,19 +1085,13 @@ async function loadParentAccounts() {
     .order("email");
 
   if (error) {
-    select.innerHTML =
-      `<option value="">讀取失敗</option>`;
-
-    showMessage(
-      "讀取家長帳號失敗：" + error.message,
-      "error"
-    );
+    select.innerHTML = `<option value="">讀取失敗</option>`;
+    showMessage("讀取家長帳號失敗：" + error.message, "error");
     return;
   }
 
   if (!parents || parents.length === 0) {
-    select.innerHTML =
-      `<option value="">目前沒有家長帳號</option>`;
+    select.innerHTML = `<option value="">目前沒有家長帳號</option>`;
     return;
   }
 
@@ -1030,38 +1099,28 @@ async function loadParentAccounts() {
     <option value="">請選擇家長帳號</option>
     ${parents.map(parent => `
       <option value="${escapeHTML(parent.id)}">
-        ${escapeHTML(
-          parent.display_name ||
-          parent.email ||
-          "家長帳號"
-        )}
+        ${escapeHTML(parent.display_name || parent.email || "家長帳號")}
         （${escapeHTML(parent.email || "")}）
       </option>
     `).join("")}
   `;
 
-  const button =
-    document.getElementById("resetParentPasswordBtn");
+  const button = document.getElementById("resetParentPasswordBtn");
 
-  if (button) {
-    button.onclick = resetParentPassword;
-  }
+  if (button) button.onclick = resetParentPassword;
 }
 
 // ==================================================
-// 12. 管理員重設家長密碼
+// 13. 管理員重設家長密碼
 // ==================================================
 
 async function resetParentPassword() {
-
   if (currentProfile?.role !== "admin") {
     showMessage("只有管理員可以重設家長密碼。", "error");
     return;
   }
 
-  const select =
-    document.getElementById("resetParentSelect");
-
+  const select = document.getElementById("resetParentSelect");
   const parentUserId = select?.value;
 
   if (!parentUserId) {
@@ -1079,11 +1138,8 @@ async function resetParentPassword() {
 
   if (!confirmed) return;
 
-  const button =
-    document.getElementById("resetParentPasswordBtn");
-
-  const area =
-    document.getElementById("temporaryPasswordArea");
+  const button = document.getElementById("resetParentPasswordBtn");
+  const area = document.getElementById("temporaryPasswordArea");
 
   button.disabled = true;
   button.textContent = "正在重設密碼……";
@@ -1091,13 +1147,10 @@ async function resetParentPassword() {
   if (area) area.innerHTML = "";
 
   try {
-
     const { data, error } = await db.functions.invoke(
       "admin-reset-parent-password",
       {
-        body: {
-          parentUserId
-        }
+        body: { parentUserId }
       }
     );
 
@@ -1106,17 +1159,12 @@ async function resetParentPassword() {
     }
 
     if (!data?.success || !data?.temporaryPassword) {
-      throw new Error(
-        data?.error || "伺服器沒有回傳臨時密碼"
-      );
+      throw new Error(data?.error || "伺服器沒有回傳臨時密碼");
     }
 
     area.innerHTML = `
       <div class="password-result">
-
-        <h3 class="success">
-          家長臨時密碼已重設
-        </h3>
+        <h3 class="success">家長臨時密碼已重設</h3>
 
         <p class="notice">
           請將以下臨時密碼透過 LINE 私下傳送給家長。
@@ -1132,61 +1180,42 @@ async function resetParentPassword() {
           value="${escapeHTML(data.temporaryPassword)}"
         >
 
-        <button
-          type="button"
-          id="copyTemporaryPasswordBtn"
-        >
+        <button type="button" id="copyTemporaryPasswordBtn">
           複製臨時密碼
         </button>
-
       </div>
     `;
 
     document.getElementById("copyTemporaryPasswordBtn")
       .addEventListener("click", copyTemporaryPassword);
 
-    showMessage(
-      "家長密碼已成功重設。",
-      "success"
-    );
+    showMessage("家長密碼已成功重設。", "success");
 
   } catch (error) {
-
-    showMessage(
-      "重設密碼失敗：" + error.message,
-      "error"
-    );
-
+    showMessage("重設密碼失敗：" + error.message, "error");
   } finally {
-
     button.disabled = false;
     button.textContent = "重設家長密碼";
-
   }
 }
 
 // ==================================================
-// 13. 複製家長臨時密碼
+// 14. 複製家長臨時密碼
 // ==================================================
 
 async function copyTemporaryPassword() {
-
-  const input =
-    document.getElementById("temporaryPasswordValue");
+  const input = document.getElementById("temporaryPasswordValue");
 
   if (!input) return;
 
   try {
-
     await navigator.clipboard.writeText(input.value);
 
     showMessage(
       "臨時密碼已複製，請透過 LINE 私下傳送給家長。",
       "success"
     );
-
   } catch (error) {
-
     input.focus();
     input.select();
 
@@ -1198,16 +1227,14 @@ async function copyTemporaryPassword() {
         : "複製失敗，請手動選取並複製臨時密碼。",
       copied ? "success" : "error"
     );
-
   }
 }
 
 // ==================================================
-// 14. 家長修改自己的密碼
+// 15. 家長修改自己的密碼
 // ==================================================
 
 async function changeParentPassword(event) {
-
   event.preventDefault();
 
   if (currentProfile?.role !== "parent") {
@@ -1217,14 +1244,9 @@ async function changeParentPassword(event) {
 
   const form = new FormData(event.target);
 
-  const currentPassword =
-    form.get("currentPassword");
-
-  const newPassword =
-    form.get("newPassword");
-
-  const confirmPassword =
-    form.get("confirmPassword");
+  const currentPassword = form.get("currentPassword");
+  const newPassword = form.get("newPassword");
+  const confirmPassword = form.get("confirmPassword");
 
   if (!currentPassword || !newPassword || !confirmPassword) {
     showMessage("請完整填寫所有密碼欄位。", "error");
@@ -1252,9 +1274,6 @@ async function changeParentPassword(event) {
   button.textContent = "正在修改密碼……";
 
   try {
-
-    // 先確認目前密碼正確
-
     const { data: loginData, error: loginError } =
       await db.auth.signInWithPassword({
         email: currentUser.email,
@@ -1272,12 +1291,9 @@ async function changeParentPassword(event) {
 
     currentUser = loginData.user;
 
-    // 更新密碼
-
-    const { error: updateError } =
-      await db.auth.updateUser({
-        password: newPassword
-      });
+    const { error: updateError } = await db.auth.updateUser({
+      password: newPassword
+    });
 
     if (updateError) {
       throw new Error(updateError.message);
@@ -1291,35 +1307,41 @@ async function changeParentPassword(event) {
     );
 
   } catch (error) {
-
-    showMessage(
-      "修改密碼失敗：" + error.message,
-      "error"
-    );
-
+    showMessage("修改密碼失敗：" + error.message, "error");
   } finally {
-
     button.disabled = false;
     button.textContent = "修改密碼";
-
   }
 }
 
 // ==================================================
-// 15. 新增學生
+// 16. 新增學生
 // ==================================================
 
 async function addStudent(event) {
-
   event.preventDefault();
 
   const form = new FormData(event.target);
 
   const record = {
-    full_name: form.get("full_name").trim(),
-    student_code: form.get("student_code").trim(),
+    full_name: String(form.get("full_name") || "").trim(),
+    student_code: String(form.get("student_code") || "").trim(),
     class_name: form.get("class_name")
   };
+
+  if (!record.full_name || !record.student_code) {
+    showMessage("請完整填寫學生姓名及編號。", "error");
+    return;
+  }
+
+  const duplicate = studentsCache.find(s =>
+    s.student_code.toLowerCase() === record.student_code.toLowerCase()
+  );
+
+  if (duplicate) {
+    showMessage("這個學生編號已經存在。", "error");
+    return;
+  }
 
   const { error } = await db
     .from("students")
@@ -1338,19 +1360,16 @@ async function addStudent(event) {
 }
 
 // ==================================================
-// 16. 刪除學生及相關資料
+// 17. 刪除學生及相關資料
 // ==================================================
 
 async function deleteStudent(studentId) {
-
   if (currentProfile?.role !== "admin") {
     alert("只有管理者可以刪除學生。");
     return;
   }
 
-  const student = studentsCache.find(
-    s => s.id === studentId
-  );
+  const student = studentsCache.find(s => s.id === studentId);
 
   if (!student) {
     alert("找不到這位學生的資料。");
@@ -1376,10 +1395,7 @@ async function deleteStudent(studentId) {
     .eq("student_id", studentId);
 
   if (scoreError) {
-    showMessage(
-      "刪除學生成績失敗：" + scoreError.message,
-      "error"
-    );
+    showMessage("刪除學生成績失敗：" + scoreError.message, "error");
     return;
   }
 
@@ -1389,10 +1405,7 @@ async function deleteStudent(studentId) {
     .eq("student_id", studentId);
 
   if (guardianError) {
-    showMessage(
-      "刪除家長綁定失敗：" + guardianError.message,
-      "error"
-    );
+    showMessage("刪除家長綁定失敗：" + guardianError.message, "error");
     return;
   }
 
@@ -1402,10 +1415,7 @@ async function deleteStudent(studentId) {
     .eq("id", studentId);
 
   if (studentError) {
-    showMessage(
-      "刪除學生失敗：" + studentError.message,
-      "error"
-    );
+    showMessage("刪除學生失敗：" + studentError.message, "error");
     return;
   }
 
@@ -1420,11 +1430,10 @@ async function deleteStudent(studentId) {
 }
 
 // ==================================================
-// 17. 建立考試場次
+// 18. 建立考試場次
 // ==================================================
 
 async function addExam(event) {
-
   event.preventDefault();
 
   const form = new FormData(event.target);
@@ -1437,8 +1446,7 @@ async function addExam(event) {
     return;
   }
 
-  const title =
-    `${formatDate(start)}～${formatDate(end)}周考`;
+  const title = `${formatDate(start)}～${formatDate(end)}周考`;
 
   const { error } = await db
     .from("exams")
@@ -1449,17 +1457,11 @@ async function addExam(event) {
     });
 
   if (error) {
-    showMessage(
-      "建立考試場次失敗：" + error.message,
-      "error"
-    );
+    showMessage("建立考試場次失敗：" + error.message, "error");
     return;
   }
 
-  showMessage(
-    "考試場次建立成功：" + title,
-    "success"
-  );
+  showMessage("考試場次建立成功：" + title, "success");
 
   event.target.reset();
 
@@ -1467,11 +1469,10 @@ async function addExam(event) {
 }
 
 // ==================================================
-// 18. 刪除周考場次及該場次成績
+// 19. 刪除周考場次及該場次成績
 // ==================================================
 
 async function deleteExam(examId) {
-
   if (currentProfile?.role !== "admin") {
     alert("只有管理者可以刪除周考場次。");
     return;
@@ -1500,10 +1501,7 @@ async function deleteExam(examId) {
     .eq("exam_id", examId);
 
   if (scoreError) {
-    showMessage(
-      "刪除該場次成績失敗：" + scoreError.message,
-      "error"
-    );
+    showMessage("刪除該場次成績失敗：" + scoreError.message, "error");
     return;
   }
 
@@ -1513,35 +1511,28 @@ async function deleteExam(examId) {
     .eq("id", examId);
 
   if (examError) {
-    showMessage(
-      "刪除考試場次失敗：" + examError.message,
-      "error"
-    );
+    showMessage("刪除考試場次失敗：" + examError.message, "error");
     return;
   }
 
   overviewRows = [];
 
-  showMessage(
-    `「${exam.title}」及該場次所有成績已刪除。`,
-    "success"
-  );
+  showMessage(`「${exam.title}」及該場次所有成績已刪除。`, "success");
 
   await loadStaffData();
 }
 
 // ==================================================
-// 19. 儲存學生成績（重複輸入時確認是否覆蓋）
+// 20. 儲存學生成績（重複輸入確認是否覆蓋）
 // ==================================================
 
 async function saveScore(event) {
-
   event.preventDefault();
 
   const form = new FormData(event.target);
 
   const score = Number(form.get("score"));
-  const scope = (form.get("scope") || "").trim();
+  const scope = String(form.get("scope") || "").trim();
 
   if (!scope) {
     showMessage("請輸入科目範圍。", "error");
@@ -1570,8 +1561,6 @@ async function saveScore(event) {
     score
   };
 
-  // 先查詢同一位學生、同一場週考、同一科目是否已有成績
-
   const { data: existingScore, error: lookupError } = await db
     .from("scores")
     .select("id,score,scope")
@@ -1581,34 +1570,20 @@ async function saveScore(event) {
     .maybeSingle();
 
   if (lookupError) {
-    showMessage(
-      "查詢原有成績失敗：" + lookupError.message,
-      "error"
-    );
+    showMessage("查詢原有成績失敗：" + lookupError.message, "error");
     return;
   }
 
   let saveError = null;
 
-  // 如果已有成績，先詢問是否覆蓋
-
   if (existingScore) {
-
-    const student = studentsCache.find(
-      s => s.id === studentId
-    );
-
-    const exam = examsCache.find(
-      e => e.id === examId
-    );
-
-    const studentName = student?.full_name || "此學生";
-    const examTitle = exam?.title || "此考試場次";
+    const student = studentsCache.find(s => s.id === studentId);
+    const exam = examsCache.find(e => e.id === examId);
 
     const confirmed = confirm(
       `【成績已經存在】\n\n` +
-      `學生：${studentName}\n` +
-      `考試：${examTitle}\n` +
+      `學生：${student?.full_name || "此學生"}\n` +
+      `考試：${exam?.title || "此考試場次"}\n` +
       `科目：${subject}\n\n` +
       `原考試範圍：${existingScore.scope || "未填寫"}\n` +
       `新考試範圍：${scope}\n\n` +
@@ -1617,52 +1592,33 @@ async function saveScore(event) {
       `是否確定要覆蓋原成績？`
     );
 
-    // 按取消：保留原成績
-
     if (!confirmed) {
-      showMessage(
-        "已取消覆蓋，原有成績保留不變。",
-        "notice"
-      );
+      showMessage("已取消覆蓋，原有成績保留不變。", "notice");
       return;
     }
 
-    // 按確定：更新原有資料
-
     const { error } = await db
       .from("scores")
-      .update({
-        scope,
-        score
-      })
+      .update({ scope, score })
       .eq("id", existingScore.id);
 
     saveError = error;
 
   } else {
-
-    // 沒有舊成績，直接新增
-
     const { error } = await db
       .from("scores")
       .insert(record);
 
     saveError = error;
-
   }
 
   if (saveError) {
-    showMessage(
-      "成績儲存失敗：" + saveError.message,
-      "error"
-    );
+    showMessage("成績儲存失敗：" + saveError.message, "error");
     return;
   }
 
   showMessage(
-    existingScore
-      ? "成績已成功覆蓋更新！"
-      : "科目範圍及成績儲存成功！",
+    existingScore ? "成績已成功覆蓋更新！" : "科目範圍及成績儲存成功！",
     "success"
   );
 
@@ -1670,40 +1626,100 @@ async function saveScore(event) {
 }
 
 // ==================================================
-// 20. 全校成績總覽按鈕
+// 21. 全校成績總覽按鈕
 // ==================================================
 
 function setupOverviewControls() {
-
-  const queryBtn =
-    document.getElementById("queryOverviewBtn");
-
-  const exportBtn =
-    document.getElementById("exportOverviewBtn");
+  const queryBtn = document.getElementById("queryOverviewBtn");
+  const exportBtn = document.getElementById("exportOverviewBtn");
 
   if (queryBtn) {
     queryBtn.onclick = queryOverviewScores;
   }
 
   if (exportBtn) {
-    exportBtn.onclick = exportOverviewCSV;
+    exportBtn.onclick = exportSelectedExamsCSV;
+  }
+
+  const selectAllBtn =
+    document.getElementById("selectAllExportExamsBtn");
+
+  const clearBtn =
+    document.getElementById("clearExportExamsBtn");
+
+  if (selectAllBtn) {
+    selectAllBtn.onclick = () => {
+      document.querySelectorAll(".export-exam-checkbox")
+        .forEach(input => input.checked = true);
+
+      updateExportExamCount();
+    };
+  }
+
+  if (clearBtn) {
+    clearBtn.onclick = () => {
+      document.querySelectorAll(".export-exam-checkbox")
+        .forEach(input => input.checked = false);
+
+      updateExportExamCount();
+    };
   }
 }
 
 // ==================================================
-// 21. 查詢全校成績
+// 22. 多場次匯出選項
+// ==================================================
+
+function renderExportExamOptions() {
+  const area = document.getElementById("exportExamList");
+
+  if (!area) return;
+
+  if (!examsCache.length) {
+    area.innerHTML = `<p class="notice">目前沒有考試場次。</p>`;
+    updateExportExamCount();
+    return;
+  }
+
+  area.innerHTML = examsCache.map(exam => `
+    <label class="export-exam-item">
+      <input
+        type="checkbox"
+        class="export-exam-checkbox"
+        value="${escapeHTML(exam.id)}"
+      >
+      <span>${escapeHTML(exam.title)}</span>
+    </label>
+  `).join("");
+
+  area.querySelectorAll(".export-exam-checkbox")
+    .forEach(input => {
+      input.addEventListener("change", updateExportExamCount);
+    });
+
+  updateExportExamCount();
+}
+
+function updateExportExamCount() {
+  const count = document.querySelectorAll(
+    ".export-exam-checkbox:checked"
+  ).length;
+
+  const area = document.getElementById("exportExamCount");
+
+  if (area) {
+    area.textContent = `已選取 ${count} 個場次`;
+  }
+}
+
+// ==================================================
+// 23. 查詢單場次成績
 // ==================================================
 
 async function queryOverviewScores() {
-
-  const className =
-    document.getElementById("overviewClass").value;
-
-  const examId =
-    document.getElementById("overviewExam").value;
-
-  const resultArea =
-    document.getElementById("overviewResult");
+  const className = document.getElementById("overviewClass").value;
+  const examId = document.getElementById("overviewExam").value;
+  const resultArea = document.getElementById("overviewResult");
 
   if (!examId) {
     resultArea.textContent = "請先建立考試場次。";
@@ -1711,7 +1727,6 @@ async function queryOverviewScores() {
   }
 
   resultArea.textContent = "正在讀取成績……";
-
   overviewExamId = examId;
 
   const { data: students, error: studentError } = await db
@@ -1721,15 +1736,13 @@ async function queryOverviewScores() {
     .order("student_code");
 
   if (studentError) {
-    resultArea.textContent =
-      "讀取學生資料失敗：" + studentError.message;
+    resultArea.textContent = "讀取學生資料失敗：" + studentError.message;
     return;
   }
 
   if (!students || students.length === 0) {
     overviewRows = [];
-    resultArea.textContent =
-      "這個班級目前沒有學生資料。";
+    resultArea.textContent = "這個班級目前沒有學生資料。";
     return;
   }
 
@@ -1742,25 +1755,21 @@ async function queryOverviewScores() {
     .in("student_id", studentIds);
 
   if (scoreError) {
-    resultArea.textContent =
-      "讀取成績失敗：" + scoreError.message;
+    resultArea.textContent = "讀取成績失敗：" + scoreError.message;
     return;
   }
 
   const scoreMap = {};
 
   (scores || []).forEach(s => {
-
     if (!scoreMap[s.student_id]) {
       scoreMap[s.student_id] = {};
     }
 
     scoreMap[s.student_id][s.subject] = s;
-
   });
 
   overviewRows = students.map(student => {
-
     const records = scoreMap[student.id] || {};
 
     return {
@@ -1778,37 +1787,30 @@ async function queryOverviewScores() {
       science: records["自然"]?.score ?? "",
       science_scope: records["自然"]?.scope || ""
     };
-
   });
 
   renderOverviewTable();
 }
 
 // ==================================================
-// 22. 顯示全校成績總覽
+// 24. 顯示單場次成績總覽
 // ==================================================
 
 function renderOverviewTable() {
-
-  const resultArea =
-    document.getElementById("overviewResult");
+  const resultArea = document.getElementById("overviewResult");
 
   if (!overviewRows.length) {
-    resultArea.textContent =
-      "目前沒有可顯示的學生資料。";
+    resultArea.textContent = "目前沒有可顯示的學生資料。";
     return;
   }
 
   const isAdmin = currentProfile.role === "admin";
 
   resultArea.innerHTML = `
-
     <p>共 ${overviewRows.length} 位學生</p>
 
     <div class="table-scroll">
-
       <table>
-
         <thead>
           <tr>
             <th>學生編號</th>
@@ -1823,19 +1825,14 @@ function renderOverviewTable() {
         </thead>
 
         <tbody>
-
           ${overviewRows.map(s => `
-
             <tr>
-
               <td>${escapeHTML(s.student_code)}</td>
               <td>${escapeHTML(s.full_name)}</td>
 
               <td>${escapeHTML(s.chinese_scope || "—")}</td>
-
               <td>
                 ${s.chinese === "" ? "—" : escapeHTML(s.chinese)}
-
                 ${
                   isAdmin && s.chinese !== ""
                     ? `
@@ -1843,19 +1840,15 @@ function renderOverviewTable() {
                         type="button"
                         class="danger"
                         onclick="deleteScore('${escapeHTML(s.id)}','國文')"
-                      >
-                        刪除
-                      </button>
+                      >刪除</button>
                     `
                     : ""
                 }
               </td>
 
               <td>${escapeHTML(s.english_scope || "—")}</td>
-
               <td>
                 ${s.english === "" ? "—" : escapeHTML(s.english)}
-
                 ${
                   isAdmin && s.english !== ""
                     ? `
@@ -1863,19 +1856,15 @@ function renderOverviewTable() {
                         type="button"
                         class="danger"
                         onclick="deleteScore('${escapeHTML(s.id)}','英文')"
-                      >
-                        刪除
-                      </button>
+                      >刪除</button>
                     `
                     : ""
                 }
               </td>
 
               <td>${escapeHTML(s.science_scope || "—")}</td>
-
               <td>
                 ${s.science === "" ? "—" : escapeHTML(s.science)}
-
                 ${
                   isAdmin && s.science !== ""
                     ? `
@@ -1883,41 +1872,30 @@ function renderOverviewTable() {
                         type="button"
                         class="danger"
                         onclick="deleteScore('${escapeHTML(s.id)}','自然')"
-                      >
-                        刪除
-                      </button>
+                      >刪除</button>
                     `
                     : ""
                 }
               </td>
-
             </tr>
-
           `).join("")}
-
         </tbody>
-
       </table>
-
     </div>
-
   `;
 }
 
 // ==================================================
-// 23. 刪除單科成績
+// 25. 刪除單科成績
 // ==================================================
 
 async function deleteScore(studentId, subject) {
-
   if (currentProfile?.role !== "admin") {
     alert("只有管理者可以刪除成績。");
     return;
   }
 
-  const student = overviewRows.find(
-    s => s.id === studentId
-  );
+  const student = overviewRows.find(s => s.id === studentId);
 
   if (!student) {
     alert("找不到學生資料。");
@@ -1939,99 +1917,215 @@ async function deleteScore(studentId, subject) {
     .eq("subject", subject);
 
   if (error) {
-    showMessage(
-      "刪除成績失敗：" + error.message,
-      "error"
-    );
+    showMessage("刪除成績失敗：" + error.message, "error");
     return;
   }
 
-  showMessage(
-    `${student.full_name} 的 ${subject} 成績已刪除。`,
-    "success"
-  );
+  showMessage(`${student.full_name} 的 ${subject} 成績已刪除。`, "success");
 
   await queryOverviewScores();
 }
 
 // ==================================================
-// 24. 匯出 CSV（Excel 可開啟）
+// 26. 多場次成績匯出 CSV
 // ==================================================
 
-function exportOverviewCSV() {
-
-  if (!overviewRows.length) {
-    alert("請先查詢成績，再進行匯出。");
+async function exportSelectedExamsCSV() {
+  if (currentProfile?.role !== "admin") {
+    showMessage("只有管理者可以匯出成績。", "error");
     return;
   }
 
-  const headers = [
-    "班級",
-    "學生編號",
-    "學生姓名",
-    "國文範圍",
-    "國文成績",
-    "英文範圍",
-    "英文成績",
-    "自然範圍",
-    "自然成績"
-  ];
+  const className = document.getElementById("exportClass").value;
 
-  const rows = overviewRows.map(s => [
-    s.class_name,
-    s.student_code,
-    s.full_name,
-    s.chinese_scope,
-    s.chinese,
-    s.english_scope,
-    s.english,
-    s.science_scope,
-    s.science
-  ]);
+  const selectedExamIds = [
+    ...document.querySelectorAll(".export-exam-checkbox:checked")
+  ].map(input => input.value);
 
-  const csvCell = value =>
-    `"${String(value ?? "").replace(/"/g, '""')}"`;
+  if (selectedExamIds.length === 0) {
+    alert("請至少勾選一個週考場次。");
+    return;
+  }
 
-  const csv = "\uFEFF" + [
-    headers,
-    ...rows
-  ].map(row =>
-    row.map(csvCell).join(",")
-  ).join("\r\n");
+  const selectedExams = examsCache
+    .filter(exam => selectedExamIds.includes(exam.id))
+    .sort((a, b) => a.start_date.localeCompare(b.start_date));
 
-  const blob = new Blob([csv], {
-    type: "text/csv;charset=utf-8;"
-  });
+  if (selectedExams.length === 0) {
+    alert("找不到所選考試場次，請重新整理頁面。");
+    return;
+  }
 
-  const url = URL.createObjectURL(blob);
+  const button = document.getElementById("exportOverviewBtn");
 
-  const link = document.createElement("a");
+  button.disabled = true;
+  button.textContent = "正在整理成績……";
 
-  link.href = url;
-  link.download = "小象成績總覽.csv";
+  try {
+    // 取得指定班級學生
 
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+    const { data: students, error: studentError } = await db
+      .from("students")
+      .select("id,student_code,full_name,class_name")
+      .eq("class_name", className)
+      .order("student_code");
 
-  URL.revokeObjectURL(url);
+    if (studentError) {
+      throw new Error("讀取學生資料失敗：" + studentError.message);
+    }
+
+    if (!students || students.length === 0) {
+      throw new Error("這個班級目前沒有學生資料。");
+    }
+
+    const studentIds = students.map(s => s.id);
+
+    // 取得所有勾選場次的成績
+
+    let allScores = [];
+
+    // 分批查詢，避免一次傳入過多學生 ID
+    const batchSize = 200;
+
+    for (let i = 0; i < studentIds.length; i += batchSize) {
+      const batchIds = studentIds.slice(i, i + batchSize);
+
+      const { data: scores, error: scoreError } = await db
+        .from("scores")
+        .select("student_id,exam_id,subject,score,scope")
+        .in("student_id", batchIds)
+        .in("exam_id", selectedExamIds);
+
+      if (scoreError) {
+        throw new Error("讀取成績失敗：" + scoreError.message);
+      }
+
+      allScores = allScores.concat(scores || []);
+    }
+
+    // 建立成績索引
+
+    const scoreMap = {};
+
+    allScores.forEach(score => {
+      const key =
+        `${score.student_id}|${score.exam_id}|${score.subject}`;
+
+      scoreMap[key] = score;
+    });
+
+    // CSV 欄位
+
+    const headers = [
+      "週考區間",
+      "班級",
+      "學生編號",
+      "學生姓名",
+      "國文範圍",
+      "國文成績",
+      "英文範圍",
+      "英文成績",
+      "自然範圍",
+      "自然成績"
+    ];
+
+    const rows = [];
+
+    // 每位學生 × 每個場次各產生一列
+    // 即使沒有成績也保留該列
+
+    students.forEach(student => {
+      selectedExams.forEach(exam => {
+        const chinese = scoreMap[
+          `${student.id}|${exam.id}|國文`
+        ];
+
+        const english = scoreMap[
+          `${student.id}|${exam.id}|英文`
+        ];
+
+        const science = scoreMap[
+          `${student.id}|${exam.id}|自然`
+        ];
+
+        rows.push([
+          exam.title,
+          student.class_name,
+          student.student_code,
+          student.full_name,
+          chinese?.scope || "",
+          chinese?.score ?? "",
+          english?.scope || "",
+          english?.score ?? "",
+          science?.scope || "",
+          science?.score ?? ""
+        ]);
+      });
+    });
+
+    // CSV 文字處理
+
+    const csvCell = value =>
+      `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+    const csv = "\uFEFF" + [
+      headers,
+      ...rows
+    ].map(row =>
+      row.map(csvCell).join(",")
+    ).join("\r\n");
+
+    // 建立下載檔案
+
+    const blob = new Blob([csv], {
+      type: "text/csv;charset=utf-8;"
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    const today = new Date();
+    const dateText =
+      today.getFullYear() +
+      String(today.getMonth() + 1).padStart(2, "0") +
+      String(today.getDate()).padStart(2, "0");
+
+    link.href = url;
+    link.download =
+      `小象成績_${className}_${selectedExams.length}個週考_${dateText}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // 延遲釋放下載網址
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    showMessage(
+      `匯出成功！${className}，共 ${students.length} 位學生、${selectedExams.length} 個週考場次，已整理 ${rows.length} 筆資料。`,
+      "success"
+    );
+
+  } catch (error) {
+    showMessage("匯出失敗：" + error.message, "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "匯出所選場次 Excel CSV";
+  }
 }
 
 // ==================================================
-// 25. 綁定家長與學生
+// 27. 綁定家長與學生
 // ==================================================
 
 async function bindGuardian(event) {
-
   event.preventDefault();
 
   const form = new FormData(event.target);
 
-  const email =
-    form.get("email").trim().toLowerCase();
-
-  const studentId =
-    form.get("student_id");
+  const email = String(form.get("email") || "").trim().toLowerCase();
+  const studentId = form.get("student_id");
 
   const { data: profiles, error: profileError } = await db
     .from("profiles")
@@ -2039,10 +2133,7 @@ async function bindGuardian(event) {
     .ilike("email", email);
 
   if (profileError) {
-    showMessage(
-      "查詢家長帳號失敗：" + profileError.message,
-      "error"
-    );
+    showMessage("查詢家長帳號失敗：" + profileError.message, "error");
     return;
   }
 
@@ -2059,10 +2150,7 @@ async function bindGuardian(event) {
   }
 
   if (guardian.role !== "parent") {
-    showMessage(
-      "此帳號不是家長帳號，無法進行綁定。",
-      "error"
-    );
+    showMessage("此帳號不是家長帳號，無法進行綁定。", "error");
     return;
   }
 
@@ -2077,10 +2165,7 @@ async function bindGuardian(event) {
     if (error.code === "23505") {
       showMessage("這位家長已經綁定該學生。", "error");
     } else {
-      showMessage(
-        "綁定失敗：" + error.message,
-        "error"
-      );
+      showMessage("綁定失敗：" + error.message, "error");
     }
     return;
   }
@@ -2091,17 +2176,13 @@ async function bindGuardian(event) {
 }
 
 // ==================================================
-// 26. 管理者查看家長登入紀錄
+// 28. 管理者查看家長登入紀錄
 // ==================================================
 
 async function loadLoginEvents() {
-
-  if (currentProfile?.role !== "admin") {
-    return;
-  }
+  if (currentProfile?.role !== "admin") return;
 
   const area = document.getElementById("loginList");
-
   if (!area) return;
 
   area.textContent = "正在讀取登入紀錄……";
@@ -2112,8 +2193,7 @@ async function loadLoginEvents() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    area.textContent =
-      "讀取登入紀錄失敗：" + error.message;
+    area.textContent = "讀取登入紀錄失敗：" + error.message;
     return;
   }
 
@@ -2122,9 +2202,7 @@ async function loadLoginEvents() {
     return;
   }
 
-  const userIds = [
-    ...new Set(events.map(e => e.user_id))
-  ];
+  const userIds = [...new Set(events.map(e => e.user_id))];
 
   const { data: profiles, error: profileError } = await db
     .from("profiles")
@@ -2132,8 +2210,7 @@ async function loadLoginEvents() {
     .in("id", userIds);
 
   if (profileError) {
-    area.textContent =
-      "讀取帳號資料失敗：" + profileError.message;
+    area.textContent = "讀取帳號資料失敗：" + profileError.message;
     return;
   }
 
@@ -2143,9 +2220,9 @@ async function loadLoginEvents() {
     profileMap[p.id] = p;
   });
 
-  const parentEvents = events.filter(e => {
-    return profileMap[e.user_id]?.role === "parent";
-  });
+  const parentEvents = events.filter(e =>
+    profileMap[e.user_id]?.role === "parent"
+  );
 
   if (parentEvents.length === 0) {
     area.textContent = "目前尚無家長登入紀錄。";
@@ -2156,14 +2233,12 @@ async function loadLoginEvents() {
   const lastLogin = {};
 
   parentEvents.forEach(e => {
-
     loginCounts[e.user_id] =
       (loginCounts[e.user_id] || 0) + 1;
 
     if (!lastLogin[e.user_id]) {
       lastLogin[e.user_id] = e.created_at;
     }
-
   });
 
   const parentIds = Object.keys(loginCounts);
@@ -2174,8 +2249,7 @@ async function loadLoginEvents() {
     .in("guardian_id", parentIds);
 
   if (guardianError) {
-    area.textContent =
-      "讀取家長綁定資料失敗：" + guardianError.message;
+    area.textContent = "讀取家長綁定資料失敗：" + guardianError.message;
     return;
   }
 
@@ -2186,15 +2260,13 @@ async function loadLoginEvents() {
   let students = [];
 
   if (studentIds.length > 0) {
-
     const { data: studentData, error: studentError } = await db
       .from("students")
       .select("id,full_name")
       .in("id", studentIds);
 
     if (studentError) {
-      area.textContent =
-        "讀取學生姓名失敗：" + studentError.message;
+      area.textContent = "讀取學生姓名失敗：" + studentError.message;
       return;
     }
 
@@ -2210,7 +2282,6 @@ async function loadLoginEvents() {
   const guardianStudentNames = {};
 
   (guardianLinks || []).forEach(link => {
-
     const studentName = studentMap[link.student_id];
 
     if (!studentName) return;
@@ -2222,15 +2293,11 @@ async function loadLoginEvents() {
     if (!guardianStudentNames[link.guardian_id].includes(studentName)) {
       guardianStudentNames[link.guardian_id].push(studentName);
     }
-
   });
 
   area.innerHTML = `
-
     <div class="table-scroll">
-
       <table>
-
         <thead>
           <tr>
             <th>學生姓名</th>
@@ -2240,14 +2307,11 @@ async function loadLoginEvents() {
         </thead>
 
         <tbody>
-
           ${parentIds.map(id => {
-
             const names = guardianStudentNames[id] || [];
 
             return `
               <tr>
-
                 <td>
                   ${escapeHTML(
                     names.length > 0
@@ -2263,34 +2327,24 @@ async function loadLoginEvents() {
                     new Date(lastLogin[id]).toLocaleString("zh-TW")
                   )}
                 </td>
-
               </tr>
             `;
-
           }).join("")}
-
         </tbody>
-
       </table>
-
     </div>
-
   `;
 }
 
 // ==================================================
-// 27. 家長查詢成績：每位學生只顯示最近三次週考
+// 29. 家長查詢成績：每位學生只顯示最近三次週考
 // ==================================================
 
 async function loadParentScores() {
-
   const area = document.getElementById("parentScores");
-
   if (!area) return;
 
   area.textContent = "正在讀取成績……";
-
-  // 取得此家長綁定的學生
 
   const { data: links, error: linkError } = await db
     .from("guardian_students")
@@ -2298,8 +2352,7 @@ async function loadParentScores() {
     .eq("guardian_id", currentUser.id);
 
   if (linkError) {
-    area.textContent =
-      "讀取學生綁定資料失敗：" + linkError.message;
+    area.textContent = "讀取學生綁定資料失敗：" + linkError.message;
     return;
   }
 
@@ -2310,20 +2363,15 @@ async function loadParentScores() {
 
   const studentIds = links.map(link => link.student_id);
 
-  // 取得學生資料
-
   const { data: students, error: studentError } = await db
     .from("students")
     .select("id,student_code,full_name,class_name")
     .in("id", studentIds);
 
   if (studentError) {
-    area.textContent =
-      "讀取學生資料失敗：" + studentError.message;
+    area.textContent = "讀取學生資料失敗：" + studentError.message;
     return;
   }
-
-  // 取得成績
 
   const { data: scores, error: scoreError } = await db
     .from("scores")
@@ -2331,21 +2379,15 @@ async function loadParentScores() {
     .in("student_id", studentIds);
 
   if (scoreError) {
-    area.textContent =
-      "讀取成績失敗：" + scoreError.message;
+    area.textContent = "讀取成績失敗：" + scoreError.message;
     return;
   }
 
-  // 取得有成績的考試場次
-
-  const examIds = [
-    ...new Set((scores || []).map(s => s.exam_id))
-  ];
+  const examIds = [...new Set((scores || []).map(s => s.exam_id))];
 
   let exams = [];
 
   if (examIds.length > 0) {
-
     const { data: examData, error: examError } = await db
       .from("exams")
       .select("id,title,start_date,end_date")
@@ -2353,8 +2395,7 @@ async function loadParentScores() {
       .order("start_date", { ascending: false });
 
     if (examError) {
-      area.textContent =
-        "讀取考試場次失敗：" + examError.message;
+      area.textContent = "讀取考試場次失敗：" + examError.message;
       return;
     }
 
@@ -2367,10 +2408,7 @@ async function loadParentScores() {
     examMap[e.id] = e;
   });
 
-  // 每位學生獨立篩選最近三次考試
-
   area.innerHTML = (students || []).map(student => {
-
     const studentScores = (scores || []).filter(
       s => s.student_id === student.id
     );
@@ -2383,49 +2421,37 @@ async function loadParentScores() {
       .map(id => examMap[id])
       .filter(Boolean)
       .sort((a, b) => {
-
-        const dateCompare =
-          b.start_date.localeCompare(a.start_date);
+        const dateCompare = b.start_date.localeCompare(a.start_date);
 
         if (dateCompare !== 0) return dateCompare;
 
         return b.end_date.localeCompare(a.end_date);
-
       });
 
-    // 只取最近三次有成績的週考
     const recentStudentExams = studentExams.slice(0, 3);
 
     return `
-
       <section class="panel">
-
         <h3>
           ${escapeHTML(student.class_name)}
           ｜${escapeHTML(student.full_name)}
         </h3>
 
-        <p class="notice">
-          顯示最近三次週考紀錄
-        </p>
+        <p class="notice">顯示最近三次週考紀錄</p>
 
         ${
           recentStudentExams.length === 0
             ? `<p class="notice">目前尚無成績資料。</p>`
             : recentStudentExams.map(exam => {
-
                 const examScores = studentScores.filter(
                   s => s.exam_id === exam.id
                 );
 
                 return `
-
                   <h4>${escapeHTML(exam.title)}</h4>
 
                   <div class="table-scroll">
-
                     <table>
-
                       <thead>
                         <tr>
                           <th>科目</th>
@@ -2435,7 +2461,6 @@ async function loadParentScores() {
                       </thead>
 
                       <tbody>
-
                         ${examScores.map(s => `
                           <tr>
                             <td>${escapeHTML(s.subject)}</td>
@@ -2443,32 +2468,22 @@ async function loadParentScores() {
                             <td>${escapeHTML(s.score)}</td>
                           </tr>
                         `).join("")}
-
                       </tbody>
-
                     </table>
-
                   </div>
-
                 `;
-
               }).join("")
         }
-
       </section>
-
     `;
-
   }).join("");
-
 }
 
 // ==================================================
-// 28. 登出
+// 30. 登出
 // ==================================================
 
 async function logout() {
-
   await db.auth.signOut();
 
   currentUser = null;
@@ -2478,18 +2493,16 @@ async function logout() {
   examsCache = [];
 
   overviewRows = [];
-
   overviewExamId = "";
 
   loginPage();
 }
 
 // ==================================================
-// 29. 網站啟動
+// 31. 網站啟動
 // ==================================================
 
 async function initializeApp() {
-
   const { data, error } = await db.auth.getSession();
 
   if (error) {
