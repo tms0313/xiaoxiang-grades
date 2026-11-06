@@ -552,7 +552,7 @@ function renderOverview() {
 
     const resultText = grade3Math
       ? (
-          "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
+          "<span>答對 " + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
           "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
         )
       : grade3
@@ -1801,7 +1801,7 @@ async function renderParentDashboard() {
 
         const resultText = grade3Math
           ? (
-              "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
+              "<span>答對 " + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
               "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
             )
           : grade3
