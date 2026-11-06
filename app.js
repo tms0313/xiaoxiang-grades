@@ -20,7 +20,9 @@
    本版本整合：
    1. 家長忘記密碼提示
    2. 成績總覽單筆成績刪除
-   3. 原有系統功能完整保留
+   3. 國三數學改為答對分數＋模擬考等級
+   4. 國三國文、英文、自然維持答對題數＋等級
+   5. 原有系統功能完整保留
    ================================================== */
 
 "use strict";
@@ -102,6 +104,11 @@ function formatDateRange(exam) {
 
 function isGrade3Class(className) {
   return String(className || "").includes("國三");
+}
+
+// 判斷是否為國三數學
+function isGrade3Math(className, subject) {
+  return isGrade3Class(className) && subject === "數學";
 }
 
 function scoreClass(score, className) {
@@ -500,7 +507,6 @@ function renderAdminTab() {
 
 // ==================================================
 // 7. 成績總覽
-//    新增單筆成績刪除
 // ==================================================
 
 function renderOverview() {
@@ -518,18 +524,24 @@ function renderOverview() {
     if (!student || !exam) return "";
 
     const grade3 = isGrade3Class(student.class_name);
+    const grade3Math = isGrade3Math(student.class_name, score.subject);
 
-    const resultText = grade3
+    const resultText = grade3Math
       ? (
-          "答對 " + escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
-          " 題　" +
+          "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
           "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
         )
-      : (
-          "<span class='" + scoreClass(score.score, student.class_name) + "'>" +
-          escapeHtml(score.score == null ? "—" : score.score) +
-          "</span>"
-        );
+      : grade3
+        ? (
+            "答對 " + escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
+            " 題　" +
+            "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
+          )
+        : (
+            "<span class='" + scoreClass(score.score, student.class_name) + "'>" +
+            escapeHtml(score.score == null ? "—" : score.score) +
+            "</span>"
+          );
 
     return (
       "<tr>" +
@@ -651,10 +663,13 @@ async function deleteScore(scoreId) {
     return;
   }
 
-  const resultText = isGrade3Class(student.class_name)
-    ? "答對 " + (score.correct_count == null ? "—" : score.correct_count) +
-      " 題，等級：" + (score.grade_level || "—")
-    : "分數：" + (score.score == null ? "—" : score.score);
+  const resultText = isGrade3Math(student.class_name, score.subject)
+    ? "分數：" + (score.score == null ? "—" : score.score) +
+      " 分，等級：" + (score.grade_level || "—")
+    : isGrade3Class(student.class_name)
+      ? "答對 " + (score.correct_count == null ? "—" : score.correct_count) +
+        " 題，等級：" + (score.grade_level || "—")
+      : "分數：" + (score.score == null ? "—" : score.score);
 
   const confirmed = confirm(
     "確定要刪除以下這筆成績嗎？\n\n" +
@@ -734,25 +749,52 @@ function renderScoreEntry() {
           "</select></div>" +
           "<div class='field'><label>考試範圍</label><input id='scoreScope' name='scope' placeholder='例如：第 1～2 課' required></div>" +
         "</div>" +
+
         "<div id='normalScoreField' class='field'>" +
           "<label>一般成績</label><input id='scoreValue' type='number' min='0' max='100' step='0.1' placeholder='請輸入分數'>" +
         "</div>" +
-        "<div id='grade3Fields' class='form-grid hidden'>" +
-          "<div class='field'><label>答對題數</label><input id='correctCount' type='number' min='0' step='1' placeholder='請輸入答對題數'></div>" +
-          "<div class='field'><label>模擬考等級</label><select id='gradeLevel'>" +
-            "<option value=''>請選擇等級</option>" +
-            GRADE_OPTIONS.map(function (g) {
-              return "<option>" + g + "</option>";
-            }).join("") +
-          "</select></div>" +
+
+        "<div id='grade3MathFields' class='form-grid hidden'>" +
+          "<div class='field'>" +
+            "<label>國三數學答對分數</label>" +
+            "<input id='grade3MathScore' type='number' min='0' max='100' step='0.1' placeholder='請輸入 0～100 分'>" +
+          "</div>" +
+          "<div class='field'>" +
+            "<label>模擬考等級</label>" +
+            "<select id='grade3MathGrade'>" +
+              "<option value=''>請選擇等級</option>" +
+              GRADE_OPTIONS.map(function (g) {
+                return "<option>" + escapeHtml(g) + "</option>";
+              }).join("") +
+            "</select>" +
+          "</div>" +
         "</div>" +
+
+        "<div id='grade3Fields' class='form-grid hidden'>" +
+          "<div class='field'>" +
+            "<label>答對題數</label>" +
+            "<input id='correctCount' type='number' min='0' step='1' placeholder='請輸入答對題數'>" +
+          "</div>" +
+          "<div class='field'>" +
+            "<label>模擬考等級</label>" +
+            "<select id='gradeLevel'>" +
+              "<option value=''>請選擇等級</option>" +
+              GRADE_OPTIONS.map(function (g) {
+                return "<option>" + escapeHtml(g) + "</option>";
+              }).join("") +
+            "</select>" +
+          "</div>" +
+        "</div>" +
+
         "<button class='btn btn-success' type='submit'>儲存成績</button>" +
       "</form>" +
     "</div>" +
-    "<p class='muted'>同一位學生、同一場考試、同一科目及相同考試範圍若已有成績，系統會先詢問是否覆蓋。</p>";
+    "<p class='muted'>國三數學輸入答對分數及模擬考等級；國三其他科目輸入答對題數及模擬考等級。相同學生、考試、科目及範圍若已有成績，系統會先詢問是否覆蓋。</p>";
 
   $("scoreStudent").addEventListener("change", updateScoreMode);
+  $("scoreSubject").addEventListener("change", updateScoreMode);
   $("scoreForm").addEventListener("submit", saveScore);
+
   updateScoreMode();
 }
 
@@ -761,14 +803,22 @@ function updateScoreMode() {
     return item.id === $("scoreStudent").value;
   });
 
+  const subject = $("scoreSubject").value;
+
   const grade3 = student && isGrade3Class(student.class_name);
+  const grade3Math = student && isGrade3Math(student.class_name, subject);
+  const grade3Other = !!grade3 && !grade3Math;
 
   $("normalScoreField").classList.toggle("hidden", !!grade3);
-  $("grade3Fields").classList.toggle("hidden", !grade3);
+  $("grade3MathFields").classList.toggle("hidden", !grade3Math);
+  $("grade3Fields").classList.toggle("hidden", !grade3Other);
 
   $("scoreValue").required = !grade3;
-  $("correctCount").required = !!grade3;
-  $("gradeLevel").required = !!grade3;
+  $("grade3MathScore").required = !!grade3Math;
+  $("grade3MathGrade").required = !!grade3Math;
+
+  $("correctCount").required = !!grade3Other;
+  $("gradeLevel").required = !!grade3Other;
 }
 
 async function saveScore(event) {
@@ -789,12 +839,30 @@ async function saveScore(event) {
   }
 
   const grade3 = isGrade3Class(student.class_name);
+  const grade3Math = isGrade3Math(student.class_name, subject);
 
   let scoreValue = null;
   let correctCount = null;
   let gradeLevel = null;
 
-  if (grade3) {
+  // 國三數學：分數＋等級
+  if (grade3Math) {
+    scoreValue = Number($("grade3MathScore").value);
+    gradeLevel = $("grade3MathGrade").value;
+
+    if (
+      $("grade3MathScore").value === "" ||
+      !Number.isFinite(scoreValue) ||
+      scoreValue < 0 ||
+      scoreValue > 100 ||
+      !gradeLevel
+    ) {
+      showMessage("國三數學請輸入 0～100 分，並選擇模擬考等級。", "error");
+      return;
+    }
+
+  // 國三國文、英文、自然：答對題數＋等級
+  } else if (grade3) {
     correctCount = Number($("correctCount").value);
     gradeLevel = $("gradeLevel").value;
 
@@ -807,6 +875,8 @@ async function saveScore(event) {
       showMessage("請輸入正確的答對題數及模擬考等級。", "error");
       return;
     }
+
+  // 國一、國二：一般分數
   } else {
     scoreValue = Number($("scoreValue").value);
 
@@ -1321,7 +1391,6 @@ function renderPasswords() {
   });
 }
 
-
 async function resetParentPassword(parentUserId) {
   if (!confirm("確定要重設這位家長的登入密碼？")) return;
 
@@ -1345,7 +1414,6 @@ async function resetParentPassword(parentUserId) {
 
     const temporaryPassword = data.temporaryPassword;
 
-    // 顯示臨時密碼
     const copied = confirm(
       "家長臨時密碼已重設成功！\n\n" +
       "臨時密碼：\n" +
@@ -1373,7 +1441,6 @@ async function resetParentPassword(parentUserId) {
     showMessage("密碼重設失敗：" + error.message, "error");
   }
 }
-
 
 // ==================================================
 // 13. 家長登入紀錄
@@ -1455,7 +1522,7 @@ function renderExport() {
       "</div>" +
       "<button class='btn btn-success' id='downloadCsv'>下載 CSV 成績表</button>" +
     "</div>" +
-    "<p class='muted'>匯出欄位：週考區間、班級、學生編號、學生姓名、科目、考試範圍、一般成績、答對題數、模擬考等級。</p>";
+    "<p class='muted'>匯出欄位：週考區間、班級、學生編號、學生姓名、科目、考試範圍、一般成績、答對題數、模擬考等級。國三數學分數會放在一般成績欄，等級放在模擬考等級欄。</p>";
 
   $("selectAllExams").addEventListener("click", function () {
     document.querySelectorAll(".exportExam").forEach(function (item) {
@@ -1627,18 +1694,24 @@ async function renderParentDashboard() {
 
       const scoreRows = examScores.map(function (score) {
         const grade3 = isGrade3Class(student.class_name);
+        const grade3Math = isGrade3Math(student.class_name, score.subject);
 
-        const resultText = grade3
+        const resultText = grade3Math
           ? (
-              "答對 " + escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
-              " 題　" +
+              "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
               "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
             )
-          : (
-              "<span class='" + scoreClass(score.score, student.class_name) + "'>" +
-              escapeHtml(score.score == null ? "—" : score.score) +
-              "</span>"
-            );
+          : grade3
+            ? (
+                "答對 " + escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
+                " 題　" +
+                "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
+              )
+            : (
+                "<span class='" + scoreClass(score.score, student.class_name) + "'>" +
+                escapeHtml(score.score == null ? "—" : score.score) +
+                "</span>"
+              );
 
         return (
           "<tr>" +
