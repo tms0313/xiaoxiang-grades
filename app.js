@@ -1,6 +1,6 @@
 
 /* ==================================================
-   小象文教機構｜七堵校區成績管理系統
+   小象文教機構｜成績管理系統
    完整 App.js
 
    管理員：admin
@@ -14,15 +14,10 @@
    scores
    guardian_students
 
-   scores 唯一索引：
-   student_id, exam_id, subject, scope
-
-   本版本整合：
-   1. 家長忘記密碼提示
-   2. 成績總覽單筆成績刪除
-   3. 國三數學改為答對分數＋模擬考等級
-   4. 國三國文、英文、自然維持答對題數＋等級
-   5. 原有系統功能完整保留
+   本版本：
+   1. 移除登入畫面及家長畫面的「七堵校區」
+   2. 家長頁面最上方標題維持白色
+   3. 保留原有所有系統功能
    ================================================== */
 
 "use strict";
@@ -106,7 +101,6 @@ function isGrade3Class(className) {
   return String(className || "").includes("國三");
 }
 
-// 判斷是否為國三數學
 function isGrade3Math(className, subject) {
   return isGrade3Class(className) && subject === "數學";
 }
@@ -211,8 +205,8 @@ style.textContent = [
   ".system-message.error { background:#fde8e8; color:#a32626; }",
   ".system-message.success { background:#e3f5e9; color:#20683d; }",
   ".topbar { background:#23466b; color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap; }",
-  ".topbar h1 { font-size:20px; margin:0; }",
-  ".topbar small { color:#dce7f2; }",
+  ".topbar h1 { font-size:20px; margin:0; color:#fff; }",
+  ".topbar small { color:#fff; }",
   ".dashboard { width:min(1200px,94%); margin:30px auto; background:#fff; padding:28px; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
   ".tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; border-bottom:1px solid #e4e9ef; padding-bottom:15px; }",
   ".tab-btn { border:0; padding:10px 14px; border-radius:8px; background:#edf1f5; color:#34475b; font-weight:700; }",
@@ -263,7 +257,7 @@ function loginPage() {
     "<div class='login-wrap'>" +
       "<div class='login-card'>" +
         "<h1>小象文教機構</h1>" +
-        "<p>七堵校區｜成績管理系統</p>" +
+        "<p>成績管理系統</p>" +
         "<div id='systemMessage' class='system-message'></div>" +
         "<form id='loginForm'>" +
           "<div class='field'>" +
@@ -284,7 +278,7 @@ function loginPage() {
         "</div>" +
       "</div>" +
     "</div>" +
-    "<div class='footer'>© 小象文教機構 七堵校區</div>";
+    "<div class='footer'>© 小象文教機構</div>";
 
   $("loginForm").addEventListener("submit", handleLogin);
 }
@@ -472,7 +466,7 @@ function renderAdminDashboard() {
       "</div>" +
       "<section id='adminContent'></section>" +
     "</main>" +
-    "<div class='footer'>© 小象文教機構 七堵校區</div>";
+    "<div class='footer'>© 小象文教機構</div>";
 
   $("logoutButton").addEventListener("click", handleLogout);
 
@@ -629,7 +623,6 @@ function renderOverview() {
 
   content.addEventListener("click", async function (event) {
     const button = event.target.closest("[data-delete-score]");
-
     if (!button) return;
 
     await deleteScore(button.dataset.deleteScore);
@@ -749,43 +742,25 @@ function renderScoreEntry() {
           "</select></div>" +
           "<div class='field'><label>考試範圍</label><input id='scoreScope' name='scope' placeholder='例如：第 1～2 課' required></div>" +
         "</div>" +
-
         "<div id='normalScoreField' class='field'>" +
           "<label>一般成績</label><input id='scoreValue' type='number' min='0' max='100' step='0.1' placeholder='請輸入分數'>" +
         "</div>" +
-
         "<div id='grade3MathFields' class='form-grid hidden'>" +
-          "<div class='field'>" +
-            "<label>國三數學答對分數</label>" +
-            "<input id='grade3MathScore' type='number' min='0' max='100' step='0.1' placeholder='請輸入 0～100 分'>" +
-          "</div>" +
-          "<div class='field'>" +
-            "<label>模擬考等級</label>" +
-            "<select id='grade3MathGrade'>" +
-              "<option value=''>請選擇等級</option>" +
-              GRADE_OPTIONS.map(function (g) {
-                return "<option>" + escapeHtml(g) + "</option>";
-              }).join("") +
-            "</select>" +
-          "</div>" +
+          "<div class='field'><label>國三數學答對分數</label><input id='grade3MathScore' type='number' min='0' max='100' step='0.1' placeholder='請輸入 0～100 分'></div>" +
+          "<div class='field'><label>模擬考等級</label><select id='grade3MathGrade'><option value=''>請選擇等級</option>" +
+            GRADE_OPTIONS.map(function (g) {
+              return "<option>" + escapeHtml(g) + "</option>";
+            }).join("") +
+          "</select></div>" +
         "</div>" +
-
         "<div id='grade3Fields' class='form-grid hidden'>" +
-          "<div class='field'>" +
-            "<label>答對題數</label>" +
-            "<input id='correctCount' type='number' min='0' step='1' placeholder='請輸入答對題數'>" +
-          "</div>" +
-          "<div class='field'>" +
-            "<label>模擬考等級</label>" +
-            "<select id='gradeLevel'>" +
-              "<option value=''>請選擇等級</option>" +
-              GRADE_OPTIONS.map(function (g) {
-                return "<option>" + escapeHtml(g) + "</option>";
-              }).join("") +
-            "</select>" +
-          "</div>" +
+          "<div class='field'><label>答對題數</label><input id='correctCount' type='number' min='0' step='1' placeholder='請輸入答對題數'></div>" +
+          "<div class='field'><label>模擬考等級</label><select id='gradeLevel'><option value=''>請選擇等級</option>" +
+            GRADE_OPTIONS.map(function (g) {
+              return "<option>" + escapeHtml(g) + "</option>";
+            }).join("") +
+          "</select></div>" +
         "</div>" +
-
         "<button class='btn btn-success' type='submit'>儲存成績</button>" +
       "</form>" +
     "</div>" +
@@ -845,7 +820,6 @@ async function saveScore(event) {
   let correctCount = null;
   let gradeLevel = null;
 
-  // 國三數學：分數＋等級
   if (grade3Math) {
     scoreValue = Number($("grade3MathScore").value);
     gradeLevel = $("grade3MathGrade").value;
@@ -861,7 +835,6 @@ async function saveScore(event) {
       return;
     }
 
-  // 國三國文、英文、自然：答對題數＋等級
   } else if (grade3) {
     correctCount = Number($("correctCount").value);
     gradeLevel = $("gradeLevel").value;
@@ -876,7 +849,6 @@ async function saveScore(event) {
       return;
     }
 
-  // 國一、國二：一般分數
   } else {
     scoreValue = Number($("scoreValue").value);
 
@@ -1632,7 +1604,7 @@ async function renderParentDashboard() {
 
   appRoot.innerHTML =
     "<div class='topbar'>" +
-      "<div><h1>小象文教機構｜家長成績查詢</h1><small>七堵校區</small></div>" +
+      "<div><h1>小象文教機構｜家長成績查詢</h1></div>" +
       "<div>" +
         "<span>親愛的家長，您好！</span>　" +
         "<button class='btn btn-secondary btn-small' id='changePasswordButton'>修改密碼</button> " +
@@ -1644,7 +1616,7 @@ async function renderParentDashboard() {
       "<h2 class='section-title'>孩子的最近三次週考成績</h2>" +
       "<div id='parentScores'></div>" +
     "</main>" +
-    "<div class='footer'>© 小象文教機構 七堵校區</div>";
+    "<div class='footer'>© 小象文教機構</div>";
 
   $("logoutButton").addEventListener("click", handleLogout);
   $("changePasswordButton").addEventListener("click", changeOwnPassword);
