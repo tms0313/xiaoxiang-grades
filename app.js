@@ -21,7 +21,8 @@
    4. 家長成績表格固定欄寬，避免欄位左右位移
    5. 家長考試標題只顯示日期區間＋週考
    6. 國三成績統一顯示「XX 題」或「XX 分」，移除「答對」
-   7. 保留原有所有系統功能
+   7. 學生管理修改、刪除按鈕固定水平排列
+   8. 保留原有所有系統功能
    ================================================== */
 
 "use strict";
@@ -244,6 +245,16 @@ style.textContent = [
   ".parent-score-table td { overflow-wrap:anywhere; word-break:break-word; }",
   ".parent-score-table td:nth-child(3) { white-space:normal; }",
 
+  /* 學生管理專用表格：不再套用家長成績表格欄寬 */
+  ".student-management-table { width:100%; min-width:620px; table-layout:fixed; }",
+  ".student-management-table th:nth-child(1),.student-management-table td:nth-child(1) { width:18%; }",
+  ".student-management-table th:nth-child(2),.student-management-table td:nth-child(2) { width:24%; }",
+  ".student-management-table th:nth-child(3),.student-management-table td:nth-child(3) { width:22%; }",
+  ".student-management-table th:nth-child(4),.student-management-table td:nth-child(4) { width:36%; min-width:210px; }",
+  ".student-management-table td.student-action-cell { white-space:nowrap; }",
+  ".student-actions { display:flex; align-items:center; justify-content:flex-start; gap:8px; white-space:nowrap; }",
+  ".student-actions .btn { flex:0 0 auto; margin:0; }",
+
   ".low-score { color:#d32626; font-weight:800; }",
   ".grade-tag { display:inline-block; padding:4px 9px; border-radius:6px; background:#e8eff8; color:#315d86; font-weight:800; white-space:nowrap; }",
   ".muted { color:#778494; font-size:13px; }",
@@ -262,6 +273,7 @@ style.textContent = [
   ".tabs { gap:5px; }",
   ".tab-btn { padding:8px 10px; font-size:13px; }",
   ".parent-score-table { min-width:520px; }",
+  ".student-management-table { min-width:620px; }",
   "}"
 ].join("\n");
 
@@ -961,9 +973,15 @@ function renderStudents() {
         "<td>" + escapeHtml(student.student_code) + "</td>" +
         "<td>" + escapeHtml(student.full_name) + "</td>" +
         "<td>" + escapeHtml(student.class_name) + "</td>" +
-        "<td>" +
-          "<button class='btn btn-small' data-edit-student='" + escapeHtml(student.id) + "'>修改</button>" +
-          "<button class='btn btn-danger btn-small' data-delete-student='" + escapeHtml(student.id) + "'>刪除</button>" +
+        "<td class='student-action-cell'>" +
+          "<div class='student-actions'>" +
+            "<button class='btn btn-small' data-edit-student='" +
+              escapeHtml(student.id) +
+            "'>修改</button>" +
+            "<button class='btn btn-danger btn-small' data-delete-student='" +
+              escapeHtml(student.id) +
+            "'>刪除</button>" +
+          "</div>" +
         "</td>" +
       "</tr>"
     );
@@ -987,10 +1005,19 @@ function renderStudents() {
         "<button class='btn btn-secondary' type='button' id='studentCancel'>清除</button>" +
       "</form>" +
     "</div>" +
-    "<div class='table-wrap'><table class='parent-score-table'>" +
-      "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>操作</th></tr></thead>" +
-      "<tbody>" + (rows || "<tr><td colspan='4' class='empty'>尚無學生資料</td></tr>") + "</tbody>" +
-    "</table></div>";
+    "<div class='table-wrap'>" +
+      "<table class='student-management-table'>" +
+        "<thead><tr>" +
+          "<th>學生編號</th>" +
+          "<th>姓名</th>" +
+          "<th>班級</th>" +
+          "<th>操作</th>" +
+        "</tr></thead>" +
+        "<tbody>" +
+          (rows || "<tr><td colspan='4' class='empty'>尚無學生資料</td></tr>") +
+        "</tbody>" +
+      "</table>" +
+    "</div>";
 
   $("studentForm").addEventListener("submit", saveStudent);
   $("studentCancel").addEventListener("click", clearStudentForm);
