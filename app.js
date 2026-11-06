@@ -1,3 +1,4 @@
+
 /* ==================================================
    小象文教機構｜成績管理系統
    完整 App.js
@@ -19,7 +20,8 @@
    3. 家長每週六晚上 20:00 開放當週成績
    4. 家長成績表格固定欄寬，避免欄位左右位移
    5. 家長考試標題只顯示日期區間＋週考
-   6. 保留原有所有系統功能
+   6. 國三成績統一顯示「XX 題」或「XX 分」，移除「答對」
+   7. 保留原有所有系統功能
    ================================================== */
 
 "use strict";
@@ -233,7 +235,6 @@ style.textContent = [
   "th { background:#f3f6f9; color:#40566d; white-space:nowrap; }",
   "tr:hover td { background:#fafbfd; }",
 
-  /* 家長成績表格：固定欄寬，避免每次考試欄位左右位移 */
   ".parent-score-table { width:100%; min-width:560px; table-layout:fixed; }",
   ".parent-score-table th:nth-child(1),.parent-score-table td:nth-child(1) { width:18%; }",
   ".parent-score-table th:nth-child(2),.parent-score-table td:nth-child(2) { width:52%; }",
@@ -552,12 +553,12 @@ function renderOverview() {
 
     const resultText = grade3Math
       ? (
-          "<span>答對 " + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
+          "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
           "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
         )
       : grade3
         ? (
-            "答對 " + escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
+            escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
             " 題　" +
             "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
           )
@@ -690,7 +691,7 @@ async function deleteScore(scoreId) {
     ? "分數：" + (score.score == null ? "—" : score.score) +
       " 分，等級：" + (score.grade_level || "—")
     : isGrade3Class(student.class_name)
-      ? "答對 " + (score.correct_count == null ? "—" : score.correct_count) +
+      ? (score.correct_count == null ? "—" : score.correct_count) +
         " 題，等級：" + (score.grade_level || "—")
       : "分數：" + (score.score == null ? "—" : score.score);
 
@@ -1688,21 +1689,18 @@ async function renderParentDashboard() {
     }).value
   );
 
-  // 取得台灣當天日期
   const taipeiDate = new Date(Date.UTC(
     Number(dateValues.year),
     Number(dateValues.month) - 1,
     Number(dateValues.day)
   ));
 
-  // 計算本週星期一
   const weekday = taipeiDate.getUTCDay();
   const mondayOffset = (weekday + 6) % 7;
 
   const monday = new Date(taipeiDate);
   monday.setUTCDate(monday.getUTCDate() - mondayOffset);
 
-  // 計算本週星期六
   const saturday = new Date(monday);
   saturday.setUTCDate(saturday.getUTCDate() + 5);
 
@@ -1741,14 +1739,12 @@ async function renderParentDashboard() {
       exam.end_date || exam.start_date || ""
     ).slice(0, 10);
 
-    // 判斷考試日期是否與本週一至週六重疊
     const isCurrentWeekExam =
       examStart !== "" &&
       examEnd !== "" &&
       examStart <= saturdayStr &&
       examEnd >= mondayStr;
 
-    // 尚未開放時，排除當週考試
     if (!currentWeekReleased && isCurrentWeekExam) {
       return false;
     }
@@ -1756,7 +1752,6 @@ async function renderParentDashboard() {
     return true;
   });
 
-  // 只顯示最近三次考試
   const recentExams = filteredExams.slice(0, 3);
 
   const examIds = recentExams.map(function (item) {
@@ -1801,12 +1796,12 @@ async function renderParentDashboard() {
 
         const resultText = grade3Math
           ? (
-              "<span>答對 " + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
+              "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
               "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
             )
           : grade3
             ? (
-                "答對 " + escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
+                escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
                 " 題　" +
                 "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
               )
