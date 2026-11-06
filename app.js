@@ -549,10 +549,6 @@ function renderAdminTab() {
 function renderOverview() {
   const content = $("adminContent");
 
-  // --------------------------------------------------
-  // 取得學生、考試及成績資料
-  // --------------------------------------------------
-
   function getStudent(studentId) {
     return studentsCache.find(function (item) {
       return String(item.id) === String(studentId);
@@ -565,10 +561,7 @@ function renderOverview() {
     });
   }
 
-  // --------------------------------------------------
-  // 取得指定學生、指定考試、指定科目的排序成績
-  // --------------------------------------------------
-
+  // 取得指定學生、考試及科目的排序成績
   function getSubjectScore(studentId, examId, subject) {
     const student = getStudent(studentId);
 
@@ -596,7 +589,6 @@ function renderOverview() {
       }
 
       return item.score == null ? null : Number(item.score);
-
     }).filter(function (value) {
       return value !== null && Number.isFinite(value);
     });
@@ -607,10 +599,7 @@ function renderOverview() {
     return Math.max.apply(null, values);
   }
 
-  // --------------------------------------------------
   // 顯示單筆成績
-  // --------------------------------------------------
-
   function buildOverviewRow(score) {
     const student = getStudent(score.student_id);
     const exam = getExam(score.exam_id);
@@ -655,10 +644,7 @@ function renderOverview() {
     );
   }
 
-  // --------------------------------------------------
   // 建立成績總覽畫面
-  // --------------------------------------------------
-
   content.innerHTML =
     "<h2 class='section-title'>成績總覽</h2>" +
     "<div class='toolbar'>" +
@@ -694,17 +680,14 @@ function renderOverview() {
       "</table>" +
     "</div>";
 
-  // --------------------------------------------------
   // 篩選及排序
-  // --------------------------------------------------
-
   function filterRows() {
     const search = $("overviewSearch").value.trim().toLowerCase();
     const className = $("overviewClass").value;
     const sortSubject = $("overviewSortSubject").value;
 
     // 先依照搜尋條件及班級篩選
-    let filtered = scoresCache.filter(function (score) {
+    const filtered = scoresCache.filter(function (score) {
       const student = getStudent(score.student_id);
 
       return student &&
@@ -716,10 +699,7 @@ function renderOverview() {
         );
     });
 
-    // --------------------------------------------------
-    // 沒有選擇科目：維持原本成績資料順序
-    // --------------------------------------------------
-
+    // 沒有選擇科目：維持原本資料順序
     if (!sortSubject) {
       $("overviewRows").innerHTML =
         filtered.map(buildOverviewRow).join("") ||
@@ -728,13 +708,10 @@ function renderOverview() {
       return;
     }
 
-    // --------------------------------------------------
-    // 選擇科目：依考試場次及學生分組
-    // --------------------------------------------------
-
+    // 依照考試場次及學生分組
     const examGroups = {};
 
-    filtered.forEach(function (score) {
+    filtered.forEach(function (score, index) {
       const examId = String(score.exam_id);
       const studentId = String(score.student_id);
 
@@ -757,13 +734,14 @@ function renderOverview() {
         };
       }
 
-      examGroups[examId].students[studentId].scores.push(score);
+      // 保留原始順序，讓同科目及其他科目在排序後仍穩定排列
+      examGroups[examId].students[studentId].scores.push({
+        data: score,
+        originalOrder: index
+      });
     });
 
-    // --------------------------------------------------
     // 考試場次依日期由新到舊
-    // --------------------------------------------------
-
     const sortedExamGroups = Object.keys(examGroups).map(function (examId) {
       return examGroups[examId];
     }).sort(function (a, b) {
@@ -778,12 +756,9 @@ function renderOverview() {
       return dateB.localeCompare(dateA);
     });
 
-    // --------------------------------------------------
-    // 每個考試場次內，學生依指定科目成績由高到低
-    // --------------------------------------------------
-
     const sortedScores = [];
 
+    // 每個考試場次內，學生依指定科目成績由高到低
     sortedExamGroups.forEach(function (examGroup) {
       const studentGroups = Object.keys(examGroup.students).map(function (studentId) {
         return examGroup.students[studentId];
@@ -814,10 +789,22 @@ function renderOverview() {
         return codeA.localeCompare(codeB, "zh-Hant");
       });
 
-      // 同一學生、同一考試的其他科目成績保持在一起
+      // 關鍵修正：
+      // 每位學生的指定科目成績，一律排在該學生其他科目之前
       studentGroups.forEach(function (studentGroup) {
-        studentGroup.scores.forEach(function (score) {
-          sortedScores.push(score);
+        studentGroup.scores.sort(function (a, b) {
+          const aSelected = a.data.subject === sortSubject;
+          const bSelected = b.data.subject === sortSubject;
+
+          if (aSelected && !bSelected) return -1;
+          if (!aSelected && bSelected) return 1;
+
+          // 同樣是指定科目或其他科目時，維持原本資料順序
+          return a.originalOrder - b.originalOrder;
+        });
+
+        studentGroup.scores.forEach(function (item) {
+          sortedScores.push(item.data);
         });
       });
     });
@@ -827,20 +814,12 @@ function renderOverview() {
       "<tr><td colspan='8' class='empty'>沒有符合的成績資料</td></tr>";
   }
 
-  // --------------------------------------------------
   // 綁定搜尋、篩選及排序事件
-  // --------------------------------------------------
-
   $("overviewSearch").addEventListener("input", filterRows);
-
   $("overviewClass").addEventListener("change", filterRows);
-
   $("overviewSortSubject").addEventListener("change", filterRows);
 
-  // --------------------------------------------------
   // 重新整理
-  // --------------------------------------------------
-
   $("overviewRefresh").addEventListener("click", async function () {
     try {
       await loadAdminData();
@@ -851,10 +830,7 @@ function renderOverview() {
     }
   });
 
-  // --------------------------------------------------
   // 刪除單筆成績
-  // --------------------------------------------------
-
   content.addEventListener("click", async function (event) {
     const button = event.target.closest("[data-delete-score]");
     if (!button) return;
@@ -1678,7 +1654,6 @@ async function renderLoginLogs() {
     "<div class='empty'>正在讀取登入紀錄……</div>";
 
   try {
-    // 同時讀取登入紀錄及所有使用者的角色資料
     const results = await Promise.all([
       db
         .from("login_events")
@@ -1698,19 +1673,16 @@ async function renderLoginLogs() {
     const allProfiles = results[1].data || [];
 
     const rows = logs.map(function (log) {
-      // 找出登入者的角色
       const profile = allProfiles.find(function (item) {
         return String(item.id) === String(log.user_id);
       });
 
       let loginIdentity = "未知帳號";
 
-      // 管理員直接顯示「管理員」
       if (profile && profile.role === "admin") {
         loginIdentity = "管理員";
 
       } else {
-        // 家長直接顯示目前連結的學生姓名
         const linkedStudents = guardianLinksCache
           .filter(function (link) {
             return String(link.guardian_id) === String(log.user_id);
@@ -1724,7 +1696,6 @@ async function renderLoginLogs() {
           })
           .filter(Boolean);
 
-        // 去除重複姓名
         const uniqueNames = Array.from(new Set(linkedStudents));
 
         loginIdentity = uniqueNames.length > 0
@@ -1933,10 +1904,7 @@ async function renderParentDashboard() {
     return;
   }
 
-  // ==========================================
   // 台灣時間判斷：每週六晚上 20:00 開放當週成績
-  // ==========================================
-
   const now = new Date();
 
   const taipeiDateParts = new Intl.DateTimeFormat("en-CA", {
@@ -1987,10 +1955,7 @@ async function renderParentDashboard() {
     weekday === 0 ||
     (weekday === 6 && taipeiHour >= 20);
 
-  // ==========================================
   // 取得考試資料
-  // ==========================================
-
   const examResult = await db
     .from("exams")
     .select("*")
@@ -2001,10 +1966,7 @@ async function renderParentDashboard() {
 
   const allExams = examResult.data || [];
 
-  // ==========================================
   // 篩選當週考試
-  // ==========================================
-
   const filteredExams = allExams.filter(function (exam) {
     const examStart = String(
       exam.start_date || exam.end_date || ""
@@ -2033,10 +1995,7 @@ async function renderParentDashboard() {
     return item.id;
   });
 
-  // ==========================================
   // 查詢學生成績
-  // ==========================================
-
   let scores = [];
 
   if (examIds.length > 0) {
@@ -2051,10 +2010,7 @@ async function renderParentDashboard() {
     scores = scoreResult.data || [];
   }
 
-  // ==========================================
   // 顯示家長端成績
-  // ==========================================
-
   $("parentScores").innerHTML = children.map(function (student) {
     const studentScores = scores.filter(function (score) {
       return score.student_id === student.id;
