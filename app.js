@@ -1,8 +1,7 @@
-
 // ==================================================
 // 小象文教機構｜成績管理系統
 // 完整 App.js
-// 版本：家長密碼管理＋最近三次週考
+// 版本：家長密碼管理＋最近三次週考＋重複成績覆蓋確認
 // ==================================================
 
 const db = supabaseClient;
@@ -1532,7 +1531,7 @@ async function deleteExam(examId) {
 }
 
 // ==================================================
-// 19. 儲存學生成績
+// 19. 儲存學生成績（重複輸入時確認是否覆蓋）
 // ==================================================
 
 async function saveScore(event) {
@@ -1554,30 +1553,116 @@ async function saveScore(event) {
     return;
   }
 
+  const studentId = form.get("student_id");
+  const examId = form.get("exam_id");
+  const subject = form.get("subject");
+
+  if (!studentId || !examId || !subject) {
+    showMessage("請完整選擇學生、考試場次及科目。", "error");
+    return;
+  }
+
   const record = {
-    student_id: form.get("student_id"),
-    exam_id: form.get("exam_id"),
-    subject: form.get("subject"),
+    student_id: studentId,
+    exam_id: examId,
+    subject,
     scope,
     score
   };
 
-  const { error } = await db
-    .from("scores")
-    .upsert(record, {
-      onConflict: "student_id,exam_id,subject"
-    });
+  // 先查詢同一位學生、同一場週考、同一科目是否已有成績
 
-  if (error) {
+  const { data: existingScore, error: lookupError } = await db
+    .from("scores")
+    .select("id,score,scope")
+    .eq("student_id", studentId)
+    .eq("exam_id", examId)
+    .eq("subject", subject)
+    .maybeSingle();
+
+  if (lookupError) {
     showMessage(
-      "成績儲存失敗：" + error.message,
+      "查詢原有成績失敗：" + lookupError.message,
+      "error"
+    );
+    return;
+  }
+
+  let saveError = null;
+
+  // 如果已有成績，先詢問是否覆蓋
+
+  if (existingScore) {
+
+    const student = studentsCache.find(
+      s => s.id === studentId
+    );
+
+    const exam = examsCache.find(
+      e => e.id === examId
+    );
+
+    const studentName = student?.full_name || "此學生";
+    const examTitle = exam?.title || "此考試場次";
+
+    const confirmed = confirm(
+      `【成績已經存在】\n\n` +
+      `學生：${studentName}\n` +
+      `考試：${examTitle}\n` +
+      `科目：${subject}\n\n` +
+      `原考試範圍：${existingScore.scope || "未填寫"}\n` +
+      `新考試範圍：${scope}\n\n` +
+      `原成績：${existingScore.score} 分\n` +
+      `新成績：${score} 分\n\n` +
+      `是否確定要覆蓋原成績？`
+    );
+
+    // 按取消：保留原成績
+
+    if (!confirmed) {
+      showMessage(
+        "已取消覆蓋，原有成績保留不變。",
+        "notice"
+      );
+      return;
+    }
+
+    // 按確定：更新原有資料
+
+    const { error } = await db
+      .from("scores")
+      .update({
+        scope,
+        score
+      })
+      .eq("id", existingScore.id);
+
+    saveError = error;
+
+  } else {
+
+    // 沒有舊成績，直接新增
+
+    const { error } = await db
+      .from("scores")
+      .insert(record);
+
+    saveError = error;
+
+  }
+
+  if (saveError) {
+    showMessage(
+      "成績儲存失敗：" + saveError.message,
       "error"
     );
     return;
   }
 
   showMessage(
-    "科目範圍及成績儲存成功！",
+    existingScore
+      ? "成績已成功覆蓋更新！"
+      : "科目範圍及成績儲存成功！",
     "success"
   );
 
