@@ -1696,7 +1696,7 @@ async function renderParentDashboard() {
 
       return (
         "<div class='panel'>" +
-          "<h3>" + escapeHtml(formatDateRange(exam)) + "｜" + escapeHtml(exam.title) + "</h3>" +
+            "<h3>" + escapeHtml(formatDateRange(exam)) + " 週考</h3>" +
           "<div class='table-wrap'><table>" +
             "<thead><tr><th>科目</th><th>考試範圍</th><th>成績</th></tr></thead>" +
             "<tbody>" +
