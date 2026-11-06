@@ -1,6 +1,8 @@
+
 // ==================================================
 // 小象文教機構｜成績管理系統
 // 完整 App.js
+// 版本：家長密碼管理＋最近三次週考
 // ==================================================
 
 const db = supabaseClient;
@@ -58,6 +60,11 @@ style.textContent = `
 
 .dashboard button:hover {
   opacity: .88;
+}
+
+.dashboard button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
 }
 
 .dashboard button.secondary {
@@ -136,6 +143,102 @@ style.textContent = `
   width: 100%;
 }
 
+.dashboard .password-result {
+  background: #fff;
+  border: 1px solid #d9b66f;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.dashboard .password-result input {
+  font-size: 17px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  background: #fff;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #edf1f7;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.08);
+  box-sizing: border-box;
+}
+
+.login-card .logo {
+  font-size: 42px;
+  font-weight: bold;
+  color: #17365d;
+  text-align: center;
+}
+
+.login-card .school-name {
+  text-align: center;
+  color: #777;
+}
+
+.login-card h1 {
+  text-align: center;
+  color: #17365d;
+}
+
+.login-card .subtitle {
+  text-align: center;
+  color: #777;
+  font-size: 14px;
+  margin-bottom: 26px;
+}
+
+.login-card label {
+  display: block;
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  box-sizing: border-box;
+}
+
+.login-card button {
+  width: 100%;
+  background: #17365d;
+  color: white;
+  border: 0;
+  border-radius: 7px;
+  padding: 13px;
+  margin-top: 20px;
+  cursor: pointer;
+}
+
+.login-card #message {
+  color: #b42318;
+  font-size: 14px;
+}
+
+.login-card footer {
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  margin-top: 25px;
+}
+
 @media(max-width:600px) {
   .dashboard {
     padding: 16px;
@@ -149,6 +252,10 @@ style.textContent = `
   .dashboard th,
   .dashboard td {
     padding: 7px;
+  }
+
+  .login-card {
+    padding: 24px;
   }
 }
 `;
@@ -253,6 +360,10 @@ function loginPage() {
 
         </form>
 
+        <p style="text-align:center;color:#777;font-size:13px;">
+          忘記密碼？請聯絡管理員協助重設。
+        </p>
+
         <footer>© 小象文教機構 七堵校區</footer>
 
       </section>
@@ -318,7 +429,6 @@ async function loadCurrentProfile() {
 
   currentProfile = profile;
 
-  // 記錄登入時間
   await db.from("login_events").insert({
     user_id: currentUser.id
   });
@@ -337,7 +447,6 @@ function renderDashboard() {
     parent: "家長"
   };
 
-  // 本系統只開放管理者與家長兩種身分
   if (!["admin", "parent"].includes(currentProfile.role)) {
     alert("此帳號身分未開放使用，請聯絡管理者。");
     db.auth.signOut();
@@ -354,15 +463,15 @@ function renderDashboard() {
           <h1>小象文教機構｜成績管理系統</h1>
 
           <div class="user-info">
-  ${
-    currentProfile.role === "parent"
-      ? "親愛的家長，您好！"
-      : escapeHTML(
-          currentProfile.display_name ||
-          currentProfile.email
-        ) + "・" + (roleNames[currentProfile.role] || "使用者")
-  }
-</div>
+            ${
+              currentProfile.role === "parent"
+                ? "親愛的家長，您好！"
+                : escapeHTML(
+                    currentProfile.display_name ||
+                    currentProfile.email
+                  ) + "・" + roleNames[currentProfile.role]
+            }
+          </div>
         </div>
 
         <button id="logoutBtn" class="secondary">
@@ -388,7 +497,19 @@ function renderDashboard() {
     .addEventListener("click", logout);
 
   if (currentProfile.role === "parent") {
+
+    const passwordForm =
+      document.getElementById("changePasswordForm");
+
+    if (passwordForm) {
+      passwordForm.addEventListener(
+        "submit",
+        changeParentPassword
+      );
+    }
+
     loadParentScores();
+
   } else {
     loadStaffData();
   }
@@ -399,8 +520,6 @@ function renderDashboard() {
 // ==================================================
 
 function staffView() {
-
-  const isAdmin = currentProfile.role === "admin";
 
   return `
 
@@ -416,27 +535,16 @@ function staffView() {
 
           <div>
             <label>學生姓名</label>
-
-            <input
-              name="full_name"
-              required
-              placeholder="請輸入學生姓名"
-            >
+            <input name="full_name" required placeholder="請輸入學生姓名">
           </div>
 
           <div>
             <label>學生編號</label>
-
-            <input
-              name="student_code"
-              required
-              placeholder="例如：A001"
-            >
+            <input name="student_code" required placeholder="例如：A001">
           </div>
 
           <div>
             <label>班級</label>
-
             <select name="class_name" required>
               <option value="國一班">國一班</option>
               <option value="國二班">國二班</option>
@@ -467,22 +575,12 @@ function staffView() {
 
           <div>
             <label>開始日期</label>
-
-            <input
-              type="date"
-              name="start_date"
-              required
-            >
+            <input type="date" name="start_date" required>
           </div>
 
           <div>
             <label>結束日期</label>
-
-            <input
-              type="date"
-              name="end_date"
-              required
-            >
+            <input type="date" name="end_date" required>
           </div>
 
         </div>
@@ -499,30 +597,18 @@ function staffView() {
     <!-- 三、學生成績登錄 -->
 
     <section class="panel">
-          <h2>三、學生成績登錄</h2>
+
+      <h2>三、學生成績登錄</h2>
 
       <form id="scoreForm">
 
         <label>選擇學生</label>
-
-        <select
-          name="student_id"
-          id="scoreStudent"
-          required
-        ></select>
-
+        <select name="student_id" id="scoreStudent" required></select>
 
         <label>選擇考試場次</label>
-
-        <select
-          name="exam_id"
-          id="scoreExam"
-          required
-        ></select>
-
+        <select name="exam_id" id="scoreExam" required></select>
 
         <label>科目範圍</label>
-
         <input
           type="text"
           name="scope"
@@ -530,18 +616,14 @@ function staffView() {
           required
         >
 
-
         <label>考試科目</label>
-
         <select name="subject" required>
           <option value="國文">國文</option>
           <option value="英文">英文</option>
           <option value="自然">自然</option>
         </select>
 
-
         <label>考試成績（0～100）</label>
-
         <input
           type="number"
           name="score"
@@ -568,7 +650,6 @@ function staffView() {
 
         <div>
           <label>選擇班級</label>
-
           <select id="overviewClass">
             <option value="國一班">國一班</option>
             <option value="國二班">國二班</option>
@@ -578,30 +659,21 @@ function staffView() {
 
         <div>
           <label>選擇考試場次</label>
-
           <select id="overviewExam"></select>
         </div>
 
       </div>
 
-      <button
-        type="button"
-        id="queryOverviewBtn"
-      >
+      <button type="button" id="queryOverviewBtn">
         查詢全班成績
       </button>
 
-      <button
-        type="button"
-        id="exportOverviewBtn"
-      >
+      <button type="button" id="exportOverviewBtn">
         匯出 Excel CSV
       </button>
 
       <div id="overviewResult">
-        <p class="notice">
-          請選擇班級及考試場次後查詢。
-        </p>
+        <p class="notice">請選擇班級及考試場次後查詢。</p>
       </div>
 
     </section>
@@ -621,35 +693,52 @@ function staffView() {
       <form id="bindForm">
 
         <label>家長電子郵件</label>
-
-        <input
-          type="email"
-          name="email"
-          required
-        >
+        <input type="email" name="email" required>
 
         <label>要綁定的學生</label>
+        <select name="student_id" id="bindStudent" required></select>
 
-        <select
-          name="student_id"
-          id="bindStudent"
-          required
-        ></select>
-
-        <button type="submit">
-          綁定家長與學生
-        </button>
+        <button type="submit">綁定家長與學生</button>
 
       </form>
 
     </section>
 
 
-    <!-- 六、家長登入紀錄 -->
+    <!-- 六、家長密碼管理 -->
 
     <section class="panel">
 
-      <h2>六、家長登入紀錄</h2>
+      <h2>六、家長密碼管理</h2>
+
+      <p class="notice">
+        家長忘記密碼時，由管理員協助重設。
+        系統會產生臨時密碼，請管理員透過 LINE 私下傳送給家長。
+      </p>
+
+      <label>選擇家長帳號</label>
+
+      <select id="resetParentSelect">
+        <option value="">正在讀取家長帳號……</option>
+      </select>
+
+      <button
+        type="button"
+        id="resetParentPasswordBtn"
+      >
+        重設家長密碼
+      </button>
+
+      <div id="temporaryPasswordArea"></div>
+
+    </section>
+
+
+    <!-- 七、家長登入紀錄 -->
+
+    <section class="panel">
+
+      <h2>七、家長登入紀錄</h2>
 
       <div id="loginList"></div>
 
@@ -663,13 +752,16 @@ function staffView() {
 // ==================================================
 
 function parentView() {
+
   return `
+
     <section class="panel">
 
       <h2>孩子的學習成績</h2>
 
       <p class="notice">
         以下僅顯示已與此家長帳號綁定的學生資料。
+        每位學生顯示最近三次有成績的週考。
       </p>
 
       <div id="parentScores">
@@ -677,6 +769,56 @@ function parentView() {
       </div>
 
     </section>
+
+
+    <!-- 家長自行修改密碼 -->
+
+    <section class="panel">
+
+      <h2>修改登入密碼</h2>
+
+      <p class="notice">
+        請輸入目前密碼，再設定新的登入密碼。
+        新密碼至少需要 8 個字元。
+      </p>
+
+      <form id="changePasswordForm">
+
+        <label>目前密碼</label>
+
+        <input
+          type="password"
+          name="currentPassword"
+          autocomplete="current-password"
+          required
+        >
+
+        <label>新密碼（至少 8 個字元）</label>
+
+        <input
+          type="password"
+          name="newPassword"
+          minlength="8"
+          autocomplete="new-password"
+          required
+        >
+
+        <label>確認新密碼</label>
+
+        <input
+          type="password"
+          name="confirmPassword"
+          minlength="8"
+          autocomplete="new-password"
+          required
+        >
+
+        <button type="submit">修改密碼</button>
+
+      </form>
+
+    </section>
+
   `;
 }
 
@@ -714,60 +856,43 @@ async function loadStaffData() {
   studentsCache = studentResult.data || [];
   examsCache = examResult.data || [];
 
-  // 學生名單
-
   const isAdmin = currentProfile.role === "admin";
+
+  // 學生名單
 
   document.getElementById("studentList").innerHTML =
     studentsCache.length
       ? `
         <div class="table-scroll">
-
           <table>
-
             <thead>
               <tr>
                 <th>編號</th>
                 <th>姓名</th>
                 <th>班級</th>
-                ${isAdmin ? "<th>操作</th>" : ""}
+                <th>操作</th>
               </tr>
             </thead>
 
             <tbody>
-
               ${studentsCache.map(s => `
                 <tr>
-
                   <td>${escapeHTML(s.student_code)}</td>
-
                   <td>${escapeHTML(s.full_name)}</td>
-
                   <td>${escapeHTML(s.class_name)}</td>
-
-                  ${
-                    isAdmin
-                      ? `
-                        <td>
-                          <button
-                            type="button"
-                            class="danger"
-                            onclick="deleteStudent('${escapeHTML(s.id)}')"
-                          >
-                            刪除學生
-                          </button>
-                        </td>
-                      `
-                      : ""
-                  }
-
+                  <td>
+                    <button
+                      type="button"
+                      class="danger"
+                      onclick="deleteStudent('${escapeHTML(s.id)}')"
+                    >
+                      刪除學生
+                    </button>
+                  </td>
                 </tr>
               `).join("")}
-
             </tbody>
-
           </table>
-
         </div>
       `
       : `<p class="notice">目前尚未建立學生資料。</p>`;
@@ -779,47 +904,35 @@ async function loadStaffData() {
     examsCache.length
       ? `
         <div class="table-scroll">
-
           <table>
-
             <thead>
               <tr>
                 <th>考試場次</th>
                 <th>開始日期</th>
                 <th>結束日期</th>
-                ${isAdmin ? "<th>操作</th>" : ""}
+                <th>操作</th>
               </tr>
             </thead>
 
             <tbody>
-
               ${examsCache.map(e => `
                 <tr>
                   <td>${escapeHTML(e.title)}</td>
                   <td>${escapeHTML(e.start_date)}</td>
                   <td>${escapeHTML(e.end_date)}</td>
-                  ${
-                    isAdmin
-                      ? `
-                        <td>
-                          <button
-                            type="button"
-                            class="danger"
-                            onclick="deleteExam('${escapeHTML(e.id)}')"
-                          >
-                            刪除場次
-                          </button>
-                        </td>
-                      `
-                      : ""
-                  }
+                  <td>
+                    <button
+                      type="button"
+                      class="danger"
+                      onclick="deleteExam('${escapeHTML(e.id)}')"
+                    >
+                      刪除場次
+                    </button>
+                  </td>
                 </tr>
               `).join("")}
-
             </tbody>
-
           </table>
-
         </div>
       `
       : `<p class="notice">目前尚未建立考試場次。</p>`;
@@ -856,13 +969,13 @@ async function loadStaffData() {
     examOptions || `<option value="">目前沒有考試場次</option>`;
 
 
-  // 管理者登入紀錄
+  // 管理者資料
 
   if (isAdmin) {
-    await loadLoginEvents();
-  } else {
-    document.getElementById("loginList").textContent =
-      "僅管理者可以查看家長登入紀錄。";
+    await Promise.all([
+      loadLoginEvents(),
+      loadParentAccounts()
+    ]);
   }
 
 
@@ -877,10 +990,328 @@ async function loadStaffData() {
 }
 
 // ==================================================
-// 11. 新增學生
+// 11. 讀取家長帳號清單
+// ==================================================
+
+async function loadParentAccounts() {
+
+  if (currentProfile?.role !== "admin") return;
+
+  const select = document.getElementById("resetParentSelect");
+
+  if (!select) return;
+
+  select.innerHTML =
+    `<option value="">正在讀取家長帳號……</option>`;
+
+  const { data: parents, error } = await db
+    .from("profiles")
+    .select("id,email,display_name")
+    .eq("role", "parent")
+    .order("email");
+
+  if (error) {
+    select.innerHTML =
+      `<option value="">讀取失敗</option>`;
+
+    showMessage(
+      "讀取家長帳號失敗：" + error.message,
+      "error"
+    );
+    return;
+  }
+
+  if (!parents || parents.length === 0) {
+    select.innerHTML =
+      `<option value="">目前沒有家長帳號</option>`;
+    return;
+  }
+
+  select.innerHTML = `
+    <option value="">請選擇家長帳號</option>
+    ${parents.map(parent => `
+      <option value="${escapeHTML(parent.id)}">
+        ${escapeHTML(
+          parent.display_name ||
+          parent.email ||
+          "家長帳號"
+        )}
+        （${escapeHTML(parent.email || "")}）
+      </option>
+    `).join("")}
+  `;
+
+  const button =
+    document.getElementById("resetParentPasswordBtn");
+
+  if (button) {
+    button.onclick = resetParentPassword;
+  }
+}
+
+// ==================================================
+// 12. 管理員重設家長密碼
+// ==================================================
+
+async function resetParentPassword() {
+
+  if (currentProfile?.role !== "admin") {
+    showMessage("只有管理員可以重設家長密碼。", "error");
+    return;
+  }
+
+  const select =
+    document.getElementById("resetParentSelect");
+
+  const parentUserId = select?.value;
+
+  if (!parentUserId) {
+    showMessage("請先選擇要重設密碼的家長帳號。", "error");
+    return;
+  }
+
+  const selectedText =
+    select.options[select.selectedIndex]?.text || "此家長帳號";
+
+  const confirmed = confirm(
+    `確定要重設以下帳號的密碼嗎？\n\n${selectedText}\n\n` +
+    "重設後，家長原本的密碼將立即失效。"
+  );
+
+  if (!confirmed) return;
+
+  const button =
+    document.getElementById("resetParentPasswordBtn");
+
+  const area =
+    document.getElementById("temporaryPasswordArea");
+
+  button.disabled = true;
+  button.textContent = "正在重設密碼……";
+
+  if (area) area.innerHTML = "";
+
+  try {
+
+    const { data, error } = await db.functions.invoke(
+      "admin-reset-parent-password",
+      {
+        body: {
+          parentUserId
+        }
+      }
+    );
+
+    if (error) {
+      throw new Error(error.message || "呼叫密碼重設服務失敗");
+    }
+
+    if (!data?.success || !data?.temporaryPassword) {
+      throw new Error(
+        data?.error || "伺服器沒有回傳臨時密碼"
+      );
+    }
+
+    area.innerHTML = `
+      <div class="password-result">
+
+        <h3 class="success">
+          家長臨時密碼已重設
+        </h3>
+
+        <p class="notice">
+          請將以下臨時密碼透過 LINE 私下傳送給家長。
+          家長登入後，請立即修改密碼。
+        </p>
+
+        <label>臨時密碼</label>
+
+        <input
+          type="text"
+          id="temporaryPasswordValue"
+          readonly
+          value="${escapeHTML(data.temporaryPassword)}"
+        >
+
+        <button
+          type="button"
+          id="copyTemporaryPasswordBtn"
+        >
+          複製臨時密碼
+        </button>
+
+      </div>
+    `;
+
+    document.getElementById("copyTemporaryPasswordBtn")
+      .addEventListener("click", copyTemporaryPassword);
+
+    showMessage(
+      "家長密碼已成功重設。",
+      "success"
+    );
+
+  } catch (error) {
+
+    showMessage(
+      "重設密碼失敗：" + error.message,
+      "error"
+    );
+
+  } finally {
+
+    button.disabled = false;
+    button.textContent = "重設家長密碼";
+
+  }
+}
+
+// ==================================================
+// 13. 複製家長臨時密碼
+// ==================================================
+
+async function copyTemporaryPassword() {
+
+  const input =
+    document.getElementById("temporaryPasswordValue");
+
+  if (!input) return;
+
+  try {
+
+    await navigator.clipboard.writeText(input.value);
+
+    showMessage(
+      "臨時密碼已複製，請透過 LINE 私下傳送給家長。",
+      "success"
+    );
+
+  } catch (error) {
+
+    input.focus();
+    input.select();
+
+    const copied = document.execCommand("copy");
+
+    showMessage(
+      copied
+        ? "臨時密碼已複製，請透過 LINE 傳送給家長。"
+        : "複製失敗，請手動選取並複製臨時密碼。",
+      copied ? "success" : "error"
+    );
+
+  }
+}
+
+// ==================================================
+// 14. 家長修改自己的密碼
+// ==================================================
+
+async function changeParentPassword(event) {
+
+  event.preventDefault();
+
+  if (currentProfile?.role !== "parent") {
+    showMessage("只有家長可以使用此功能。", "error");
+    return;
+  }
+
+  const form = new FormData(event.target);
+
+  const currentPassword =
+    form.get("currentPassword");
+
+  const newPassword =
+    form.get("newPassword");
+
+  const confirmPassword =
+    form.get("confirmPassword");
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    showMessage("請完整填寫所有密碼欄位。", "error");
+    return;
+  }
+
+  if (newPassword.length < 8) {
+    showMessage("新密碼至少需要 8 個字元。", "error");
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showMessage("兩次輸入的新密碼不一致。", "error");
+    return;
+  }
+
+  if (newPassword === currentPassword) {
+    showMessage("新密碼不能與目前密碼相同。", "error");
+    return;
+  }
+
+  const button = event.target.querySelector("button[type='submit']");
+
+  button.disabled = true;
+  button.textContent = "正在修改密碼……";
+
+  try {
+
+    // 先確認目前密碼正確
+
+    const { data: loginData, error: loginError } =
+      await db.auth.signInWithPassword({
+        email: currentUser.email,
+        password: currentPassword
+      });
+
+    if (loginError || !loginData?.user) {
+      throw new Error("目前密碼不正確，請重新確認。");
+    }
+
+    if (loginData.user.id !== currentUser.id) {
+      await db.auth.signOut();
+      throw new Error("帳號驗證異常，請重新登入。");
+    }
+
+    currentUser = loginData.user;
+
+    // 更新密碼
+
+    const { error: updateError } =
+      await db.auth.updateUser({
+        password: newPassword
+      });
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
+    event.target.reset();
+
+    showMessage(
+      "密碼修改成功！下次請使用新密碼登入。",
+      "success"
+    );
+
+  } catch (error) {
+
+    showMessage(
+      "修改密碼失敗：" + error.message,
+      "error"
+    );
+
+  } finally {
+
+    button.disabled = false;
+    button.textContent = "修改密碼";
+
+  }
+}
+
+// ==================================================
+// 15. 新增學生
 // ==================================================
 
 async function addStudent(event) {
+
   event.preventDefault();
 
   const form = new FormData(event.target);
@@ -908,12 +1339,11 @@ async function addStudent(event) {
 }
 
 // ==================================================
-// 12. 刪除學生及相關資料
+// 16. 刪除學生及相關資料
 // ==================================================
 
 async function deleteStudent(studentId) {
 
-  // 前端權限檢查
   if (currentProfile?.role !== "admin") {
     alert("只有管理者可以刪除學生。");
     return;
@@ -941,8 +1371,6 @@ async function deleteStudent(studentId) {
 
   showMessage("正在刪除學生資料……");
 
-  // 先刪除該學生所有成績
-
   const { error: scoreError } = await db
     .from("scores")
     .delete()
@@ -956,8 +1384,6 @@ async function deleteStudent(studentId) {
     return;
   }
 
-  // 再刪除家長綁定
-
   const { error: guardianError } = await db
     .from("guardian_students")
     .delete()
@@ -970,8 +1396,6 @@ async function deleteStudent(studentId) {
     );
     return;
   }
-
-  // 最後刪除學生
 
   const { error: studentError } = await db
     .from("students")
@@ -994,13 +1418,14 @@ async function deleteStudent(studentId) {
   );
 
   await loadStaffData();
-
 }
+
 // ==================================================
-// 13. 建立考試場次
+// 17. 建立考試場次
 // ==================================================
 
 async function addExam(event) {
+
   event.preventDefault();
 
   const form = new FormData(event.target);
@@ -1043,7 +1468,7 @@ async function addExam(event) {
 }
 
 // ==================================================
-// 14. 刪除周考場次及該場次成績（僅管理者）
+// 18. 刪除周考場次及該場次成績
 // ==================================================
 
 async function deleteExam(examId) {
@@ -1070,7 +1495,6 @@ async function deleteExam(examId) {
 
   showMessage("正在刪除周考場次及相關成績……");
 
-  // 先刪除該場次所有成績，避免資料庫外鍵限制
   const { error: scoreError } = await db
     .from("scores")
     .delete()
@@ -1084,7 +1508,6 @@ async function deleteExam(examId) {
     return;
   }
 
-  // 再刪除考試場次
   const { error: examError } = await db
     .from("exams")
     .delete()
@@ -1109,10 +1532,11 @@ async function deleteExam(examId) {
 }
 
 // ==================================================
-// 15. 儲存學生成績
+// 19. 儲存學生成績
 // ==================================================
 
 async function saveScore(event) {
+
   event.preventDefault();
 
   const form = new FormData(event.target);
@@ -1161,7 +1585,7 @@ async function saveScore(event) {
 }
 
 // ==================================================
-// 15. 全校成績總覽按鈕
+// 20. 全校成績總覽按鈕
 // ==================================================
 
 function setupOverviewControls() {
@@ -1182,7 +1606,7 @@ function setupOverviewControls() {
 }
 
 // ==================================================
-// 16. 查詢全校成績
+// 21. 查詢全校成績
 // ==================================================
 
 async function queryOverviewScores() {
@@ -1205,8 +1629,6 @@ async function queryOverviewScores() {
 
   overviewExamId = examId;
 
-  // 取得指定班級學生
-
   const { data: students, error: studentError } = await db
     .from("students")
     .select("id,student_code,full_name,class_name")
@@ -1227,8 +1649,6 @@ async function queryOverviewScores() {
   }
 
   const studentIds = students.map(s => s.id);
-
-  // 取得這場考試的所有成績
 
   const { data: scores, error: scoreError } = await db
     .from("scores")
@@ -1280,7 +1700,7 @@ async function queryOverviewScores() {
 }
 
 // ==================================================
-// 17. 顯示全校成績總覽
+// 22. 顯示全校成績總覽
 // ==================================================
 
 function renderOverviewTable() {
@@ -1305,21 +1725,16 @@ function renderOverviewTable() {
       <table>
 
         <thead>
-
           <tr>
             <th>學生編號</th>
             <th>學生姓名</th>
-
             <th>國文範圍</th>
             <th>國文成績</th>
-
             <th>英文範圍</th>
             <th>英文成績</th>
-
             <th>自然範圍</th>
             <th>自然成績</th>
           </tr>
-
         </thead>
 
         <tbody>
@@ -1329,17 +1744,12 @@ function renderOverviewTable() {
             <tr>
 
               <td>${escapeHTML(s.student_code)}</td>
-
               <td>${escapeHTML(s.full_name)}</td>
 
               <td>${escapeHTML(s.chinese_scope || "—")}</td>
 
               <td>
-                ${
-                  s.chinese === ""
-                    ? "—"
-                    : escapeHTML(s.chinese)
-                }
+                ${s.chinese === "" ? "—" : escapeHTML(s.chinese)}
 
                 ${
                   isAdmin && s.chinese !== ""
@@ -1356,15 +1766,10 @@ function renderOverviewTable() {
                 }
               </td>
 
-
               <td>${escapeHTML(s.english_scope || "—")}</td>
 
               <td>
-                ${
-                  s.english === ""
-                    ? "—"
-                    : escapeHTML(s.english)
-                }
+                ${s.english === "" ? "—" : escapeHTML(s.english)}
 
                 ${
                   isAdmin && s.english !== ""
@@ -1381,15 +1786,10 @@ function renderOverviewTable() {
                 }
               </td>
 
-
               <td>${escapeHTML(s.science_scope || "—")}</td>
 
               <td>
-                ${
-                  s.science === ""
-                    ? "—"
-                    : escapeHTML(s.science)
-                }
+                ${s.science === "" ? "—" : escapeHTML(s.science)}
 
                 ${
                   isAdmin && s.science !== ""
@@ -1420,7 +1820,7 @@ function renderOverviewTable() {
 }
 
 // ==================================================
-// 18. 刪除單科成績
+// 23. 刪除單科成績
 // ==================================================
 
 async function deleteScore(studentId, subject) {
@@ -1470,7 +1870,7 @@ async function deleteScore(studentId, subject) {
 }
 
 // ==================================================
-// 19. 匯出 CSV（Excel 可開啟）
+// 24. 匯出 CSV（Excel 可開啟）
 // ==================================================
 
 function exportOverviewCSV() {
@@ -1531,11 +1931,13 @@ function exportOverviewCSV() {
 
   URL.revokeObjectURL(url);
 }
+
 // ==================================================
-// 20. 綁定家長與學生
+// 25. 綁定家長與學生
 // ==================================================
 
 async function bindGuardian(event) {
+
   event.preventDefault();
 
   const form = new FormData(event.target);
@@ -1545,8 +1947,6 @@ async function bindGuardian(event) {
 
   const studentId =
     form.get("student_id");
-
-  // 依電子郵件尋找家長帳號
 
   const { data: profiles, error: profileError } = await db
     .from("profiles")
@@ -1581,8 +1981,6 @@ async function bindGuardian(event) {
     return;
   }
 
-  // 建立家長與學生關係
-
   const { error } = await db
     .from("guardian_students")
     .insert({
@@ -1608,7 +2006,7 @@ async function bindGuardian(event) {
 }
 
 // ==================================================
-// 21. 管理者查看家長登入紀錄
+// 26. 管理者查看家長登入紀錄
 // ==================================================
 
 async function loadLoginEvents() {
@@ -1669,23 +2067,22 @@ async function loadLoginEvents() {
     return;
   }
 
-  // 統計每位家長的登入次數及最後登入時間
   const loginCounts = {};
   const lastLogin = {};
 
   parentEvents.forEach(e => {
+
     loginCounts[e.user_id] =
       (loginCounts[e.user_id] || 0) + 1;
 
-    // events 已依時間由新到舊排序，因此第一次遇到的就是最後登入時間
     if (!lastLogin[e.user_id]) {
       lastLogin[e.user_id] = e.created_at;
     }
+
   });
 
   const parentIds = Object.keys(loginCounts);
 
-  // 查詢每位家長所綁定的學生
   const { data: guardianLinks, error: guardianError } = await db
     .from("guardian_students")
     .select("guardian_id,student_id")
@@ -1704,6 +2101,7 @@ async function loadLoginEvents() {
   let students = [];
 
   if (studentIds.length > 0) {
+
     const { data: studentData, error: studentError } = await db
       .from("students")
       .select("id,full_name")
@@ -1724,10 +2122,10 @@ async function loadLoginEvents() {
     studentMap[student.id] = student.full_name;
   });
 
-  // 將同一位家長綁定的學生姓名整理在一起
   const guardianStudentNames = {};
 
   (guardianLinks || []).forEach(link => {
+
     const studentName = studentMap[link.student_id];
 
     if (!studentName) return;
@@ -1739,6 +2137,7 @@ async function loadLoginEvents() {
     if (!guardianStudentNames[link.guardian_id].includes(studentName)) {
       guardianStudentNames[link.guardian_id].push(studentName);
     }
+
   });
 
   area.innerHTML = `
@@ -1763,6 +2162,7 @@ async function loadLoginEvents() {
 
             return `
               <tr>
+
                 <td>
                   ${escapeHTML(
                     names.length > 0
@@ -1778,6 +2178,7 @@ async function loadLoginEvents() {
                     new Date(lastLogin[id]).toLocaleString("zh-TW")
                   )}
                 </td>
+
               </tr>
             `;
 
@@ -1793,7 +2194,7 @@ async function loadLoginEvents() {
 }
 
 // ==================================================
-// 22. 家長查詢成績
+// 27. 家長查詢成績：每位學生只顯示最近三次週考
 // ==================================================
 
 async function loadParentScores() {
@@ -1804,7 +2205,7 @@ async function loadParentScores() {
 
   area.textContent = "正在讀取成績……";
 
-  // 先取得此家長綁定的學生
+  // 取得此家長綁定的學生
 
   const { data: links, error: linkError } = await db
     .from("guardian_students")
@@ -1850,7 +2251,7 @@ async function loadParentScores() {
     return;
   }
 
-  // 取得考試場次
+  // 取得有成績的考試場次
 
   const examIds = [
     ...new Set((scores || []).map(s => s.exam_id))
@@ -1881,9 +2282,9 @@ async function loadParentScores() {
     examMap[e.id] = e;
   });
 
-  // 顯示各學生歷史成績
+  // 每位學生獨立篩選最近三次考試
 
-  area.innerHTML = students.map(student => {
+  area.innerHTML = (students || []).map(student => {
 
     const studentScores = (scores || []).filter(
       s => s.student_id === student.id
@@ -1896,9 +2297,19 @@ async function loadParentScores() {
     const studentExams = studentExamIds
       .map(id => examMap[id])
       .filter(Boolean)
-      .sort((a, b) =>
-        b.start_date.localeCompare(a.start_date)
-      );
+      .sort((a, b) => {
+
+        const dateCompare =
+          b.start_date.localeCompare(a.start_date);
+
+        if (dateCompare !== 0) return dateCompare;
+
+        return b.end_date.localeCompare(a.end_date);
+
+      });
+
+    // 只取最近三次有成績的週考
+    const recentStudentExams = studentExams.slice(0, 3);
 
     return `
 
@@ -1909,10 +2320,14 @@ async function loadParentScores() {
           ｜${escapeHTML(student.full_name)}
         </h3>
 
+        <p class="notice">
+          顯示最近三次週考紀錄
+        </p>
+
         ${
-          studentExams.length === 0
+          recentStudentExams.length === 0
             ? `<p class="notice">目前尚無成績資料。</p>`
-            : studentExams.map(exam => {
+            : recentStudentExams.map(exam => {
 
                 const examScores = studentScores.filter(
                   s => s.exam_id === exam.id
@@ -1964,7 +2379,7 @@ async function loadParentScores() {
 }
 
 // ==================================================
-// 23. 登出
+// 28. 登出
 // ==================================================
 
 async function logout() {
@@ -1979,11 +2394,13 @@ async function logout() {
 
   overviewRows = [];
 
+  overviewExamId = "";
+
   loginPage();
 }
 
 // ==================================================
-// 24. 網站啟動
+// 29. 網站啟動
 // ==================================================
 
 async function initializeApp() {
@@ -2004,4 +2421,3 @@ async function initializeApp() {
 }
 
 initializeApp();
-
