@@ -1,3 +1,4 @@
+
 /* ==================================================
    小象文教機構｜成績管理系統
    完整 App.js
@@ -21,7 +22,7 @@
    5. 修正各管理頁面的修改／刪除按鈕被擠壓問題
    6. 考試管理只顯示開始日期及結束日期
    7. 考試名稱由系統依日期自動產生，維持資料庫相容
-   8. 家長綁定清單新增年級排序及班級篩選
+   8. 家長綁定清單保留班級篩選，移除排序功能
    9. 國三成績新增「缺考」等級
    10. 缺考以紅色粗體顯示，不需輸入分數或答對題數
    ================================================== */
@@ -42,7 +43,6 @@ const db = supabaseClient;
 
 const SUBJECTS = ["國文", "英文", "數學", "自然"];
 
-// 新增「缺考」
 const GRADE_OPTIONS = ["A++", "A+", "A", "B++", "B+", "B", "C", "缺考"];
 
 let currentUser = null;
@@ -124,7 +124,6 @@ function scoreClass(score, className) {
   return "";
 }
 
-// 成績等級顯示：缺考使用紅色粗體
 function gradeTag(gradeLevel) {
   if (!gradeLevel) {
     return "<span class='grade-tag'>—</span>";
@@ -139,7 +138,6 @@ function gradeTag(gradeLevel) {
     "</span>";
 }
 
-// 下拉選單選到缺考時，選單文字也改為紅色
 function updateGradeSelectStyle(selectElement) {
   if (!selectElement) return;
 
@@ -291,7 +289,6 @@ style.textContent = [
   ".low-score { color:#d32626; font-weight:800; }",
   ".grade-tag { display:inline-block; padding:4px 9px; border-radius:6px; background:#e8eff8; color:#315d86; font-weight:800; white-space:nowrap; }",
 
-  /* 缺考紅色顯示 */
   ".grade-absent { color:#d32626 !important; background:#fde8e8 !important; font-weight:900 !important; }",
   ".grade-select-absent { color:#d32626 !important; font-weight:900 !important; }",
   "option[value='缺考'] { color:#d32626; font-weight:900; }",
@@ -739,7 +736,6 @@ async function editScore(scoreId) {
       return;
     }
 
-    // 缺考不需要輸入分數或答對題數
     if (gradeLevel !== "缺考") {
       if (grade3Math) {
         const value = prompt(
@@ -966,7 +962,6 @@ function updateScoreMode() {
   updateGrade3AbsenceMode();
 }
 
-// 選擇缺考時，不再要求輸入分數或題數
 function updateGrade3AbsenceMode() {
   const mathGrade = $("grade3MathGrade");
   const otherGrade = $("gradeLevel");
@@ -1372,17 +1367,13 @@ function renderGuardians() {
       "</option>";
   }).join("");
 
-  const gradeOrder = {
-    "國一班": 1,
-    "國二班": 2,
-    "國三班": 3
-  };
-
+  // 只依照選擇的班級篩選，不再執行排序
   function buildGuardianRows() {
-    const sortMode = $("guardianSort") ? $("guardianSort").value : "grade";
-    const selectedClass = $("guardianClass") ? $("guardianClass").value : "";
+    const selectedClass = $("guardianClass")
+      ? $("guardianClass").value
+      : "";
 
-    let links = guardianLinksCache.filter(function (link) {
+    const links = guardianLinksCache.filter(function (link) {
       const parent = profilesCache.find(
         item => String(item.id) === String(link.guardian_id)
       );
@@ -1394,31 +1385,6 @@ function renderGuardians() {
       return parent && student &&
         (!selectedClass || student.class_name === selectedClass);
     });
-
-    if (sortMode === "grade") {
-      links.sort(function (a, b) {
-        const studentA = studentsCache.find(
-          item => String(item.id) === String(a.student_id)
-        );
-
-        const studentB = studentsCache.find(
-          item => String(item.id) === String(b.student_id)
-        );
-
-        const gradeA = gradeOrder[studentA.class_name] || 99;
-        const gradeB = gradeOrder[studentB.class_name] || 99;
-
-        if (gradeA !== gradeB) {
-          return gradeA - gradeB;
-        }
-
-        return String(studentA.student_code || "").localeCompare(
-          String(studentB.student_code || ""),
-          "zh-Hant",
-          { numeric: true }
-        );
-      });
-    }
 
     return links.map(function (link) {
       const parent = profilesCache.find(
@@ -1476,11 +1442,6 @@ function renderGuardians() {
           "<option value='國二班'>國二班</option>" +
           "<option value='國三班'>國三班</option>" +
         "</select>" +
-        "<label for='guardianSort'><strong>排序方式：</strong></label>" +
-        "<select id='guardianSort'>" +
-          "<option value='grade' selected>依年級排序（國一 → 國二 → 國三）</option>" +
-          "<option value='original'>原始順序</option>" +
-        "</select>" +
       "</div>" +
       "<div class='table-wrap'><table class='guardian-management-table'>" +
         "<thead><tr><th>家長姓名</th><th>家長帳號</th><th>班級</th><th>學生姓名</th><th>操作</th></tr></thead>" +
@@ -1499,7 +1460,7 @@ function renderGuardians() {
       "<tr><td colspan='5' class='empty'>目前沒有符合條件的綁定資料</td></tr>";
   }
 
-  $("guardianSort").addEventListener("change", refreshGuardianRows);
+  // 只保留班級篩選事件
   $("guardianClass").addEventListener("change", refreshGuardianRows);
 
   content.onclick = async function (event) {
