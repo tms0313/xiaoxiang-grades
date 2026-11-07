@@ -262,3 +262,12 @@ footer {
   padding: 10px 16px;
   white-space: nowrap;
 }
+/* 學生管理：修改、刪除按鈕縮小 */
+.student-management-table .student-actions button {
+  width: auto !important;
+  min-height: 0 !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  margin: 0 2px !important;
+}
