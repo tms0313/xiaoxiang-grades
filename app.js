@@ -1,3 +1,4 @@
+
 /* ==================================================
    小象文教機構｜成績管理系統
    完整 App.js
@@ -21,6 +22,7 @@
    5. 修正各管理頁面的修改／刪除按鈕被擠壓問題
    6. 考試管理只顯示開始日期及結束日期
    7. 考試名稱由系統依日期自動產生，維持資料庫相容
+   8. 家長綁定清單新增年級排序
    ================================================== */
 
 "use strict";
@@ -1273,27 +1275,82 @@ function renderGuardians() {
       "</option>";
   }).join("");
 
-  const rows = guardianLinksCache.map(function (link) {
-    const parent = profilesCache.find(item => item.id === link.guardian_id);
-    const student = studentsCache.find(item => item.id === link.student_id);
+  // 年級排序：國一 → 國二 → 國三
+  const gradeOrder = {
+    "國一班": 1,
+    "國二班": 2,
+    "國三班": 3
+  };
 
-    if (!parent || !student) return "";
+  function buildGuardianRows() {
+    const sortMode = $("guardianSort") ? $("guardianSort").value : "grade";
 
-    return "<tr>" +
-      "<td>" + escapeHtml(parent.display_name || parent.email) + "</td>" +
-      "<td>" + escapeHtml(parent.email) + "</td>" +
-      "<td>" + escapeHtml(student.class_name) + "</td>" +
-      "<td>" + escapeHtml(student.full_name) + "</td>" +
-      "<td class='action-cell'>" +
-        "<div class='action-buttons'>" +
-          "<button class='btn btn-small' data-edit-parent='" + escapeHtml(parent.id) + "'>修改家長資料</button>" +
-          "<button class='btn btn-danger btn-small' data-unbind='" + escapeHtml(link.guardian_id) + "|" + escapeHtml(link.student_id) + "'>解除綁定</button>" +
-        "</div>" +
-      "</td></tr>";
-  }).join("");
+    let links = guardianLinksCache.filter(function (link) {
+      const parent = profilesCache.find(
+        item => String(item.id) === String(link.guardian_id)
+      );
+
+      const student = studentsCache.find(
+        item => String(item.id) === String(link.student_id)
+      );
+
+      return parent && student;
+    });
+
+    if (sortMode === "grade") {
+      links.sort(function (a, b) {
+        const studentA = studentsCache.find(
+          item => String(item.id) === String(a.student_id)
+        );
+
+        const studentB = studentsCache.find(
+          item => String(item.id) === String(b.student_id)
+        );
+
+        const gradeA = gradeOrder[studentA.class_name] || 99;
+        const gradeB = gradeOrder[studentB.class_name] || 99;
+
+        if (gradeA !== gradeB) {
+          return gradeA - gradeB;
+        }
+
+        return String(studentA.student_code || "").localeCompare(
+          String(studentB.student_code || ""),
+          "zh-Hant",
+          { numeric: true }
+        );
+      });
+    }
+
+    return links.map(function (link) {
+      const parent = profilesCache.find(
+        item => String(item.id) === String(link.guardian_id)
+      );
+
+      const student = studentsCache.find(
+        item => String(item.id) === String(link.student_id)
+      );
+
+      return "<tr>" +
+        "<td>" + escapeHtml(parent.display_name || parent.email) + "</td>" +
+        "<td>" + escapeHtml(parent.email) + "</td>" +
+        "<td>" + escapeHtml(student.class_name) + "</td>" +
+        "<td>" + escapeHtml(student.full_name) + "</td>" +
+        "<td class='action-cell'>" +
+          "<div class='action-buttons'>" +
+            "<button class='btn btn-small' data-edit-parent='" +
+              escapeHtml(parent.id) + "'>修改家長資料</button>" +
+            "<button class='btn btn-danger btn-small' data-unbind='" +
+              escapeHtml(link.guardian_id) + "|" +
+              escapeHtml(link.student_id) + "'>解除綁定</button>" +
+          "</div>" +
+        "</td></tr>";
+    }).join("");
+  }
 
   content.innerHTML =
     "<h2 class='section-title'>家長綁定</h2>" +
+
     "<div class='panel'><h3>新增家長帳號</h3>" +
       "<p class='muted'>輸入家長姓名及 Email，選擇學生後，系統會自動建立家長登入帳號並完成學生綁定。</p>" +
       "<form id='createParentForm'><div class='form-grid'>" +
@@ -1311,19 +1368,40 @@ function renderGuardians() {
         "<div class='field'><label>學生</label><select id='guardianStudent' required><option value=''>請選擇學生</option>" + studentOptions + "</select></div>" +
       "</div><button class='btn btn-success' type='submit'>建立綁定</button></form></div>" +
 
-    "<div class='table-wrap'><table class='guardian-management-table'>" +
-      "<thead><tr><th>家長姓名</th><th>家長帳號</th><th>班級</th><th>學生姓名</th><th>操作</th></tr></thead>" +
-      "<tbody>" + (rows || "<tr><td colspan='5' class='empty'>目前沒有綁定資料</td></tr>") + "</tbody>" +
-    "</table></div>";
+    "<div class='panel'>" +
+      "<h3>既有家長帳號與學生綁定清單</h3>" +
+      "<div class='toolbar'>" +
+        "<label for='guardianSort'><strong>排序方式：</strong></label>" +
+        "<select id='guardianSort'>" +
+          "<option value='grade' selected>依年級排序（國一 → 國二 → 國三）</option>" +
+          "<option value='original'>原始順序</option>" +
+        "</select>" +
+      "</div>" +
+      "<div class='table-wrap'><table class='guardian-management-table'>" +
+        "<thead><tr><th>家長姓名</th><th>家長帳號</th><th>班級</th><th>學生姓名</th><th>操作</th></tr></thead>" +
+        "<tbody id='guardianRows'>" +
+          (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有綁定資料</td></tr>") +
+        "</tbody>" +
+      "</table></div>" +
+    "</div>";
 
   $("createParentForm").addEventListener("submit", createParentAccount);
   $("guardianForm").addEventListener("submit", saveGuardianBinding);
+
+  // 切換排序方式
+  $("guardianSort").addEventListener("change", function () {
+    $("guardianRows").innerHTML =
+      buildGuardianRows() ||
+      "<tr><td colspan='5' class='empty'>目前沒有綁定資料</td></tr>";
+  });
 
   content.onclick = async function (event) {
     const editButton = event.target.closest("[data-edit-parent]");
     const unbindButton = event.target.closest("[data-unbind]");
 
-    if (editButton) await editParentAccount(editButton.dataset.editParent);
+    if (editButton) {
+      await editParentAccount(editButton.dataset.editParent);
+    }
 
     if (unbindButton) {
       const parts = unbindButton.dataset.unbind.split("|");
@@ -1479,7 +1557,11 @@ async function createParentAccount(event) {
     );
 
     if (result.error) {
-      throw new Error(result.data && result.data.error ? result.data.error : result.error.message);
+      throw new Error(
+        result.data && result.data.error
+          ? result.data.error
+          : result.error.message
+      );
     }
 
     const data = result.data || {};
