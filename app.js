@@ -1,4 +1,3 @@
-
 /* ==================================================
    小象文教機構｜成績管理系統
    完整 App.js
@@ -14,11 +13,14 @@
    scores
    guardian_students
 
-   本版本保留原有功能，新增：
+   本版本：
    1. 成績總覽可修改既有成績
    2. 家長綁定可修改家長姓名及 Email
    3. 修改家長 Email 時同步更新 Auth 與 profiles
    4. 修改家長資料不影響密碼及學生綁定
+   5. 修正各管理頁面的修改／刪除按鈕被擠壓問題
+   6. 考試管理只顯示開始日期及結束日期
+   7. 考試名稱由系統依日期自動產生，維持資料庫相容
    ================================================== */
 
 "use strict";
@@ -90,10 +92,12 @@ function formatDateRange(exam) {
   const end = formatDate(exam.end_date);
 
   if (!exam.start_date && !exam.end_date) {
-    return exam.title || "未命名考試";
+    return exam.title || "未設定日期";
   }
 
   if (start === end || !exam.end_date) return start;
+  if (!exam.start_date) return end;
+
   return start + "～" + end;
 }
 
@@ -173,57 +177,89 @@ style.textContent = [
   "* { box-sizing:border-box; }",
   "button,input,select { font:inherit; }",
   "button { cursor:pointer; }",
+
   ".login-wrap { min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; }",
   ".login-card { width:min(420px,100%); background:#fff; padding:35px; border-radius:18px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
   ".login-card h1 { text-align:center; font-size:25px; margin:0 0 8px; color:#23466b; }",
   ".login-card p { text-align:center; color:#788493; margin-bottom:25px; }",
+
   ".field { margin-bottom:16px; }",
   ".field label { display:block; font-weight:700; margin-bottom:7px; }",
   ".field input,.field select { width:100%; padding:12px; border:1px solid #ccd4df; border-radius:8px; background:#fff; }",
+
   ".btn { border:0; border-radius:8px; padding:10px 16px; background:#315d86; color:#fff; font-weight:700; }",
   ".btn:hover { filter:brightness(.94); }",
   ".btn-secondary { background:#64748b; }",
   ".btn-danger { background:#bd4242; }",
   ".btn-success { background:#27845b; }",
-  ".btn-small { padding:6px 10px; font-size:13px; margin:2px; }",
+  ".btn-small { padding:5px 9px; font-size:12px; margin:0; white-space:nowrap; }",
   ".login-card .btn { width:100%; padding:13px; }",
   ".btn:disabled { opacity:.6; cursor:not-allowed; }",
+
   ".forgot-password { margin-top:18px; padding:13px; border-radius:8px; background:#f1f5f9; color:#526477; font-size:14px; line-height:1.8; text-align:center; }",
   ".system-message { display:none; padding:12px 15px; border-radius:8px; margin-bottom:16px; background:#fff3cd; color:#765b13; }",
   ".system-message.error { background:#fde8e8; color:#a32626; }",
   ".system-message.success { background:#e3f5e9; color:#20683d; }",
+
   ".topbar { background:#23466b; color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap; }",
   ".topbar h1 { font-size:20px; margin:0; color:#fff; }",
   ".topbar small { color:#fff; }",
+
   ".dashboard { width:min(1200px,94%); margin:30px auto; background:#fff; padding:28px; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
   ".tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; border-bottom:1px solid #e4e9ef; padding-bottom:15px; }",
   ".tab-btn { border:0; padding:10px 14px; border-radius:8px; background:#edf1f5; color:#34475b; font-weight:700; }",
   ".tab-btn.active { background:#315d86; color:#fff; }",
+
   ".section-title { font-size:21px; margin:0 0 18px; color:#23466b; }",
   ".toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:15px 0; align-items:center; }",
   ".toolbar input,.toolbar select { padding:9px; border:1px solid #ccd4df; border-radius:7px; }",
   ".form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }",
   ".panel { border:1px solid #e2e8ef; border-radius:12px; padding:18px; margin-bottom:18px; }",
   ".panel h3 { margin:0 0 15px; color:#315d86; }",
-  ".table-wrap { overflow-x:auto; width:100%; }",
+
+  ".table-wrap { overflow-x:auto; width:100%; -webkit-overflow-scrolling:touch; }",
   "table { border-collapse:collapse; width:100%; min-width:650px; }",
   "th,td { border-bottom:1px solid #e7ebf0; padding:11px 10px; text-align:left; vertical-align:middle; }",
   "th { background:#f3f6f9; color:#40566d; white-space:nowrap; }",
   "tr:hover td { background:#fafbfd; }",
+
+  /* 成績總覽：固定操作欄寬度，避免按鈕被擠壓 */
+  ".overview-table { min-width:1050px; table-layout:fixed; }",
+  ".overview-table th:nth-child(1),.overview-table td:nth-child(1) { width:13%; }",
+  ".overview-table th:nth-child(2),.overview-table td:nth-child(2) { width:9%; }",
+  ".overview-table th:nth-child(3),.overview-table td:nth-child(3) { width:8%; }",
+  ".overview-table th:nth-child(4),.overview-table td:nth-child(4) { width:11%; }",
+  ".overview-table th:nth-child(5),.overview-table td:nth-child(5) { width:8%; }",
+  ".overview-table th:nth-child(6),.overview-table td:nth-child(6) { width:17%; }",
+  ".overview-table th:nth-child(7),.overview-table td:nth-child(7) { width:13%; }",
+  ".overview-table th:nth-child(8),.overview-table td:nth-child(8) { width:21%; }",
+
+  /* 所有操作按鈕統一並排 */
+  ".action-cell { min-width:155px; white-space:nowrap; }",
+  ".action-buttons { display:flex; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:5px; white-space:nowrap; }",
+  ".action-buttons .btn { flex:0 0 auto; margin:0; }",
+
   ".parent-score-table { width:100%; min-width:560px; table-layout:fixed; }",
   ".parent-score-table th:nth-child(1),.parent-score-table td:nth-child(1) { width:18%; text-align:center; }",
   ".parent-score-table th:nth-child(2),.parent-score-table td:nth-child(2) { width:52%; }",
   ".parent-score-table th:nth-child(3),.parent-score-table td:nth-child(3) { width:30%; text-align:center; }",
   ".parent-score-table td { overflow-wrap:anywhere; word-break:break-word; }",
   ".parent-score-table td:nth-child(3) { white-space:normal; }",
-  ".student-management-table { width:100%; min-width:620px; table-layout:fixed; }",
-  ".student-management-table th:nth-child(1),.student-management-table td:nth-child(1) { width:18%; }",
-  ".student-management-table th:nth-child(2),.student-management-table td:nth-child(2) { width:24%; }",
-  ".student-management-table th:nth-child(3),.student-management-table td:nth-child(3) { width:22%; }",
-  ".student-management-table th:nth-child(4),.student-management-table td:nth-child(4) { width:36%; min-width:210px; }",
+
+  ".student-management-table { width:100%; min-width:650px; table-layout:fixed; }",
+  ".student-management-table th:nth-child(1),.student-management-table td:nth-child(1) { width:17%; }",
+  ".student-management-table th:nth-child(2),.student-management-table td:nth-child(2) { width:22%; }",
+  ".student-management-table th:nth-child(3),.student-management-table td:nth-child(3) { width:21%; }",
+  ".student-management-table th:nth-child(4),.student-management-table td:nth-child(4) { width:40%; min-width:220px; }",
   ".student-management-table td.student-action-cell { white-space:nowrap; }",
-  ".student-actions { display:flex; align-items:center; justify-content:flex-start; gap:8px; white-space:nowrap; }",
-  ".student-actions .btn { flex:0 0 auto; margin:0; }",
+
+  ".exam-management-table { min-width:600px; table-layout:fixed; }",
+  ".exam-management-table th:nth-child(1),.exam-management-table td:nth-child(1) { width:30%; }",
+  ".exam-management-table th:nth-child(2),.exam-management-table td:nth-child(2) { width:30%; }",
+  ".exam-management-table th:nth-child(3),.exam-management-table td:nth-child(3) { width:40%; }",
+
+  ".guardian-management-table { min-width:850px; }",
+
   ".low-score { color:#d32626; font-weight:800; }",
   ".grade-tag { display:inline-block; padding:4px 9px; border-radius:6px; background:#e8eff8; color:#315d86; font-weight:800; white-space:nowrap; }",
   ".muted { color:#778494; font-size:13px; }",
@@ -233,6 +269,7 @@ style.textContent = [
   ".student-card h3 { margin-top:0; color:#23466b; }",
   ".footer { text-align:center; color:#8995a2; padding:25px; font-size:13px; }",
   ".hidden { display:none !important; }",
+
   "@media(max-width:600px) {",
   ".dashboard { width:96%; padding:15px; margin:15px auto; }",
   ".topbar { padding:14px; }",
@@ -241,7 +278,9 @@ style.textContent = [
   ".tabs { gap:5px; }",
   ".tab-btn { padding:8px 10px; font-size:13px; }",
   ".parent-score-table { min-width:520px; }",
-  ".student-management-table { min-width:620px; }",
+  ".student-management-table { min-width:650px; }",
+  ".overview-table { min-width:1050px; }",
+  ".exam-management-table { min-width:600px; }",
   "}"
 ].join("\n");
 
@@ -523,9 +562,11 @@ function renderOverview() {
         "<td>" + escapeHtml(score.subject) + "</td>" +
         "<td>" + escapeHtml(score.scope || "—") + "</td>" +
         "<td>" + resultText + "</td>" +
-        "<td style='white-space:nowrap'>" +
-          "<button class='btn btn-small' data-edit-score='" + escapeHtml(score.id) + "'>修改</button>" +
-          "<button class='btn btn-danger btn-small' data-delete-score='" + escapeHtml(score.id) + "'>刪除</button>" +
+        "<td class='action-cell'>" +
+          "<div class='action-buttons'>" +
+            "<button class='btn btn-small' data-edit-score='" + escapeHtml(score.id) + "'>修改</button>" +
+            "<button class='btn btn-danger btn-small' data-delete-score='" + escapeHtml(score.id) + "'>刪除</button>" +
+          "</div>" +
         "</td>" +
       "</tr>"
     );
@@ -540,7 +581,7 @@ function renderOverview() {
       "</select>" +
       "<button class='btn btn-secondary' id='overviewRefresh'>重新整理</button>" +
     "</div>" +
-    "<div class='table-wrap'><table>" +
+    "<div class='table-wrap'><table class='overview-table'>" +
       "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績</th><th>操作</th></tr></thead>" +
       "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
     "</table></div>";
@@ -781,7 +822,7 @@ async function deleteScore(scoreId) {
     "確定要刪除以下這筆成績嗎？\n\n" +
     "學生：" + student.full_name + "\n" +
     "班級：" + student.class_name + "\n" +
-    "考試：" + exam.title + "\n" +
+    "考試：" + formatDateRange(exam) + "\n" +
     "科目：" + score.subject + "\n" +
     "考試範圍：" + (score.scope || "—") + "\n" +
     "成績：" + resultText + "\n\n" +
@@ -819,7 +860,7 @@ function renderScoreEntry() {
 
   const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
     return "<option value='" + escapeHtml(exam.id) + "'>" +
-      escapeHtml(formatDateRange(exam) + "｜" + exam.title) +
+      escapeHtml(formatDateRange(exam)) +
       "</option>";
   }).join("");
 
@@ -977,7 +1018,7 @@ function renderStudents() {
       "<td>" + escapeHtml(student.student_code) + "</td>" +
       "<td>" + escapeHtml(student.full_name) + "</td>" +
       "<td>" + escapeHtml(student.class_name) + "</td>" +
-      "<td class='student-action-cell'><div class='student-actions'>" +
+      "<td class='student-action-cell action-cell'><div class='action-buttons'>" +
         "<button class='btn btn-small' data-edit-student='" + escapeHtml(student.id) + "'>修改</button>" +
         "<button class='btn btn-danger btn-small' data-delete-student='" + escapeHtml(student.id) + "'>刪除</button>" +
       "</div></td></tr>";
@@ -1086,11 +1127,14 @@ function renderExams() {
 
   const rows = sortByDateDesc(examsCache, "start_date").map(function (exam) {
     return "<tr>" +
-      "<td>" + escapeHtml(exam.title) + "</td>" +
       "<td>" + escapeHtml(formatDate(exam.start_date)) + "</td>" +
       "<td>" + escapeHtml(formatDate(exam.end_date)) + "</td>" +
-      "<td><button class='btn btn-small' data-edit-exam='" + escapeHtml(exam.id) + "'>修改</button> " +
-      "<button class='btn btn-danger btn-small' data-delete-exam='" + escapeHtml(exam.id) + "'>刪除</button></td>" +
+      "<td class='action-cell'>" +
+        "<div class='action-buttons'>" +
+          "<button class='btn btn-small' data-edit-exam='" + escapeHtml(exam.id) + "'>修改</button>" +
+          "<button class='btn btn-danger btn-small' data-delete-exam='" + escapeHtml(exam.id) + "'>刪除</button>" +
+        "</div>" +
+      "</td>" +
       "</tr>";
   }).join("");
 
@@ -1099,15 +1143,16 @@ function renderExams() {
     "<div class='panel'><h3 id='examFormTitle'>新增考試</h3>" +
       "<form id='examForm'><input type='hidden' id='examEditId'>" +
         "<div class='form-grid'>" +
-          "<div class='field'><label>考試名稱</label><input id='examTitle' placeholder='例如：第 1 次週考' required></div>" +
           "<div class='field'><label>開始日期</label><input id='examStart' type='date' required></div>" +
           "<div class='field'><label>結束日期</label><input id='examEnd' type='date' required></div>" +
         "</div>" +
         "<button class='btn btn-success' type='submit'>儲存考試</button> " +
         "<button class='btn btn-secondary' type='button' id='examCancel'>清除</button>" +
       "</form></div>" +
-      "<div class='table-wrap'><table><thead><tr><th>考試名稱</th><th>開始日期</th><th>結束日期</th><th>操作</th></tr></thead>" +
-      "<tbody>" + (rows || "<tr><td colspan='4' class='empty'>尚無考試資料</td></tr>") + "</tbody></table></div>";
+      "<div class='table-wrap'><table class='exam-management-table'>" +
+        "<thead><tr><th>開始日期</th><th>結束日期</th><th>操作</th></tr></thead>" +
+        "<tbody>" + (rows || "<tr><td colspan='3' class='empty'>尚無考試資料</td></tr>") + "</tbody>" +
+      "</table></div>";
 
   $("examForm").addEventListener("submit", saveExam);
   $("examCancel").addEventListener("click", clearExamForm);
@@ -1128,14 +1173,13 @@ function clearExamForm() {
 }
 
 function editExam(id) {
-  const exam = examsCache.find(item => item.id === id);
+  const exam = examsCache.find(item => String(item.id) === String(id));
   if (!exam) return;
 
   $("examEditId").value = exam.id;
-  $("examTitle").value = exam.title || "";
   $("examStart").value = exam.start_date || "";
   $("examEnd").value = exam.end_date || "";
-  $("examFormTitle").textContent = "修改考試資料";
+  $("examFormTitle").textContent = "修改考試日期";
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1147,13 +1191,27 @@ async function saveExam(event) {
   const startDate = $("examStart").value;
   const endDate = $("examEnd").value;
 
+  if (!startDate || !endDate) {
+    showMessage("請填寫開始日期及結束日期。", "error");
+    return;
+  }
+
   if (endDate < startDate) {
     showMessage("結束日期不可早於開始日期。", "error");
     return;
   }
 
+  /*
+    資料庫原本有 title 欄位。
+    為了不必更動資料表，這裡依日期自動產生 title。
+    管理畫面不再顯示或要求使用者輸入考試名稱。
+  */
+  const autoTitle = startDate === endDate
+    ? startDate
+    : startDate + "～" + endDate;
+
   const payload = {
-    title: $("examTitle").value.trim(),
+    title: autoTitle,
     start_date: startDate,
     end_date: endDate
   };
@@ -1167,7 +1225,7 @@ async function saveExam(event) {
 
     await loadAdminData();
     renderExams();
-    showMessage(id ? "考試資料已更新。" : "考試場次已新增。", "success");
+    showMessage(id ? "考試日期已更新。" : "考試場次已新增。", "success");
 
   } catch (error) {
     showMessage("考試資料儲存失敗：" + error.message, "error");
@@ -1175,10 +1233,13 @@ async function saveExam(event) {
 }
 
 async function deleteExam(id) {
-  const exam = examsCache.find(item => item.id === id);
+  const exam = examsCache.find(item => String(item.id) === String(id));
   if (!exam) return;
 
-  if (!confirm("確定刪除考試「" + exam.title + "」？\n若已有成績資料，資料庫可能會拒絕刪除。")) return;
+  if (!confirm(
+    "確定刪除考試場次「" + formatDateRange(exam) + "」？\n\n" +
+    "若已有成績資料，資料庫可能會拒絕刪除。"
+  )) return;
 
   try {
     const result = await db.from("exams").delete().eq("id", id);
@@ -1223,9 +1284,11 @@ function renderGuardians() {
       "<td>" + escapeHtml(parent.email) + "</td>" +
       "<td>" + escapeHtml(student.class_name) + "</td>" +
       "<td>" + escapeHtml(student.full_name) + "</td>" +
-      "<td style='white-space:nowrap'>" +
-        "<button class='btn btn-small' data-edit-parent='" + escapeHtml(parent.id) + "'>修改家長資料</button> " +
-        "<button class='btn btn-danger btn-small' data-unbind='" + escapeHtml(link.guardian_id) + "|" + escapeHtml(link.student_id) + "'>解除綁定</button>" +
+      "<td class='action-cell'>" +
+        "<div class='action-buttons'>" +
+          "<button class='btn btn-small' data-edit-parent='" + escapeHtml(parent.id) + "'>修改家長資料</button>" +
+          "<button class='btn btn-danger btn-small' data-unbind='" + escapeHtml(link.guardian_id) + "|" + escapeHtml(link.student_id) + "'>解除綁定</button>" +
+        "</div>" +
       "</td></tr>";
   }).join("");
 
@@ -1248,7 +1311,7 @@ function renderGuardians() {
         "<div class='field'><label>學生</label><select id='guardianStudent' required><option value=''>請選擇學生</option>" + studentOptions + "</select></div>" +
       "</div><button class='btn btn-success' type='submit'>建立綁定</button></form></div>" +
 
-    "<div class='table-wrap'><table>" +
+    "<div class='table-wrap'><table class='guardian-management-table'>" +
       "<thead><tr><th>家長姓名</th><th>家長帳號</th><th>班級</th><th>學生姓名</th><th>操作</th></tr></thead>" +
       "<tbody>" + (rows || "<tr><td colspan='5' class='empty'>目前沒有綁定資料</td></tr>") + "</tbody>" +
     "</table></div>";
@@ -1670,7 +1733,7 @@ function renderExport() {
   const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
     return "<label style='display:block;margin:8px 0'>" +
       "<input type='checkbox' class='exportExam' value='" + escapeHtml(exam.id) + "'> " +
-      escapeHtml(formatDateRange(exam) + "｜" + exam.title) +
+      escapeHtml(formatDateRange(exam)) +
       "</label>";
   }).join("");
 
@@ -1710,7 +1773,7 @@ function exportCsv() {
   const rows = [headers.map(csvCell).join(",")];
 
   scoresCache.forEach(function (score) {
-    if (!selectedIds.includes(score.exam_id)) return;
+    if (!selectedIds.includes(String(score.exam_id))) return;
 
     const student = studentsCache.find(item => item.id === score.student_id);
     const exam = examsCache.find(item => item.id === score.exam_id);
