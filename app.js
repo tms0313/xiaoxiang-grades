@@ -26,6 +26,8 @@
    10. 缺考不需輸入分數或答對題數
    11. 國三數學低於 60 分以紅色粗體顯示
    12. 成績匯出改為考試週期勾選清單
+   13. 家長登入後可自行修改密碼
+   14. 家長新密碼至少 8 個字元
    ================================================== */
 
 "use strict";
@@ -302,7 +304,6 @@ style.textContent = [
   ".grade-select-absent { color:#d32626 !important; font-weight:900 !important; }",
   "option[value='缺考'] { color:#d32626; font-weight:900; }",
 
-  /* 成績匯出頁面 */
   ".export-panel { border:1px solid #e2e8ef; border-radius:12px; padding:20px; background:#fff; }",
   ".export-panel-title { font-size:17px; font-weight:800; color:#315d86; margin-bottom:15px; }",
   ".export-select-all { display:flex; align-items:center; gap:11px; padding:15px 16px; border:1px solid #d8e2ed; border-radius:10px; background:#f2f6fa; margin-bottom:12px; cursor:pointer; }",
@@ -1903,6 +1904,7 @@ async function renderLoginLogs() {
       "<p class='system-message error'>讀取失敗：" + escapeHtml(error.message) + "</p>";
   }
 }
+
 // ==================================================
 // 14. 成績匯出
 // ==================================================
@@ -1984,7 +1986,6 @@ function renderExport() {
     downloadButton.disabled = selectedCount === 0;
   }
 
-  // 全部選取／全部取消
   selectAll.addEventListener("change", function () {
     checkboxes.forEach(function (checkbox) {
       checkbox.checked = selectAll.checked;
@@ -1993,12 +1994,10 @@ function renderExport() {
     updateExportSelection();
   });
 
-  // 個別選取
   checkboxes.forEach(function (checkbox) {
     checkbox.addEventListener("change", updateExportSelection);
   });
 
-  // 下載 CSV
   downloadButton.addEventListener("click", exportCsv);
 
   updateExportSelection();
@@ -2102,16 +2101,21 @@ async function renderParentDashboard() {
     return item.student_id;
   });
 
+  // 尚未綁定學生的家長畫面
   if (studentIds.length === 0) {
     content.innerHTML =
       "<div class='topbar'>" +
         "<div><h1>小象文教機構｜成績查詢</h1><small>家長專區</small></div>" +
-        "<button class='btn btn-secondary btn-small' id='logoutButton'>登出</button>" +
+        "<div>" +
+          "<button class='btn btn-small' id='changePasswordButton'>修改密碼</button> " +
+          "<button class='btn btn-secondary btn-small' id='logoutButton'>登出</button>" +
+        "</div>" +
       "</div>" +
       "<main class='dashboard'>" +
         "<div class='system-message'>目前尚未綁定學生，請聯絡管理員協助處理。</div>" +
       "</main>";
 
+    $("changePasswordButton").addEventListener("click", changeOwnPassword);
     $("logoutButton").addEventListener("click", handleLogout);
     return;
   }
@@ -2179,12 +2183,10 @@ async function renderParentDashboard() {
     const today =
       taiwan.year + "-" + taiwan.month + "-" + taiwan.day;
 
-    // 當週考試成績於週六 20:00 開放
     const endDate = new Date(exam.end_date + "T12:00:00+08:00");
 
     const weekday = endDate.getDay();
 
-    // 以考試結束日期所在週的週六作為開放日
     const daysUntilSaturday = (6 - weekday + 7) % 7;
 
     endDate.setDate(endDate.getDate() + daysUntilSaturday);
@@ -2306,7 +2308,9 @@ async function renderParentDashboard() {
       "<div><h1>小象文教機構｜成績查詢</h1><small>家長專區</small></div>" +
       "<div><span>" +
         escapeHtml(currentProfile.display_name || currentUser.email) +
-      "</span>　<button class='btn btn-secondary btn-small' id='logoutButton'>登出</button></div>" +
+      "</span>　" +
+      "<button class='btn btn-small' id='changePasswordButton'>修改密碼</button> " +
+      "<button class='btn btn-secondary btn-small' id='logoutButton'>登出</button></div>" +
     "</div>" +
     "<main class='dashboard'>" +
       "<h2 class='section-title'>學生考試成績</h2>" +
@@ -2314,6 +2318,7 @@ async function renderParentDashboard() {
     "</main>" +
     "<div class='footer'>© 小象文教機構</div>";
 
+  $("changePasswordButton").addEventListener("click", changeOwnPassword);
   $("logoutButton").addEventListener("click", handleLogout);
 }
 
@@ -2322,21 +2327,25 @@ async function renderParentDashboard() {
 // ==================================================
 
 async function changeOwnPassword() {
-  const newPassword = prompt("請輸入新的登入密碼（至少 6 個字元）：");
+  const newPassword = prompt(
+    "請輸入新的登入密碼（至少 8 個字元）："
+  );
 
   if (newPassword === null) return;
 
-  if (newPassword.length < 6) {
-    showMessage("新密碼至少需要 6 個字元。", "error");
+  if (newPassword.length < 8) {
+    showMessage("新密碼至少需要 8 個字元。", "error");
     return;
   }
 
-  const confirmPassword = prompt("請再次輸入新的登入密碼：");
+  const confirmPassword = prompt(
+    "請再次輸入新的登入密碼："
+  );
 
   if (confirmPassword === null) return;
 
   if (newPassword !== confirmPassword) {
-    showMessage("兩次輸入的密碼不一致。", "error");
+    showMessage("兩次輸入的密碼不一致，請重新操作。", "error");
     return;
   }
 
