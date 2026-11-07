@@ -18,13 +18,14 @@
    2. 家長綁定可修改家長姓名及 Email
    3. 修改家長 Email 時同步更新 Auth 與 profiles
    4. 修改家長資料不影響密碼及學生綁定
-   5. 修正各管理頁面的修改／刪除按鈕被擠壓問題
+   5. 管理頁修改／刪除按鈕縮小並排
    6. 考試管理只顯示開始日期及結束日期
-   7. 考試名稱由系統依日期自動產生，維持資料庫相容
-   8. 家長綁定清單保留班級篩選，移除排序功能
+   7. 考試名稱由系統依日期自動產生
+   8. 家長綁定清單只保留班級篩選
    9. 國三成績新增「缺考」等級
-   10. 缺考以紅色粗體顯示，不需輸入分數或答對題數
+   10. 缺考不需輸入分數或答對題數
    11. 國三數學低於 60 分以紅色粗體顯示
+   12. 成績匯出改為考試週期勾選清單
    ================================================== */
 
 "use strict";
@@ -114,7 +115,6 @@ function isGrade3Math(className, subject) {
   return isGrade3Class(className) && subject === "數學";
 }
 
-// 國三數學低於 60 分，以及其他年級低於 60 分，使用紅色粗體
 function scoreClass(score, className, subject) {
   if (
     isGrade3Math(className, subject) &&
@@ -298,10 +298,27 @@ style.textContent = [
 
   ".low-score { color:#d32626; font-weight:800; }",
   ".grade-tag { display:inline-block; padding:4px 9px; border-radius:6px; background:#e8eff8; color:#315d86; font-weight:800; white-space:nowrap; }",
-
   ".grade-absent { color:#d32626 !important; background:#fde8e8 !important; font-weight:900 !important; }",
   ".grade-select-absent { color:#d32626 !important; font-weight:900 !important; }",
   "option[value='缺考'] { color:#d32626; font-weight:900; }",
+
+  /* 成績匯出頁面 */
+  ".export-panel { border:1px solid #e2e8ef; border-radius:12px; padding:20px; background:#fff; }",
+  ".export-panel-title { font-size:17px; font-weight:800; color:#315d86; margin-bottom:15px; }",
+  ".export-select-all { display:flex; align-items:center; gap:11px; padding:15px 16px; border:1px solid #d8e2ed; border-radius:10px; background:#f2f6fa; margin-bottom:12px; cursor:pointer; }",
+  ".export-select-all input { width:19px; height:19px; accent-color:#315d86; cursor:pointer; }",
+  ".export-select-all span { font-weight:800; color:#23466b; }",
+  ".export-period-list { display:flex; flex-direction:column; gap:8px; }",
+  ".export-period-item { display:flex; align-items:center; gap:12px; padding:13px 16px; border:1px solid #e3e9f0; border-radius:9px; background:#fff; cursor:pointer; transition:background .15s,border-color .15s; }",
+  ".export-period-item:hover { background:#f7f9fc; border-color:#b9cadb; }",
+  ".export-period-item:has(input:checked) { background:#f0f5fa; border-color:#9db5cc; }",
+  ".export-period-item input { width:18px; height:18px; accent-color:#315d86; flex:0 0 auto; cursor:pointer; }",
+  ".export-period-date { font-weight:700; color:#34475b; }",
+  ".export-summary { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:15px 2px; color:#64748b; font-size:14px; }",
+  ".export-count { font-weight:800; color:#315d86; }",
+  ".export-download { width:100%; padding:13px 18px; font-size:15px; }",
+  ".export-download:disabled { opacity:.45; cursor:not-allowed; }",
+  ".export-empty { padding:25px; text-align:center; color:#8491a0; background:#f8fafc; border-radius:9px; }",
 
   ".muted { color:#778494; font-size:13px; }",
   ".empty { padding:25px; text-align:center; color:#8491a0; }",
@@ -322,6 +339,8 @@ style.textContent = [
   ".student-management-table { min-width:650px; }",
   ".overview-table { min-width:1050px; }",
   ".exam-management-table { min-width:600px; }",
+  ".export-panel { padding:14px; }",
+  ".export-period-item { padding:12px; }",
   "}"
 ].join("\n");
 
@@ -929,7 +948,7 @@ function renderScoreEntry() {
       "</div>" +
       "<div id='normalScoreField' class='field'><label>一般成績</label><input id='scoreValue' type='number' min='0' max='100' step='0.1' placeholder='請輸入分數'></div>" +
       "<div id='grade3MathFields' class='form-grid hidden'>" +
-        "<div class='field'><label>國三數學答對分數</label><input id='grade3MathScore' type='number' min='0' max='100' step='0.1'></div>" +
+        "<div class='field'><label>國三數學分數</label><input id='grade3MathScore' type='number' min='0' max='100' step='0.1'></div>" +
         "<div class='field'><label>模擬考等級</label><select id='grade3MathGrade'><option value=''>請選擇等級</option>" +
           gradeOptionsHtml +
         "</select></div>" +
@@ -943,7 +962,7 @@ function renderScoreEntry() {
       "<p id='absenceHint' class='muted hidden' style='color:#d32626;font-weight:800'>已選擇缺考，不需要輸入分數或答對題數。</p>" +
       "<button class='btn btn-success' type='submit'>儲存成績</button>" +
     "</form></div>" +
-    "<p class='muted'>國三數學輸入答對分數及模擬考等級；國三其他科目輸入答對題數及模擬考等級。選擇「缺考」時不需輸入分數或答對題數。相同學生、考試、科目及範圍若已有成績，系統會先詢問是否覆蓋。</p>";
+    "<p class='muted'>國三數學輸入分數及模擬考等級；國三其他科目輸入答對題數及模擬考等級。選擇「缺考」時不需輸入分數或答對題數。相同學生、考試、科目及範圍若已有成績，系統會先詢問是否覆蓋。</p>";
 
   $("scoreStudent").addEventListener("change", updateScoreMode);
   $("scoreSubject").addEventListener("change", updateScoreMode);
@@ -1381,7 +1400,6 @@ function renderGuardians() {
       "</option>";
   }).join("");
 
-  // 只依照選擇的班級篩選，不再執行排序
   function buildGuardianRows() {
     const selectedClass = $("guardianClass")
       ? $("guardianClass").value
@@ -1474,7 +1492,6 @@ function renderGuardians() {
       "<tr><td colspan='5' class='empty'>目前沒有符合條件的綁定資料</td></tr>";
   }
 
-  // 只保留班級篩選事件
   $("guardianClass").addEventListener("change", refreshGuardianRows);
 
   content.onclick = async function (event) {
@@ -1886,61 +1903,151 @@ async function renderLoginLogs() {
       "<p class='system-message error'>讀取失敗：" + escapeHtml(error.message) + "</p>";
   }
 }
-
 // ==================================================
-// 14. CSV 多場次成績匯出
+// 14. 成績匯出
 // ==================================================
 
 function renderExport() {
   const content = $("adminContent");
 
-  const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
-    return "<label style='display:block;margin:8px 0'>" +
-      "<input type='checkbox' class='exportExam' value='" + escapeHtml(exam.id) + "'> " +
-      escapeHtml(formatDateRange(exam)) +
-      "</label>";
+  const examList = sortByDateDesc(examsCache, "start_date");
+
+  const examOptions = examList.map(function (exam) {
+    return (
+      "<label class='export-period-item'>" +
+        "<input type='checkbox' class='exportExam' value='" +
+          escapeHtml(exam.id) +
+        "'>" +
+        "<span class='export-period-date'>" +
+          escapeHtml(formatDateRange(exam)) +
+        "</span>" +
+      "</label>"
+    );
   }).join("");
 
   content.innerHTML =
     "<h2 class='section-title'>成績匯出</h2>" +
-    "<div class='panel'><h3>選擇要匯出的考試場次</h3>" +
-      "<div style='margin-bottom:12px'>" +
-        "<button class='btn btn-secondary btn-small' id='selectAllExams'>全選</button> " +
-        "<button class='btn btn-secondary btn-small' id='clearAllExams'>取消全選</button>" +
+
+    "<div class='export-panel'>" +
+
+      "<div class='export-panel-title'>選擇要匯出的考試週期</div>" +
+
+      "<label class='export-select-all'>" +
+        "<input type='checkbox' id='exportSelectAll'>" +
+        "<span>全部選取</span>" +
+      "</label>" +
+
+      "<div class='export-period-list' id='exportExamList'>" +
+        (
+          examOptions ||
+          "<div class='export-empty'>目前沒有考試週期資料</div>"
+        ) +
       "</div>" +
-      "<div id='exportExamList'>" + (examOptions || "<p class='empty'>目前沒有考試場次</p>") + "</div>" +
-      "<button class='btn btn-success' id='downloadCsv'>下載 CSV 成績表</button>" +
+
+      "<div class='export-summary'>" +
+        "<span id='exportSelectedCount' class='export-count'>已選取 0 個考試週期</span>" +
+        "<span>可同時選取多個考試週期</span>" +
+      "</div>" +
+
+      "<button class='btn btn-success export-download' id='downloadCsv' disabled>" +
+        "下載 CSV 成績表" +
+      "</button>" +
+
     "</div>" +
-    "<p class='muted'>匯出欄位：週考區間、班級、學生編號、學生姓名、科目、考試範圍、一般成績、答對題數、模擬考等級。國三數學分數會放在一般成績欄，等級放在模擬考等級欄。</p>";
 
-  $("selectAllExams").addEventListener("click", function () {
-    document.querySelectorAll(".exportExam").forEach(item => item.checked = true);
+    "<p class='muted' style='margin-top:14px;line-height:1.8'>" +
+      "匯出欄位：週考區間、班級、學生編號、學生姓名、科目、考試範圍、一般成績、答對題數、模擬考等級。" +
+    "</p>";
+
+  const selectAll = $("exportSelectAll");
+  const checkboxes = Array.from(
+    document.querySelectorAll(".exportExam")
+  );
+  const downloadButton = $("downloadCsv");
+
+  function updateExportSelection() {
+    const selectedCount = checkboxes.filter(function (checkbox) {
+      return checkbox.checked;
+    }).length;
+
+    const totalCount = checkboxes.length;
+
+    selectAll.checked =
+      totalCount > 0 && selectedCount === totalCount;
+
+    selectAll.indeterminate =
+      selectedCount > 0 && selectedCount < totalCount;
+
+    $("exportSelectedCount").textContent =
+      "已選取 " + selectedCount + " 個考試週期";
+
+    downloadButton.disabled = selectedCount === 0;
+  }
+
+  // 全部選取／全部取消
+  selectAll.addEventListener("change", function () {
+    checkboxes.forEach(function (checkbox) {
+      checkbox.checked = selectAll.checked;
+    });
+
+    updateExportSelection();
   });
 
-  $("clearAllExams").addEventListener("click", function () {
-    document.querySelectorAll(".exportExam").forEach(item => item.checked = false);
+  // 個別選取
+  checkboxes.forEach(function (checkbox) {
+    checkbox.addEventListener("change", updateExportSelection);
   });
 
-  $("downloadCsv").addEventListener("click", exportCsv);
+  // 下載 CSV
+  downloadButton.addEventListener("click", exportCsv);
+
+  updateExportSelection();
 }
 
+// ==================================================
+// 14-1. 匯出 CSV 成績資料
+// ==================================================
+
 function exportCsv() {
-  const selectedIds = Array.from(document.querySelectorAll(".exportExam:checked"))
-    .map(item => item.value);
+  const selectedIds = Array.from(
+    document.querySelectorAll(".exportExam:checked")
+  ).map(function (checkbox) {
+    return String(checkbox.value);
+  });
 
   if (selectedIds.length === 0) {
-    showMessage("請至少選擇一個考試場次。", "error");
+    showMessage("請至少選擇一個考試週期。", "error");
     return;
   }
 
-  const headers = ["週考區間", "班級", "學生編號", "學生姓名", "科目", "考試範圍", "一般成績", "答對題數", "模擬考等級"];
-  const rows = [headers.map(csvCell).join(",")];
+  const headers = [
+    "週考區間",
+    "班級",
+    "學生編號",
+    "學生姓名",
+    "科目",
+    "考試範圍",
+    "一般成績",
+    "答對題數",
+    "模擬考等級"
+  ];
 
-  scoresCache.forEach(function (score) {
-    if (!selectedIds.includes(String(score.exam_id))) return;
+  const rows = [
+    headers.map(csvCell).join(",")
+  ];
 
-    const student = studentsCache.find(item => item.id === score.student_id);
-    const exam = examsCache.find(item => item.id === score.exam_id);
+  const selectedScores = scoresCache.filter(function (score) {
+    return selectedIds.includes(String(score.exam_id));
+  });
+
+  selectedScores.forEach(function (score) {
+    const student = studentsCache.find(function (item) {
+      return String(item.id) === String(score.student_id);
+    });
+
+    const exam = examsCache.find(function (item) {
+      return String(item.id) === String(score.exam_id);
+    });
 
     if (!student || !exam) return;
 
@@ -1957,202 +2064,266 @@ function exportCsv() {
     ].map(csvCell).join(","));
   });
 
+  const today = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Taipei"
+  });
+
   downloadText(
-    "小象成績資料_" + new Date().toISOString().slice(0, 10) + ".csv",
+    "小象成績資料_" + today + ".csv",
     rows.join("\r\n"),
     "text/csv;charset=utf-8"
   );
 
-  showMessage("CSV 成績表已產生。", "success");
+  showMessage(
+    "CSV 成績表已產生，共匯出 " +
+    selectedScores.length +
+    " 筆成績資料。",
+    "success"
+  );
 }
 
 // ==================================================
-// 15. 家長主畫面
+// 15. 家長端畫面
 // ==================================================
 
 async function renderParentDashboard() {
-  const contentResult = await db
+  const content = $("appRoot");
+
+  const profileResult = await db
     .from("guardian_students")
     .select("student_id")
     .eq("guardian_id", currentUser.id);
 
-  if (contentResult.error) throw contentResult.error;
-
-  const studentIds = (contentResult.data || []).map(item => item.student_id);
-  let children = [];
-
-  if (studentIds.length > 0) {
-    const studentResult = await db
-      .from("students")
-      .select("*")
-      .in("id", studentIds)
-      .order("student_code");
-
-    if (studentResult.error) throw studentResult.error;
-    children = studentResult.data || [];
+  if (profileResult.error) {
+    throw new Error("讀取家長學生綁定失敗：" + profileResult.error.message);
   }
 
-  appRoot.innerHTML =
-    "<div class='topbar'><div><h1>小象文教機構｜家長成績查詢</h1></div>" +
-      "<div><span>親愛的家長，您好！</span>　" +
-      "<button class='btn btn-secondary btn-small' id='changePasswordButton'>修改密碼</button> " +
-      "<button class='btn btn-secondary btn-small' id='logoutButton'>登出</button></div>" +
-    "</div>" +
-    "<main class='dashboard'><div id='systemMessage' class='system-message'></div>" +
-      "<h2 class='section-title'>孩子的最近三次週考成績</h2>" +
-      "<div id='parentScores'></div>" +
-    "</main><div class='footer'>© 小象文教機構</div>";
+  const studentIds = (profileResult.data || []).map(function (item) {
+    return item.student_id;
+  });
 
-  $("logoutButton").addEventListener("click", handleLogout);
-  $("changePasswordButton").addEventListener("click", changeOwnPassword);
+  if (studentIds.length === 0) {
+    content.innerHTML =
+      "<div class='topbar'>" +
+        "<div><h1>小象文教機構｜成績查詢</h1><small>家長專區</small></div>" +
+        "<button class='btn btn-secondary btn-small' id='logoutButton'>登出</button>" +
+      "</div>" +
+      "<main class='dashboard'>" +
+        "<div class='system-message'>目前尚未綁定學生，請聯絡管理員協助處理。</div>" +
+      "</main>";
 
-  if (children.length === 0) {
-    $("parentScores").innerHTML = "<div class='empty'>目前尚未綁定學生資料，請聯絡班級管理員。</div>";
+    $("logoutButton").addEventListener("click", handleLogout);
     return;
   }
 
-  // 台灣時間判斷：每週六晚上 20:00 開放當週成績
-  const now = new Date();
-
-  const taipeiDateParts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Taipei",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).formatToParts(now);
-
-  const taipeiTimeParts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Taipei",
-    hour: "2-digit",
-    hourCycle: "h23"
-  }).formatToParts(now);
-
-  const dateValues = {};
-
-  taipeiDateParts.forEach(part => {
-    dateValues[part.type] = part.value;
-  });
-
-  const taipeiHour = Number(
-    taipeiTimeParts.find(part => part.type === "hour").value
-  );
-
-  const taipeiDate = new Date(Date.UTC(
-    Number(dateValues.year),
-    Number(dateValues.month) - 1,
-    Number(dateValues.day)
-  ));
-
-  const weekday = taipeiDate.getUTCDay();
-  const mondayOffset = (weekday + 6) % 7;
-
-  const monday = new Date(taipeiDate);
-  monday.setUTCDate(monday.getUTCDate() - mondayOffset);
-
-  const saturday = new Date(monday);
-  saturday.setUTCDate(saturday.getUTCDate() + 5);
-
-  const mondayStr = monday.toISOString().slice(0, 10);
-  const saturdayStr = saturday.toISOString().slice(0, 10);
-
-  const currentWeekReleased = weekday === 0 || (weekday === 6 && taipeiHour >= 20);
-
-  const examResult = await db
-    .from("exams")
+  const studentsResult = await db
+    .from("students")
     .select("*")
-    .order("start_date", { ascending: false })
-    .limit(50);
+    .in("id", studentIds)
+    .order("student_code");
 
-  if (examResult.error) throw examResult.error;
-
-  const allExams = examResult.data || [];
-
-  const filteredExams = allExams.filter(function (exam) {
-    const examStart = String(exam.start_date || exam.end_date || "").slice(0, 10);
-    const examEnd = String(exam.end_date || exam.start_date || "").slice(0, 10);
-
-    const isCurrentWeekExam = examStart !== "" &&
-      examEnd !== "" &&
-      examStart <= saturdayStr &&
-      examEnd >= mondayStr;
-
-    if (!currentWeekReleased && isCurrentWeekExam) return false;
-    return true;
-  });
-
-  const recentExams = filteredExams.slice(0, 3);
-  const examIds = recentExams.map(item => item.id);
-
-  let scores = [];
-
-  if (examIds.length > 0) {
-    const scoreResult = await db
-      .from("scores")
-      .select("*")
-      .in("student_id", studentIds)
-      .in("exam_id", examIds);
-
-    if (scoreResult.error) throw scoreResult.error;
-    scores = scoreResult.data || [];
+  if (studentsResult.error) {
+    throw new Error("讀取學生資料失敗：" + studentsResult.error.message);
   }
 
-  $("parentScores").innerHTML = children.map(function (student) {
-    const studentScores = scores.filter(score => score.student_id === student.id);
+  const parentStudents = studentsResult.data || [];
 
-    const examBlocks = recentExams.map(function (exam) {
-      const examScores = studentScores.filter(score => score.exam_id === exam.id);
+  const scoresResult = await db
+    .from("scores")
+    .select("*")
+    .in("student_id", studentIds);
 
-      const scoreRows = examScores.map(function (score) {
-        const grade3 = isGrade3Class(student.class_name);
-        const grade3Math = isGrade3Math(student.class_name, score.subject);
+  if (scoresResult.error) {
+    throw new Error("讀取成績資料失敗：" + scoresResult.error.message);
+  }
 
-        const resultText = grade3Math
-          ? (
-              score.grade_level === "缺考"
-                ? gradeTag("缺考")
-                : "<span class='" +
-                  scoreClass(score.score, student.class_name, score.subject) +
-                  "'>" +
-                  escapeHtml(score.score == null ? "—" : score.score) +
-                  " 分</span>　" +
-                  gradeTag(score.grade_level)
-            )
-          : grade3
-            ? (
-                score.grade_level === "缺考"
-                  ? gradeTag("缺考")
-                  : escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
-                    " 題　" + gradeTag(score.grade_level)
-              )
-            : "<span class='" + scoreClass(score.score, student.class_name, score.subject) + "'>" +
-              escapeHtml(score.score == null ? "—" : score.score) + "</span>";
+  const parentScores = scoresResult.data || [];
 
-        return "<tr><td>" + escapeHtml(score.subject) + "</td>" +
-          "<td>" + escapeHtml(score.scope || "—") + "</td>" +
-          "<td>" + resultText + "</td></tr>";
-      }).join("");
+  const examsResult = await db
+    .from("exams")
+    .select("*")
+    .order("start_date", { ascending: false });
 
-      return "<div class='panel'><h3>" + escapeHtml(formatDateRange(exam)) + " 週考</h3>" +
-        "<div class='table-wrap'><table class='parent-score-table'>" +
-          "<colgroup><col style='width:18%'><col style='width:52%'><col style='width:30%'></colgroup>" +
-          "<thead><tr><th>科目</th><th>考試範圍</th><th>成績</th></tr></thead>" +
-          "<tbody>" + (scoreRows || "<tr><td colspan='3' class='empty'>本次尚無成績資料</td></tr>") + "</tbody>" +
-        "</table></div></div>";
+  if (examsResult.error) {
+    throw new Error("讀取考試資料失敗：" + examsResult.error.message);
+  }
+
+  const parentExams = examsResult.data || [];
+
+  function getTaiwanDateTime() {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Taipei",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23"
+    }).formatToParts(new Date());
+
+    const result = {};
+
+    parts.forEach(function (part) {
+      result[part.type] = part.value;
+    });
+
+    return result;
+  }
+
+  function isExamReleased(exam) {
+    if (!exam || !exam.end_date) return false;
+
+    const taiwan = getTaiwanDateTime();
+
+    const today =
+      taiwan.year + "-" + taiwan.month + "-" + taiwan.day;
+
+    // 當週考試成績於週六 20:00 開放
+    const endDate = new Date(exam.end_date + "T12:00:00+08:00");
+
+    const weekday = endDate.getDay();
+
+    // 以考試結束日期所在週的週六作為開放日
+    const daysUntilSaturday = (6 - weekday + 7) % 7;
+
+    endDate.setDate(endDate.getDate() + daysUntilSaturday);
+
+    const releaseDate =
+      endDate.getFullYear() + "-" +
+      String(endDate.getMonth() + 1).padStart(2, "0") + "-" +
+      String(endDate.getDate()).padStart(2, "0");
+
+    if (today > releaseDate) return true;
+    if (today < releaseDate) return false;
+
+    return Number(taiwan.hour) > 20 ||
+      (
+        Number(taiwan.hour) === 20 &&
+        Number(taiwan.minute) >= 0
+      );
+  }
+
+  function getStudentScores(student, exam) {
+    return parentScores.filter(function (score) {
+      return String(score.student_id) === String(student.id) &&
+        String(score.exam_id) === String(exam.id);
+    });
+  }
+
+  function buildParentScoreTable(student, exam) {
+    const scores = getStudentScores(student, exam);
+
+    if (scores.length === 0) {
+      return "<div class='empty'>本次考試尚無成績資料。</div>";
+    }
+
+    const rows = scores.map(function (score) {
+      const grade3 = isGrade3Class(student.class_name);
+      const grade3Math = isGrade3Math(student.class_name, score.subject);
+
+      let resultText = "";
+
+      if (score.grade_level === "缺考") {
+        resultText = gradeTag("缺考");
+
+      } else if (grade3Math) {
+        resultText =
+          "<span class='" +
+          scoreClass(score.score, student.class_name, score.subject) +
+          "'>" +
+          escapeHtml(score.score == null ? "—" : score.score) +
+          " 分</span>　" +
+          gradeTag(score.grade_level);
+
+      } else if (grade3) {
+        resultText =
+          escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
+          " 題　" +
+          gradeTag(score.grade_level);
+
+      } else {
+        resultText =
+          "<span class='" +
+          scoreClass(score.score, student.class_name, score.subject) +
+          "'>" +
+          escapeHtml(score.score == null ? "—" : score.score) +
+          " 分</span>";
+      }
+
+      return "<tr>" +
+        "<td>" + escapeHtml(score.subject) + "</td>" +
+        "<td>" + escapeHtml(score.scope || "—") + "</td>" +
+        "<td>" + resultText + "</td>" +
+        "</tr>";
     }).join("");
 
-    return "<div class='student-card'><h3>" + escapeHtml(student.full_name) + "</h3>" +
-      "<p class='muted'>" + escapeHtml(student.class_name) + "｜學生編號：" + escapeHtml(student.student_code) + "</p>" +
-      (examBlocks || "<p class='empty'>目前沒有考試資料。</p>") +
-      "</div>";
+    return (
+      "<div class='table-wrap'>" +
+        "<table class='parent-score-table'>" +
+          "<thead><tr><th>科目</th><th>考試範圍</th><th>成績</th></tr></thead>" +
+          "<tbody>" + rows + "</tbody>" +
+        "</table>" +
+      "</div>"
+    );
+  }
+
+  const sortedExams = sortByDateDesc(parentExams, "start_date");
+
+  const latestThreeExams = sortedExams.slice(0, 3);
+
+  const studentCards = parentStudents.map(function (student) {
+    const examCards = latestThreeExams.map(function (exam) {
+      const released = isExamReleased(exam);
+
+      return (
+        "<div class='panel'>" +
+          "<h3>" + escapeHtml(formatDateRange(exam)) + "</h3>" +
+          (
+            released
+              ? buildParentScoreTable(student, exam)
+              : "<div class='empty'>本次考試成績將於週六 20:00 開放查詢。</div>"
+          ) +
+        "</div>"
+      );
+    }).join("");
+
+    return (
+      "<div class='student-card'>" +
+        "<h3>" +
+          escapeHtml(student.full_name) +
+          "　<span class='muted'>" +
+          escapeHtml(student.class_name) +
+          "</span>" +
+        "</h3>" +
+        examCards +
+      "</div>"
+    );
   }).join("");
+
+  content.innerHTML =
+    "<div class='topbar'>" +
+      "<div><h1>小象文教機構｜成績查詢</h1><small>家長專區</small></div>" +
+      "<div><span>" +
+        escapeHtml(currentProfile.display_name || currentUser.email) +
+      "</span>　<button class='btn btn-secondary btn-small' id='logoutButton'>登出</button></div>" +
+    "</div>" +
+    "<main class='dashboard'>" +
+      "<h2 class='section-title'>學生考試成績</h2>" +
+      studentCards +
+    "</main>" +
+    "<div class='footer'>© 小象文教機構</div>";
+
+  $("logoutButton").addEventListener("click", handleLogout);
 }
 
 // ==================================================
-// 16. 家長自行修改密碼
+// 16. 修改自己的登入密碼
 // ==================================================
 
 async function changeOwnPassword() {
-  const newPassword = prompt("請輸入新的密碼（至少 6 個字元）：");
+  const newPassword = prompt("請輸入新的登入密碼（至少 6 個字元）：");
+
   if (newPassword === null) return;
 
   if (newPassword.length < 6) {
@@ -2160,7 +2331,8 @@ async function changeOwnPassword() {
     return;
   }
 
-  const confirmPassword = prompt("請再次輸入新密碼確認：");
+  const confirmPassword = prompt("請再次輸入新的登入密碼：");
+
   if (confirmPassword === null) return;
 
   if (newPassword !== confirmPassword) {
@@ -2169,18 +2341,21 @@ async function changeOwnPassword() {
   }
 
   try {
-    const result = await db.auth.updateUser({ password: newPassword });
+    const result = await db.auth.updateUser({
+      password: newPassword
+    });
+
     if (result.error) throw result.error;
 
-    showMessage("密碼修改成功。", "success");
+    showMessage("登入密碼已成功修改。", "success");
 
   } catch (error) {
-    showMessage("密碼修改失敗：" + error.message, "error");
+    showMessage("修改密碼失敗：" + error.message, "error");
   }
 }
 
 // ==================================================
-// 17. 系統初始化
+// 17. 啟動系統
 // ==================================================
 
 async function initializeApp() {
@@ -2188,6 +2363,7 @@ async function initializeApp() {
 
   try {
     const result = await db.auth.getSession();
+
     if (result.error) throw result.error;
 
     const session = result.data.session;
@@ -2201,6 +2377,17 @@ async function initializeApp() {
     console.error("系統初始化失敗：", error);
     showMessage("系統初始化失敗：" + error.message, "error");
   }
+
+  db.auth.onAuthStateChange(function (event, session) {
+    if (event === "SIGNED_OUT") {
+      currentUser = null;
+      currentProfile = null;
+
+      if ($("appRoot")) {
+        loginPage();
+      }
+    }
+  });
 }
 
 initializeApp();
