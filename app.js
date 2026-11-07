@@ -1,4 +1,3 @@
-
 /* ==================================================
    小象文教機構｜成績管理系統
    完整 App.js
@@ -22,7 +21,9 @@
    5. 修正各管理頁面的修改／刪除按鈕被擠壓問題
    6. 考試管理只顯示開始日期及結束日期
    7. 考試名稱由系統依日期自動產生，維持資料庫相容
-   8. 家長綁定清單新增年級排序
+   8. 家長綁定清單新增年級排序及班級篩選
+   9. 國三成績新增「缺考」等級
+   10. 缺考以紅色粗體顯示，不需輸入分數或答對題數
    ================================================== */
 
 "use strict";
@@ -40,7 +41,9 @@ if (typeof supabaseClient === "undefined") {
 const db = supabaseClient;
 
 const SUBJECTS = ["國文", "英文", "數學", "自然"];
-const GRADE_OPTIONS = ["A++", "A+", "A", "B++", "B+", "B", "C"];
+
+// 新增「缺考」
+const GRADE_OPTIONS = ["A++", "A+", "A", "B++", "B+", "B", "C", "缺考"];
 
 let currentUser = null;
 let currentProfile = null;
@@ -119,6 +122,31 @@ function scoreClass(score, className) {
   }
 
   return "";
+}
+
+// 成績等級顯示：缺考使用紅色粗體
+function gradeTag(gradeLevel) {
+  if (!gradeLevel) {
+    return "<span class='grade-tag'>—</span>";
+  }
+
+  if (gradeLevel === "缺考") {
+    return "<span class='grade-tag grade-absent'>缺考</span>";
+  }
+
+  return "<span class='grade-tag'>" +
+    escapeHtml(gradeLevel) +
+    "</span>";
+}
+
+// 下拉選單選到缺考時，選單文字也改為紅色
+function updateGradeSelectStyle(selectElement) {
+  if (!selectElement) return;
+
+  selectElement.classList.toggle(
+    "grade-select-absent",
+    selectElement.value === "缺考"
+  );
 }
 
 function showLoading(message) {
@@ -225,7 +253,6 @@ style.textContent = [
   "th { background:#f3f6f9; color:#40566d; white-space:nowrap; }",
   "tr:hover td { background:#fafbfd; }",
 
-  /* 成績總覽：固定操作欄寬度，避免按鈕被擠壓 */
   ".overview-table { min-width:1050px; table-layout:fixed; }",
   ".overview-table th:nth-child(1),.overview-table td:nth-child(1) { width:13%; }",
   ".overview-table th:nth-child(2),.overview-table td:nth-child(2) { width:9%; }",
@@ -236,7 +263,6 @@ style.textContent = [
   ".overview-table th:nth-child(7),.overview-table td:nth-child(7) { width:13%; }",
   ".overview-table th:nth-child(8),.overview-table td:nth-child(8) { width:21%; }",
 
-  /* 所有操作按鈕統一並排 */
   ".action-cell { min-width:155px; white-space:nowrap; }",
   ".action-buttons { display:flex; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:5px; white-space:nowrap; }",
   ".action-buttons .btn { flex:0 0 auto; margin:0; }",
@@ -264,6 +290,12 @@ style.textContent = [
 
   ".low-score { color:#d32626; font-weight:800; }",
   ".grade-tag { display:inline-block; padding:4px 9px; border-radius:6px; background:#e8eff8; color:#315d86; font-weight:800; white-space:nowrap; }",
+
+  /* 缺考紅色顯示 */
+  ".grade-absent { color:#d32626 !important; background:#fde8e8 !important; font-weight:900 !important; }",
+  ".grade-select-absent { color:#d32626 !important; font-weight:900 !important; }",
+  "option[value='缺考'] { color:#d32626; font-weight:900; }",
+
   ".muted { color:#778494; font-size:13px; }",
   ".empty { padding:25px; text-align:center; color:#8491a0; }",
   ".loading-message { position:fixed; top:15px; right:15px; z-index:9999; background:#23466b; color:#fff; padding:12px 18px; border-radius:8px; box-shadow:0 3px 12px rgba(0,0,0,.2); }",
@@ -547,11 +579,19 @@ function renderOverview() {
     const grade3Math = isGrade3Math(student.class_name, score.subject);
 
     const resultText = grade3Math
-      ? "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
-        "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
+      ? (
+          score.grade_level === "缺考"
+            ? gradeTag("缺考")
+            : "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
+              gradeTag(score.grade_level)
+        )
       : grade3
-        ? escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
-          " 題　<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
+        ? (
+            score.grade_level === "缺考"
+              ? gradeTag("缺考")
+              : escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
+                " 題　" + gradeTag(score.grade_level)
+          )
         : "<span class='" + scoreClass(score.score, student.class_name) + "'>" +
           escapeHtml(score.score == null ? "—" : score.score) + "</span>";
 
@@ -684,23 +724,9 @@ async function editScore(scoreId) {
   let correctCount = null;
   let gradeLevel = null;
 
-  if (grade3Math) {
-    const value = prompt(
-      "請輸入國三數學分數（0～100）：",
-      score.score == null ? "" : String(score.score)
-    );
-
-    if (value === null) return;
-
-    scoreValue = Number(value);
-
-    if (value.trim() === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-      showMessage("國三數學分數必須是 0～100。", "error");
-      return;
-    }
-
+  if (grade3Math || grade3) {
     const grade = prompt(
-      "請輸入模擬考等級（A++、A+、A、B++、B+、B、C）：",
+      "請輸入模擬考等級（A++、A+、A、B++、B+、B、C、缺考）：",
       score.grade_level || ""
     );
 
@@ -713,33 +739,38 @@ async function editScore(scoreId) {
       return;
     }
 
-  } else if (grade3) {
-    const value = prompt(
-      "請輸入答對題數：",
-      score.correct_count == null ? "" : String(score.correct_count)
-    );
+    // 缺考不需要輸入分數或答對題數
+    if (gradeLevel !== "缺考") {
+      if (grade3Math) {
+        const value = prompt(
+          "請輸入國三數學分數（0～100）：",
+          score.score == null ? "" : String(score.score)
+        );
 
-    if (value === null) return;
+        if (value === null) return;
 
-    correctCount = Number(value);
+        scoreValue = Number(value);
 
-    if (value.trim() === "" || !Number.isInteger(correctCount) || correctCount < 0) {
-      showMessage("答對題數必須是 0 或正整數。", "error");
-      return;
-    }
+        if (value.trim() === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+          showMessage("國三數學分數必須是 0～100。", "error");
+          return;
+        }
 
-    const grade = prompt(
-      "請輸入模擬考等級（A++、A+、A、B++、B+、B、C）：",
-      score.grade_level || ""
-    );
+      } else {
+        const value = prompt(
+          "請輸入答對題數：",
+          score.correct_count == null ? "" : String(score.correct_count)
+        );
 
-    if (grade === null) return;
+        if (value === null) return;
 
-    gradeLevel = grade.trim();
+        correctCount = Number(value);
 
-    if (!GRADE_OPTIONS.includes(gradeLevel)) {
-      showMessage("請輸入正確的模擬考等級。", "error");
-      return;
+        if (value.trim() === "" || !Number.isInteger(correctCount) || correctCount < 0) {
+          showMessage("答對題數必須是 0 或正整數。", "error");
+          return;
+        }
+      }
     }
 
   } else {
@@ -763,6 +794,7 @@ async function editScore(scoreId) {
     "學生：" + student.full_name + "\n" +
     "科目：" + subject + "\n" +
     "考試範圍：" + scope + "\n" +
+    "成績：" + (gradeLevel === "缺考" ? "缺考" : "正常成績") + "\n" +
     "此操作會更新原有資料，不會新增另一筆成績。"
   );
 
@@ -814,11 +846,13 @@ async function deleteScore(scoreId) {
     return;
   }
 
-  const resultText = isGrade3Math(student.class_name, score.subject)
-    ? "分數：" + (score.score == null ? "—" : score.score) + " 分，等級：" + (score.grade_level || "—")
-    : isGrade3Class(student.class_name)
-      ? (score.correct_count == null ? "—" : score.correct_count) + " 題，等級：" + (score.grade_level || "—")
-      : "分數：" + (score.score == null ? "—" : score.score);
+  const resultText = score.grade_level === "缺考"
+    ? "缺考"
+    : isGrade3Math(student.class_name, score.subject)
+      ? "分數：" + (score.score == null ? "—" : score.score) + " 分，等級：" + (score.grade_level || "—")
+      : isGrade3Class(student.class_name)
+        ? (score.correct_count == null ? "—" : score.correct_count) + " 題，等級：" + (score.grade_level || "—")
+        : "分數：" + (score.score == null ? "—" : score.score);
 
   const confirmed = confirm(
     "確定要刪除以下這筆成績嗎？\n\n" +
@@ -866,6 +900,12 @@ function renderScoreEntry() {
       "</option>";
   }).join("");
 
+  const gradeOptionsHtml = GRADE_OPTIONS.map(function (grade) {
+    return "<option value='" + escapeHtml(grade) + "'>" +
+      escapeHtml(grade) +
+      "</option>";
+  }).join("");
+
   content.innerHTML =
     "<h2 class='section-title'>成績登錄</h2>" +
     "<div class='panel'><form id='scoreForm'>" +
@@ -881,21 +921,26 @@ function renderScoreEntry() {
       "<div id='grade3MathFields' class='form-grid hidden'>" +
         "<div class='field'><label>國三數學答對分數</label><input id='grade3MathScore' type='number' min='0' max='100' step='0.1'></div>" +
         "<div class='field'><label>模擬考等級</label><select id='grade3MathGrade'><option value=''>請選擇等級</option>" +
-          GRADE_OPTIONS.map(g => "<option>" + escapeHtml(g) + "</option>").join("") +
+          gradeOptionsHtml +
         "</select></div>" +
       "</div>" +
       "<div id='grade3Fields' class='form-grid hidden'>" +
         "<div class='field'><label>答對題數</label><input id='correctCount' type='number' min='0' step='1'></div>" +
         "<div class='field'><label>模擬考等級</label><select id='gradeLevel'><option value=''>請選擇等級</option>" +
-          GRADE_OPTIONS.map(g => "<option>" + escapeHtml(g) + "</option>").join("") +
+          gradeOptionsHtml +
         "</select></div>" +
       "</div>" +
+      "<p id='absenceHint' class='muted hidden' style='color:#d32626;font-weight:800'>已選擇缺考，不需要輸入分數或答對題數。</p>" +
       "<button class='btn btn-success' type='submit'>儲存成績</button>" +
     "</form></div>" +
-    "<p class='muted'>國三數學輸入答對分數及模擬考等級；國三其他科目輸入答對題數及模擬考等級。相同學生、考試、科目及範圍若已有成績，系統會先詢問是否覆蓋。</p>";
+    "<p class='muted'>國三數學輸入答對分數及模擬考等級；國三其他科目輸入答對題數及模擬考等級。選擇「缺考」時不需輸入分數或答對題數。相同學生、考試、科目及範圍若已有成績，系統會先詢問是否覆蓋。</p>";
 
   $("scoreStudent").addEventListener("change", updateScoreMode);
   $("scoreSubject").addEventListener("change", updateScoreMode);
+
+  $("grade3MathGrade").addEventListener("change", updateGrade3AbsenceMode);
+  $("gradeLevel").addEventListener("change", updateGrade3AbsenceMode);
+
   $("scoreForm").addEventListener("submit", saveScore);
   updateScoreMode();
 }
@@ -917,6 +962,40 @@ function updateScoreMode() {
   $("grade3MathGrade").required = !!grade3Math;
   $("correctCount").required = !!grade3Other;
   $("gradeLevel").required = !!grade3Other;
+
+  updateGrade3AbsenceMode();
+}
+
+// 選擇缺考時，不再要求輸入分數或題數
+function updateGrade3AbsenceMode() {
+  const mathGrade = $("grade3MathGrade");
+  const otherGrade = $("gradeLevel");
+
+  updateGradeSelectStyle(mathGrade);
+  updateGradeSelectStyle(otherGrade);
+
+  const student = $("scoreStudent")
+    ? studentsCache.find(item => item.id === $("scoreStudent").value)
+    : null;
+
+  const subject = $("scoreSubject") ? $("scoreSubject").value : "";
+  const grade3Math = student && isGrade3Math(student.class_name, subject);
+  const grade3Other = student && isGrade3Class(student.class_name) && !grade3Math;
+
+  const mathAbsent = grade3Math && mathGrade.value === "缺考";
+  const otherAbsent = grade3Other && otherGrade.value === "缺考";
+  const absent = mathAbsent || otherAbsent;
+
+  $("grade3MathScore").required = !!grade3Math && !mathAbsent;
+  $("correctCount").required = !!grade3Other && !otherAbsent;
+
+  $("grade3MathScore").disabled = !!mathAbsent;
+  $("correctCount").disabled = !!otherAbsent;
+
+  if (mathAbsent) $("grade3MathScore").value = "";
+  if (otherAbsent) $("correctCount").value = "";
+
+  $("absenceHint").classList.toggle("hidden", !absent);
 }
 
 async function saveScore(event) {
@@ -942,21 +1021,39 @@ async function saveScore(event) {
   let gradeLevel = null;
 
   if (grade3Math) {
-    scoreValue = Number($("grade3MathScore").value);
     gradeLevel = $("grade3MathGrade").value;
 
-    if ($("grade3MathScore").value === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100 || !gradeLevel) {
-      showMessage("國三數學請輸入 0～100 分，並選擇模擬考等級。", "error");
+    if (!GRADE_OPTIONS.includes(gradeLevel)) {
+      showMessage("請選擇正確的模擬考等級。", "error");
       return;
     }
+
+    if (gradeLevel !== "缺考") {
+      scoreValue = Number($("grade3MathScore").value);
+
+      if ($("grade3MathScore").value === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+        showMessage("國三數學請輸入 0～100 分。", "error");
+        return;
+      }
+    }
+
   } else if (grade3) {
-    correctCount = Number($("correctCount").value);
     gradeLevel = $("gradeLevel").value;
 
-    if ($("correctCount").value === "" || !Number.isInteger(correctCount) || correctCount < 0 || !gradeLevel) {
-      showMessage("請輸入正確的答對題數及模擬考等級。", "error");
+    if (!GRADE_OPTIONS.includes(gradeLevel)) {
+      showMessage("請選擇正確的模擬考等級。", "error");
       return;
     }
+
+    if (gradeLevel !== "缺考") {
+      correctCount = Number($("correctCount").value);
+
+      if ($("correctCount").value === "" || !Number.isInteger(correctCount) || correctCount < 0) {
+        showMessage("請輸入正確的答對題數。", "error");
+        return;
+      }
+    }
+
   } else {
     scoreValue = Number($("scoreValue").value);
 
@@ -1001,7 +1098,12 @@ async function saveScore(event) {
     await loadAdminData();
     renderScoreEntry();
 
-    showMessage(duplicate ? "原有成績已成功覆蓋。" : "成績已成功儲存。", "success");
+    showMessage(
+      duplicate
+        ? "原有成績已成功覆蓋。"
+        : (gradeLevel === "缺考" ? "缺考資料已成功儲存。" : "成績已成功儲存。"),
+      "success"
+    );
 
   } catch (error) {
     showMessage("成績儲存失敗：" + error.message, "error");
@@ -1203,11 +1305,6 @@ async function saveExam(event) {
     return;
   }
 
-  /*
-    資料庫原本有 title 欄位。
-    為了不必更動資料表，這裡依日期自動產生 title。
-    管理畫面不再顯示或要求使用者輸入考試名稱。
-  */
   const autoTitle = startDate === endDate
     ? startDate
     : startDate + "～" + endDate;
@@ -1275,7 +1372,6 @@ function renderGuardians() {
       "</option>";
   }).join("");
 
-  // 年級排序：國一 → 國二 → 國三
   const gradeOrder = {
     "國一班": 1,
     "國二班": 2,
@@ -1284,6 +1380,7 @@ function renderGuardians() {
 
   function buildGuardianRows() {
     const sortMode = $("guardianSort") ? $("guardianSort").value : "grade";
+    const selectedClass = $("guardianClass") ? $("guardianClass").value : "";
 
     let links = guardianLinksCache.filter(function (link) {
       const parent = profilesCache.find(
@@ -1294,7 +1391,8 @@ function renderGuardians() {
         item => String(item.id) === String(link.student_id)
       );
 
-      return parent && student;
+      return parent && student &&
+        (!selectedClass || student.class_name === selectedClass);
     });
 
     if (sortMode === "grade") {
@@ -1371,6 +1469,13 @@ function renderGuardians() {
     "<div class='panel'>" +
       "<h3>既有家長帳號與學生綁定清單</h3>" +
       "<div class='toolbar'>" +
+        "<label for='guardianClass'><strong>班級：</strong></label>" +
+        "<select id='guardianClass'>" +
+          "<option value=''>全部班級</option>" +
+          "<option value='國一班'>國一班</option>" +
+          "<option value='國二班'>國二班</option>" +
+          "<option value='國三班'>國三班</option>" +
+        "</select>" +
         "<label for='guardianSort'><strong>排序方式：</strong></label>" +
         "<select id='guardianSort'>" +
           "<option value='grade' selected>依年級排序（國一 → 國二 → 國三）</option>" +
@@ -1380,7 +1485,7 @@ function renderGuardians() {
       "<div class='table-wrap'><table class='guardian-management-table'>" +
         "<thead><tr><th>家長姓名</th><th>家長帳號</th><th>班級</th><th>學生姓名</th><th>操作</th></tr></thead>" +
         "<tbody id='guardianRows'>" +
-          (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有綁定資料</td></tr>") +
+          (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有符合條件的綁定資料</td></tr>") +
         "</tbody>" +
       "</table></div>" +
     "</div>";
@@ -1388,12 +1493,14 @@ function renderGuardians() {
   $("createParentForm").addEventListener("submit", createParentAccount);
   $("guardianForm").addEventListener("submit", saveGuardianBinding);
 
-  // 切換排序方式
-  $("guardianSort").addEventListener("change", function () {
+  function refreshGuardianRows() {
     $("guardianRows").innerHTML =
       buildGuardianRows() ||
-      "<tr><td colspan='5' class='empty'>目前沒有綁定資料</td></tr>";
-  });
+      "<tr><td colspan='5' class='empty'>目前沒有符合條件的綁定資料</td></tr>";
+  }
+
+  $("guardianSort").addEventListener("change", refreshGuardianRows);
+  $("guardianClass").addEventListener("change", refreshGuardianRows);
 
   content.onclick = async function (event) {
     const editButton = event.target.closest("[data-edit-parent]");
@@ -2025,11 +2132,19 @@ async function renderParentDashboard() {
         const grade3Math = isGrade3Math(student.class_name, score.subject);
 
         const resultText = grade3Math
-          ? "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
-            "<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
+          ? (
+              score.grade_level === "缺考"
+                ? gradeTag("缺考")
+                : "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
+                  gradeTag(score.grade_level)
+            )
           : grade3
-            ? escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
-              " 題　<span class='grade-tag'>" + escapeHtml(score.grade_level || "—") + "</span>"
+            ? (
+                score.grade_level === "缺考"
+                  ? gradeTag("缺考")
+                  : escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
+                    " 題　" + gradeTag(score.grade_level)
+              )
             : "<span class='" + scoreClass(score.score, student.class_name) + "'>" +
               escapeHtml(score.score == null ? "—" : score.score) + "</span>";
 
