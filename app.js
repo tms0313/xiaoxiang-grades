@@ -1,4 +1,3 @@
-
 /* ==================================================
    小象文教機構｜成績管理系統
    完整 App.js
@@ -25,6 +24,8 @@
    8. 登入紀錄顯示管理員或連結學生姓名，不顯示家長帳號
    9. 成績總覽恢復原本順序，不提供科目排序
    10. 保留原有所有系統功能
+   11. 新增管理員建立家長帳號功能
+   12. 新增家長帳號時自動綁定指定學生
    ================================================== */
 
 "use strict";
@@ -210,6 +211,7 @@ style.textContent = [
   ".btn-success { background:#27845b; }",
   ".btn-small { padding:6px 10px; font-size:13px; margin:2px; }",
   ".login-card .btn { width:100%; padding:13px; }",
+  ".btn:disabled { opacity:.6; cursor:not-allowed; }",
 
   ".forgot-password { margin-top:18px; padding:13px; border-radius:8px; background:#f1f5f9; color:#526477; font-size:14px; line-height:1.8; text-align:center; }",
   ".system-message { display:none; padding:12px 15px; border-radius:8px; margin-bottom:16px; background:#fff3cd; color:#765b13; }",
@@ -562,7 +564,6 @@ function renderOverview() {
     });
   }
 
-  // 顯示單筆成績
   function buildOverviewRow(score) {
     const student = getStudent(score.student_id);
     const exam = getExam(score.exam_id);
@@ -607,7 +608,6 @@ function renderOverview() {
     );
   }
 
-  // 建立成績總覽畫面
   content.innerHTML =
     "<h2 class='section-title'>成績總覽</h2>" +
     "<div class='toolbar'>" +
@@ -636,7 +636,6 @@ function renderOverview() {
       "</table>" +
     "</div>";
 
-  // 搜尋及班級篩選
   function filterRows() {
     const search = $("overviewSearch").value.trim().toLowerCase();
     const className = $("overviewClass").value;
@@ -661,7 +660,6 @@ function renderOverview() {
   $("overviewSearch").addEventListener("input", filterRows);
   $("overviewClass").addEventListener("change", filterRows);
 
-  // 重新整理
   $("overviewRefresh").addEventListener("click", async function () {
     try {
       await loadAdminData();
@@ -672,7 +670,6 @@ function renderOverview() {
     }
   });
 
-  // 刪除單筆成績
   content.addEventListener("click", async function (event) {
     const button = event.target.closest("[data-delete-score]");
     if (!button) return;
@@ -680,7 +677,6 @@ function renderOverview() {
     await deleteScore(button.dataset.deleteScore);
   });
 
-  // 初次顯示
   filterRows();
 }
 
@@ -1268,7 +1264,7 @@ async function deleteExam(id) {
 }
 
 // ==================================================
-// 11. 家長及學生綁定
+// 11. 家長帳號建立、家長及學生綁定
 // ==================================================
 
 function renderGuardians() {
@@ -1314,8 +1310,37 @@ function renderGuardians() {
 
   content.innerHTML =
     "<h2 class='section-title'>家長綁定</h2>" +
+
+    // 新增家長帳號區塊
     "<div class='panel'>" +
-      "<h3>新增家長與學生綁定</h3>" +
+      "<h3>新增家長帳號</h3>" +
+      "<p class='muted'>輸入家長姓名及 Email，選擇學生後，系統會自動建立家長登入帳號並完成學生綁定。</p>" +
+      "<form id='createParentForm'>" +
+        "<div class='form-grid'>" +
+          "<div class='field'>" +
+            "<label>家長姓名</label>" +
+            "<input id='newParentName' type='text' placeholder='例如：王小明家長' required>" +
+          "</div>" +
+          "<div class='field'>" +
+            "<label>家長 Email（登入帳號）</label>" +
+            "<input id='newParentEmail' type='email' placeholder='請輸入家長 Email' autocomplete='off' required>" +
+          "</div>" +
+          "<div class='field'>" +
+            "<label>綁定學生</label>" +
+            "<select id='newParentStudent' required>" +
+              "<option value=''>請選擇學生</option>" +
+              studentOptions +
+            "</select>" +
+          "</div>" +
+        "</div>" +
+        "<p class='muted'>初始密碼：123456。家長首次登入後，請自行修改密碼。</p>" +
+        "<button class='btn btn-success' type='submit' id='createParentButton'>建立家長帳號</button>" +
+      "</form>" +
+    "</div>" +
+
+    // 原有手動綁定功能
+    "<div class='panel'>" +
+      "<h3>既有家長帳號與學生綁定</h3>" +
       "<form id='guardianForm'>" +
         "<div class='form-grid'>" +
           "<div class='field'><label>家長帳號</label><select id='guardianParent' required>" +
@@ -1328,11 +1353,14 @@ function renderGuardians() {
         "<button class='btn btn-success' type='submit'>建立綁定</button>" +
       "</form>" +
     "</div>" +
+
+    // 原有綁定清單
     "<div class='table-wrap'><table>" +
       "<thead><tr><th>家長姓名</th><th>家長帳號</th><th>班級</th><th>學生姓名</th><th>操作</th></tr></thead>" +
       "<tbody>" + (rows || "<tr><td colspan='5' class='empty'>目前沒有綁定資料</td></tr>") + "</tbody>" +
     "</table></div>";
 
+  $("createParentForm").addEventListener("submit", createParentAccount);
   $("guardianForm").addEventListener("submit", saveGuardianBinding);
 
   content.addEventListener("click", async function (event) {
@@ -1343,6 +1371,136 @@ function renderGuardians() {
     await removeGuardianBinding(parts[0], parts[1]);
   });
 }
+
+// ==================================================
+// 11-1. 呼叫 Edge Function 建立家長帳號
+// ==================================================
+
+async function createParentAccount(event) {
+  event.preventDefault();
+
+  const displayName = $("newParentName").value.trim();
+  const email = $("newParentEmail").value.trim().toLowerCase();
+  const studentId = $("newParentStudent").value;
+  const button = $("createParentButton");
+
+  if (!displayName || !email || !studentId) {
+    showMessage("請完整填寫家長姓名、Email 及綁定學生。", "error");
+    return;
+  }
+
+  const student = studentsCache.find(function (item) {
+    return String(item.id) === String(studentId);
+  });
+
+  if (!student) {
+    showMessage("找不到所選學生，請重新整理後再試。", "error");
+    return;
+  }
+
+  const confirmed = confirm(
+    "請確認以下家長帳號資料：\n\n" +
+    "家長姓名：" + displayName + "\n" +
+    "登入帳號：" + email + "\n" +
+    "綁定學生：" + student.full_name + "\n" +
+    "班級：" + student.class_name + "\n" +
+    "初始密碼：123456\n\n" +
+    "確認建立家長帳號嗎？"
+  );
+
+  if (!confirmed) return;
+
+  button.disabled = true;
+  button.textContent = "建立中……";
+
+  try {
+    const result = await db.functions.invoke(
+      "admin-create-parent-account",
+      {
+        body: {
+          email: email,
+          displayName: displayName,
+          studentId: studentId
+        }
+      }
+    );
+
+    if (result.error) {
+      throw new Error(
+        result.data && result.data.error
+          ? result.data.error
+          : result.error.message
+      );
+    }
+
+    const data = result.data || {};
+
+    if (!data.success || !data.initialPassword) {
+      throw new Error(
+        data.error || "帳號建立結果不完整，請確認 Supabase Edge Function。"
+      );
+    }
+
+    // Edge Function 已經完成：
+    // 1. 建立 Supabase Auth 使用者
+    // 2. 新增 profiles 家長資料
+    // 3. 新增 guardian_students 學生綁定
+    // 前端不再重複新增上述資料。
+
+    await loadAdminData();
+    renderGuardians();
+
+    const passwordText = data.initialPassword;
+
+    let copied = false;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(passwordText);
+        copied = true;
+      }
+    } catch (copyError) {
+      console.warn("複製初始密碼失敗：", copyError);
+    }
+
+    alert(
+      "家長帳號建立成功！\n\n" +
+      "家長姓名：" + (data.displayName || displayName) + "\n" +
+      "登入帳號：" + (data.email || email) + "\n" +
+      "綁定學生：" + student.full_name + "\n" +
+      "初始密碼：" + passwordText + "\n\n" +
+      (copied
+        ? "初始密碼已複製，可以直接貼到 LINE 傳給家長。"
+        : "請記下初始密碼，並透過 LINE 提供給家長。")
+    );
+
+    showMessage(
+      "家長帳號「" + displayName + "」已建立，並完成「" +
+      student.full_name + "」的學生綁定。",
+      "success"
+    );
+
+  } catch (error) {
+    console.error("建立家長帳號失敗：", error);
+
+    showMessage(
+      "建立家長帳號失敗：" + error.message,
+      "error"
+    );
+
+  } finally {
+    const currentButton = $("createParentButton");
+
+    if (currentButton) {
+      currentButton.disabled = false;
+      currentButton.textContent = "建立家長帳號";
+    }
+  }
+}
+
+// ==================================================
+// 11-2. 原有手動建立家長綁定
+// ==================================================
 
 async function saveGuardianBinding(event) {
   event.preventDefault();
@@ -1792,12 +1950,10 @@ async function renderParentDashboard() {
   const mondayStr = monday.toISOString().slice(0, 10);
   const saturdayStr = saturday.toISOString().slice(0, 10);
 
-  // 週六 20:00 起開放，週日也維持開放
   const currentWeekReleased =
     weekday === 0 ||
     (weekday === 6 && taipeiHour >= 20);
 
-  // 取得考試資料
   const examResult = await db
     .from("exams")
     .select("*")
@@ -1808,7 +1964,6 @@ async function renderParentDashboard() {
 
   const allExams = examResult.data || [];
 
-  // 篩選當週考試
   const filteredExams = allExams.filter(function (exam) {
     const examStart = String(
       exam.start_date || exam.end_date || ""
@@ -1837,7 +1992,6 @@ async function renderParentDashboard() {
     return item.id;
   });
 
-  // 查詢學生成績
   let scores = [];
 
   if (examIds.length > 0) {
@@ -1852,7 +2006,6 @@ async function renderParentDashboard() {
     scores = scoreResult.data || [];
   }
 
-  // 顯示家長端成績
   $("parentScores").innerHTML = children.map(function (student) {
     const studentScores = scores.filter(function (score) {
       return score.student_id === student.id;
