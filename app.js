@@ -1,4 +1,3 @@
-
 /* ==================================================
    小象文教機構｜成績管理系統
    完整 App.js
@@ -25,6 +24,7 @@
    8. 家長綁定清單保留班級篩選，移除排序功能
    9. 國三成績新增「缺考」等級
    10. 缺考以紅色粗體顯示，不需輸入分數或答對題數
+   11. 國三數學低於 60 分以紅色粗體顯示
    ================================================== */
 
 "use strict";
@@ -114,7 +114,17 @@ function isGrade3Math(className, subject) {
   return isGrade3Class(className) && subject === "數學";
 }
 
-function scoreClass(score, className) {
+// 國三數學低於 60 分，以及其他年級低於 60 分，使用紅色粗體
+function scoreClass(score, className, subject) {
+  if (
+    isGrade3Math(className, subject) &&
+    score !== null &&
+    score !== undefined &&
+    Number(score) < 60
+  ) {
+    return "low-score";
+  }
+
   if (isGrade3Class(className)) return "";
 
   if (score !== null && score !== undefined && Number(score) < 60) {
@@ -579,7 +589,11 @@ function renderOverview() {
       ? (
           score.grade_level === "缺考"
             ? gradeTag("缺考")
-            : "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
+            : "<span class='" +
+              scoreClass(score.score, student.class_name, score.subject) +
+              "'>" +
+              escapeHtml(score.score == null ? "—" : score.score) +
+              " 分</span>　" +
               gradeTag(score.grade_level)
         )
       : grade3
@@ -589,7 +603,7 @@ function renderOverview() {
               : escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
                 " 題　" + gradeTag(score.grade_level)
           )
-        : "<span class='" + scoreClass(score.score, student.class_name) + "'>" +
+        : "<span class='" + scoreClass(score.score, student.class_name, score.subject) + "'>" +
           escapeHtml(score.score == null ? "—" : score.score) + "</span>";
 
     return (
@@ -2096,7 +2110,11 @@ async function renderParentDashboard() {
           ? (
               score.grade_level === "缺考"
                 ? gradeTag("缺考")
-                : "<span>" + escapeHtml(score.score == null ? "—" : score.score) + " 分</span>　" +
+                : "<span class='" +
+                  scoreClass(score.score, student.class_name, score.subject) +
+                  "'>" +
+                  escapeHtml(score.score == null ? "—" : score.score) +
+                  " 分</span>　" +
                   gradeTag(score.grade_level)
             )
           : grade3
@@ -2106,7 +2124,7 @@ async function renderParentDashboard() {
                   : escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
                     " 題　" + gradeTag(score.grade_level)
               )
-            : "<span class='" + scoreClass(score.score, student.class_name) + "'>" +
+            : "<span class='" + scoreClass(score.score, student.class_name, score.subject) + "'>" +
               escapeHtml(score.score == null ? "—" : score.score) + "</span>";
 
         return "<tr><td>" + escapeHtml(score.subject) + "</td>" +
