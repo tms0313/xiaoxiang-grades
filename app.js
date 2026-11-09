@@ -1451,7 +1451,7 @@ function renderStudents() {
         "<select id='studentSubjectFilter'><option value='all'>全部科目</option>" +
           SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") +
         "</select>" +
-        "<span id='studentSubjectCount' style='display:inline-flex; align-items:center; gap:4px; white-space:nowrap; padding:4px 10px; border-radius:6px; background:#e4f7e8; color:#176b35; font-weight:700; line-height:1.4;'>目前修課人數 <strong style='color:#d62828; font-size:1.35em; line-height:1;'> " + enrolledStudents.length + "</strong> 人</span>" +
+        "<span id='studentSubjectCount' style='display:inline-flex; align-items:center; gap:4px; white-space:nowrap; padding:4px 10px; border-radius:6px; background:#e4f7e8; color:#176b35; font-weight:700; font-size:inherit; line-height:1.4;'>目前修課人數 <strong style='color:#d62828; font-size:1.35em; line-height:1;'> " + enrolledStudents.length + "</strong> 人</span>" +
       "</div>" +
       "<div class='table-wrap'><table class='student-management-table'>" +
         "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>狀態</th><th>操作</th></tr></thead>" +
