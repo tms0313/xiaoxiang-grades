@@ -57,6 +57,7 @@ let examsCache = [];
 let profilesCache = [];
 let scoresCache = [];
 let guardianLinksCache = [];
+let studentSubjectsCache = [];
 let scoreEntrySavedCount = 0;
 let activeTab = "overview";
 
@@ -590,10 +591,11 @@ async function loadAdminData() {
     db.from("exams").select("*").order("start_date", { ascending: false }),
     db.from("profiles").select("*").eq("role", "parent"),
     db.from("scores").select("*"),
-    db.from("guardian_students").select("*")
+    db.from("guardian_students").select("*"),
+    db.from("student_subjects").select("*")
   ]);
 
-  const names = ["學生資料", "考試資料", "家長帳號", "成績資料", "家長綁定資料"];
+  const names = ["學生資料", "考試資料", "家長帳號", "成績資料", "家長綁定資料", "學生修課資料"];
 
   for (let i = 0; i < results.length; i++) {
     if (results[i].error) {
@@ -606,6 +608,7 @@ async function loadAdminData() {
   profilesCache = results[2].data || [];
   scoresCache = results[3].data || [];
   guardianLinksCache = results[4].data || [];
+  studentSubjectsCache = results[5].data || [];
 }
 
 async function renderDashboard() {
@@ -813,11 +816,15 @@ function renderOverview() {
       return { score: score, student: getStudent(score.student_id), exam: getExam(score.exam_id) };
     }).filter(item => item.exam);
 
-    // 選定考試週期與科目時，只檢查在學學生是否有漏登。
+    // 只針對有修讀所選科目的在學學生檢查漏登。
     if (examId && subject) {
       const selectedExam = getExam(examId);
       const targetStudents = studentsCache.filter(student =>
-        student.is_active !== false && matchesStudent(student)
+        student.is_active !== false && matchesStudent(student) &&
+        studentSubjectsCache.some(function (item) {
+          return String(item.student_id) === String(student.id) &&
+            item.subject === subject && item.is_active === true;
+        })
       );
       targetStudents.forEach(function (student) {
         const hasSubjectScore = scoresCache.some(function (score) {
@@ -848,8 +855,8 @@ function renderOverview() {
     if (hint) {
       hint.textContent = examId && subject
         ? "目前篩選：" + formatDateRange(getExam(examId)) + "／" + (className || "全部班級") + "／" + subject +
-          "；尚未登錄 " + missingCount + " 位。此處以「該考試週期至少有一筆該科成績」判定已登錄。"
-        : "選擇考試週期及科目後，可一併查看尚未登錄該科成績的學生。";
+          "；依學生修課設定檢查，尚未登錄 " + missingCount + " 位。未修讀該科的學生不列入檢查。"
+        : "選擇考試週期及科目後，系統會依學生修課設定檢查尚未登錄名單。";
     }
 
     $("overviewRows").innerHTML =
@@ -1409,6 +1416,9 @@ function renderStudents() {
           "<div class='field'><label>學生姓名</label><input id='studentName' required></div>" +
           "<div class='field'><label>班級</label><select id='studentClass' required><option value=''>請選擇班級</option><option>國一班</option><option>國二班</option><option>國三班</option></select></div>" +
         "</div>" +
+        "<div class='field student-subject-field'><label>修課科目</label><div class='student-subject-options'>" +
+          SUBJECTS.map(subject => "<label class='student-subject-option'><input type='checkbox' name='studentSubject' value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</label>").join("") +
+        "</div><small class='muted'>請勾選學生實際修讀的科目；未勾選的科目不會列入漏登檢查。日後修課異動可在此修改。</small></div>" +
         "<button class='btn btn-success' type='submit'>儲存學生資料</button> " +
         "<button class='btn btn-secondary' type='button' id='studentCancel'>清除</button>" +
       "</form></div>" +
@@ -1436,6 +1446,7 @@ function renderStudents() {
 function clearStudentForm() {
   $("studentForm").reset();
   $("studentEditId").value = "";
+  document.querySelectorAll("input[name='studentSubject']").forEach(checkbox => { checkbox.checked = false; });
   $("studentFormTitle").textContent = "新增學生";
 }
 
@@ -1447,6 +1458,12 @@ function editStudent(id) {
   $("studentCode").value = student.student_code || "";
   $("studentName").value = student.full_name || "";
   $("studentClass").value = student.class_name || "";
+  document.querySelectorAll("input[name='studentSubject']").forEach(function (checkbox) {
+    checkbox.checked = studentSubjectsCache.some(function (item) {
+      return String(item.student_id) === String(student.id) &&
+        item.subject === checkbox.value && item.is_active === true;
+    });
+  });
   $("studentFormTitle").textContent = "修改學生資料";
 
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1463,15 +1480,34 @@ async function saveStudent(event) {
   };
 
   try {
-    const result = id
-      ? await db.from("students").update(payload).eq("id", id)
-      : await db.from("students").insert(Object.assign({ is_active: true }, payload));
+    let studentId = id;
+    if (id) {
+      const result = await db.from("students").update(payload).eq("id", id);
+      if (result.error) throw result.error;
+    } else {
+      const result = await db.from("students")
+        .insert(Object.assign({ is_active: true }, payload))
+        .select("id")
+        .single();
+      if (result.error) throw result.error;
+      studentId = result.data.id;
+    }
 
-    if (result.error) throw result.error;
+    const selectedSubjects = Array.from(document.querySelectorAll("input[name='studentSubject']:checked"))
+      .map(checkbox => checkbox.value);
+    const subjectRows = SUBJECTS.map(subject => ({
+      student_id: studentId,
+      subject: subject,
+      is_active: selectedSubjects.includes(subject)
+    }));
+
+    const subjectResult = await db.from("student_subjects")
+      .upsert(subjectRows, { onConflict: "student_id,subject" });
+    if (subjectResult.error) throw subjectResult.error;
 
     await loadAdminData();
     renderStudents();
-    showMessage(id ? "學生資料已更新。" : "學生已新增。", "success");
+    showMessage(id ? "學生資料及修課科目已更新。" : "學生及修課科目已新增。", "success");
 
   } catch (error) {
     showMessage("學生資料儲存失敗：" + error.message, "error");
