@@ -238,6 +238,11 @@ style.textContent = [
   ".field { margin-bottom:16px; }",
   ".field label { display:block; font-weight:700; margin-bottom:7px; }",
   ".field input,.field select { width:100%; padding:12px; border:1px solid #ccd4df; border-radius:8px; background:#fff; }",
+  ".student-subject-field > label { display:block; margin-bottom:9px; }",
+  ".student-subject-options { display:flex; align-items:center; flex-wrap:nowrap; gap:26px; }",
+  ".student-subject-option { display:inline-flex !important; align-items:center; gap:7px; margin:0 !important; font-size:15px; font-weight:500 !important; white-space:nowrap; cursor:pointer; }",
+  ".student-subject-option input[type=checkbox] { appearance:auto; -webkit-appearance:checkbox; width:16px !important; height:16px !important; min-width:16px; margin:0; padding:0; accent-color:#315d86; cursor:pointer; }",
+  "@media(max-width:600px) { .student-subject-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:18px; row-gap:10px; justify-items:start; } .student-subject-option { font-size:15px; } }",
 
   ".btn { border:0; border-radius:8px; padding:10px 16px; background:#315d86; color:#fff; font-weight:700; }",
   ".btn:hover { filter:brightness(.94); }",
@@ -1416,7 +1421,7 @@ function renderStudents() {
           "<div class='field'><label>學生姓名</label><input id='studentName' required></div>" +
           "<div class='field'><label>班級</label><select id='studentClass' required><option value=''>請選擇班級</option><option>國一班</option><option>國二班</option><option>國三班</option></select></div>" +
         "</div>" +
-        "<div class='field student-subject-field'><label>修課科目</label><div class='student-subject-options'>" +
+        "<div class='field student-subject-field'><label>勾選科目</label><div class='student-subject-options'>" +
           SUBJECTS.map(subject => "<label class='student-subject-option'><input type='checkbox' name='studentSubject' value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</label>").join("") +
         "</div><small class='muted'>請勾選學生實際修讀的科目；未勾選的科目不會列入漏登檢查。日後修課異動可在此修改。</small></div>" +
         "<button class='btn btn-success' type='submit'>儲存學生資料</button> " +
