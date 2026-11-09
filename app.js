@@ -2254,7 +2254,7 @@ async function renderParentDashboard() {
   if (studentIds.length === 0) {
     content.innerHTML =
       "<div class='topbar'>" +
-        "<div><h1>小象文教機構｜成績查詢</h1><small>家長專區</small></div>" +
+        "<div><h1>小象文教機構｜成績查詢</h1></div>" +
         "<div class='parent-top-actions'>" +
           "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
             "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
@@ -2455,7 +2455,7 @@ async function renderParentDashboard() {
 
   content.innerHTML =
     "<div class='topbar'>" +
-      "<div><h1>小象文教機構｜成績查詢</h1><small>家長專區</small></div>" +
+      "<div><h1>小象文教機構｜成績查詢</h1></div>" +
       "<div class='parent-top-actions'>" +
       "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
         "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
@@ -2465,7 +2465,6 @@ async function renderParentDashboard() {
         "<span>登出</span></button></div>" +
     "</div>" +
     "<main class='dashboard'>" +
-      "<h2 class='section-title'>學生考試成績</h2>" +
       studentCards +
     "</main>" +
     "<div class='footer'>© 小象文教機構</div>" +
