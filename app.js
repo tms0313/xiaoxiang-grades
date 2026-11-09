@@ -57,6 +57,7 @@ let examsCache = [];
 let profilesCache = [];
 let scoresCache = [];
 let guardianLinksCache = [];
+let scoreEntrySavedCount = 0;
 let activeTab = "overview";
 
 // ==================================================
@@ -1001,225 +1002,228 @@ async function deleteScore(scoreId) {
 
 function renderScoreEntry() {
   const content = $("adminContent");
-
-  const studentOptions = studentsCache.map(function (student) {
-    return "<option value='" + escapeHtml(student.id) + "'>" +
-      escapeHtml(student.class_name + "｜" + student.student_code + "｜" + student.full_name) +
-      "</option>";
-  }).join("");
-
   const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
-    return "<option value='" + escapeHtml(exam.id) + "'>" +
-      escapeHtml(formatDateRange(exam)) +
-      "</option>";
+    return "<option value='" + escapeHtml(exam.id) + "'>" + escapeHtml(formatDateRange(exam)) + "</option>";
   }).join("");
-
   const gradeOptionsHtml = GRADE_OPTIONS.map(function (grade) {
-    return "<option value='" + escapeHtml(grade) + "'>" +
-      escapeHtml(grade) +
-      "</option>";
+    return "<option value='" + escapeHtml(grade) + "'>" + escapeHtml(grade) + "</option>";
   }).join("");
 
   content.innerHTML =
     "<h2 class='section-title'>成績登錄</h2>" +
-    "<div class='panel'><form id='scoreForm'>" +
-      "<div class='form-grid'>" +
-        "<div class='field'><label>學生</label><select id='scoreStudent' required><option value=''>請選擇學生</option>" + studentOptions + "</select></div>" +
-        "<div class='field'><label>考試場次</label><select id='scoreExam' required><option value=''>請選擇考試</option>" + examOptions + "</select></div>" +
-        "<div class='field'><label>科目</label><select id='scoreSubject' required><option value=''>請選擇科目</option>" +
-          SUBJECTS.map(s => "<option>" + escapeHtml(s) + "</option>").join("") +
-        "</select></div>" +
-        "<div class='field'><label>考試範圍</label><input id='scoreScope' placeholder='例如：第 1～2 課' required></div>" +
-      "</div>" +
-      "<div id='normalScoreField' class='field'><label>一般成績</label><input id='scoreValue' type='number' min='0' max='100' step='0.1' placeholder='請輸入分數'></div>" +
-      "<div id='grade3MathFields' class='form-grid hidden'>" +
-        "<div class='field'><label>國三數學分數</label><input id='grade3MathScore' type='number' min='0' max='100' step='0.1'></div>" +
-        "<div class='field'><label>模擬考等級</label><select id='grade3MathGrade'><option value=''>請選擇等級</option>" +
-          gradeOptionsHtml +
-        "</select></div>" +
-      "</div>" +
-      "<div id='grade3Fields' class='form-grid hidden'>" +
-        "<div class='field'><label>答對題數</label><input id='correctCount' type='number' min='0' step='1'></div>" +
-        "<div class='field'><label>模擬考等級</label><select id='gradeLevel'><option value=''>請選擇等級</option>" +
-          gradeOptionsHtml +
-        "</select></div>" +
-      "</div>" +
-      "<p id='absenceHint' class='muted hidden' style='color:#d32626;font-weight:800'>已選擇缺考，不需要輸入分數或答對題數。</p>" +
-      "<button class='btn btn-success' type='submit'>儲存成績</button>" +
-    "</form></div>" +
-    "<p class='muted'>國三數學輸入分數及模擬考等級；國三其他科目輸入答對題數及模擬考等級。選擇「缺考」時不需輸入分數或答對題數。相同學生、考試、科目及範圍若已有成績，系統會先詢問是否覆蓋。</p>";
+    "<div class='panel'><form id='scoreForm'><div class='form-grid'>" +
+    "<div class='field'><label>考試週期</label><select id='scoreExam' required><option value=''>請先選擇考試週期</option>" + examOptions + "</select></div>" +
+    "<div class='field'><label>班級篩選</label><select id='scoreClass'><option value=''>全部班級</option><option value='國一班'>國一班</option><option value='國二班'>國二班</option><option value='國三班'>國三班</option></select></div>" +
+    "<div class='field'><label>學生</label><select id='scoreStudent' required><option value=''>請選擇學生</option></select><small id='scoreStudentCount' class='muted'></small></div>" +
+    "<div class='field'><label>科目</label><select id='scoreSubject' required><option value=''>請選擇科目</option>" +
+    SUBJECTS.map(s => "<option>" + escapeHtml(s) + "</option>").join("") +
+    "</select></div>" +
+    "<div class='field'><label>考試範圍</label><input id='scoreScope' placeholder='例如：第 1～2 課' required></div></div>" +
+    "<div class='toolbar' style='margin:4px 0 16px'>" +
+    "<button class='btn btn-secondary btn-small' type='button' id='scorePrevStudent'>上一位學生</button>" +
+    "<button class='btn btn-secondary btn-small' type='button' id='scoreNextStudent'>下一位學生</button>" +
+    "<span class='muted' id='scoreEntryCounter'>本次頁面已成功登錄 " + scoreEntrySavedCount + " 筆</span></div>" +
+    "<div id='normalScoreField' class='field'><label>一般成績</label><input id='scoreValue' type='number' min='0' max='100' step='0.1' placeholder='請輸入分數'></div>" +
+    "<div id='grade3MathFields' class='form-grid hidden'><div class='field'><label>國三數學分數</label><input id='grade3MathScore' type='number' min='0' max='100' step='0.1'></div>" +
+    "<div class='field'><label>模擬考等級</label><select id='grade3MathGrade'><option value=''>請選擇等級</option>" + gradeOptionsHtml + "</select></div></div>" +
+    "<div id='grade3Fields' class='form-grid hidden'><div class='field'><label>答對題數</label><input id='correctCount' type='number' min='0' step='1'></div>" +
+    "<div class='field'><label>模擬考等級</label><select id='gradeLevel'><option value=''>請選擇等級</option>" + gradeOptionsHtml + "</select></div></div>" +
+    "<p id='absenceHint' class='muted hidden' style='color:#d32626;font-weight:800'>已選擇缺考，不需要輸入分數或答對題數。</p>" +
+    "<button class='btn btn-success' type='submit' id='saveScoreButton'>儲存成績</button></form></div>" +
+    "<p class='muted'>請先選擇考試週期，再依班級篩選學生。儲存後會保留考試、班級、學生、科目及範圍，方便連續登錄；可使用上一位／下一位學生快速切換。遇到重複資料時，系統會顯示原有與新成績供確認。</p>";
 
+  $("scoreClass").addEventListener("change", function () {
+    updateScoreStudentOptions(false);
+    updateScoreMode();
+  });
   $("scoreStudent").addEventListener("change", updateScoreMode);
   $("scoreSubject").addEventListener("change", updateScoreMode);
-
   $("grade3MathGrade").addEventListener("change", updateGrade3AbsenceMode);
   $("gradeLevel").addEventListener("change", updateGrade3AbsenceMode);
-
+  $("scorePrevStudent").addEventListener("click", function () { moveScoreStudent(-1); });
+  $("scoreNextStudent").addEventListener("click", function () { moveScoreStudent(1); });
   $("scoreForm").addEventListener("submit", saveScore);
+  updateScoreStudentOptions(false);
+  updateScoreMode();
+}
+
+function getScoreEntryStudents() {
+  const className = $("scoreClass") ? $("scoreClass").value : "";
+  return studentsCache.filter(student => !className || student.class_name === className);
+}
+
+function updateScoreStudentOptions(keepSelection) {
+  const select = $("scoreStudent");
+  if (!select) return;
+  const previousId = keepSelection ? select.value : "";
+  const students = getScoreEntryStudents();
+  select.innerHTML = "<option value=''>請選擇學生</option>" + students.map(function (student) {
+    return "<option value='" + escapeHtml(student.id) + "'>" +
+      escapeHtml(student.student_code + "｜" + student.full_name) + "</option>";
+  }).join("");
+  if (previousId && students.some(item => String(item.id) === String(previousId))) select.value = previousId;
+  const count = $("scoreStudentCount");
+  if (count) count.textContent = "目前 " + students.length + " 位學生";
+  const index = students.findIndex(item => String(item.id) === String(select.value));
+  if ($("scorePrevStudent")) $("scorePrevStudent").disabled = index <= 0;
+  if ($("scoreNextStudent")) $("scoreNextStudent").disabled = index < 0 || index >= students.length - 1;
+}
+
+function moveScoreStudent(offset) {
+  const students = getScoreEntryStudents();
+  const index = students.findIndex(item => String(item.id) === String($("scoreStudent").value));
+  const next = index < 0 ? 0 : index + offset;
+  if (next < 0 || next >= students.length) return;
+  $("scoreStudent").value = students[next].id;
+  updateScoreStudentOptions(true);
   updateScoreMode();
 }
 
 function updateScoreMode() {
-  const student = studentsCache.find(item => item.id === $("scoreStudent").value);
+  const student = studentsCache.find(item => String(item.id) === String($("scoreStudent").value));
   const subject = $("scoreSubject").value;
-
   const grade3 = student && isGrade3Class(student.class_name);
   const grade3Math = student && isGrade3Math(student.class_name, subject);
   const grade3Other = !!grade3 && !grade3Math;
-
   $("normalScoreField").classList.toggle("hidden", !!grade3);
   $("grade3MathFields").classList.toggle("hidden", !grade3Math);
   $("grade3Fields").classList.toggle("hidden", !grade3Other);
-
   $("scoreValue").required = !grade3;
   $("grade3MathScore").required = !!grade3Math;
   $("grade3MathGrade").required = !!grade3Math;
   $("correctCount").required = !!grade3Other;
   $("gradeLevel").required = !!grade3Other;
-
+  updateScoreStudentOptions(true);
   updateGrade3AbsenceMode();
 }
 
 function updateGrade3AbsenceMode() {
   const mathGrade = $("grade3MathGrade");
   const otherGrade = $("gradeLevel");
-
   updateGradeSelectStyle(mathGrade);
   updateGradeSelectStyle(otherGrade);
-
-  const student = $("scoreStudent")
-    ? studentsCache.find(item => item.id === $("scoreStudent").value)
-    : null;
-
+  const student = $("scoreStudent") ? studentsCache.find(item => String(item.id) === String($("scoreStudent").value)) : null;
   const subject = $("scoreSubject") ? $("scoreSubject").value : "";
   const grade3Math = student && isGrade3Math(student.class_name, subject);
   const grade3Other = student && isGrade3Class(student.class_name) && !grade3Math;
-
   const mathAbsent = grade3Math && mathGrade.value === "缺考";
   const otherAbsent = grade3Other && otherGrade.value === "缺考";
-  const absent = mathAbsent || otherAbsent;
-
   $("grade3MathScore").required = !!grade3Math && !mathAbsent;
   $("correctCount").required = !!grade3Other && !otherAbsent;
-
   $("grade3MathScore").disabled = !!mathAbsent;
   $("correctCount").disabled = !!otherAbsent;
-
   if (mathAbsent) $("grade3MathScore").value = "";
   if (otherAbsent) $("correctCount").value = "";
-
-  $("absenceHint").classList.toggle("hidden", !absent);
+  $("absenceHint").classList.toggle("hidden", !(mathAbsent || otherAbsent));
 }
 
 async function saveScore(event) {
   event.preventDefault();
-
+  const saveButton = $("saveScoreButton");
+  if (saveButton.disabled) return;
   const studentId = $("scoreStudent").value;
   const examId = $("scoreExam").value;
   const subject = $("scoreSubject").value;
   const scope = $("scoreScope").value.trim();
-
-  const student = studentsCache.find(item => item.id === studentId);
-
+  const student = studentsCache.find(item => String(item.id) === String(studentId));
   if (!student || !examId || !subject || !scope) {
-    showMessage("請完整填寫成績資料。", "error");
+    showMessage("請完整選擇考試週期、學生、科目並填寫考試範圍。", "error");
     return;
   }
 
   const grade3 = isGrade3Class(student.class_name);
   const grade3Math = isGrade3Math(student.class_name, subject);
-
   let scoreValue = null;
   let correctCount = null;
   let gradeLevel = null;
 
   if (grade3Math) {
     gradeLevel = $("grade3MathGrade").value;
-
     if (!GRADE_OPTIONS.includes(gradeLevel)) {
       showMessage("請選擇正確的模擬考等級。", "error");
       return;
     }
-
     if (gradeLevel !== "缺考") {
       scoreValue = Number($("grade3MathScore").value);
-
       if ($("grade3MathScore").value === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
         showMessage("國三數學請輸入 0～100 分。", "error");
         return;
       }
     }
-
   } else if (grade3) {
     gradeLevel = $("gradeLevel").value;
-
     if (!GRADE_OPTIONS.includes(gradeLevel)) {
       showMessage("請選擇正確的模擬考等級。", "error");
       return;
     }
-
     if (gradeLevel !== "缺考") {
       correctCount = Number($("correctCount").value);
-
       if ($("correctCount").value === "" || !Number.isInteger(correctCount) || correctCount < 0) {
         showMessage("請輸入正確的答對題數。", "error");
         return;
       }
     }
-
   } else {
     scoreValue = Number($("scoreValue").value);
-
     if ($("scoreValue").value === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-      showMessage("一般成績請輸入 0～100 分。", "error");
+      showMessage("一般成績請輸入 0～100。", "error");
       return;
     }
   }
 
-  const duplicate = scoresCache.find(function (item) {
-    return item.student_id === studentId &&
-      item.exam_id === examId &&
-      item.subject === subject &&
-      String(item.scope || "").trim() === scope;
-  });
+  const duplicate = scoresCache.find(item =>
+    String(item.student_id) === String(studentId) &&
+    String(item.exam_id) === String(examId) &&
+    item.subject === subject &&
+    String(item.scope || "").trim() === scope
+  );
 
-  if (duplicate && !confirm("這位學生已經登錄相同考試範圍的成績。\n\n是否覆蓋原有成績？")) {
-    return;
+  if (duplicate) {
+    const oldResult = duplicate.grade_level === "缺考" ? "缺考" :
+      grade3Math ? (duplicate.score == null ? "—" : duplicate.score) + " 分／" + (duplicate.grade_level || "未設定等級") :
+      grade3 ? (duplicate.correct_count == null ? "—" : duplicate.correct_count) + " 題／" + (duplicate.grade_level || "未設定等級") :
+      (duplicate.score == null ? "—" : duplicate.score) + " 分";
+    const newResult = gradeLevel === "缺考" ? "缺考" :
+      grade3Math ? scoreValue + " 分／" + gradeLevel :
+      grade3 ? correctCount + " 題／" + gradeLevel : scoreValue + " 分";
+    const exam = examsCache.find(item => String(item.id) === String(examId));
+    if (!confirm("發現相同資料，是否覆蓋原有成績？\\n\\n" +
+      "考試：" + formatDateRange(exam) + "\\n" +
+      "學生：" + student.full_name + "（" + student.class_name + "）\\n" +
+      "科目：" + subject + "\\n範圍：" + scope + "\\n\\n" +
+      "原有成績：" + oldResult + "\\n新輸入成績：" + newResult +
+      "\\n\\n確認後會更新原有資料，不會新增第二筆。")) return;
   }
 
   const payload = {
-    student_id: studentId,
-    exam_id: examId,
-    subject: subject,
-    scope: scope,
-    score: scoreValue,
-    correct_count: correctCount,
-    grade_level: gradeLevel
+    student_id: studentId, exam_id: examId, subject: subject, scope: scope,
+    score: scoreValue, correct_count: correctCount, grade_level: gradeLevel
   };
-
+  saveButton.disabled = true;
+  saveButton.textContent = "儲存中……";
   try {
-    let result;
-
-    if (duplicate) {
-      result = await db.from("scores").update(payload).eq("id", duplicate.id);
-    } else {
-      result = await db.from("scores").insert(payload);
-    }
-
+    const result = duplicate
+      ? await db.from("scores").update(payload).eq("id", duplicate.id)
+      : await db.from("scores").insert(payload);
     if (result.error) throw result.error;
-
     await loadAdminData();
-    renderScoreEntry();
-
-    showMessage(
-      duplicate
-        ? "原有成績已成功覆蓋。"
-        : (gradeLevel === "缺考" ? "缺考資料已成功儲存。" : "成績已成功儲存。"),
-      "success"
-    );
-
+    scoreEntrySavedCount += 1;
+    $("scoreValue").value = "";
+    $("grade3MathScore").value = "";
+    $("grade3MathGrade").value = "";
+    $("correctCount").value = "";
+    $("gradeLevel").value = "";
+    updateScoreStudentOptions(true);
+    updateScoreMode();
+    const counter = $("scoreEntryCounter");
+    if (counter) counter.textContent = "本次頁面已成功登錄 " + scoreEntrySavedCount + " 筆";
+    showMessage((duplicate ? "原有成績已成功覆蓋。" : "成績已成功儲存。") +
+      "本次頁面累計完成 " + scoreEntrySavedCount + " 筆。", "success");
   } catch (error) {
-    showMessage("成績儲存失敗：" + error.message, "error");
+    showMessage("成績儲存失敗，原輸入資料已保留。原因：" + error.message, "error");
+  } finally {
+    saveButton.disabled = false;
+    saveButton.textContent = "儲存成績";
   }
 }
 
