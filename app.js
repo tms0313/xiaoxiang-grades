@@ -261,7 +261,6 @@ style.textContent = [
   ".tab-btn { border:0; padding:10px 14px; border-radius:8px; background:#edf1f5; color:#34475b; font-weight:700; }",
   ".tab-btn:hover { background:#315d86; color:#fff; }",
   ".tab-btn.active { background:#315d86; color:#fff; }",
-  ".admin-header #logoutButton { font-size:14px !important; font-weight:700 !important; padding:10px 14px !important; }",
 
   ".section-title { font-size:21px; margin:0 0 18px; color:#23466b; }",
   ".toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:15px 0; align-items:center; }",
@@ -622,7 +621,7 @@ function renderAdminDashboard() {
     "<div class='topbar'>" +
       "<div><h1>小象文教機構｜成績管理系統</h1><small>管理員後台</small></div>" +
       "<div><span>" + escapeHtml(currentProfile.display_name || currentUser.email) + "</span>　" +
-      "<button class='btn btn-secondary btn-small' id='logoutButton'>登出</button></div>" +
+      "<button class='tab-btn' id='logoutButton'>登出</button></div>" +
     "</div>" +
     "<main class='dashboard'>" +
       "<div id='systemMessage' class='system-message'></div>" +
