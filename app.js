@@ -817,6 +817,8 @@ function renderOverview() {
       if (dateA !== dateB) return dateB.localeCompare(dateA);
       const classCompare = String(a.student.class_name || "").localeCompare(String(b.student.class_name || ""), "zh-Hant");
       if (classCompare !== 0) return classCompare;
+      // 同一班級內，已登錄的學生排前面，尚未登錄者集中排在班級最底下。
+      if (!!a.missing !== !!b.missing) return a.missing ? 1 : -1;
       return String(a.student.student_code || "").localeCompare(String(b.student.student_code || ""), undefined, { numeric: true });
     });
 
