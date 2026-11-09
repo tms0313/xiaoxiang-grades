@@ -1417,9 +1417,9 @@ function renderStudents() {
     "<div class='panel'><h3 id='studentFormTitle'>新增學生</h3>" +
       "<form id='studentForm'><input type='hidden' id='studentEditId'>" +
         "<div class='form-grid'>" +
+          "<div class='field'><label>班級</label><select id='studentClass' required><option value=''>請選擇班級</option><option>國一班</option><option>國二班</option><option>國三班</option></select></div>" +
           "<div class='field'><label>學生編號</label><input id='studentCode' required readonly></div>" +
           "<div class='field'><label>學生姓名</label><input id='studentName' required></div>" +
-          "<div class='field'><label>班級</label><select id='studentClass' required><option value=''>請選擇班級</option><option>國一班</option><option>國二班</option><option>國三班</option></select></div>" +
         "</div>" +
         "<div class='field student-subject-field'><label>勾選科目</label><div class='student-subject-options'>" +
           SUBJECTS.map(subject => "<label class='student-subject-option'><input type='checkbox' name='studentSubject' value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</label>").join("") +
