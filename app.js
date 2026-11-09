@@ -1077,6 +1077,52 @@ async function deleteScore(scoreId) {
 // 8. 成績登錄
 // ==================================================
 
+const SCORE_ENTRY_PROGRESS_KEY = "xiaoxiang_score_entry_progress_v1";
+
+function saveScoreEntryProgress() {
+  if (!$("scoreExam")) return;
+  const progress = {
+    exam: $("scoreExam").value,
+    className: $("scoreClass").value,
+    student: $("scoreStudent").value,
+    subject: $("scoreSubject").value,
+    scope: $("scoreScope").value,
+    score: $("scoreValue").value,
+    mathScore: $("grade3MathScore").value,
+    mathGrade: $("grade3MathGrade").value,
+    correctCount: $("correctCount").value,
+    gradeLevel: $("gradeLevel").value,
+    savedAt: new Date().toISOString()
+  };
+  try { localStorage.setItem(SCORE_ENTRY_PROGRESS_KEY, JSON.stringify(progress)); } catch (error) {}
+}
+
+function restoreScoreEntryProgress() {
+  let progress = null;
+  try { progress = JSON.parse(localStorage.getItem(SCORE_ENTRY_PROGRESS_KEY) || "null"); } catch (error) {}
+  if (!progress) return;
+  if ($("scoreExam")) $("scoreExam").value = progress.exam || "";
+  if ($("scoreClass")) $("scoreClass").value = progress.className || "";
+  updateScoreStudentOptions(false);
+  if ($("scoreStudent")) $("scoreStudent").value = progress.student || "";
+  if ($("scoreSubject")) $("scoreSubject").value = progress.subject || "";
+  if ($("scoreScope")) $("scoreScope").value = progress.scope || "";
+  updateScoreMode();
+  if ($("scoreValue")) $("scoreValue").value = progress.score || "";
+  if ($("grade3MathScore")) $("grade3MathScore").value = progress.mathScore || "";
+  if ($("grade3MathGrade")) $("grade3MathGrade").value = progress.mathGrade || "";
+  if ($("correctCount")) $("correctCount").value = progress.correctCount || "";
+  if ($("gradeLevel")) $("gradeLevel").value = progress.gradeLevel || "";
+  updateGrade3AbsenceMode();
+}
+
+function clearScoreEntryDraft() {
+  ["scoreValue", "grade3MathScore", "grade3MathGrade", "correctCount", "gradeLevel"].forEach(function (id) {
+    if ($(id)) $(id).value = "";
+  });
+  saveScoreEntryProgress();
+}
+
 function renderScoreEntry() {
   const content = $("adminContent");
   const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
@@ -1109,19 +1155,25 @@ function renderScoreEntry() {
     "<button class='btn btn-success' type='submit' id='saveScoreButton'>儲存成績</button></form></div>" +
     "<p class='muted'>請先選擇考試週期，再依班級篩選學生。儲存後會保留考試、班級、學生、科目及範圍，方便連續登錄；可使用上一位／下一位學生快速切換。遇到重複資料時，系統會顯示原有與新成績供確認。</p>";
 
+  $("scoreExam").addEventListener("change", saveScoreEntryProgress);
   $("scoreClass").addEventListener("change", function () {
     updateScoreStudentOptions(false);
     updateScoreMode();
+    saveScoreEntryProgress();
   });
-  $("scoreStudent").addEventListener("change", updateScoreMode);
-  $("scoreSubject").addEventListener("change", updateScoreMode);
-  $("grade3MathGrade").addEventListener("change", updateGrade3AbsenceMode);
-  $("gradeLevel").addEventListener("change", updateGrade3AbsenceMode);
-  $("scorePrevStudent").addEventListener("click", function () { moveScoreStudent(-1); });
-  $("scoreNextStudent").addEventListener("click", function () { moveScoreStudent(1); });
+  $("scoreStudent").addEventListener("change", function () { updateScoreMode(); saveScoreEntryProgress(); });
+  $("scoreSubject").addEventListener("change", function () { updateScoreMode(); saveScoreEntryProgress(); });
+  $("scoreScope").addEventListener("input", saveScoreEntryProgress);
+  ["scoreValue", "grade3MathScore", "grade3MathGrade", "correctCount", "gradeLevel"].forEach(function (id) {
+    $(id).addEventListener("input", saveScoreEntryProgress);
+    $(id).addEventListener("change", saveScoreEntryProgress);
+  });
+  $("scorePrevStudent").addEventListener("click", function () { moveScoreStudent(-1); saveScoreEntryProgress(); });
+  $("scoreNextStudent").addEventListener("click", function () { moveScoreStudent(1); saveScoreEntryProgress(); });
   $("scoreForm").addEventListener("submit", saveScore);
   updateScoreStudentOptions(false);
   updateScoreMode();
+  restoreScoreEntryProgress();
 }
 
 function getScoreEntryStudents() {
@@ -1154,6 +1206,7 @@ function moveScoreStudent(offset) {
   $("scoreStudent").value = students[next].id;
   updateScoreStudentOptions(true);
   updateScoreMode();
+  saveScoreEntryProgress();
 }
 
 function updateScoreMode() {
@@ -1285,11 +1338,7 @@ async function saveScore(event) {
     if (result.error) throw result.error;
     await loadAdminData();
     scoreEntrySavedCount += 1;
-    $("scoreValue").value = "";
-    $("grade3MathScore").value = "";
-    $("grade3MathGrade").value = "";
-    $("correctCount").value = "";
-    $("gradeLevel").value = "";
+    clearScoreEntryDraft();
     updateScoreStudentOptions(true);
     updateScoreMode();
     const counter = $("scoreEntryCounter");
@@ -1593,6 +1642,7 @@ function renderGuardians() {
         "<tr>" +
           "<td>" + escapeHtml(parent.display_name || parent.email) + "</td>" +
           "<td>" + escapeHtml(parent.email) + "</td>" +
+          "<td><span class='guardian-status-bound'>已綁定</span></td>" +
           "<td>" + escapeHtml(student.class_name) + "</td>" +
           "<td>" + escapeHtml(student.full_name) + "</td>" +
           "<td class='action-cell'>" +
@@ -1615,7 +1665,8 @@ function renderGuardians() {
           "<tr class='guardian-unbound-row'>" +
             "<td>" + escapeHtml(parent.display_name || "未設定姓名") + "</td>" +
             "<td>" + escapeHtml(parent.email || "—") + "</td>" +
-            "<td><span class='guardian-status-unbound'>未綁定</span></td>" +
+            "<td><span class='guardian-status-unbound'>尚未綁定學生</span></td>" +
+            "<td>—</td>" +
             "<td>—</td>" +
             "<td class='action-cell'>" +
               "<div class='action-buttons'>" +
@@ -1664,9 +1715,9 @@ function renderGuardians() {
         "</select>" +
       "</div>" +
       "<div class='table-wrap'><table class='guardian-management-table'>" +
-        "<thead><tr><th>家長姓名</th><th>家長帳號</th><th>班級</th><th>學生姓名</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>家長姓名</th><th>家長帳號</th><th>綁定狀態</th><th>班級</th><th>學生姓名</th><th>操作</th></tr></thead>" +
         "<tbody id='guardianRows'>" +
-          (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>") +
+          (buildGuardianRows() || "<tr><td colspan='6' class='empty'>目前沒有家長帳號資料</td></tr>") +
         "</tbody>" +
       "</table></div>" +
     "</div>";
@@ -1677,7 +1728,7 @@ function renderGuardians() {
   function refreshGuardianRows() {
     $("guardianRows").innerHTML =
       buildGuardianRows() ||
-      "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>";
+      "<tr><td colspan='6' class='empty'>目前沒有家長帳號資料</td></tr>";
   }
 
   $("guardianClass").addEventListener("change", refreshGuardianRows);
