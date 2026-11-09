@@ -375,6 +375,8 @@ style.textContent = [
   ".export-period-item { padding:7px 12px !important; gap:10px !important; min-height:0; }",
   ".export-period-item input { width:19px; height:19px; }",
   ".export-summary { padding:9px 2px; }",
+  ".login-card .field label { font-size:20px !important; font-weight:800 !important; }",
+  ".guardian-management-table .action-buttons .btn { width:29px !important; min-width:29px !important; height:20px !important; min-height:20px !important; padding:0 !important; font-size:14px !important; font-weight:800 !important; line-height:20px !important; border-radius:4px !important; }",
   "@media(max-width:600px) { .export-panel-title,.export-select-all span,.export-period-date { font-size:21px !important; } .export-period-item { padding:6px 10px !important; } }",
 
   ".muted { color:#778494; font-size:13px; }",
