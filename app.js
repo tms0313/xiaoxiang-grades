@@ -1393,12 +1393,18 @@ function renderStudents() {
   const content = $("adminContent");
   const filter = $("studentStatusFilter") ? $("studentStatusFilter").value : "active";
   const classFilter = $("studentClassFilter") ? $("studentClassFilter").value : "all";
+  const subjectFilter = $("studentSubjectFilter") ? $("studentSubjectFilter").value : "all";
 
   const visibleStudents = studentsCache.filter(function (student) {
     const active = student.is_active !== false;
     const statusMatch = filter === "active" ? active : !active;
     const classMatch = classFilter === "all" || student.class_name === classFilter;
-    return statusMatch && classMatch;
+    const subjectMatch = subjectFilter === "all" || studentSubjectsCache.some(function (item) {
+      return String(item.student_id) === String(student.id) &&
+        item.subject === subjectFilter &&
+        item.is_active === true;
+    });
+    return statusMatch && classMatch && subjectMatch;
   });
 
   const rows = visibleStudents.map(function (student) {
@@ -1436,6 +1442,10 @@ function renderStudents() {
         "<select id='studentStatusFilter'><option value='active'>在學學生</option><option value='inactive'>離班學生</option></select>" +
         "<label for='studentClassFilter'><strong>班級：</strong></label>" +
         "<select id='studentClassFilter'><option value='all'>全部學生</option><option value='國一班'>國一班</option><option value='國二班'>國二班</option><option value='國三班'>國三班</option></select>" +
+        "<label for='studentSubjectFilter'><strong>修課科目：</strong></label>" +
+        "<select id='studentSubjectFilter'><option value='all'>全部科目</option>" +
+          SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") +
+        "</select>" +
       "</div>" +
       "<div class='table-wrap'><table class='student-management-table'>" +
         "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>狀態</th><th>操作</th></tr></thead>" +
@@ -1444,8 +1454,10 @@ function renderStudents() {
 
   $("studentStatusFilter").value = filter;
   $("studentClassFilter").value = classFilter;
+  $("studentSubjectFilter").value = subjectFilter;
   $("studentStatusFilter").addEventListener("change", renderStudents);
   $("studentClassFilter").addEventListener("change", renderStudents);
+  $("studentSubjectFilter").addEventListener("change", renderStudents);
   $("studentForm").addEventListener("submit", saveStudent);
   $("studentClass").addEventListener("change", function () {
     if (!$("studentEditId").value) {
