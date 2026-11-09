@@ -314,7 +314,11 @@ style.textContent = [
   ".student-management-table th:nth-child(1),.student-management-table td:nth-child(1) { width:20%; }",
   ".student-management-table th:nth-child(2),.student-management-table td:nth-child(2) { width:19%; }",
   ".student-management-table th:nth-child(3),.student-management-table td:nth-child(3) { width:15%; }",
-  ".student-management-table th:nth-child(4),.student-management-table td:nth-child(4) { width:46%; min-width:170px; }",
+  ".student-management-table th:nth-child(4),.student-management-table td:nth-child(4) { width:16%; }",
+  ".student-management-table th:nth-child(5),.student-management-table td:nth-child(5) { width:30%; min-width:150px; }",
+  ".student-status-active,.student-status-inactive { display:inline-block; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:800; white-space:nowrap; }",
+  ".student-status-active { background:#e7f6ec; color:#237344; }",
+  ".student-status-inactive { background:#f1f3f5; color:#697586; }",
   ".student-management-table .action-buttons { gap:3px; }",
   ".student-management-table .action-buttons .btn { padding:2px 3px; font-size:8px; line-height:1.3; border-radius:5px; }",
   ".student-management-table .action-buttons .btn { width:29px !important; min-width:29px !important; height:20px !important; min-height:20px !important; padding:0 !important; font-size:8px !important; line-height:20px !important; border-radius:4px !important; }",
@@ -794,10 +798,12 @@ function renderOverview() {
       return { score: score, student: getStudent(score.student_id), exam: getExam(score.exam_id) };
     }).filter(item => item.exam);
 
-    // 選定考試週期與科目時，補上尚無任何該科成績紀錄的學生，方便核對登錄進度。
+    // 選定考試週期與科目時，只檢查在學學生是否有漏登。
     if (examId && subject) {
       const selectedExam = getExam(examId);
-      const targetStudents = studentsCache.filter(matchesStudent);
+      const targetStudents = studentsCache.filter(student =>
+        student.is_active !== false && matchesStudent(student)
+      );
       targetStudents.forEach(function (student) {
         const hasSubjectScore = scoresCache.some(function (score) {
           return String(score.exam_id) === String(examId) &&
@@ -1178,7 +1184,10 @@ function renderScoreEntry() {
 
 function getScoreEntryStudents() {
   const className = $("scoreClass") ? $("scoreClass").value : "";
-  return studentsCache.filter(student => !className || student.class_name === className);
+  return studentsCache.filter(student =>
+    student.is_active !== false &&
+    (!className || student.class_name === className)
+  );
 }
 
 function updateScoreStudentOptions(keepSelection) {
@@ -1359,15 +1368,24 @@ async function saveScore(event) {
 
 function renderStudents() {
   const content = $("adminContent");
+  const filter = $("studentStatusFilter") ? $("studentStatusFilter").value : "active";
+  const visibleStudents = studentsCache.filter(function (student) {
+    const active = student.is_active !== false;
+    return filter === "all" || (filter === "active" ? active : !active);
+  });
 
-  const rows = studentsCache.map(function (student) {
+  const rows = visibleStudents.map(function (student) {
+    const active = student.is_active !== false;
     return "<tr>" +
       "<td>" + escapeHtml(student.student_code) + "</td>" +
       "<td>" + escapeHtml(student.full_name) + "</td>" +
       "<td>" + escapeHtml(student.class_name) + "</td>" +
+      "<td>" + (active
+        ? "<span class='student-status-active'>在學</span>"
+        : "<span class='student-status-inactive'>已停用</span>") + "</td>" +
       "<td class='student-action-cell action-cell'><div class='action-buttons'>" +
         "<button class='btn btn-small' data-edit-student='" + escapeHtml(student.id) + "'>修改</button>" +
-        "<button class='btn btn-danger btn-small' data-delete-student='" + escapeHtml(student.id) + "'>刪除</button>" +
+        "<button class='btn " + (active ? "btn-secondary" : "btn-success") + " btn-small' data-toggle-student='" + escapeHtml(student.id) + "'>" + (active ? "停用" : "啟用") + "</button>" +
       "</div></td></tr>";
   }).join("");
 
@@ -1383,20 +1401,24 @@ function renderStudents() {
         "<button class='btn btn-success' type='submit'>儲存學生資料</button> " +
         "<button class='btn btn-secondary' type='button' id='studentCancel'>清除</button>" +
       "</form></div>" +
+      "<div class='toolbar'><label for='studentStatusFilter'><strong>學生狀態：</strong></label>" +
+        "<select id='studentStatusFilter'><option value='active'>在學學生</option><option value='inactive'>已停用學生</option><option value='all'>全部學生</option></select>" +
+      "</div>" +
       "<div class='table-wrap'><table class='student-management-table'>" +
-        "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>操作</th></tr></thead>" +
-        "<tbody>" + (rows || "<tr><td colspan='4' class='empty'>尚無學生資料</td></tr>") + "</tbody>" +
+        "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>狀態</th><th>操作</th></tr></thead>" +
+        "<tbody>" + (rows || "<tr><td colspan='5' class='empty'>目前沒有符合條件的學生</td></tr>") + "</tbody>" +
       "</table></div>";
 
+  $("studentStatusFilter").value = filter;
+  $("studentStatusFilter").addEventListener("change", renderStudents);
   $("studentForm").addEventListener("submit", saveStudent);
   $("studentCancel").addEventListener("click", clearStudentForm);
 
   content.onclick = async function (event) {
     const editButton = event.target.closest("[data-edit-student]");
-    const deleteButton = event.target.closest("[data-delete-student]");
-
+    const toggleButton = event.target.closest("[data-toggle-student]");
     if (editButton) editStudent(editButton.dataset.editStudent);
-    if (deleteButton) await deleteStudent(deleteButton.dataset.deleteStudent);
+    if (toggleButton) await toggleStudentStatus(toggleButton.dataset.toggleStudent);
   };
 }
 
@@ -1423,7 +1445,6 @@ async function saveStudent(event) {
   event.preventDefault();
 
   const id = $("studentEditId").value;
-
   const payload = {
     student_code: $("studentCode").value.trim(),
     full_name: $("studentName").value.trim(),
@@ -1433,7 +1454,7 @@ async function saveStudent(event) {
   try {
     const result = id
       ? await db.from("students").update(payload).eq("id", id)
-      : await db.from("students").insert(payload);
+      : await db.from("students").insert(Object.assign({ is_active: true }, payload));
 
     if (result.error) throw result.error;
 
@@ -1443,6 +1464,38 @@ async function saveStudent(event) {
 
   } catch (error) {
     showMessage("學生資料儲存失敗：" + error.message, "error");
+  }
+}
+
+async function toggleStudentStatus(id) {
+  const student = studentsCache.find(item => String(item.id) === String(id));
+  if (!student) {
+    showMessage("找不到學生資料，請重新整理。", "error");
+    return;
+  }
+
+  const currentlyActive = student.is_active !== false;
+  const nextStatus = !currentlyActive;
+  const action = nextStatus ? "重新啟用" : "停用";
+
+  const warning = currentlyActive
+    ? "\n\n停用後：\n・不會出現在成績登錄學生選單。\n・不會列入尚未登錄成績的學生檢查。\n・既有成績及家長綁定資料會保留。\n・家長仍可查詢過往已公布的成績。"
+    : "\n\n啟用後，學生會重新出現在成績登錄及家長綁定選單。";
+
+  if (!confirm("確定" + action + "學生「" + student.full_name + "」嗎？" + warning)) return;
+
+  try {
+    const result = await db.from("students")
+      .update({ is_active: nextStatus })
+      .eq("id", id);
+
+    if (result.error) throw result.error;
+
+    await loadAdminData();
+    renderStudents();
+    showMessage("學生「" + student.full_name + "」已" + action + "。", "success");
+  } catch (error) {
+    showMessage(action + "學生失敗：" + error.message, "error");
   }
 }
 
@@ -1609,7 +1662,8 @@ function renderGuardians() {
       "</option>";
   }).join("");
 
-  const studentOptions = studentsCache.map(function (student) {
+  const activeStudents = studentsCache.filter(student => student.is_active !== false);
+  const studentOptions = activeStudents.map(function (student) {
     return "<option value='" + escapeHtml(student.id) + "'>" +
       escapeHtml(student.class_name + "｜" + student.student_code + "｜" + student.full_name) +
       "</option>";
@@ -1657,6 +1711,7 @@ function renderGuardians() {
     });
 
     studentsCache
+      .filter(student => student.is_active !== false)
       .filter(student => !linkedStudentIds.has(String(student.id)))
       .filter(student => !selectedClass || student.class_name === selectedClass)
       .forEach(function (student) {
