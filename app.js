@@ -244,10 +244,18 @@ style.textContent = [
   ".topbar { background:#23466b; color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap; }",
   ".topbar h1 { font-size:20px; margin:0; color:#fff; }",
   ".topbar small { color:#fff; }",
+  ".parent-action-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:38px; padding:8px 12px; border:1px solid rgba(255,255,255,.34); border-radius:9px; color:#fff; font-size:13px; font-weight:800; letter-spacing:.2px; vertical-align:middle; transition:background .15s,transform .15s,box-shadow .15s; }",
+  ".parent-action-btn:hover { transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.18); }",
+  ".parent-password-btn { background:#3c78a8; }",
+  ".parent-password-btn:hover { background:#4b8bbd; }",
+  ".parent-logout-btn { background:#a83e45; }",
+  ".parent-logout-btn:hover { background:#c04d55; }",
+  ".parent-action-icon { width:18px; height:18px; flex:0 0 18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }",
 
   ".dashboard { width:min(1200px,94%); margin:30px auto; background:#fff; padding:28px; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
   ".tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; border-bottom:1px solid #e4e9ef; padding-bottom:15px; }",
   ".tab-btn { border:0; padding:10px 14px; border-radius:8px; background:#edf1f5; color:#34475b; font-weight:700; }",
+  ".tab-btn:hover { background:#315d86; color:#fff; }",
   ".tab-btn.active { background:#315d86; color:#fff; }",
 
   ".section-title { font-size:21px; margin:0 0 18px; color:#23466b; }",
@@ -297,6 +305,8 @@ style.textContent = [
   ".exam-management-table th:nth-child(3),.exam-management-table td:nth-child(3) { width:40%; }",
 
   ".guardian-management-table { min-width:850px; }",
+  ".guardian-unbound-row td { background:#fffaf0; }",
+  ".guardian-status-unbound { display:inline-block; padding:4px 8px; border-radius:6px; background:#fff0cf; color:#8a5a00; font-weight:800; white-space:nowrap; }",
 
   ".low-score { color:#d32626; font-weight:800; }",
   ".grade-tag { display:inline-block; padding:4px 9px; border-radius:6px; background:#e8eff8; color:#315d86; font-weight:800; white-space:nowrap; }",
@@ -476,9 +486,7 @@ async function loadCurrentProfile() {
   }
 
   await renderDashboard();
-}
-
-// ==================================================
+}// ==================================================
 // 5. 重新讀取資料
 // ==================================================
 
@@ -854,9 +862,7 @@ async function editScore(scoreId) {
   } catch (error) {
     showMessage("修改成績失敗：" + error.message, "error");
   }
-}
-
-// ==================================================
+}// ==================================================
 // 7-2. 刪除單筆成績
 // ==================================================
 
@@ -1249,9 +1255,7 @@ async function deleteStudent(id) {
   } catch (error) {
     showMessage("刪除失敗：" + error.message, "error");
   }
-}
-
-// ==================================================
+}// ==================================================
 // 10. 考試管理
 // ==================================================
 
@@ -1406,7 +1410,14 @@ function renderGuardians() {
       ? $("guardianClass").value
       : "";
 
-    const links = guardianLinksCache.filter(function (link) {
+    const linkedParentIds = new Set(
+      guardianLinksCache.map(link => String(link.guardian_id))
+    );
+
+    const rows = [];
+
+    // 已綁定學生的家長：依綁定關係顯示，保留班級篩選。
+    guardianLinksCache.forEach(function (link) {
       const parent = profilesCache.find(
         item => String(item.id) === String(link.guardian_id)
       );
@@ -1415,34 +1426,51 @@ function renderGuardians() {
         item => String(item.id) === String(link.student_id)
       );
 
-      return parent && student &&
-        (!selectedClass || student.class_name === selectedClass);
+      if (!parent || !student) return;
+      if (selectedClass && student.class_name !== selectedClass) return;
+
+      rows.push(
+        "<tr>" +
+          "<td>" + escapeHtml(parent.display_name || parent.email) + "</td>" +
+          "<td>" + escapeHtml(parent.email) + "</td>" +
+          "<td>" + escapeHtml(student.class_name) + "</td>" +
+          "<td>" + escapeHtml(student.full_name) + "</td>" +
+          "<td class='action-cell'>" +
+            "<div class='action-buttons'>" +
+              "<button class='btn btn-small' data-edit-parent='" +
+                escapeHtml(parent.id) + "'>修改家長資料</button>" +
+              "<button class='btn btn-danger btn-small' data-unbind='" +
+                escapeHtml(link.guardian_id) + "|" +
+                escapeHtml(link.student_id) + "'>解除綁定</button>" +
+            "</div>" +
+          "</td>" +
+        "</tr>"
+      );
     });
 
-    return links.map(function (link) {
-      const parent = profilesCache.find(
-        item => String(item.id) === String(link.guardian_id)
-      );
+    // 未綁定任何學生的家長也列出；不受班級篩選影響，方便清理測試帳號。
+    profilesCache
+      .filter(profile => !linkedParentIds.has(String(profile.id)))
+      .forEach(function (parent) {
+        rows.push(
+          "<tr class='guardian-unbound-row'>" +
+            "<td>" + escapeHtml(parent.display_name || "未設定姓名") + "</td>" +
+            "<td>" + escapeHtml(parent.email || "—") + "</td>" +
+            "<td><span class='guardian-status-unbound'>未綁定</span></td>" +
+            "<td>—</td>" +
+            "<td class='action-cell'>" +
+              "<div class='action-buttons'>" +
+                "<button class='btn btn-small' data-edit-parent='" +
+                  escapeHtml(parent.id) + "'>修改家長資料</button>" +
+                "<button class='btn btn-danger btn-small' data-delete-parent='" +
+                  escapeHtml(parent.id) + "'>刪除帳號</button>" +
+              "</div>" +
+            "</td>" +
+          "</tr>"
+        );
+      });
 
-      const student = studentsCache.find(
-        item => String(item.id) === String(link.student_id)
-      );
-
-      return "<tr>" +
-        "<td>" + escapeHtml(parent.display_name || parent.email) + "</td>" +
-        "<td>" + escapeHtml(parent.email) + "</td>" +
-        "<td>" + escapeHtml(student.class_name) + "</td>" +
-        "<td>" + escapeHtml(student.full_name) + "</td>" +
-        "<td class='action-cell'>" +
-          "<div class='action-buttons'>" +
-            "<button class='btn btn-small' data-edit-parent='" +
-              escapeHtml(parent.id) + "'>修改家長資料</button>" +
-            "<button class='btn btn-danger btn-small' data-unbind='" +
-              escapeHtml(link.guardian_id) + "|" +
-              escapeHtml(link.student_id) + "'>解除綁定</button>" +
-          "</div>" +
-        "</td></tr>";
-    }).join("");
+    return rows.join("");
   }
 
   content.innerHTML =
@@ -1479,7 +1507,7 @@ function renderGuardians() {
       "<div class='table-wrap'><table class='guardian-management-table'>" +
         "<thead><tr><th>家長姓名</th><th>家長帳號</th><th>班級</th><th>學生姓名</th><th>操作</th></tr></thead>" +
         "<tbody id='guardianRows'>" +
-          (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有符合條件的綁定資料</td></tr>") +
+          (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>") +
         "</tbody>" +
       "</table></div>" +
     "</div>";
@@ -1490,7 +1518,7 @@ function renderGuardians() {
   function refreshGuardianRows() {
     $("guardianRows").innerHTML =
       buildGuardianRows() ||
-      "<tr><td colspan='5' class='empty'>目前沒有符合條件的綁定資料</td></tr>";
+      "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>";
   }
 
   $("guardianClass").addEventListener("change", refreshGuardianRows);
@@ -1498,9 +1526,14 @@ function renderGuardians() {
   content.onclick = async function (event) {
     const editButton = event.target.closest("[data-edit-parent]");
     const unbindButton = event.target.closest("[data-unbind]");
+    const deleteButton = event.target.closest("[data-delete-parent]");
 
     if (editButton) {
       await editParentAccount(editButton.dataset.editParent);
+    }
+
+    if (deleteButton) {
+      await deleteUnboundParentAccount(deleteButton.dataset.deleteParent);
     }
 
     if (unbindButton) {
@@ -1511,7 +1544,66 @@ function renderGuardians() {
 }
 
 // ==================================================
-// 11-1. 修改家長姓名及 Email
+// 11-1. 刪除尚未綁定學生的家長帳號（Auth + profiles）
+// ==================================================
+
+async function deleteUnboundParentAccount(parentId) {
+  const parent = profilesCache.find(
+    item => String(item.id) === String(parentId)
+  );
+
+  if (!parent) {
+    showMessage("找不到這位家長的帳號資料，請重新整理。", "error");
+    return;
+  }
+
+  const hasBinding = guardianLinksCache.some(
+    link => String(link.guardian_id) === String(parentId)
+  );
+
+  if (hasBinding) {
+    showMessage("這個家長帳號仍有學生綁定，請先解除所有綁定後再刪除。", "error");
+    return;
+  }
+
+  if (!confirm(
+    "確定要永久刪除這個未綁定的家長帳號嗎？\n\n" +
+    "家長姓名：" + (parent.display_name || "未設定姓名") + "\n" +
+    "登入 Email：" + (parent.email || "—") + "\n\n" +
+    "此操作會同時刪除 Supabase Auth 登入帳號及 profiles 資料，且無法復原。"
+  )) return;
+
+  try {
+    const result = await db.functions.invoke(
+      "admin-delete-parent-account",
+      { body: { parentId: parentId } }
+    );
+
+    if (result.error) {
+      throw new Error(
+        result.data && result.data.error
+          ? result.data.error
+          : result.error.message
+      );
+    }
+
+    const data = result.data || {};
+    if (!data.success) {
+      throw new Error(data.error || "家長帳號刪除失敗。");
+    }
+
+    await loadAdminData();
+    renderGuardians();
+    showMessage("家長登入帳號及資料已成功刪除。", "success");
+
+  } catch (error) {
+    console.error("刪除家長帳號失敗：", error);
+    showMessage("刪除家長帳號失敗：" + error.message, "error");
+  }
+}
+
+// ==================================================
+// 11-2. 修改家長姓名及 Email
 // ==================================================
 
 async function editParentAccount(parentId) {
@@ -1609,10 +1701,7 @@ async function editParentAccount(parentId) {
     console.error("修改家長資料失敗：", error);
     showMessage("修改家長資料失敗：" + error.message, "error");
   }
-}
-
-// ==================================================
-// 11-2. 呼叫 Edge Function 建立家長帳號
+}// 11-2. 呼叫 Edge Function 建立家長帳號
 // ==================================================
 
 async function createParentAccount(event) {
@@ -2079,10 +2168,7 @@ function exportCsv() {
     " 筆成績資料。",
     "success"
   );
-}
-
-// ==================================================
-// 15. 家長端畫面
+}// 15. 家長端畫面
 // ==================================================
 
 async function renderParentDashboard() {
@@ -2107,8 +2193,12 @@ async function renderParentDashboard() {
       "<div class='topbar'>" +
         "<div><h1>小象文教機構｜成績查詢</h1><small>家長專區</small></div>" +
         "<div>" +
-          "<button class='btn btn-small' id='changePasswordButton'>修改密碼</button> " +
-          "<button class='btn btn-secondary btn-small' id='logoutButton'>登出</button>" +
+          "<button class='parent-action-btn parent-password-btn' id='changePasswordButton' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
+            "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
+            "<span>修改密碼</span></button> " +
+          "<button class='parent-action-btn parent-logout-btn' id='logoutButton' type='button' title='登出系統' aria-label='登出系統'>" +
+            "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg>" +
+            "<span>登出</span></button>" +
         "</div>" +
       "</div>" +
       "<main class='dashboard'>" +
@@ -2309,8 +2399,12 @@ async function renderParentDashboard() {
       "<div><span>" +
         escapeHtml(currentProfile.display_name || currentUser.email) +
       "</span>　" +
-      "<button class='btn btn-small' id='changePasswordButton'>修改密碼</button> " +
-      "<button class='btn btn-secondary btn-small' id='logoutButton'>登出</button></div>" +
+      "<button class='parent-action-btn parent-password-btn' id='changePasswordButton' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
+        "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
+        "<span>修改密碼</span></button> " +
+      "<button class='parent-action-btn parent-logout-btn' id='logoutButton' type='button' title='登出系統' aria-label='登出系統'>" +
+        "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg>" +
+        "<span>登出</span></button></div>" +
     "</div>" +
     "<main class='dashboard'>" +
       "<h2 class='section-title'>學生考試成績</h2>" +
