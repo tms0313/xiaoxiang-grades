@@ -646,8 +646,7 @@ function renderAdminDashboard() {
   appRoot.innerHTML =
     "<div class='topbar'>" +
       "<div><h1>小象文教機構｜成績管理系統</h1><small>管理員後台</small></div>" +
-      "<div><span>" + escapeHtml(currentProfile.display_name || currentUser.email) + "</span>　" +
-      "<button class='tab-btn' id='logoutButton'>登出</button></div>" +
+      "<div><button class='tab-btn' id='logoutButton'>登出</button></div>" +
     "</div>" +
     "<main class='dashboard'>" +
       "<div id='systemMessage' class='system-message'></div>" +
