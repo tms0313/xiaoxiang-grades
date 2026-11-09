@@ -2620,7 +2620,7 @@ async function renderParentDashboard() {
         const grade3Math = isGrade3Math(student.class_name, score.subject);
         let resultText = "";
         if (score.grade_level === "請假") {
-          resultText = "<span class='parent-score-number'>－</span>";
+          resultText = gradeTag("請假");
         } else if (score.grade_level === "缺考") {
           resultText = gradeTag("缺考");
         } else if (grade3Math) {
