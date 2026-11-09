@@ -1392,9 +1392,13 @@ async function saveScore(event) {
 function renderStudents() {
   const content = $("adminContent");
   const filter = $("studentStatusFilter") ? $("studentStatusFilter").value : "active";
+  const classFilter = $("studentClassFilter") ? $("studentClassFilter").value : "all";
+
   const visibleStudents = studentsCache.filter(function (student) {
     const active = student.is_active !== false;
-    return filter === "all" || (filter === "active" ? active : !active);
+    const statusMatch = filter === "active" ? active : !active;
+    const classMatch = classFilter === "all" || student.class_name === classFilter;
+    return statusMatch && classMatch;
   });
 
   const rows = visibleStudents.map(function (student) {
@@ -1405,7 +1409,7 @@ function renderStudents() {
       "<td>" + escapeHtml(student.class_name) + "</td>" +
       "<td>" + (active
         ? "<span class='student-status-active'>在學</span>"
-        : "<span class='student-status-inactive'>已停用</span>") + "</td>" +
+        : "<span class='student-status-inactive'>離班</span>") + "</td>" +
       "<td class='student-action-cell action-cell'><div class='action-buttons'>" +
         "<button class='btn btn-small' data-edit-student='" + escapeHtml(student.id) + "'>修改</button>" +
         "<button class='btn " + (active ? "btn-danger" : "btn-success") + " btn-small student-status-action' data-toggle-student='" + escapeHtml(student.id) + "' title='" + (active ? "離班" : "重新啟用") + "' aria-label='" + (active ? "離班" : "重新啟用") + "'>" + (active ? "離班" : "<span class='student-status-enable-icon' aria-hidden='true'>↻</span><span>啟用</span>") + "</button>" +
@@ -1427,8 +1431,11 @@ function renderStudents() {
         "<button class='btn btn-success' type='submit'>儲存學生資料</button> " +
         "<button class='btn btn-secondary' type='button' id='studentCancel'>清除</button>" +
       "</form></div>" +
-      "<div class='toolbar'><label for='studentStatusFilter'><strong>學生狀態：</strong></label>" +
-        "<select id='studentStatusFilter'><option value='active'>在學學生</option><option value='inactive'>已停用學生</option><option value='all'>全部學生</option></select>" +
+      "<div class='toolbar'>" +
+        "<label for='studentStatusFilter'><strong>學生狀態：</strong></label>" +
+        "<select id='studentStatusFilter'><option value='active'>在學學生</option><option value='inactive'>離班學生</option></select>" +
+        "<label for='studentClassFilter'><strong>班級：</strong></label>" +
+        "<select id='studentClassFilter'><option value='all'>全部學生</option><option value='國一班'>國一班</option><option value='國二班'>國二班</option><option value='國三班'>國三班</option></select>" +
       "</div>" +
       "<div class='table-wrap'><table class='student-management-table'>" +
         "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>狀態</th><th>操作</th></tr></thead>" +
@@ -1436,7 +1443,9 @@ function renderStudents() {
       "</table></div>";
 
   $("studentStatusFilter").value = filter;
+  $("studentClassFilter").value = classFilter;
   $("studentStatusFilter").addEventListener("change", renderStudents);
+  $("studentClassFilter").addEventListener("change", renderStudents);
   $("studentForm").addEventListener("submit", saveStudent);
   $("studentClass").addEventListener("change", function () {
     if (!$("studentEditId").value) {
