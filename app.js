@@ -287,6 +287,7 @@ style.textContent = [
   ".overview-table .action-cell { min-width:100px; }",
   ".overview-table .action-buttons { gap:3px; }",
   ".overview-table .action-buttons .btn { padding:2.5px 4.5px; font-size:6px; line-height:1.35; border-radius:5px; }",
+  ".overview-table .action-buttons .btn { width:30px !important; min-width:30px !important; height:21px !important; min-height:21px !important; padding:0 !important; font-size:8px !important; line-height:21px !important; border-radius:4px !important; }",
 
   ".action-cell { min-width:155px; white-space:nowrap; }",
   ".action-buttons { display:flex; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:5px; white-space:nowrap; }",
@@ -315,6 +316,7 @@ style.textContent = [
   ".student-management-table th:nth-child(4),.student-management-table td:nth-child(4) { width:46%; min-width:170px; }",
   ".student-management-table .action-buttons { gap:3px; }",
   ".student-management-table .action-buttons .btn { padding:2px 3px; font-size:8px; line-height:1.3; border-radius:5px; }",
+  ".student-management-table .action-buttons .btn { width:29px !important; min-width:29px !important; height:20px !important; min-height:20px !important; padding:0 !important; font-size:8px !important; line-height:20px !important; border-radius:4px !important; }",
   ".student-management-table td.student-action-cell { white-space:nowrap; }",
 
   ".exam-management-table { min-width:600px; table-layout:fixed; }",
@@ -324,6 +326,7 @@ style.textContent = [
   ".exam-management-table .action-cell { min-width:100px; }",
   ".exam-management-table .action-buttons { gap:3px; }",
   ".exam-management-table .action-buttons .btn { padding:2px 3px; font-size:8px; line-height:1.3; border-radius:5px; }",
+  ".exam-management-table .action-buttons .btn { width:29px !important; min-width:29px !important; height:20px !important; min-height:20px !important; padding:0 !important; font-size:8px !important; line-height:20px !important; border-radius:4px !important; }",
 
   ".guardian-management-table { min-width:850px; table-layout:fixed; }",
   ".guardian-management-table th:nth-child(1),.guardian-management-table td:nth-child(1) { width:16%; }",
@@ -334,7 +337,13 @@ style.textContent = [
   ".guardian-management-table .action-cell { min-width:0; }",
   ".guardian-management-table .action-buttons { gap:3px; }",
   ".guardian-management-table .action-buttons .btn { padding:2.5px 4px; font-size:8px; line-height:1.3; border-radius:5px; }",
+  ".guardian-management-table .action-buttons .btn { height:22px !important; min-height:22px !important; padding:0 5px !important; font-size:8px !important; line-height:22px !important; border-radius:4px !important; }",
   ".guardian-unbound-row td { background:#fffaf0; }",
+  ".password-table-wrap { max-width:820px; }",
+  ".password-management-table { width:100%; min-width:0; max-width:820px; table-layout:fixed; }",
+  ".password-management-table th:nth-child(1),.password-management-table td:nth-child(1) { width:24%; }",
+  ".password-management-table th:nth-child(2),.password-management-table td:nth-child(2) { width:48%; }",
+  ".password-management-table th:nth-child(3),.password-management-table td:nth-child(3) { width:28%; }",
   ".guardian-status-unbound { display:inline-block; padding:4px 8px; border-radius:6px; background:#fff0cf; color:#8a5a00; font-weight:800; white-space:nowrap; }",
 
   ".low-score { color:#d32626; font-weight:800; }",
@@ -1941,7 +1950,7 @@ function renderPasswords() {
   content.innerHTML =
     "<h2 class='section-title'>家長密碼管理</h2>" +
     "<p class='muted'>透過既有 Edge Function 重設家長帳號密碼。</p>" +
-    "<div class='table-wrap'><table>" +
+    "<div class='table-wrap password-table-wrap'><table class='password-management-table'>" +
       "<thead><tr><th>家長姓名</th><th>登入帳號</th><th>操作</th></tr></thead>" +
       "<tbody>" + (rows || "<tr><td colspan='3' class='empty'>目前沒有家長帳號</td></tr>") + "</tbody>" +
     "</table></div>";
