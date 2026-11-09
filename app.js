@@ -758,6 +758,12 @@ function renderOverview() {
           String(student.full_name || "").toLowerCase().includes(search) ||
           String(student.student_code || "").toLowerCase().includes(search)
         );
+    }).sort(function (a, b) {
+      const examA = getExam(a.exam_id);
+      const examB = getExam(b.exam_id);
+      const dateA = String((examA && (examA.end_date || examA.start_date)) || "");
+      const dateB = String((examB && (examB.end_date || examB.start_date)) || "");
+      return dateB.localeCompare(dateA);
     });
 
     $("overviewRows").innerHTML =
