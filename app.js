@@ -1417,7 +1417,7 @@ function renderStudents() {
     "<div class='panel'><h3 id='studentFormTitle'>新增學生</h3>" +
       "<form id='studentForm'><input type='hidden' id='studentEditId'>" +
         "<div class='form-grid'>" +
-          "<div class='field'><label>學生編號</label><input id='studentCode' required></div>" +
+          "<div class='field'><label>學生編號</label><input id='studentCode' required readonly></div>" +
           "<div class='field'><label>學生姓名</label><input id='studentName' required></div>" +
           "<div class='field'><label>班級</label><select id='studentClass' required><option value=''>請選擇班級</option><option>國一班</option><option>國二班</option><option>國三班</option></select></div>" +
         "</div>" +
@@ -1438,6 +1438,11 @@ function renderStudents() {
   $("studentStatusFilter").value = filter;
   $("studentStatusFilter").addEventListener("change", renderStudents);
   $("studentForm").addEventListener("submit", saveStudent);
+  $("studentClass").addEventListener("change", function () {
+    if (!$("studentEditId").value) {
+      $("studentCode").value = getNextStudentCode($("studentClass").value);
+    }
+  });
   $("studentCancel").addEventListener("click", clearStudentForm);
 
   content.onclick = async function (event) {
@@ -1448,9 +1453,26 @@ function renderStudents() {
   };
 }
 
+function getNextStudentCode(className) {
+  const prefixMap = { "國一班": "G1", "國二班": "G2", "國三班": "G3" };
+  const prefix = prefixMap[className];
+  if (!prefix) return "";
+
+  const maxNumber = studentsCache.reduce(function (max, student) {
+    const code = String(student.student_code || "").trim().toUpperCase();
+    const match = code.match(new RegExp("^" + prefix + "(\\d+)$"));
+    if (!match) return max;
+    return Math.max(max, Number(match[1]));
+  }, 0);
+
+  return prefix + String(maxNumber + 1).padStart(2, "0");
+}
+
 function clearStudentForm() {
   $("studentForm").reset();
   $("studentEditId").value = "";
+  $("studentCode").readOnly = true;
+  $("studentCode").value = getNextStudentCode($("studentClass").value);
   document.querySelectorAll("input[name='studentSubject']").forEach(checkbox => { checkbox.checked = false; });
   $("studentFormTitle").textContent = "新增學生";
 }
@@ -1460,6 +1482,7 @@ function editStudent(id) {
   if (!student) return;
 
   $("studentEditId").value = student.id;
+  $("studentCode").readOnly = false;
   $("studentCode").value = student.student_code || "";
   $("studentName").value = student.full_name || "";
   $("studentClass").value = student.class_name || "";
