@@ -317,6 +317,8 @@ style.textContent = [
   ".student-management-table th:nth-child(4),.student-management-table td:nth-child(4) { width:16%; }",
   ".student-management-table th:nth-child(5),.student-management-table td:nth-child(5) { width:30%; min-width:150px; }",
   ".student-status-active,.student-status-inactive { display:inline-block; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:800; white-space:nowrap; }",
+  ".student-status-action { display:inline-flex; align-items:center; justify-content:center; gap:3px; min-width:54px; }",
+  ".student-status-delete-icon,.student-status-enable-icon { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; font-size:17px; font-weight:900; line-height:1; }",
   ".student-status-active { background:#e7f6ec; color:#237344; }",
   ".student-status-inactive { background:#f1f3f5; color:#697586; }",
   ".student-management-table .action-buttons { gap:3px; }",
@@ -1385,7 +1387,7 @@ function renderStudents() {
         : "<span class='student-status-inactive'>已停用</span>") + "</td>" +
       "<td class='student-action-cell action-cell'><div class='action-buttons'>" +
         "<button class='btn btn-small' data-edit-student='" + escapeHtml(student.id) + "'>修改</button>" +
-        "<button class='btn " + (active ? "btn-secondary" : "btn-success") + " btn-small' data-toggle-student='" + escapeHtml(student.id) + "'>" + (active ? "停用" : "啟用") + "</button>" +
+        "<button class='btn " + (active ? "btn-danger" : "btn-success") + " btn-small student-status-action' data-toggle-student='" + escapeHtml(student.id) + "' title='" + (active ? "離班" : "重新啟用") + "' aria-label='" + (active ? "離班" : "重新啟用") + "'>" + (active ? "<span class='student-status-delete-icon' aria-hidden='true'>×</span><span>離班</span>" : "<span class='student-status-enable-icon' aria-hidden='true'>↻</span><span>啟用</span>") + "</button>" +
       "</div></td></tr>";
   }).join("");
 
