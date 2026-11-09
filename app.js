@@ -289,22 +289,20 @@ style.textContent = [
   ".action-buttons { display:flex; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:5px; white-space:nowrap; }",
   ".action-buttons .btn { flex:0 0 auto; margin:0; }",
 
-  ".parent-score-table { width:100%; min-width:560px; table-layout:fixed; }",
-  ".parent-score-table th:nth-child(1),.parent-score-table td:nth-child(1) { width:18%; text-align:center; }",
-  ".parent-score-table th:nth-child(2),.parent-score-table td:nth-child(2) { width:52%; }",
-  ".parent-score-table th:nth-child(3),.parent-score-table td:nth-child(3) { width:30%; text-align:center; }",
-  ".parent-score-table td { overflow-wrap:anywhere; word-break:break-word; }",
-  ".parent-score-table td:nth-child(3) { white-space:normal; }",
-
-  /* 家長成績：電腦版表格、手機版卡片 */
-  ".parent-score-desktop { display:block; }",
-  ".parent-score-mobile { display:none; }",
-
-  ".parent-subject-card { border:1px solid #dfe7ef; border-radius:10px; padding:14px; margin-bottom:10px; background:#fff; }",
-  ".parent-subject-name { font-size:16px; font-weight:800; color:#23466b; margin-bottom:10px; }",
-  ".parent-subject-scope { font-size:14px; color:#526477; line-height:1.7; overflow-wrap:anywhere; word-break:break-word; margin-bottom:10px; }",
-  ".parent-subject-scope-label { color:#8491a0; font-size:12px; font-weight:700; margin-bottom:3px; }",
-  ".parent-subject-result { padding-top:9px; border-top:1px solid #edf0f4; font-size:16px; font-weight:800; color:#263445; line-height:1.8; }",
+  /* 家長成績：科目與範圍置左，醒目成績置右 */
+  ".parent-score-list { display:flex; flex-direction:column; gap:10px; width:100%; }",
+  ".parent-subject-card { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:14px; border:1px solid #dfe7ef; border-radius:12px; padding:14px 16px; margin:0; background:#fff; }",
+  ".parent-subject-info { min-width:0; }",
+  ".parent-subject-name { font-size:17px; font-weight:900; color:#23466b; margin-bottom:7px; }",
+  ".parent-subject-scope { display:flex; flex-direction:column; gap:2px; font-size:14px; color:#526477; line-height:1.55; overflow-wrap:anywhere; word-break:break-word; }",
+  ".parent-subject-scope-label { color:#8491a0; font-size:11px; font-weight:800; }",
+  ".parent-subject-scope-text { min-width:0; }",
+  ".parent-subject-result { min-width:94px; max-width:48%; text-align:center; padding-left:14px; border-left:1px solid #e8edf3; color:#263445; }",
+  ".parent-subject-result-label { color:#8491a0; font-size:12px; font-weight:800; margin-bottom:4px; }",
+  ".parent-subject-result-value { font-size:23px; font-weight:900; line-height:1.35; color:#173f68; overflow-wrap:anywhere; }",
+  ".parent-subject-result-value .parent-score-number { font-size:25px; font-weight:900; white-space:nowrap; }",
+  ".parent-subject-result-value .grade-tag { display:inline-block; margin-top:3px; font-size:12px; vertical-align:middle; }",
+  ".parent-subject-result-value .grade-absent { font-size:16px; }",
 
   ".student-management-table { width:100%; min-width:650px; table-layout:fixed; }",
   ".student-management-table th:nth-child(1),.student-management-table td:nth-child(1) { width:17%; }",
@@ -361,10 +359,13 @@ style.textContent = [
   ".tabs { gap:5px; }",
   ".tab-btn { padding:8px 10px; font-size:13px; }",
 
-  /* 手機版不再顯示橫向表格 */
-  ".parent-score-desktop { display:none; }",
-  ".parent-score-mobile { display:block; width:100%; }",
-  ".parent-subject-card { padding:12px; }",
+  /* 手機版維持科目左、成績右，縮小間距 */
+  ".parent-subject-card { grid-template-columns:minmax(0,1fr) auto; gap:9px; padding:12px 11px; }",
+  ".parent-subject-name { font-size:16px; }",
+  ".parent-subject-scope { font-size:13px; }",
+  ".parent-subject-result { min-width:82px; max-width:45%; padding-left:10px; }",
+  ".parent-subject-result-value { font-size:21px; }",
+  ".parent-subject-result-value .parent-score-number { font-size:23px; }",
   ".parent-page .parent-top-actions { display:none !important; }",
   ".parent-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
   ".parent-bottom-nav .parent-action-btn { flex:1 1 50%; min-width:0; min-height:68px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; border:0; border-radius:10px; color:#fff; font-size:13px; font-weight:800; padding:7px 8px; }",
@@ -2373,87 +2374,48 @@ async function renderParentDashboard() {
 
   function buildParentScoreTable(student, exam) {
     const scores = getStudentScores(student, exam);
-
     if (scores.length === 0) {
       return "<div class='empty'>本次考試尚無成績資料。</div>";
     }
-
-    const desktopRows = [];
-    const mobileCards = [];
-
-    scores.forEach(function (score) {
-      const grade3 = isGrade3Class(student.class_name);
-      const grade3Math = isGrade3Math(student.class_name, score.subject);
-
-      let resultText = "";
-
-      if (score.grade_level === "缺考") {
-        resultText = gradeTag("缺考");
-
-      } else if (grade3Math) {
-        resultText =
-          "<span class='" +
-          scoreClass(score.score, student.class_name, score.subject) +
-          "'>" +
-          escapeHtml(score.score == null ? "—" : score.score) +
-          " 分</span>　" +
-          gradeTag(score.grade_level);
-
-      } else if (grade3) {
-        resultText =
-          escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
-          " 題　" +
-          gradeTag(score.grade_level);
-
-      } else {
-        resultText =
-          "<span class='" +
-          scoreClass(score.score, student.class_name, score.subject) +
-          "'>" +
-          escapeHtml(score.score == null ? "—" : score.score) +
-          " 分</span>";
-      }
-
-      // 電腦版表格資料
-      desktopRows.push(
-        "<tr>" +
-          "<td>" + escapeHtml(score.subject) + "</td>" +
-          "<td>" + escapeHtml(score.scope || "—") + "</td>" +
-          "<td>" + resultText + "</td>" +
-        "</tr>"
-      );
-
-      // 手機版直式卡片資料
-      mobileCards.push(
-        "<div class='parent-subject-card'>" +
-          "<div class='parent-subject-name'>" +
-            escapeHtml(score.subject) +
-          "</div>" +
-          "<div class='parent-subject-scope'>" +
-            "<div class='parent-subject-scope-label'>考試範圍</div>" +
-            escapeHtml(score.scope || "—") +
-          "</div>" +
-          "<div class='parent-subject-result'>" +
-            "成績：" + resultText +
-          "</div>" +
-        "</div>"
-      );
-    });
-
     return (
-      // 電腦版：原本三欄表格
-      "<div class='parent-score-desktop'>" +
-        "<div class='table-wrap'>" +
-          "<table class='parent-score-table'>" +
-            "<thead><tr><th>科目</th><th>考試範圍</th><th>成績</th></tr></thead>" +
-            "<tbody>" + desktopRows.join("") + "</tbody>" +
-          "</table>" +
-        "</div>" +
-      "</div>" +
-
-      // 手機版：直式成績卡片
-      "<div class='parent-score-mobile'>" +
-        mobileCards.join("") +
+      "<div class='parent-score-list'>" +
+      scores.map(function (score) {
+        const grade3 = isGrade3Class(student.class_name);
+        const grade3Math = isGrade3Math(student.class_name, score.subject);
+        let resultText = "";
+        if (score.grade_level === "缺考") {
+          resultText = gradeTag("缺考");
+        } else if (grade3Math) {
+          resultText = "<span class='" +
+            scoreClass(score.score, student.class_name, score.subject) + "'>" +
+            escapeHtml(score.score == null ? "—" : score.score) +
+            " 分</span> " + gradeTag(score.grade_level);
+        } else if (grade3) {
+          resultText = "<span class='parent-score-number'>" +
+            escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
+            " 題</span> " + gradeTag(score.grade_level);
+        } else {
+          resultText = "<span class='parent-score-number " +
+            scoreClass(score.score, student.class_name, score.subject) + "'>" +
+            escapeHtml(score.score == null ? "—" : score.score) +
+            " 分</span>";
+        }
+        return (
+          "<div class='parent-subject-card'>" +
+            "<div class='parent-subject-info'>" +
+              "<div class='parent-subject-name'>" + escapeHtml(score.subject) + "</div>" +
+              "<div class='parent-subject-scope'>" +
+                "<span class='parent-subject-scope-label'>考試範圍</span>" +
+                "<span class='parent-subject-scope-text'>" + escapeHtml(score.scope || "—") + "</span>" +
+              "</div>" +
+            "</div>" +
+            "<div class='parent-subject-result'>" +
+              "<div class='parent-subject-result-label'>成績</div>" +
+              "<div class='parent-subject-result-value'>" + resultText + "</div>" +
+            "</div>" +
+          "</div>"
+        );
+      }).join("") +
       "</div>"
     );
   }
