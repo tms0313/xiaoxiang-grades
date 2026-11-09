@@ -349,12 +349,12 @@ style.textContent = [
   ".exam-management-table .action-buttons .btn { padding:2px 3px; font-size:8px; line-height:1.3; border-radius:5px; }",
   ".exam-management-table .action-buttons .btn { width:29px !important; min-width:29px !important; height:20px !important; min-height:20px !important; padding:0 !important; font-size:8px !important; line-height:20px !important; border-radius:4px !important; }",
 
-  ".guardian-management-table { min-width:850px; table-layout:fixed; }",
-  ".guardian-management-table th:nth-child(1),.guardian-management-table td:nth-child(1) { width:16%; }",
-  ".guardian-management-table th:nth-child(2),.guardian-management-table td:nth-child(2) { width:27%; }",
-  ".guardian-management-table th:nth-child(3),.guardian-management-table td:nth-child(3) { width:13%; }",
-  ".guardian-management-table th:nth-child(4),.guardian-management-table td:nth-child(4) { width:16%; }",
-  ".guardian-management-table th:nth-child(5),.guardian-management-table td:nth-child(5) { width:28%; }",
+  ".guardian-management-table { min-width:760px; table-layout:fixed; }",
+  ".guardian-management-table th:nth-child(1),.guardian-management-table td:nth-child(1) { width:15%; }",
+  ".guardian-management-table th:nth-child(2),.guardian-management-table td:nth-child(2) { width:20%; }",
+  ".guardian-management-table th:nth-child(3),.guardian-management-table td:nth-child(3) { width:25%; }",
+  ".guardian-management-table th:nth-child(4),.guardian-management-table td:nth-child(4) { width:17%; }",
+  ".guardian-management-table th:nth-child(5),.guardian-management-table td:nth-child(5) { width:23%; }",
   ".guardian-management-table .action-cell { min-width:0; }",
   ".guardian-management-table .action-buttons { gap:3px; }",
   ".guardian-management-table .action-buttons .btn { padding:2.5px 4px; font-size:8px; line-height:1.3; border-radius:5px; }",
@@ -1745,11 +1745,10 @@ function renderGuardians() {
 
       rows.push(
         "<tr>" +
-          "<td>" + escapeHtml(parent ? (parent.display_name || parent.email) : "家長資料不存在") + "</td>" +
-          "<td>" + escapeHtml(parent ? parent.email : "—") + "</td>" +
-          "<td><span class='guardian-status-bound'>已綁定</span></td>" +
           "<td>" + escapeHtml(student.class_name) + "</td>" +
           "<td>" + escapeHtml(student.full_name) + "</td>" +
+          "<td>" + escapeHtml(parent ? parent.email : "—") + "</td>" +
+          "<td><span class='guardian-status-bound'>已綁定</span></td>" +
           "<td class='action-cell'>" +
             "<div class='action-buttons'>" +
               (parent ? "<button class='btn btn-small' data-edit-parent='" + escapeHtml(parent.id) + "'>修改</button>" : "") +
@@ -1769,11 +1768,10 @@ function renderGuardians() {
       .forEach(function (student) {
         rows.push(
           "<tr class='guardian-unbound-row'>" +
-            "<td>—</td>" +
-            "<td>—</td>" +
-            "<td><span class='guardian-status-unbound'>尚未綁定家長</span></td>" +
             "<td>" + escapeHtml(student.class_name) + "</td>" +
             "<td>" + escapeHtml(student.full_name) + "</td>" +
+            "<td>—</td>" +
+            "<td><span class='guardian-status-unbound'>尚未綁定家長</span></td>" +
             "<td class='action-cell'>請建立家長帳號並完成綁定</td>" +
           "</tr>"
         );
@@ -1786,9 +1784,8 @@ function renderGuardians() {
     "<h2 class='section-title'>家長綁定</h2>" +
 
     "<div class='panel'><h3>新增家長帳號</h3>" +
-      "<p class='muted'>輸入家長姓名及 Email，選擇學生後，系統會自動建立家長登入帳號並完成學生綁定。</p>" +
+      "<p class='muted'>輸入家長 Email，選擇學生後，系統會自動建立家長登入帳號並完成學生綁定。</p>" +
       "<form id='createParentForm'><div class='form-grid'>" +
-        "<div class='field'><label>家長姓名</label><input id='newParentName' type='text' placeholder='例如：王小明家長' required></div>" +
         "<div class='field'><label>家長 Email（登入帳號）</label><input id='newParentEmail' type='email' placeholder='請輸入家長 Email' autocomplete='off' required></div>" +
         "<div class='field'><label>綁定學生</label><select id='newParentStudent' required><option value=''>請選擇學生</option>" + studentOptions + "</select></div>" +
       "</div>" +
@@ -1814,9 +1811,9 @@ function renderGuardians() {
         "</select>" +
       "</div>" +
       "<div class='table-wrap'><table class='guardian-management-table'>" +
-        "<thead><tr><th>家長姓名</th><th>家長帳號</th><th>綁定狀態</th><th>班級</th><th>學生姓名</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>班級</th><th>學生姓名</th><th>家長帳號</th><th>綁定狀態</th><th>操作</th></tr></thead>" +
         "<tbody id='guardianRows'>" +
-          (buildGuardianRows() || "<tr><td colspan='6' class='empty'>目前沒有家長帳號資料</td></tr>") +
+          (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>") +
         "</tbody>" +
       "</table></div>" +
     "</div>";
@@ -1827,7 +1824,7 @@ function renderGuardians() {
   function refreshGuardianRows() {
     $("guardianRows").innerHTML =
       buildGuardianRows() ||
-      "<tr><td colspan='6' class='empty'>目前沒有家長帳號資料</td></tr>";
+      "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>";
   }
 
   $("guardianClass").addEventListener("change", refreshGuardianRows);
@@ -2019,13 +2016,13 @@ async function editParentAccount(parentId) {
 async function createParentAccount(event) {
   event.preventDefault();
 
-  const displayName = $("newParentName").value.trim();
   const email = $("newParentEmail").value.trim().toLowerCase();
+  const displayName = email;
   const studentId = $("newParentStudent").value;
   const button = $("createParentButton");
 
-  if (!displayName || !email || !studentId) {
-    showMessage("請完整填寫家長姓名、Email 及綁定學生。", "error");
+  if (!email || !studentId) {
+    showMessage("請填寫家長 Email 並選擇綁定學生。", "error");
     return;
   }
 
@@ -2038,7 +2035,6 @@ async function createParentAccount(event) {
 
   if (!confirm(
     "請確認以下家長帳號資料：\n\n" +
-    "家長姓名：" + displayName + "\n" +
     "登入帳號：" + email + "\n" +
     "綁定學生：" + student.full_name + "\n" +
     "班級：" + student.class_name + "\n" +
@@ -2088,7 +2084,6 @@ async function createParentAccount(event) {
 
     alert(
       "家長帳號建立成功！\n\n" +
-      "家長姓名：" + (data.displayName || displayName) + "\n" +
       "登入帳號：" + (data.email || email) + "\n" +
       "綁定學生：" + student.full_name + "\n" +
       "初始密碼：" + passwordText + "\n\n" +
@@ -2098,7 +2093,7 @@ async function createParentAccount(event) {
     );
 
     showMessage(
-      "家長帳號「" + displayName + "」已建立，並完成「" + student.full_name + "」的學生綁定。",
+      "家長帳號「" + email + "」已建立，並完成「" + student.full_name + "」的學生綁定。",
       "success"
     );
 
