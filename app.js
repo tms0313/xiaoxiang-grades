@@ -48,7 +48,7 @@ const db = supabaseClient;
 
 const SUBJECTS = ["國文", "英文", "數學", "自然"];
 
-const GRADE_OPTIONS = ["A++", "A+", "A", "B++", "B+", "B", "C", "缺考"];
+const GRADE_OPTIONS = ["A++", "A+", "A", "B++", "B+", "B", "C", "缺考", "請假"];
 
 let currentUser = null;
 let currentProfile = null;
@@ -148,6 +148,10 @@ function gradeTag(gradeLevel) {
     return "<span class='grade-tag grade-absent'>缺考</span>";
   }
 
+  if (gradeLevel === "請假") {
+    return "<span class='grade-tag grade-leave'>請假</span>";
+  }
+
   return "<span class='grade-tag'>" +
     escapeHtml(gradeLevel) +
     "</span>";
@@ -159,6 +163,10 @@ function updateGradeSelectStyle(selectElement) {
   selectElement.classList.toggle(
     "grade-select-absent",
     selectElement.value === "缺考"
+  );
+  selectElement.classList.toggle(
+    "grade-select-leave",
+    selectElement.value === "請假"
   );
 }
 
@@ -356,8 +364,11 @@ style.textContent = [
   ".low-score { color:#d32626; font-weight:800; }",
   ".grade-tag { display:inline-block; padding:4px 9px; border-radius:6px; background:#e8eff8; color:#315d86; font-weight:800; white-space:nowrap; }",
   ".grade-absent { color:#d32626 !important; background:#fde8e8 !important; font-weight:900 !important; }",
+  ".grade-leave { color:#8a5a00 !important; background:#fff0cf !important; font-weight:900 !important; }",
   ".grade-select-absent { color:#d32626 !important; font-weight:900 !important; }",
+  ".grade-select-leave { color:#8a5a00 !important; font-weight:900 !important; }",
   "option[value='缺考'] { color:#d32626; font-weight:900; }",
+  "option[value='請假'] { color:#8a5a00; font-weight:900; }",
 
   ".export-panel { border:1px solid #e2e8ef; border-radius:12px; padding:20px; background:#fff; }",
   ".export-panel-title { font-size:17px; font-weight:800; color:#315d86; margin-bottom:15px; }",
@@ -696,7 +707,9 @@ function renderOverview() {
     const grade3 = isGrade3Class(student.class_name);
     const grade3Math = isGrade3Math(student.class_name, score.subject);
 
-    const resultText = grade3Math
+    const resultText = score.grade_level === "請假"
+      ? gradeTag("請假")
+      : grade3Math
       ? (
           score.grade_level === "缺考"
             ? gradeTag("缺考")
@@ -887,23 +900,14 @@ async function editScore(scoreId) {
   }
 
   const student = studentsCache.find(item => String(item.id) === String(score.student_id));
-
   if (!student) {
     showMessage("找不到學生資料，無法修改成績。", "error");
     return;
   }
 
-  const grade3 = isGrade3Class(student.class_name);
-
-  const subjectInput = prompt(
-    "請輸入科目：國文、英文、數學、自然",
-    score.subject || ""
-  );
-
+  const subjectInput = prompt("請輸入科目：國文、英文、數學、自然", score.subject || "");
   if (subjectInput === null) return;
-
   const subject = subjectInput.trim();
-
   if (!SUBJECTS.includes(subject)) {
     showMessage("科目只能選擇：國文、英文、數學、自然。", "error");
     return;
@@ -911,93 +915,80 @@ async function editScore(scoreId) {
 
   const scopeInput = prompt("請輸入考試範圍：", score.scope || "");
   if (scopeInput === null) return;
-
   const scope = scopeInput.trim();
-
   if (!scope) {
     showMessage("考試範圍不可空白。", "error");
     return;
   }
 
+  const grade3 = isGrade3Class(student.class_name);
   const grade3Math = isGrade3Math(student.class_name, subject);
-
   let scoreValue = null;
   let correctCount = null;
   let gradeLevel = null;
 
   if (grade3Math || grade3) {
     const grade = prompt(
-      "請輸入模擬考等級（A++、A+、A、B++、B+、B、C、缺考）：",
+      "請輸入模擬考等級（A++、A+、A、B++、B+、B、C、缺考、請假）：",
       score.grade_level || ""
     );
-
     if (grade === null) return;
-
     gradeLevel = grade.trim();
-
     if (!GRADE_OPTIONS.includes(gradeLevel)) {
       showMessage("請輸入正確的模擬考等級。", "error");
       return;
     }
 
-    if (gradeLevel !== "缺考") {
+    if (gradeLevel !== "缺考" && gradeLevel !== "請假") {
       if (grade3Math) {
-        const value = prompt(
-          "請輸入國三數學分數（0～100）：",
-          score.score == null ? "" : String(score.score)
-        );
-
+        const value = prompt("請輸入國三數學分數（0～100）：", score.score == null ? "" : String(score.score));
         if (value === null) return;
-
         scoreValue = Number(value);
-
         if (value.trim() === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
           showMessage("國三數學分數必須是 0～100。", "error");
           return;
         }
-
       } else {
-        const value = prompt(
-          "請輸入答對題數：",
-          score.correct_count == null ? "" : String(score.correct_count)
-        );
-
+        const value = prompt("請輸入答對題數：", score.correct_count == null ? "" : String(score.correct_count));
         if (value === null) return;
-
         correctCount = Number(value);
-
         if (value.trim() === "" || !Number.isInteger(correctCount) || correctCount < 0) {
           showMessage("答對題數必須是 0 或正整數。", "error");
           return;
         }
       }
     }
-
   } else {
-    const value = prompt(
-      "請輸入一般成績（0～100）：",
-      score.score == null ? "" : String(score.score)
-    );
-
+    const defaultValue = score.grade_level === "請假" ? "請假" : (score.score == null ? "" : String(score.score));
+    const value = prompt("請輸入一般成績（0～100），或輸入「請假」：", defaultValue);
     if (value === null) return;
-
-    scoreValue = Number(value);
-
-    if (value.trim() === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-      showMessage("一般成績必須是 0～100。", "error");
-      return;
+    if (value.trim() === "請假") {
+      gradeLevel = "請假";
+    } else {
+      scoreValue = Number(value);
+      if (value.trim() === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+        showMessage("一般成績必須是 0～100，或輸入「請假」。", "error");
+        return;
+      }
     }
   }
+
+  const resultLabel = gradeLevel === "請假" || gradeLevel === "缺考"
+    ? gradeLevel
+    : grade3Math
+      ? scoreValue + " 分／" + gradeLevel
+      : grade3
+        ? correctCount + " 題／" + gradeLevel
+        : scoreValue + " 分";
 
   const confirmed = confirm(
     "確認修改這筆成績嗎？\n\n" +
     "學生：" + student.full_name + "\n" +
     "科目：" + subject + "\n" +
     "考試範圍：" + scope + "\n" +
-    "成績：" + (gradeLevel === "缺考" ? "缺考" : "正常成績") + "\n" +
+    "成績：" + resultLabel + "\n" +
     "此操作會更新原有資料，不會新增另一筆成績。"
   );
-
   if (!confirmed) return;
 
   const payload = {
@@ -1009,18 +1000,11 @@ async function editScore(scoreId) {
   };
 
   try {
-    const result = await db
-      .from("scores")
-      .update(payload)
-      .eq("id", scoreId);
-
+    const result = await db.from("scores").update(payload).eq("id", scoreId);
     if (result.error) throw result.error;
-
     await loadAdminData();
     renderOverview();
-
     showMessage("「" + student.full_name + "」的成績已修改成功。", "success");
-
   } catch (error) {
     showMessage("修改成績失敗：" + error.message, "error");
   }
@@ -1046,9 +1030,11 @@ async function deleteScore(scoreId) {
     return;
   }
 
-  const resultText = score.grade_level === "缺考"
-    ? "缺考"
-    : isGrade3Math(student.class_name, score.subject)
+  const resultText = score.grade_level === "請假"
+    ? "請假"
+    : score.grade_level === "缺考"
+      ? "缺考"
+      : isGrade3Math(student.class_name, score.subject)
       ? "分數：" + (score.score == null ? "—" : score.score) + " 分，等級：" + (score.grade_level || "—")
       : isGrade3Class(student.class_name)
         ? (score.correct_count == null ? "—" : score.correct_count) + " 題，等級：" + (score.grade_level || "—")
@@ -1100,6 +1086,7 @@ function saveScoreEntryProgress() {
     mathGrade: $("grade3MathGrade").value,
     correctCount: $("correctCount").value,
     gradeLevel: $("gradeLevel").value,
+    generalAttendance: $("generalAttendance") ? $("generalAttendance").value : "normal",
     savedAt: new Date().toISOString()
   };
   try { localStorage.setItem(SCORE_ENTRY_PROGRESS_KEY, JSON.stringify(progress)); } catch (error) {}
@@ -1121,6 +1108,7 @@ function restoreScoreEntryProgress() {
   if ($("grade3MathGrade")) $("grade3MathGrade").value = progress.mathGrade || "";
   if ($("correctCount")) $("correctCount").value = progress.correctCount || "";
   if ($("gradeLevel")) $("gradeLevel").value = progress.gradeLevel || "";
+  if ($("generalAttendance")) $("generalAttendance").value = progress.generalAttendance || "normal";
   updateGrade3AbsenceMode();
 }
 
@@ -1128,6 +1116,7 @@ function clearScoreEntryDraft() {
   ["scoreValue", "grade3MathScore", "grade3MathGrade", "correctCount", "gradeLevel"].forEach(function (id) {
     if ($(id)) $(id).value = "";
   });
+  if ($("generalAttendance")) $("generalAttendance").value = "normal";
   saveScoreEntryProgress();
 }
 
@@ -1154,12 +1143,13 @@ function renderScoreEntry() {
     "<button class='btn btn-secondary btn-small' type='button' id='scorePrevStudent'>上一位學生</button>" +
     "<button class='btn btn-secondary btn-small' type='button' id='scoreNextStudent'>下一位學生</button>" +
     "<span class='muted' id='scoreEntryCounter'>本次頁面已成功登錄 " + scoreEntrySavedCount + " 筆</span></div>" +
+    "<div id='generalAttendanceField' class='field'><label>出席狀態</label><select id='generalAttendance'><option value='normal'>正常出席</option><option value='請假'>請假</option></select></div>" +
     "<div id='normalScoreField' class='field'><label>一般成績</label><input id='scoreValue' type='number' min='0' max='100' step='0.1' placeholder='請輸入分數'></div>" +
     "<div id='grade3MathFields' class='form-grid hidden'><div class='field'><label>國三數學分數</label><input id='grade3MathScore' type='number' min='0' max='100' step='0.1'></div>" +
     "<div class='field'><label>模擬考等級</label><select id='grade3MathGrade'><option value=''>請選擇等級</option>" + gradeOptionsHtml + "</select></div></div>" +
     "<div id='grade3Fields' class='form-grid hidden'><div class='field'><label>答對題數</label><input id='correctCount' type='number' min='0' step='1'></div>" +
     "<div class='field'><label>模擬考等級</label><select id='gradeLevel'><option value=''>請選擇等級</option>" + gradeOptionsHtml + "</select></div></div>" +
-    "<p id='absenceHint' class='muted hidden' style='color:#d32626;font-weight:800'>已選擇缺考，不需要輸入分數或答對題數。</p>" +
+    "<p id='absenceHint' class='muted hidden' style='color:#8a5a00;font-weight:800'>已選擇特殊狀態，不需要輸入分數或答對題數。</p>" +
     "<button class='btn btn-success' type='submit' id='saveScoreButton'>儲存成績</button></form></div>" +
     "<p class='muted'>請先選擇考試週期，再依班級篩選學生。儲存後會保留考試、班級、學生、科目及範圍，方便連續登錄；可使用上一位／下一位學生快速切換。遇到重複資料時，系統會顯示原有與新成績供確認。</p>";
 
@@ -1174,7 +1164,14 @@ function renderScoreEntry() {
   $("scoreScope").addEventListener("input", saveScoreEntryProgress);
   ["scoreValue", "grade3MathScore", "grade3MathGrade", "correctCount", "gradeLevel"].forEach(function (id) {
     $(id).addEventListener("input", saveScoreEntryProgress);
-    $(id).addEventListener("change", saveScoreEntryProgress);
+    $(id).addEventListener("change", function () {
+      updateGrade3AbsenceMode();
+      saveScoreEntryProgress();
+    });
+  });
+  $("generalAttendance").addEventListener("change", function () {
+    updateGrade3AbsenceMode();
+    saveScoreEntryProgress();
   });
   $("scorePrevStudent").addEventListener("click", function () { moveScoreStudent(-1); saveScoreEntryProgress(); });
   $("scoreNextStudent").addEventListener("click", function () { moveScoreStudent(1); saveScoreEntryProgress(); });
@@ -1226,10 +1223,11 @@ function updateScoreMode() {
   const grade3 = student && isGrade3Class(student.class_name);
   const grade3Math = student && isGrade3Math(student.class_name, subject);
   const grade3Other = !!grade3 && !grade3Math;
+  $("generalAttendanceField").classList.toggle("hidden", !!grade3);
   $("normalScoreField").classList.toggle("hidden", !!grade3);
   $("grade3MathFields").classList.toggle("hidden", !grade3Math);
   $("grade3Fields").classList.toggle("hidden", !grade3Other);
-  $("scoreValue").required = !grade3;
+  $("scoreValue").required = !grade3 && $("generalAttendance").value !== "請假";
   $("grade3MathScore").required = !!grade3Math;
   $("grade3MathGrade").required = !!grade3Math;
   $("correctCount").required = !!grade3Other;
@@ -1247,15 +1245,24 @@ function updateGrade3AbsenceMode() {
   const subject = $("scoreSubject") ? $("scoreSubject").value : "";
   const grade3Math = student && isGrade3Math(student.class_name, subject);
   const grade3Other = student && isGrade3Class(student.class_name) && !grade3Math;
-  const mathAbsent = grade3Math && mathGrade.value === "缺考";
-  const otherAbsent = grade3Other && otherGrade.value === "缺考";
+  const mathAbsent = grade3Math && (mathGrade.value === "缺考" || mathGrade.value === "請假");
+  const otherAbsent = grade3Other && (otherGrade.value === "缺考" || otherGrade.value === "請假");
+  const generalLeave = !!student && !isGrade3Class(student.class_name) &&
+    $("generalAttendance").value === "請假";
+  $("scoreValue").required = !!student && !isGrade3Class(student.class_name) && !generalLeave;
+  $("scoreValue").disabled = generalLeave;
   $("grade3MathScore").required = !!grade3Math && !mathAbsent;
   $("correctCount").required = !!grade3Other && !otherAbsent;
   $("grade3MathScore").disabled = !!mathAbsent;
   $("correctCount").disabled = !!otherAbsent;
   if (mathAbsent) $("grade3MathScore").value = "";
   if (otherAbsent) $("correctCount").value = "";
-  $("absenceHint").classList.toggle("hidden", !(mathAbsent || otherAbsent));
+  if (generalLeave) $("scoreValue").value = "";
+  const showHint = mathAbsent || otherAbsent || generalLeave;
+  $("absenceHint").textContent = generalLeave || mathGrade.value === "請假" || otherGrade.value === "請假"
+    ? "已選擇請假，不需要輸入分數或答對題數。"
+    : "已選擇缺考，不需要輸入分數或答對題數。";
+  $("absenceHint").classList.toggle("hidden", !showHint);
 }
 
 async function saveScore(event) {
@@ -1284,7 +1291,7 @@ async function saveScore(event) {
       showMessage("請選擇正確的模擬考等級。", "error");
       return;
     }
-    if (gradeLevel !== "缺考") {
+    if (gradeLevel !== "缺考" && gradeLevel !== "請假") {
       scoreValue = Number($("grade3MathScore").value);
       if ($("grade3MathScore").value === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
         showMessage("國三數學請輸入 0～100 分。", "error");
@@ -1297,13 +1304,15 @@ async function saveScore(event) {
       showMessage("請選擇正確的模擬考等級。", "error");
       return;
     }
-    if (gradeLevel !== "缺考") {
+    if (gradeLevel !== "缺考" && gradeLevel !== "請假") {
       correctCount = Number($("correctCount").value);
       if ($("correctCount").value === "" || !Number.isInteger(correctCount) || correctCount < 0) {
         showMessage("請輸入正確的答對題數。", "error");
         return;
       }
     }
+  } else if ($("generalAttendance").value === "請假") {
+    gradeLevel = "請假";
   } else {
     scoreValue = Number($("scoreValue").value);
     if ($("scoreValue").value === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
@@ -1320,11 +1329,11 @@ async function saveScore(event) {
   );
 
   if (duplicate) {
-    const oldResult = duplicate.grade_level === "缺考" ? "缺考" :
+    const oldResult = duplicate.grade_level === "缺考" || duplicate.grade_level === "請假" ? duplicate.grade_level :
       grade3Math ? (duplicate.score == null ? "—" : duplicate.score) + " 分／" + (duplicate.grade_level || "未設定等級") :
       grade3 ? (duplicate.correct_count == null ? "—" : duplicate.correct_count) + " 題／" + (duplicate.grade_level || "未設定等級") :
       (duplicate.score == null ? "—" : duplicate.score) + " 分";
-    const newResult = gradeLevel === "缺考" ? "缺考" :
+    const newResult = gradeLevel === "缺考" || gradeLevel === "請假" ? gradeLevel :
       grade3Math ? scoreValue + " 分／" + gradeLevel :
       grade3 ? correctCount + " 題／" + gradeLevel : scoreValue + " 分";
     const exam = examsCache.find(item => String(item.id) === String(examId));
@@ -2610,7 +2619,9 @@ async function renderParentDashboard() {
         const grade3 = isGrade3Class(student.class_name);
         const grade3Math = isGrade3Math(student.class_name, score.subject);
         let resultText = "";
-        if (score.grade_level === "缺考") {
+        if (score.grade_level === "請假") {
+          resultText = "<span class='parent-score-number'>－</span>";
+        } else if (score.grade_level === "缺考") {
           resultText = gradeTag("缺考");
         } else if (grade3Math) {
           resultText = "<span class='" +
