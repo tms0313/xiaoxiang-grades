@@ -1395,17 +1395,22 @@ function renderStudents() {
   const classFilter = $("studentClassFilter") ? $("studentClassFilter").value : "all";
   const subjectFilter = $("studentSubjectFilter") ? $("studentSubjectFilter").value : "all";
 
-  const visibleStudents = studentsCache.filter(function (student) {
+  const matchingStudents = studentsCache.filter(function (student) {
     const active = student.is_active !== false;
     const statusMatch = filter === "active" ? active : !active;
     const classMatch = classFilter === "all" || student.class_name === classFilter;
-    const subjectMatch = subjectFilter === "all" || studentSubjectsCache.some(function (item) {
+    return statusMatch && classMatch;
+  });
+
+  const enrolledStudents = matchingStudents.filter(function (student) {
+    return subjectFilter === "all" || studentSubjectsCache.some(function (item) {
       return String(item.student_id) === String(student.id) &&
         item.subject === subjectFilter &&
         item.is_active === true;
     });
-    return statusMatch && classMatch && subjectMatch;
   });
+
+  const visibleStudents = enrolledStudents;
 
   const rows = visibleStudents.map(function (student) {
     const active = student.is_active !== false;
@@ -1446,6 +1451,7 @@ function renderStudents() {
         "<select id='studentSubjectFilter'><option value='all'>全部科目</option>" +
           SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") +
         "</select>" +
+        "<span id='studentSubjectCount' class='muted' style='font-weight:700; white-space:nowrap;'>目前修課人數 " + enrolledStudents.length + " 人</span>" +
       "</div>" +
       "<div class='table-wrap'><table class='student-management-table'>" +
         "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>狀態</th><th>操作</th></tr></thead>" +
