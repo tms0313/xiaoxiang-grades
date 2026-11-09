@@ -368,6 +368,14 @@ style.textContent = [
   ".export-download { width:100%; padding:13px 18px; font-size:15px; }",
   ".export-download:disabled { opacity:.45; cursor:not-allowed; }",
   ".export-empty { padding:25px; text-align:center; color:#8491a0; background:#f8fafc; border-radius:9px; }",
+  ".overview-table .action-buttons .btn,.student-management-table .action-buttons .btn,.exam-management-table .action-buttons .btn { font-size:14px !important; font-weight:800 !important; }",
+  ".guardian-management-table .action-buttons .btn { font-size:13px !important; font-weight:800 !important; padding:0 5px !important; }",
+  ".export-panel-title,.export-select-all span,.export-period-date { font-size:25px !important; font-weight:850 !important; line-height:1.35; }",
+  ".export-period-list { gap:3px !important; }",
+  ".export-period-item { padding:7px 12px !important; gap:10px !important; min-height:0; }",
+  ".export-period-item input { width:19px; height:19px; }",
+  ".export-summary { padding:9px 2px; }",
+  "@media(max-width:600px) { .export-panel-title,.export-select-all span,.export-period-date { font-size:21px !important; } .export-period-item { padding:6px 10px !important; } }",
 
   ".muted { color:#778494; font-size:13px; }",
   ".empty { padding:25px; text-align:center; color:#8491a0; }",
@@ -1507,10 +1515,10 @@ function renderGuardians() {
           "<td class='action-cell'>" +
             "<div class='action-buttons'>" +
               "<button class='btn btn-small' data-edit-parent='" +
-                escapeHtml(parent.id) + "'>修改家長資料</button>" +
+                escapeHtml(parent.id) + "'>修改</button>" +
               "<button class='btn btn-danger btn-small' data-unbind='" +
                 escapeHtml(link.guardian_id) + "|" +
-                escapeHtml(link.student_id) + "'>解除綁定</button>" +
+                escapeHtml(link.student_id) + "'>解除</button>" +
             "</div>" +
           "</td>" +
         "</tr>"
@@ -1529,9 +1537,9 @@ function renderGuardians() {
             "<td class='action-cell'>" +
               "<div class='action-buttons'>" +
                 "<button class='btn btn-small' data-edit-parent='" +
-                  escapeHtml(parent.id) + "'>修改家長資料</button>" +
+                  escapeHtml(parent.id) + "'>修改</button>" +
                 "<button class='btn btn-danger btn-small' data-delete-parent='" +
-                  escapeHtml(parent.id) + "'>刪除帳號</button>" +
+                  escapeHtml(parent.id) + "'>刪除</button>" +
               "</div>" +
             "</td>" +
           "</tr>"
