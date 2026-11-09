@@ -28,6 +28,8 @@
    12. 成績匯出改為考試週期勾選清單
    13. 家長登入後可自行修改密碼
    14. 家長新密碼至少 8 個字元
+   15. 家長手機版成績改為直式卡片
+   16. 電腦版家長成績維持原本表格
    ================================================== */
 
 "use strict";
@@ -292,6 +294,16 @@ style.textContent = [
   ".parent-score-table td { overflow-wrap:anywhere; word-break:break-word; }",
   ".parent-score-table td:nth-child(3) { white-space:normal; }",
 
+  /* 家長成績：電腦版表格、手機版卡片 */
+  ".parent-score-desktop { display:block; }",
+  ".parent-score-mobile { display:none; }",
+
+  ".parent-subject-card { border:1px solid #dfe7ef; border-radius:10px; padding:14px; margin-bottom:10px; background:#fff; }",
+  ".parent-subject-name { font-size:16px; font-weight:800; color:#23466b; margin-bottom:10px; }",
+  ".parent-subject-scope { font-size:14px; color:#526477; line-height:1.7; overflow-wrap:anywhere; word-break:break-word; margin-bottom:10px; }",
+  ".parent-subject-scope-label { color:#8491a0; font-size:12px; font-weight:700; margin-bottom:3px; }",
+  ".parent-subject-result { padding-top:9px; border-top:1px solid #edf0f4; font-size:16px; font-weight:800; color:#263445; line-height:1.8; }",
+
   ".student-management-table { width:100%; min-width:650px; table-layout:fixed; }",
   ".student-management-table th:nth-child(1),.student-management-table td:nth-child(1) { width:17%; }",
   ".student-management-table th:nth-child(2),.student-management-table td:nth-child(2) { width:22%; }",
@@ -346,7 +358,12 @@ style.textContent = [
   ".login-card { padding:24px; }",
   ".tabs { gap:5px; }",
   ".tab-btn { padding:8px 10px; font-size:13px; }",
-  ".parent-score-table { min-width:520px; }",
+
+  /* 手機版不再顯示橫向表格 */
+  ".parent-score-desktop { display:none; }",
+  ".parent-score-mobile { display:block; width:100%; }",
+  ".parent-subject-card { padding:12px; }",
+
   ".student-management-table { min-width:650px; }",
   ".overview-table { min-width:1050px; }",
   ".exam-management-table { min-width:600px; }",
@@ -486,7 +503,9 @@ async function loadCurrentProfile() {
   }
 
   await renderDashboard();
-}// ==================================================
+}
+
+// ==================================================
 // 5. 重新讀取資料
 // ==================================================
 
@@ -862,7 +881,9 @@ async function editScore(scoreId) {
   } catch (error) {
     showMessage("修改成績失敗：" + error.message, "error");
   }
-}// ==================================================
+}
+
+// ==================================================
 // 7-2. 刪除單筆成績
 // ==================================================
 
@@ -1255,7 +1276,9 @@ async function deleteStudent(id) {
   } catch (error) {
     showMessage("刪除失敗：" + error.message, "error");
   }
-}// ==================================================
+}
+
+// ==================================================
 // 10. 考試管理
 // ==================================================
 
@@ -1416,7 +1439,6 @@ function renderGuardians() {
 
     const rows = [];
 
-    // 已綁定學生的家長：依綁定關係顯示，保留班級篩選。
     guardianLinksCache.forEach(function (link) {
       const parent = profilesCache.find(
         item => String(item.id) === String(link.guardian_id)
@@ -1448,7 +1470,6 @@ function renderGuardians() {
       );
     });
 
-    // 未綁定任何學生的家長也列出；不受班級篩選影響，方便清理測試帳號。
     profilesCache
       .filter(profile => !linkedParentIds.has(String(profile.id)))
       .forEach(function (parent) {
@@ -1544,7 +1565,7 @@ function renderGuardians() {
 }
 
 // ==================================================
-// 11-1. 刪除尚未綁定學生的家長帳號（Auth + profiles）
+// 11-1. 刪除尚未綁定學生的家長帳號
 // ==================================================
 
 async function deleteUnboundParentAccount(parentId) {
@@ -1701,7 +1722,10 @@ async function editParentAccount(parentId) {
     console.error("修改家長資料失敗：", error);
     showMessage("修改家長資料失敗：" + error.message, "error");
   }
-}// 11-2. 呼叫 Edge Function 建立家長帳號
+}
+
+// ==================================================
+// 11-3. 呼叫 Edge Function 建立家長帳號
 // ==================================================
 
 async function createParentAccount(event) {
@@ -1805,7 +1829,7 @@ async function createParentAccount(event) {
 }
 
 // ==================================================
-// 11-3. 原有手動建立家長綁定
+// 11-4. 原有手動建立家長綁定
 // ==================================================
 
 async function saveGuardianBinding(event) {
@@ -2168,7 +2192,10 @@ function exportCsv() {
     " 筆成績資料。",
     "success"
   );
-}// 15. 家長端畫面
+}
+
+// ==================================================
+// 15. 家長端畫面
 // ==================================================
 
 async function renderParentDashboard() {
@@ -2303,6 +2330,12 @@ async function renderParentDashboard() {
     });
   }
 
+  // ==================================================
+  // 家長成績顯示
+  // 電腦版：維持表格
+  // 手機版：每科一張直式卡片
+  // ==================================================
+
   function buildParentScoreTable(student, exam) {
     const scores = getStudentScores(student, exam);
 
@@ -2310,7 +2343,10 @@ async function renderParentDashboard() {
       return "<div class='empty'>本次考試尚無成績資料。</div>";
     }
 
-    const rows = scores.map(function (score) {
+    const desktopRows = [];
+    const mobileCards = [];
+
+    scores.forEach(function (score) {
       const grade3 = isGrade3Class(student.class_name);
       const grade3Math = isGrade3Math(student.class_name, score.subject);
 
@@ -2343,19 +2379,46 @@ async function renderParentDashboard() {
           " 分</span>";
       }
 
-      return "<tr>" +
-        "<td>" + escapeHtml(score.subject) + "</td>" +
-        "<td>" + escapeHtml(score.scope || "—") + "</td>" +
-        "<td>" + resultText + "</td>" +
-        "</tr>";
-    }).join("");
+      // 電腦版表格資料
+      desktopRows.push(
+        "<tr>" +
+          "<td>" + escapeHtml(score.subject) + "</td>" +
+          "<td>" + escapeHtml(score.scope || "—") + "</td>" +
+          "<td>" + resultText + "</td>" +
+        "</tr>"
+      );
+
+      // 手機版直式卡片資料
+      mobileCards.push(
+        "<div class='parent-subject-card'>" +
+          "<div class='parent-subject-name'>" +
+            escapeHtml(score.subject) +
+          "</div>" +
+          "<div class='parent-subject-scope'>" +
+            "<div class='parent-subject-scope-label'>考試範圍</div>" +
+            escapeHtml(score.scope || "—") +
+          "</div>" +
+          "<div class='parent-subject-result'>" +
+            "成績：" + resultText +
+          "</div>" +
+        "</div>"
+      );
+    });
 
     return (
-      "<div class='table-wrap'>" +
-        "<table class='parent-score-table'>" +
-          "<thead><tr><th>科目</th><th>考試範圍</th><th>成績</th></tr></thead>" +
-          "<tbody>" + rows + "</tbody>" +
-        "</table>" +
+      // 電腦版：原本三欄表格
+      "<div class='parent-score-desktop'>" +
+        "<div class='table-wrap'>" +
+          "<table class='parent-score-table'>" +
+            "<thead><tr><th>科目</th><th>考試範圍</th><th>成績</th></tr></thead>" +
+            "<tbody>" + desktopRows.join("") + "</tbody>" +
+          "</table>" +
+        "</div>" +
+      "</div>" +
+
+      // 手機版：直式成績卡片
+      "<div class='parent-score-mobile'>" +
+        mobileCards.join("") +
       "</div>"
     );
   }
