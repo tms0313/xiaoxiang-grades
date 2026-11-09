@@ -1620,8 +1620,8 @@ function renderGuardians() {
       ? $("guardianClass").value
       : "";
 
-    const linkedParentIds = new Set(
-      guardianLinksCache.map(link => String(link.guardian_id))
+    const linkedStudentIds = new Set(
+      guardianLinksCache.map(link => String(link.student_id))
     );
 
     const rows = [];
@@ -1630,25 +1630,23 @@ function renderGuardians() {
       const parent = profilesCache.find(
         item => String(item.id) === String(link.guardian_id)
       );
-
       const student = studentsCache.find(
         item => String(item.id) === String(link.student_id)
       );
 
-      if (!parent || !student) return;
+      if (!student) return;
       if (selectedClass && student.class_name !== selectedClass) return;
 
       rows.push(
         "<tr>" +
-          "<td>" + escapeHtml(parent.display_name || parent.email) + "</td>" +
-          "<td>" + escapeHtml(parent.email) + "</td>" +
+          "<td>" + escapeHtml(parent ? (parent.display_name || parent.email) : "家長資料不存在") + "</td>" +
+          "<td>" + escapeHtml(parent ? parent.email : "—") + "</td>" +
           "<td><span class='guardian-status-bound'>已綁定</span></td>" +
           "<td>" + escapeHtml(student.class_name) + "</td>" +
           "<td>" + escapeHtml(student.full_name) + "</td>" +
           "<td class='action-cell'>" +
             "<div class='action-buttons'>" +
-              "<button class='btn btn-small' data-edit-parent='" +
-                escapeHtml(parent.id) + "'>修改</button>" +
+              (parent ? "<button class='btn btn-small' data-edit-parent='" + escapeHtml(parent.id) + "'>修改</button>" : "") +
               "<button class='btn btn-danger btn-small' data-unbind='" +
                 escapeHtml(link.guardian_id) + "|" +
                 escapeHtml(link.student_id) + "'>解除</button>" +
@@ -1658,24 +1656,18 @@ function renderGuardians() {
       );
     });
 
-    profilesCache
-      .filter(profile => !linkedParentIds.has(String(profile.id)))
-      .forEach(function (parent) {
+    studentsCache
+      .filter(student => !linkedStudentIds.has(String(student.id)))
+      .filter(student => !selectedClass || student.class_name === selectedClass)
+      .forEach(function (student) {
         rows.push(
           "<tr class='guardian-unbound-row'>" +
-            "<td>" + escapeHtml(parent.display_name || "未設定姓名") + "</td>" +
-            "<td>" + escapeHtml(parent.email || "—") + "</td>" +
-            "<td><span class='guardian-status-unbound'>尚未綁定學生</span></td>" +
             "<td>—</td>" +
             "<td>—</td>" +
-            "<td class='action-cell'>" +
-              "<div class='action-buttons'>" +
-                "<button class='btn btn-small' data-edit-parent='" +
-                  escapeHtml(parent.id) + "'>修改</button>" +
-                "<button class='btn btn-danger btn-small' data-delete-parent='" +
-                  escapeHtml(parent.id) + "'>刪除</button>" +
-              "</div>" +
-            "</td>" +
+            "<td><span class='guardian-status-unbound'>尚未綁定家長</span></td>" +
+            "<td>" + escapeHtml(student.class_name) + "</td>" +
+            "<td>" + escapeHtml(student.full_name) + "</td>" +
+            "<td class='action-cell'>請建立家長帳號並完成綁定</td>" +
           "</tr>"
         );
       });
