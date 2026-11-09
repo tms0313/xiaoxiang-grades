@@ -253,6 +253,8 @@ style.textContent = [
   ".parent-logout-btn { background:#a83e45; }",
   ".parent-logout-btn:hover { background:#c04d55; }",
   ".parent-action-icon { width:18px; height:18px; flex:0 0 18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }",
+  ".parent-bottom-nav { display:none; }",
+  ".parent-page { padding-bottom:94px; }",
 
   ".dashboard { width:min(1200px,94%); margin:30px auto; background:#fff; padding:28px; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
   ".tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; border-bottom:1px solid #e4e9ef; padding-bottom:15px; }",
@@ -363,6 +365,13 @@ style.textContent = [
   ".parent-score-desktop { display:none; }",
   ".parent-score-mobile { display:block; width:100%; }",
   ".parent-subject-card { padding:12px; }",
+  ".parent-page .parent-top-actions { display:none !important; }",
+  ".parent-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
+  ".parent-bottom-nav .parent-action-btn { flex:1 1 50%; min-width:0; min-height:68px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; border:0; border-radius:10px; color:#fff; font-size:13px; font-weight:800; padding:7px 8px; }",
+  ".parent-bottom-nav .parent-action-icon { width:25px; height:25px; flex:0 0 25px; stroke-width:2.1; }",
+  ".parent-bottom-nav .parent-password-btn { background:#315f8b; }",
+  ".parent-bottom-nav .parent-logout-btn { background:#a83e45; }",
+  ".parent-bottom-nav .parent-action-btn:hover { transform:none; box-shadow:none; }",
 
   ".student-management-table { min-width:650px; }",
   ".overview-table { min-width:1050px; }",
@@ -389,6 +398,7 @@ function createRoot() {
 const appRoot = createRoot();
 
 function loginPage() {
+  document.body.classList.remove("parent-page");
   appRoot.innerHTML =
     "<div class='login-wrap'>" +
       "<div class='login-card'>" +
@@ -2194,11 +2204,36 @@ function exportCsv() {
   );
 }
 
+// 家長端固定底部功能列：僅保留修改密碼與登出
+function buildParentBottomNav() {
+  return (
+    "<nav class='parent-bottom-nav' aria-label='家長功能'>" +
+      "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
+        "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
+        "<span>修改密碼</span>" +
+      "</button>" +
+      "<button class='parent-action-btn parent-logout-btn parent-logout' type='button' title='登出系統' aria-label='登出系統'>" +
+        "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg>" +
+        "<span>登出</span>" +
+      "</button>" +
+    "</nav>"
+  );
+}
+function bindParentActionButtons() {
+  document.querySelectorAll(".parent-change-password").forEach(function (button) {
+    button.addEventListener("click", changeOwnPassword);
+  });
+  document.querySelectorAll(".parent-logout").forEach(function (button) {
+    button.addEventListener("click", handleLogout);
+  });
+}
+
 // ==================================================
 // 15. 家長端畫面
 // ==================================================
 
 async function renderParentDashboard() {
+  document.body.classList.add("parent-page");
   const content = $("appRoot");
 
   const profileResult = await db
@@ -2219,21 +2254,21 @@ async function renderParentDashboard() {
     content.innerHTML =
       "<div class='topbar'>" +
         "<div><h1>小象文教機構｜成績查詢</h1><small>家長專區</small></div>" +
-        "<div>" +
-          "<button class='parent-action-btn parent-password-btn' id='changePasswordButton' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
+        "<div class='parent-top-actions'>" +
+          "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
             "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
             "<span>修改密碼</span></button> " +
-          "<button class='parent-action-btn parent-logout-btn' id='logoutButton' type='button' title='登出系統' aria-label='登出系統'>" +
+          "<button class='parent-action-btn parent-logout-btn parent-logout' type='button' title='登出系統' aria-label='登出系統'>" +
             "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg>" +
             "<span>登出</span></button>" +
         "</div>" +
       "</div>" +
       "<main class='dashboard'>" +
         "<div class='system-message'>目前尚未綁定學生，請聯絡管理員協助處理。</div>" +
-      "</main>";
+      "</main>" +
+      buildParentBottomNav();
 
-    $("changePasswordButton").addEventListener("click", changeOwnPassword);
-    $("logoutButton").addEventListener("click", handleLogout);
+    bindParentActionButtons();
     return;
   }
 
@@ -2459,13 +2494,11 @@ async function renderParentDashboard() {
   content.innerHTML =
     "<div class='topbar'>" +
       "<div><h1>小象文教機構｜成績查詢</h1><small>家長專區</small></div>" +
-      "<div><span>" +
-        escapeHtml(currentProfile.display_name || currentUser.email) +
-      "</span>　" +
-      "<button class='parent-action-btn parent-password-btn' id='changePasswordButton' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
+      "<div class='parent-top-actions'>" +
+      "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
         "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
         "<span>修改密碼</span></button> " +
-      "<button class='parent-action-btn parent-logout-btn' id='logoutButton' type='button' title='登出系統' aria-label='登出系統'>" +
+      "<button class='parent-action-btn parent-logout-btn parent-logout' type='button' title='登出系統' aria-label='登出系統'>" +
         "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg>" +
         "<span>登出</span></button></div>" +
     "</div>" +
@@ -2473,10 +2506,10 @@ async function renderParentDashboard() {
       "<h2 class='section-title'>學生考試成績</h2>" +
       studentCards +
     "</main>" +
-    "<div class='footer'>© 小象文教機構</div>";
+    "<div class='footer'>© 小象文教機構</div>" +
+    buildParentBottomNav();
 
-  $("changePasswordButton").addEventListener("click", changeOwnPassword);
-  $("logoutButton").addEventListener("click", handleLogout);
+  bindParentActionButtons();
 }
 
 // ==================================================
