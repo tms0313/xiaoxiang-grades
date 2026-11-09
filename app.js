@@ -347,7 +347,9 @@ style.textContent = [
   ".empty { padding:25px; text-align:center; color:#8491a0; }",
   ".loading-message { position:fixed; top:15px; right:15px; z-index:9999; background:#23466b; color:#fff; padding:12px 18px; border-radius:8px; box-shadow:0 3px 12px rgba(0,0,0,.2); }",
   ".student-card { border:1px solid #e2e8ef; border-radius:12px; padding:18px; margin:15px 0; }",
-  ".student-card h3 { margin-top:0; color:#23466b; }",
+  ".student-card .student-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:0 12px; margin:0 0 16px; color:#23466b; line-height:1.35; }",
+  ".student-card .student-name { font-size:25px; font-weight:850; letter-spacing:.3px; color:#1e4165; }",
+  ".student-card .student-class { font-size:18px; font-weight:700; color:#64748b; }",
   ".footer { text-align:center; color:#8995a2; padding:25px; font-size:13px; }",
   ".hidden { display:none !important; }",
 
@@ -366,10 +368,13 @@ style.textContent = [
   ".parent-subject-result { min-width:82px; max-width:45%; padding-left:10px; }",
   ".parent-subject-result-value { font-size:21px; }",
   ".parent-subject-result-value .parent-score-number { font-size:23px; }",
+  ".student-card .student-heading { gap:0 9px; margin-bottom:14px; }",
+  ".student-card .student-name { font-size:23px; }",
+  ".student-card .student-class { font-size:17px; }",
   ".parent-page .parent-top-actions { display:none !important; }",
   ".parent-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
-  ".parent-bottom-nav .parent-action-btn { flex:1 1 50%; min-width:0; min-height:68px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; border:0; border-radius:10px; color:#fff; font-size:13px; font-weight:800; padding:7px 8px; }",
-  ".parent-bottom-nav .parent-action-icon { width:25px; height:25px; flex:0 0 25px; stroke-width:2.1; }",
+  ".parent-bottom-nav .parent-action-btn { flex:1 1 50%; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:9px; color:#fff; font-size:12px; font-weight:750; padding:5px 8px; }",
+  ".parent-bottom-nav .parent-action-icon { width:19px; height:19px; flex:0 0 19px; stroke-width:1.9; }",
   ".parent-bottom-nav .parent-password-btn { background:#315f8b; }",
   ".parent-bottom-nav .parent-logout-btn { background:#a83e45; }",
   ".parent-bottom-nav .parent-action-btn:hover { transform:none; box-shadow:none; }",
@@ -2442,11 +2447,9 @@ async function renderParentDashboard() {
 
     return (
       "<div class='student-card'>" +
-        "<h3>" +
-          escapeHtml(student.full_name) +
-          "　<span class='muted'>" +
-          escapeHtml(student.class_name) +
-          "</span>" +
+        "<h3 class='student-heading'>" +
+          "<span class='student-name'>" + escapeHtml(student.full_name) + "</span>" +
+          "<span class='student-class'>" + escapeHtml(student.class_name) + "</span>" +
         "</h3>" +
         examCards +
       "</div>"
