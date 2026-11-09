@@ -730,27 +730,52 @@ function renderOverview() {
     );
   }
 
+  function buildMissingOverviewRow(student, exam, subject) {
+    return (
+      "<tr class='overview-missing-row'>" +
+        "<td>" + escapeHtml(formatDateRange(exam)) + "</td>" +
+        "<td>" + escapeHtml(student.class_name) + "</td>" +
+        "<td>" + escapeHtml(student.student_code) + "</td>" +
+        "<td>" + escapeHtml(student.full_name) + "</td>" +
+        "<td>" + escapeHtml(subject) + "</td>" +
+        "<td>—</td>" +
+        "<td><strong style='color:#d97706'>尚未登錄</strong></td>" +
+        "<td>—</td>" +
+      "</tr>"
+    );
+  }
+
+  const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
+    return "<option value='" + escapeHtml(exam.id) + "'>" +
+      escapeHtml(formatDateRange(exam)) + "</option>";
+  }).join("");
+
   content.innerHTML =
     "<h2 class='section-title'>成績總覽</h2>" +
     "<div class='toolbar'>" +
       "<input id='overviewSearch' placeholder='搜尋學生姓名或編號'>" +
+      "<select id='overviewExam'><option value=''>全部考試週期</option>" + examOptions + "</select>" +
       "<select id='overviewClass'><option value=''>全部班級</option>" +
         "<option>國一班</option><option>國二班</option><option>國三班</option>" +
       "</select>" +
+      "<select id='overviewSubject'><option value=''>全部科目</option>" +
+        SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") +
+      "</select>" +
       "<button class='btn btn-secondary' id='overviewRefresh'>重新整理</button>" +
     "</div>" +
+    "<p id='overviewFilterHint' class='muted' style='margin:0 0 10px'>選擇考試週期及科目後，可一併查看尚未登錄該科成績的學生。</p>" +
     "<div class='table-wrap'><table class='overview-table'>" +
-      "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績</th><th>操作</th></tr></thead>" +
+      "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績／狀態</th><th>操作</th></tr></thead>" +
       "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
     "</table></div>";
 
   function filterRows() {
     const search = $("overviewSearch").value.trim().toLowerCase();
+    const examId = $("overviewExam").value;
     const className = $("overviewClass").value;
+    const subject = $("overviewSubject").value;
 
-    const filtered = scoresCache.filter(function (score) {
-      const student = getStudent(score.student_id);
-
+    const matchesStudent = function (student) {
       return student &&
         (!className || student.class_name === className) &&
         (
@@ -758,21 +783,65 @@ function renderOverview() {
           String(student.full_name || "").toLowerCase().includes(search) ||
           String(student.student_code || "").toLowerCase().includes(search)
         );
-    }).sort(function (a, b) {
-      const examA = getExam(a.exam_id);
-      const examB = getExam(b.exam_id);
-      const dateA = String((examA && (examA.end_date || examA.start_date)) || "");
-      const dateB = String((examB && (examB.end_date || examB.start_date)) || "");
-      return dateB.localeCompare(dateA);
+    };
+
+    const rows = scoresCache.filter(function (score) {
+      const student = getStudent(score.student_id);
+      return matchesStudent(student) &&
+        (!examId || String(score.exam_id) === String(examId)) &&
+        (!subject || score.subject === subject);
+    }).map(function (score) {
+      return { score: score, student: getStudent(score.student_id), exam: getExam(score.exam_id) };
+    }).filter(item => item.exam);
+
+    // 選定考試週期與科目時，補上尚無任何該科成績紀錄的學生，方便核對登錄進度。
+    if (examId && subject) {
+      const selectedExam = getExam(examId);
+      const targetStudents = studentsCache.filter(matchesStudent);
+      targetStudents.forEach(function (student) {
+        const hasSubjectScore = scoresCache.some(function (score) {
+          return String(score.exam_id) === String(examId) &&
+            String(score.student_id) === String(student.id) &&
+            score.subject === subject;
+        });
+
+        if (!hasSubjectScore && selectedExam) {
+          rows.push({ missing: true, student: student, exam: selectedExam, subject: subject });
+        }
+      });
+    }
+
+    rows.sort(function (a, b) {
+      const dateA = String((a.exam && (a.exam.end_date || a.exam.start_date)) || "");
+      const dateB = String((b.exam && (b.exam.end_date || b.exam.start_date)) || "");
+      if (dateA !== dateB) return dateB.localeCompare(dateA);
+      const classCompare = String(a.student.class_name || "").localeCompare(String(b.student.class_name || ""), "zh-Hant");
+      if (classCompare !== 0) return classCompare;
+      return String(a.student.student_code || "").localeCompare(String(b.student.student_code || ""), undefined, { numeric: true });
     });
 
+    const missingCount = rows.filter(item => item.missing).length;
+    const hint = $("overviewFilterHint");
+    if (hint) {
+      hint.textContent = examId && subject
+        ? "目前篩選：" + formatDateRange(getExam(examId)) + "／" + (className || "全部班級") + "／" + subject +
+          "；尚未登錄 " + missingCount + " 位。此處以「該考試週期至少有一筆該科成績」判定已登錄。"
+        : "選擇考試週期及科目後，可一併查看尚未登錄該科成績的學生。";
+    }
+
     $("overviewRows").innerHTML =
-      filtered.map(buildOverviewRow).join("") ||
+      rows.map(function (item) {
+        return item.missing
+          ? buildMissingOverviewRow(item.student, item.exam, item.subject)
+          : buildOverviewRow(item.score);
+      }).join("") ||
       "<tr><td colspan='8' class='empty'>沒有符合的成績資料</td></tr>";
   }
 
   $("overviewSearch").addEventListener("input", filterRows);
+  $("overviewExam").addEventListener("change", filterRows);
   $("overviewClass").addEventListener("change", filterRows);
+  $("overviewSubject").addEventListener("change", filterRows);
 
   $("overviewRefresh").addEventListener("click", async function () {
     try {
