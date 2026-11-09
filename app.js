@@ -289,8 +289,9 @@ style.textContent = [
   ".action-buttons { display:flex; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:5px; white-space:nowrap; }",
   ".action-buttons .btn { flex:0 0 auto; margin:0; }",
 
-  /* 家長成績：科目與範圍置左，醒目成績置右 */
-  ".parent-score-list { display:flex; flex-direction:column; gap:10px; width:100%; }",
+  /* 家長成績：電腦與手機統一採用科目卡片式呈現 */
+  ".parent-page .dashboard { max-width:960px; }",
+  ".parent-score-list { display:flex; flex-direction:column; gap:10px; width:100%; max-width:780px; margin:0 auto; }",
   ".parent-subject-card { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:14px; border:1px solid #dfe7ef; border-radius:12px; padding:14px 16px; margin:0; background:#fff; }",
   ".parent-subject-info { min-width:0; }",
   ".parent-subject-name { font-size:17px; font-weight:900; color:#23466b; margin-bottom:7px; }",
@@ -346,7 +347,7 @@ style.textContent = [
   ".muted { color:#778494; font-size:13px; }",
   ".empty { padding:25px; text-align:center; color:#8491a0; }",
   ".loading-message { position:fixed; top:15px; right:15px; z-index:9999; background:#23466b; color:#fff; padding:12px 18px; border-radius:8px; box-shadow:0 3px 12px rgba(0,0,0,.2); }",
-  ".student-card { border:1px solid #e2e8ef; border-radius:12px; padding:18px; margin:15px 0; }",
+  ".student-card { max-width:900px; border:1px solid #e2e8ef; border-radius:12px; padding:22px; margin:18px auto; }",
   ".student-card .student-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:0 12px; margin:0 0 16px; color:#23466b; line-height:1.35; }",
   ".student-card .student-name { font-size:25px; font-weight:850; letter-spacing:.3px; color:#1e4165; }",
   ".student-card .student-class { font-size:18px; font-weight:700; color:#64748b; }",
@@ -355,6 +356,9 @@ style.textContent = [
 
   "@media(max-width:600px) {",
   ".dashboard { width:96%; padding:15px; margin:15px auto; }",
+  ".parent-page .dashboard { max-width:none; }",
+  ".student-card { padding:15px; margin:15px 0; }",
+  ".parent-score-list { max-width:none; }",
   ".topbar { padding:14px; }",
   ".topbar h1 { font-size:17px; }",
   ".login-card { padding:24px; }",
@@ -2410,7 +2414,6 @@ async function renderParentDashboard() {
             "<div class='parent-subject-info'>" +
               "<div class='parent-subject-name'>" + escapeHtml(score.subject) + "</div>" +
               "<div class='parent-subject-scope'>" +
-                "<span class='parent-subject-scope-label'>考試範圍</span>" +
                 "<span class='parent-subject-scope-text'>" + escapeHtml(score.scope || "—") + "</span>" +
               "</div>" +
             "</div>" +
