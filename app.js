@@ -2605,7 +2605,7 @@ async function renderLoginLogs() {
   try {
     const results = await Promise.all([
       db.from("login_events").select("*").order("created_at", { ascending: false }).limit(200),
-      db.from("profiles").select("id, role")
+      db.from("profiles").select("id, role, email")
     ]);
 
     if (results[0].error) throw results[0].error;
@@ -2621,6 +2621,14 @@ async function renderLoginLogs() {
 
       if (profile && profile.role === "admin") {
         loginIdentity = "管理員";
+      } else if (profile && profile.role === "teacher") {
+        const teacherNames = {
+          "black951165@gmail.com": "王炫老師",
+          "tingning1995120@gmail.com": "溫老師",
+          "nice0220@hotmail.com": "林一老師"
+        };
+        const teacherEmail = String(profile.email || "").trim().toLowerCase();
+        loginIdentity = teacherNames[teacherEmail] || profile.email || "教師帳號";
       } else {
         const linkedStudents = guardianLinksCache
           .filter(link => String(link.guardian_id) === String(log.user_id))
