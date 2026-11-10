@@ -52,6 +52,9 @@ const GRADE_OPTIONS = ["A++", "A+", "A", "B++", "B+", "B", "C", "缺考", "請�
 
 let currentUser = null;
 let currentProfile = null;
+let currentHasTeacher = false;
+let currentMode = "";
+let profileRolesCache = [];
 let studentsCache = [];
 let examsCache = [];
 let profilesCache = [];
@@ -573,6 +576,9 @@ async function handleLogout() {
 
   currentUser = null;
   currentProfile = null;
+  currentHasTeacher = false;
+  currentMode = "";
+  profileRolesCache = [];
   studentsCache = [];
   examsCache = [];
   profilesCache = [];
@@ -608,6 +614,20 @@ async function loadCurrentProfile() {
 
   currentProfile = result.data;
 
+  const extraRoleResult = await db
+    .from("profile_roles")
+    .select("role")
+    .eq("user_id", currentUser.id)
+    .eq("role", "teacher")
+    .maybeSingle();
+
+  if (extraRoleResult.error) {
+    showMessage("讀取額外身分失敗：" + extraRoleResult.error.message, "error");
+    return;
+  }
+
+  currentHasTeacher = currentProfile.role === "teacher" || !!extraRoleResult.data;
+
   if (currentProfile.role === "teacher" && currentUser.app_metadata && currentUser.app_metadata.must_change_password === true) {
     renderTeacherFirstLoginPasswordChange();
     return;
@@ -620,14 +640,62 @@ async function loadCurrentProfile() {
     return;
   }
 
+  if (currentProfile.role === "parent" && currentHasTeacher) {
+    currentMode = "";
+    renderModeChooser();
+  } else {
+    currentMode = currentProfile.role === "teacher" ? "teacher" : currentProfile.role;
+    await recordSuccessfulLogin();
+  }
+
+  if (currentProfile.role === "parent" && currentHasTeacher) return;
+
+  await renderDashboard();
+}
+
+async function recordSuccessfulLogin() {
   try {
     await db.from("login_events").insert({ user_id: currentUser.id });
   } catch (error) {
     console.warn("登入紀錄寫入失敗", error);
   }
-
-  await renderDashboard();
 }
+
+function renderModeChooser() {
+  document.body.classList.remove("parent-page", "teacher-page");
+  appRoot.innerHTML =
+    "<div class='topbar'><div><h1>小象文教機構</h1><small>請選擇登入模式</small></div>" +
+    "<button class='tab-btn' id='modeLogoutButton'>登出</button></div>" +
+    "<main class='dashboard' style='max-width:560px'>" +
+      "<div class='panel'><h2>選擇使用身分</h2>" +
+        "<p class='muted'>此帳號同時具有家長及教師身分，請選擇本次要使用的功能。</p>" +
+        "<div class='form-grid'>" +
+          "<button class='btn btn-success' id='chooseParentMode' type='button'>家長查詢</button>" +
+          "<button class='btn' id='chooseTeacherMode' type='button'>教師查詢</button>" +
+        "</div>" +
+      "</div>" +
+    "</main><div class='footer'>© 小象文教機構</div>";
+
+  $("modeLogoutButton").addEventListener("click", handleLogout);
+  $("chooseParentMode").addEventListener("click", async function () {
+    currentMode = "parent";
+    await recordSuccessfulLogin();
+    await renderDashboard();
+  });
+  $("chooseTeacherMode").addEventListener("click", async function () {
+    currentMode = "teacher";
+    await recordSuccessfulLogin();
+    await renderDashboard();
+  });
+}
+
+function switchAccountMode() {
+  if (!currentHasTeacher || currentProfile.role !== "parent") return;
+  currentMode = currentMode === "teacher" ? "parent" : "teacher";
+  renderDashboard();
+}
+
+
 
 // ==================================================
 // 5. 重新讀取資料
@@ -642,10 +710,12 @@ async function loadAdminData() {
     db.from("guardian_students").select("*"),
     db.from("student_subjects").select("*"),
     db.from("profiles").select("*").eq("role", "teacher"),
-    db.from("teacher_assignments").select("*")
+    db.from("teacher_assignments").select("*"),
+    db.from("profiles").select("*"),
+    db.from("profile_roles").select("user_id, role").eq("role", "teacher")
   ]);
 
-  const names = ["學生資料", "考試資料", "家長帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師帳號", "教師授課權限"];
+  const names = ["學生資料", "考試資料", "家長帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師帳號", "教師授課權限", "全部帳號", "額外身分資料"];
 
   for (let i = 0; i < results.length; i++) {
     if (results[i].error) {
@@ -659,8 +729,22 @@ async function loadAdminData() {
   scoresCache = results[3].data || [];
   guardianLinksCache = results[4].data || [];
   studentSubjectsCache = results[5].data || [];
-  teacherProfilesCache = results[6].data || [];
   teacherAssignmentsCache = results[7].data || [];
+  profileRolesCache = results[9].data || [];
+  const additionalTeacherIds = new Set(profileRolesCache.map(item => String(item.user_id)));
+  const allProfiles = results[8].data || [];
+  const teacherMap = new Map();
+  (results[6].data || []).forEach(profile => teacherMap.set(String(profile.id), {
+    ...profile,
+    isAdditionalTeacherRole: false
+  }));
+  allProfiles.filter(profile => additionalTeacherIds.has(String(profile.id))).forEach(profile => {
+    teacherMap.set(String(profile.id), {
+      ...profile,
+      isAdditionalTeacherRole: true
+    });
+  });
+  teacherProfilesCache = Array.from(teacherMap.values());
 }
 
 async function renderDashboard() {
@@ -670,7 +754,7 @@ async function renderDashboard() {
     if (currentProfile.role === "admin") {
       await loadAdminData();
       renderAdminDashboard();
-    } else if (currentProfile.role === "teacher") {
+    } else if (currentProfile.role === "teacher" || currentMode === "teacher") {
       await renderTeacherDashboard();
     } else {
       await renderParentDashboard();
@@ -2298,9 +2382,24 @@ function renderTeacherManagement() {
       "</tr>";
     }).join("");
 
+  const eligibleParents = profilesCache.filter(profile =>
+    !profileRolesCache.some(item => String(item.user_id) === String(profile.id) && item.role === "teacher")
+  );
+  const eligibleParentOptions = eligibleParents.map(profile =>
+    "<option value='" + escapeHtml(profile.id) + "'>" +
+    escapeHtml(profile.display_name || profile.email || profile.id) +
+    "（" + escapeHtml(profile.email || "") + "）</option>"
+  ).join("");
+
   content.innerHTML =
     "<h2 class='section-title'>教師管理</h2>" +
-    "<div class='panel'><h3>建立教師帳號</h3>" +
+    "<div class='panel'><h3>既有家長帳號增加教師身分</h3>" +
+      "<p class='muted'>選擇已存在的家長帳號，即可保留原本 Email、密碼及孩子綁定，另外啟用教師查詢身分；不會建立新登入帳號。</p>" +
+      "<form id='addTeacherRoleForm'><div class='form-grid'>" +
+        "<div class='field'><label>既有家長帳號</label><select id='existingParentForTeacher' required><option value=''>請選擇家長帳號</option>" + eligibleParentOptions + "</select></div>" +
+      "</div><button class='btn btn-success' type='submit' " + (eligibleParents.length ? "" : "disabled") + ">增加教師身分</button></form>" +
+    "</div>" +
+    "<div class='panel'><h3>建立獨立教師帳號</h3>" +
       "<p class='muted'>輸入教師 Email，系統會建立教師登入帳號並產生臨時密碼。教師登入後可自行修改密碼。</p>" +
       "<form id='createTeacherForm'><div class='form-grid'>" +
         "<div class='field'><label>教師 Email（登入帳號）</label><input id='newTeacherEmail' type='email' autocomplete='off' placeholder='請輸入教師 Email' required></div>" +
@@ -2311,11 +2410,13 @@ function renderTeacherManagement() {
       "<div class='table-wrap'><table class='teacher-account-table'><thead><tr><th>教師登入 Email</th><th>操作</th></tr></thead>" +
       "<tbody id='teacherAccountRows'>" +
         (teacherProfilesCache.map(function (profile) {
-          return "<tr><td>" + escapeHtml(profile.email || profile.display_name || "—") + "</td>" +
-            "<td class='action-cell'><div class='action-buttons'>" +
-              "<button class='btn btn-small' data-reset-teacher='" + escapeHtml(profile.id) + "'>重設密碼</button>" +
-              "<button class='btn btn-danger btn-small' data-delete-teacher='" + escapeHtml(profile.id) + "'>刪除帳號</button>" +
-            "</div></td></tr>";
+          const actions = profile.isAdditionalTeacherRole
+            ? "<button class='btn btn-danger btn-small' data-remove-teacher-role='" + escapeHtml(profile.id) + "'>移除教師身分</button>"
+            : "<button class='btn btn-small' data-reset-teacher='" + escapeHtml(profile.id) + "'>重設密碼</button>" +
+              "<button class='btn btn-danger btn-small' data-delete-teacher='" + escapeHtml(profile.id) + "'>刪除帳號</button>";
+          return "<tr><td>" + escapeHtml(profile.email || profile.display_name || "—") +
+            (profile.isAdditionalTeacherRole ? " <span class='muted'>（家長兼教師）</span>" : "") + "</td>" +
+            "<td class='action-cell'><div class='action-buttons'>" + actions + "</div></td></tr>";
         }).join("") || "<tr><td colspan='2' class='empty'>目前沒有教師帳號</td></tr>") +
       "</tbody></table></div>" +
     "</div>" +
@@ -2335,6 +2436,7 @@ function renderTeacherManagement() {
     "</div>";
 
   $("createTeacherForm").addEventListener("submit", createTeacherAccount);
+  $("addTeacherRoleForm").addEventListener("submit", addTeacherRoleToParent);
   if ($("teacherAssignmentForm")) {
     $("teacherAssignmentForm").addEventListener("submit", saveTeacherAssignment);
     $("teacherAccountSelect").addEventListener("change", function () {
@@ -2373,8 +2475,71 @@ function renderTeacherManagement() {
     }
 
     const assignmentButton = event.target.closest("[data-delete-teacher-assignment]");
-    if (assignmentButton) await deleteTeacherAssignment(assignmentButton.dataset.deleteTeacherAssignment);
+    if (assignmentButton) {
+      await deleteTeacherAssignment(assignmentButton.dataset.deleteTeacherAssignment);
+      return;
+    }
+
+    const removeRoleButton = event.target.closest("[data-remove-teacher-role]");
+    if (removeRoleButton) {
+      await removeAdditionalTeacherRole(removeRoleButton.dataset.removeTeacherRole);
+    }
   };
+}
+
+async function addTeacherRoleToParent(event) {
+  event.preventDefault();
+  const userId = $("existingParentForTeacher").value;
+  const profile = profilesCache.find(item => String(item.id) === String(userId));
+  if (!profile) {
+    showMessage("請選擇有效的既有家長帳號。", "error");
+    return;
+  }
+  if (!confirm(
+    "確定替這個既有家長帳號增加教師身分？\n\n" +
+    "帳號：" + (profile.email || profile.display_name || userId) +
+    "\n\n原本家長身分、密碼及孩子綁定都會保留。"
+  )) return;
+
+  try {
+    const result = await db.from("profile_roles").insert({
+      user_id: userId,
+      role: "teacher"
+    });
+    if (result.error) {
+      if (result.error.code === "23505") throw new Error("此帳號已經具有教師身分。");
+      throw result.error;
+    }
+    await loadAdminData();
+    renderTeacherManagement();
+    showMessage("已成功增加教師身分，原本家長帳號及綁定資料均保留。", "success");
+  } catch (error) {
+    showMessage("增加教師身分失敗：" + error.message, "error");
+  }
+}
+
+async function removeAdditionalTeacherRole(userId) {
+  const profile = teacherProfilesCache.find(item =>
+    String(item.id) === String(userId) && item.isAdditionalTeacherRole
+  );
+  if (!profile) return;
+  if (!confirm(
+    "確定移除此帳號的教師身分？\n\n" +
+    "帳號：" + (profile.email || profile.display_name || userId) +
+    "\n\n系統會一併移除教師授課指派，但會保留原本家長登入帳號、密碼及孩子綁定。"
+  )) return;
+
+  try {
+    const assignmentDelete = await db.from("teacher_assignments").delete().eq("teacher_id", userId);
+    if (assignmentDelete.error) throw assignmentDelete.error;
+    const roleDelete = await db.from("profile_roles").delete().eq("user_id", userId).eq("role", "teacher");
+    if (roleDelete.error) throw roleDelete.error;
+    await loadAdminData();
+    renderTeacherManagement();
+    showMessage("教師身分已移除，原本家長帳號及孩子綁定仍保留。", "success");
+  } catch (error) {
+    showMessage("移除教師身分失敗：" + error.message, "error");
+  }
 }
 
 async function createTeacherAccount(event) {
@@ -2887,6 +3052,7 @@ async function renderParentDashboard() {
       "<div class='topbar'>" +
         "<div><h1>小象文教機構｜成績查詢</h1></div>" +
         "<div class='parent-top-actions'>" +
+          (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換教師模式</button>" : "") +
           "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
             "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
             "<span>修改密碼</span></button> " +
@@ -2901,6 +3067,7 @@ async function renderParentDashboard() {
       buildParentBottomNav();
 
     bindParentActionButtons();
+    if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
     return;
   }
 
@@ -3087,6 +3254,7 @@ async function renderParentDashboard() {
     "<div class='topbar'>" +
       "<div><h1>小象文教機構｜成績查詢</h1></div>" +
       "<div class='parent-top-actions'>" +
+        (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換教師模式</button>" : "") +
       "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
         "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
         "<span>修改密碼</span></button> " +
@@ -3101,6 +3269,7 @@ async function renderParentDashboard() {
     buildParentBottomNav();
 
   bindParentActionButtons();
+  if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
 }
 
 // ==================================================
@@ -3137,10 +3306,12 @@ async function renderTeacherDashboard() {
 
   if (!teacherAssignmentsCache.length) {
     appRoot.innerHTML =
-      "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區</small></div></div>" +
+      "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區</small></div>" +
+        (currentHasTeacher && currentProfile.role === "parent" ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") + "</div>" +
       "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>" +
       "<nav class='parent-bottom-nav teacher-bottom-nav' aria-label='教師功能'><button class='parent-action-btn parent-logout-btn teacher-logout' type='button' title='登出系統' aria-label='登出系統'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg><span>登出</span></button></nav>";
     document.querySelectorAll(".teacher-logout").forEach(button => button.addEventListener("click", handleLogout));
+    if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
     return;
   }
 
@@ -3261,7 +3432,8 @@ function renderTeacherResults() {
     ).join("");
 
   appRoot.innerHTML =
-    "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區｜僅供查詢</small></div></div>" +
+    "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區｜僅供查詢</small></div>" +
+      (currentHasTeacher && currentProfile.role === "parent" ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") + "</div>" +
     "<main class='dashboard teacher-dashboard'><div class='toolbar teacher-toolbar'>" +
       "<label for='teacherExamSelect'><strong>考試週期：</strong></label>" +
       "<select id='teacherExamSelect'>" + (examOptions || "<option value=''>目前沒有考試週期</option>") + "</select>" +
@@ -3275,6 +3447,7 @@ function renderTeacherResults() {
     "<nav class='parent-bottom-nav teacher-bottom-nav' aria-label='教師功能'><button class='parent-action-btn parent-logout-btn teacher-logout' type='button' title='登出系統' aria-label='登出系統'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg><span>登出</span></button></nav>";
 
   document.querySelectorAll(".teacher-logout").forEach(button => button.addEventListener("click", handleLogout));
+  if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
   if ($("teacherExamSelect")) {
     $("teacherExamSelect").value = teacherSelectedExamId;
     $("teacherExamSelect").addEventListener("change", function () {
