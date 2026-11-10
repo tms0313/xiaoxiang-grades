@@ -3837,7 +3837,8 @@ function renderTeacherResults() {
           groups.get(scope).push({
             student: student,
             resultText: resultText,
-            code: String(student.student_code || "")
+            code: String(student.student_code || ""),
+            isLeaveOrAbsent: !!(score && (score.grade_level === "請假" || score.grade_level === "缺考"))
           });
         });
       });
@@ -3845,6 +3846,7 @@ function renderTeacherResults() {
       const scopeGroups = Array.from(groups.entries()).map(function (entry) {
         const scope = entry[0];
         const rows = entry[1].sort((a, b) =>
+          Number(a.isLeaveOrAbsent) - Number(b.isLeaveOrAbsent) ||
           a.code.localeCompare(b.code, "zh-Hant", { numeric: true }) ||
           String(a.student.full_name).localeCompare(String(b.student.full_name), "zh-Hant")
         ).map(function (item) {
