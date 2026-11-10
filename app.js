@@ -986,7 +986,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") +
       "</select>" +
       "<div style='display:flex;align-items:center;gap:10px;flex-wrap:nowrap'>" +
-        "<select id='overviewStatus' aria-label='成績狀態篩選'>" +
+        "<select id='overviewStatus' aria-label='成績狀態篩選' style='height:40px;min-height:40px;box-sizing:border-box;align-self:center'>" +
           "<option value='all'>全部狀態</option><option value='low'>低於 60 分</option><option value='leave'>請假</option><option value='absent'>缺考</option><option value='missing'>未登錄</option>" +
         "</select>" +
         "<button class='btn btn-secondary' id='toggleExcludedReminders' style='height:40px;min-height:40px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1;white-space:nowrap'>已排除提醒（" + missingExclusionsCache.length + "）</button>" +
