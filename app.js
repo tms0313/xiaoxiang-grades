@@ -1189,6 +1189,7 @@ async function editScore(scoreId) {
         escapeHtml(student.full_name) + "｜" + escapeHtml(student.class_name) + "｜" + escapeHtml(formatDateRange(exam)) +
       "</p></div><button type='button' class='score-edit-close' id='scoreEditClose' aria-label='關閉'>×</button></div>" +
       "<form id='scoreEditForm'>" +
+        "<p id='scoreEditError' class='system-message error' style='display:none'></p>" +
         "<div class='field'><label for='scoreEditSubject'>科目</label><select id='scoreEditSubject' required>" + subjectOptions + "</select></div>" +
         "<div class='field'><label for='scoreEditScope'>考試範圍</label><input id='scoreEditScope' type='text' maxlength='120' required value='" + escapeHtml(score.scope || "") + "'></div>" +
         "<div id='scoreEditValueFields'></div>" +
@@ -1227,6 +1228,13 @@ async function editScore(scoreId) {
     updateNumericVisibility();
   }
 
+  function showScoreEditError(message) {
+    const errorBox = $("scoreEditError");
+    if (!errorBox) return;
+    errorBox.textContent = message;
+    errorBox.style.display = "block";
+  }
+
   function updateNumericVisibility() {
     const gradeControl = $("scoreEditGrade") || $("scoreEditAttendance");
     const numericField = $("scoreEditNumericField");
@@ -1252,7 +1260,7 @@ async function editScore(scoreId) {
     const subject = $("scoreEditSubject").value;
     const scope = $("scoreEditScope").value.trim();
     if (!SUBJECTS.includes(subject) || !scope) {
-      showMessage("請確認科目及考試範圍均已填寫。", "error", true);
+      showScoreEditError("請確認科目及考試範圍均已填寫。");
       return;
     }
 
@@ -1263,25 +1271,25 @@ async function editScore(scoreId) {
     if (grade3 || grade3Math) {
       gradeLevel = $("scoreEditGrade").value;
       if (!GRADE_OPTIONS.includes(gradeLevel)) {
-        showMessage("請選擇正確的模擬考等級或出席狀態。", "error", true);
+        showScoreEditError("請選擇正確的模擬考等級或出席狀態。");
         return;
       }
       if (gradeLevel !== "缺考" && gradeLevel !== "請假") {
         const value = $("scoreEditNumeric").value;
         if (value.trim() === "") {
-          showMessage("請輸入成績數值。", "error", true);
+          showScoreEditError("請輸入成績數值。");
           return;
         }
         if (grade3Math) {
           scoreValue = Number(value);
           if (!Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-            showMessage("國三數學分數必須是 0～100。", "error", true);
+            showScoreEditError("國三數學分數必須是 0～100。");
             return;
           }
         } else {
           correctCount = Number(value);
           if (!Number.isInteger(correctCount) || correctCount < 0) {
-            showMessage("答對題數必須是 0 或正整數。", "error", true);
+            showScoreEditError("答對題數必須是 0 或正整數。");
             return;
           }
         }
@@ -1291,7 +1299,7 @@ async function editScore(scoreId) {
     } else {
       scoreValue = Number($("scoreEditNumeric").value);
       if ($("scoreEditNumeric").value.trim() === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-        showMessage("一般成績必須是 0～100。", "error", true);
+        showScoreEditError("一般成績必須是 0～100。");
         return;
       }
     }
@@ -1325,7 +1333,7 @@ async function editScore(scoreId) {
     } catch (error) {
       saveButton.disabled = false;
       saveButton.textContent = "儲存修改";
-      showMessage("修改成績失敗，原資料未變更。原因：" + error.message, "error", true);
+      showScoreEditError("修改成績失敗，原資料未變更。原因：" + error.message);
     }
   });
 }
