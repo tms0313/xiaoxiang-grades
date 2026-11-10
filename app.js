@@ -1324,9 +1324,19 @@ async function editScore(scoreId) {
     saveButton.disabled = true;
     saveButton.textContent = "儲存中……";
     try {
-      const result = await db.from("scores").update(payload).eq("id", scoreId);
+      const result = await db.from("scores")
+        .update(payload)
+        .eq("id", scoreId)
+        .select("*")
+        .single();
       if (result.error) throw result.error;
-      await loadAdminData();
+      if (!result.data) throw new Error("資料已送出，但未取得更新後的成績內容，請重新整理確認。");
+
+      // 直接以資料庫回傳的最新資料更新前端快取，確保畫面立即反映修改結果。
+      scoresCache = scoresCache.map(function (item) {
+        return String(item.id) === String(scoreId) ? result.data : item;
+      });
+
       closeScoreEditModal();
       renderOverview(overviewFilters);
       showMessage("「" + student.full_name + "」的成績已修改成功。", "success", true);
