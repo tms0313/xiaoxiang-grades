@@ -1315,6 +1315,7 @@ function renderScoreEntry() {
     "<div class='field'><label>考試週期</label><select id='scoreExam' required><option value=''>請先選擇考試週期</option>" + examOptions + "</select></div>" +
     "<div class='field'><label>班級篩選</label><select id='scoreClass'><option value=''>全部班級</option><option value='國一班'>國一班</option><option value='國二班'>國二班</option><option value='國三班'>國三班</option></select></div>" +
     "<div class='field'><label>學生</label><select id='scoreStudent' required><option value=''>請選擇學生</option></select></div>" +
+    "<div id='generalAttendanceField' class='field'><label>出席狀態</label><select id='generalAttendance'><option value='normal'>正常出席</option><option value='請假'>請假</option></select></div>" +
     "<div class='field'><label>科目</label><select id='scoreSubject' required><option value=''>請選擇科目</option>" +
     SUBJECTS.map(s => "<option>" + escapeHtml(s) + "</option>").join("") +
     "</select></div>" +
@@ -1323,8 +1324,8 @@ function renderScoreEntry() {
     "<div style='display:flex;flex-direction:row;align-items:center;gap:10px;flex-wrap:nowrap;width:100%'>" +
     "<button class='btn btn-success' style='flex:1' type='button' id='scorePrevStudent'>上一位學生</button>" +
     "<button class='btn btn-secondary' style='flex:1' type='button' id='scoreNextStudent'>下一位學生</button></div>" +
-    "<span class='muted' id='scoreEntryCounter'>本次頁面已成功登錄 " + scoreEntrySavedCount + " 筆</span></div>" +
-    "<div id='generalAttendanceField' class='field'><label>出席狀態</label><select id='generalAttendance'><option value='normal'>正常出席</option><option value='請假'>請假</option></select></div>" +
+    "</div>" +
+
     "<div id='normalScoreField' class='field'><label>一般成績</label><input id='scoreValue' type='number' min='0' max='100' step='0.1' placeholder='請輸入分數'></div>" +
     "<div id='grade3MathFields' class='form-grid hidden'><div class='field'><label>國三數學分數</label><input id='grade3MathScore' type='number' min='0' max='100' step='0.1'></div>" +
     "<div class='field'><label>模擬考等級</label><select id='grade3MathGrade'><option value=''>請選擇等級</option>" + gradeOptionsHtml + "</select></div></div>" +
