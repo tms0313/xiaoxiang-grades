@@ -985,11 +985,13 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       "<select id='overviewSubject'><option value=''>全部科目</option>" +
         SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") +
       "</select>" +
-      "<select id='overviewStatus' aria-label='成績狀態篩選'>" +
-        "<option value='all'>全部狀態</option><option value='low'>低於 60 分</option><option value='leave'>請假</option><option value='absent'>缺考</option><option value='missing'>未登錄</option>" +
-      "</select>" +
+      "<div style='display:flex;align-items:center;gap:10px;flex-wrap:nowrap'>" +
+        "<select id='overviewStatus' aria-label='成績狀態篩選'>" +
+          "<option value='all'>全部狀態</option><option value='low'>低於 60 分</option><option value='leave'>請假</option><option value='absent'>缺考</option><option value='missing'>未登錄</option>" +
+        "</select>" +
+        "<button class='btn btn-secondary' id='toggleExcludedReminders' style='white-space:nowrap'>已排除提醒（" + missingExclusionsCache.length + "）</button>" +
+      "</div>" +
       "<span class='muted' style='font-size:13px;white-space:nowrap'>每 60 秒自動更新</span>" +
-      "<button class='btn btn-secondary' id='toggleExcludedReminders'>已排除提醒（" + missingExclusionsCache.length + "）</button>" +
     "</div>" +
     "<p id='overviewFilterHint' class='muted' style='margin:0 0 10px'>選擇考試週期及科目後，系統會依已登錄的科目範圍比對同班修課學生。</p>" +
     "<div class='table-wrap'><table class='overview-table'>" +
