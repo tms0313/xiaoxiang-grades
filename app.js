@@ -999,7 +999,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       "<p class='muted'>這裡只管理已排除的提醒；按下「恢復提醒」後，該筆資料會重新列入未登錄清單。</p>" +
       "<div class='table-wrap'><table><thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>操作</th></tr></thead>" +
       "<tbody id='excludedReminderRows'>" + (buildExcludedReminderRows() || "<tr><td colspan='7' class='empty'>目前沒有已排除的提醒</td></tr>") + "</tbody></table></div>" +
-    "</div>";
+    "</div>" +
     "<div class='table-wrap'><table class='overview-table'>" +
       "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績／狀態</th><th>操作</th></tr></thead>" +
       "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
