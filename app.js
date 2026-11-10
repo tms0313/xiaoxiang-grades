@@ -315,8 +315,8 @@ style.textContent = [
   ".overview-table .action-buttons { gap:3px; }",
   ".overview-table .action-buttons .btn { padding:2.5px 4.5px; font-size:6px; line-height:1.35; border-radius:5px; }",
   ".overview-table .action-buttons .btn { width:30px !important; min-width:30px !important; height:21px !important; min-height:21px !important; padding:0 !important; font-size:8px !important; line-height:21px !important; border-radius:4px !important; }",
-  ".teacher-account-table .action-buttons { gap:3px; }",
-  ".teacher-account-table .action-buttons .btn { width:30px !important; min-width:30px !important; height:21px !important; min-height:21px !important; padding:0 !important; font-size:8px !important; line-height:21px !important; border-radius:4px !important; }",
+  ".teacher-account-table .action-buttons { display:inline-flex; align-items:center; gap:9px; white-space:nowrap; }",
+  ".teacher-account-table .action-buttons .btn { min-width:0 !important; height:30px !important; min-height:30px !important; padding:0 8px !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; }",
 
   ".action-cell { min-width:155px; white-space:nowrap; }",
   ".action-buttons { display:flex; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:5px; white-space:nowrap; }",
@@ -2307,7 +2307,7 @@ function renderTeacherManagement() {
       "</div><button class='btn btn-success' type='submit' id='createTeacherButton'>建立教師帳號</button></form>" +
     "</div>" +
     "<div class='panel'><h3>教師帳號管理</h3>" +
-      "<p class='muted'>建立帳號或重設密碼時，系統會產生一次性臨時密碼。教師首次登入後，必須先更改為至少 8 個字元的新密碼，才能查詢成績。</p>" +
+      "<p class='muted'>新建教師帳號的預設密碼為 123456；若教師忘記密碼，可由管理員個別重設並取得臨時密碼。每次新建或重設後，教師登入都必須先更改為至少 8 個字元的新密碼，才能查詢成績。</p>" +
       "<div class='table-wrap'><table class='teacher-account-table'><thead><tr><th>教師登入 Email</th><th>操作</th></tr></thead>" +
       "<tbody id='teacherAccountRows'>" +
         (teacherProfilesCache.map(function (profile) {
