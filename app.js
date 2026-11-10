@@ -299,6 +299,9 @@ style.textContent = [
   ".toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:15px 0; align-items:center; }",
   ".toolbar input,.toolbar select { padding:9px; border:1px solid #ccd4df; border-radius:7px; }",
   ".form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }",
+  ".score-entry-fields-wrap { width:100%; overflow-x:auto; padding-bottom:4px; }",
+  ".score-entry-fields { display:grid; grid-template-columns:repeat(6,minmax(130px,1fr)); gap:12px; min-width:852px; }",
+  ".score-entry-fields .field { margin-bottom:0; }",
   ".panel { border:1px solid #e2e8ef; border-radius:12px; padding:18px; margin-bottom:18px; }",
   ".panel h3 { margin:0 0 15px; color:#315d86; }",
 
@@ -1311,7 +1314,7 @@ function renderScoreEntry() {
       "<thead><tr><th>開始日期</th><th>結束日期</th><th>操作</th></tr></thead>" +
       "<tbody>" + (examRows || "<tr><td colspan='3' class='empty'>尚無考試資料</td></tr>") + "</tbody>" +
     "</table></div>" +
-    "<div class='panel'><h3>成績登錄</h3><form id='scoreForm'><div class='form-grid'>" +
+    "<div class='panel'><h3>成績登錄</h3><form id='scoreForm'><div class='score-entry-fields-wrap'><div class='score-entry-fields'>" +
     "<div class='field'><label>考試週期</label><select id='scoreExam' required><option value=''>請先選擇考試週期</option>" + examOptions + "</select></div>" +
     "<div class='field'><label>班級篩選</label><select id='scoreClass'><option value=''>全部班級</option><option value='國一班'>國一班</option><option value='國二班'>國二班</option><option value='國三班'>國三班</option></select></div>" +
     "<div class='field'><label>學生</label><select id='scoreStudent' required><option value=''>請選擇學生</option></select></div>" +
@@ -1319,7 +1322,7 @@ function renderScoreEntry() {
     "<div class='field'><label>科目</label><select id='scoreSubject' required><option value=''>請選擇科目</option>" +
     SUBJECTS.map(s => "<option>" + escapeHtml(s) + "</option>").join("") +
     "</select></div>" +
-    "<div class='field'><label>考試範圍</label><input id='scoreScope' placeholder='例如：第 1～2 課' required></div></div>" +
+    "<div class='field'><label>考試範圍</label><input id='scoreScope' placeholder='例如：第 1～2 課' required></div></div></div>" +
     "<div class='toolbar' style='display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:4px 0 16px'>" +
     "<div style='display:flex;flex-direction:row;align-items:center;gap:10px;flex-wrap:nowrap;width:100%'>" +
     "<button class='btn btn-success' style='flex:1' type='button' id='scorePrevStudent'>上一位學生</button>" +
