@@ -946,6 +946,23 @@ function renderOverview(preservedFilters) {
     );
   }
 
+  function buildExcludedReminderRows() {
+    return missingExclusionsCache.map(function (item) {
+      const student = getStudent(item.student_id);
+      const exam = getExam(item.exam_id);
+      if (!student || !exam) return "";
+      return "<tr>" +
+        "<td>" + escapeHtml(formatDateRange(exam)) + "</td>" +
+        "<td>" + escapeHtml(student.class_name) + "</td>" +
+        "<td>" + escapeHtml(student.student_code) + "</td>" +
+        "<td>" + escapeHtml(student.full_name) + "</td>" +
+        "<td>" + escapeHtml(item.subject) + "</td>" +
+        "<td>" + escapeHtml(item.scope || "—") + "</td>" +
+        "<td><button class='btn btn-success btn-small' data-restore-missing='" + escapeHtml(item.id) + "'>恢復提醒</button></td>" +
+      "</tr>";
+    }).filter(Boolean).join("");
+  }
+
   const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
     return "<option value='" + escapeHtml(exam.id) + "'>" +
       escapeHtml(formatDateRange(exam)) + "</option>";
@@ -966,12 +983,19 @@ function renderOverview(preservedFilters) {
         "<option value='all'>全部狀態</option><option value='low'>低於 60 分</option><option value='leave'>請假</option><option value='absent'>缺考</option><option value='missing'>未登錄</option>" +
       "</select>" +
       "<button class='btn btn-secondary' id='overviewRefresh'>重新整理</button>" +
+      "<button class='btn btn-secondary' id='toggleExcludedReminders'>已排除提醒（" + missingExclusionsCache.length + "）</button>" +
     "</div>" +
     "<p id='overviewFilterHint' class='muted' style='margin:0 0 10px'>選擇考試週期及科目後，系統會依已登錄的科目範圍比對同班修課學生。</p>" +
     "<div class='table-wrap'><table class='overview-table'>" +
       "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績／狀態</th><th>操作</th></tr></thead>" +
       "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
-    "</table></div>";
+    "</table></div>" +
+    "<div id='excludedRemindersPanel' class='panel' style='display:none;margin-top:18px'>" +
+      "<h3>已排除的未登錄提醒</h3>" +
+      "<p class='muted'>這裡只管理已排除的提醒；按下「恢復提醒」後，該筆資料會重新列入未登錄清單。</p>" +
+      "<div class='table-wrap'><table><thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>操作</th></tr></thead>" +
+      "<tbody id='excludedReminderRows'>" + (buildExcludedReminderRows() || "<tr><td colspan='7' class='empty'>目前沒有已排除的提醒</td></tr>") + "</tbody></table></div>" +
+    "</div>";
 
   function filterRows() {
     const search = $("overviewSearch").value.trim().toLowerCase();
@@ -1141,6 +1165,14 @@ function renderOverview(preservedFilters) {
   $("overviewSubject").addEventListener("change", filterRows);
   $("overviewStatus").addEventListener("change", filterRows);
 
+  $("toggleExcludedReminders").addEventListener("click", function () {
+    const panel = $("excludedRemindersPanel");
+    if (!panel) return;
+    const opening = panel.style.display === "none";
+    panel.style.display = opening ? "block" : "none";
+    this.textContent = (opening ? "收合已排除提醒" : "已排除提醒（" + missingExclusionsCache.length + "）");
+  });
+
   $("overviewRefresh").addEventListener("click", async function () {
     try {
       await loadAdminData();
@@ -1155,9 +1187,14 @@ function renderOverview(preservedFilters) {
     const editButton = event.target.closest("[data-edit-score]");
     const deleteButton = event.target.closest("[data-delete-score]");
     const excludeButton = event.target.closest("[data-exclude-missing]");
+    const restoreButton = event.target.closest("[data-restore-missing]");
 
     if (editButton) await editScore(editButton.dataset.editScore);
     if (deleteButton) await deleteScore(deleteButton.dataset.deleteScore);
+    if (restoreButton) {
+      await restoreMissingReminder(restoreButton.dataset.restoreMissing);
+      return;
+    }
     if (excludeButton) {
       await excludeMissingReminder({
         examId: excludeButton.dataset.examId,
@@ -1226,6 +1263,61 @@ async function excludeMissingReminder(item) {
     window.scrollTo({ top: overviewScrollY, behavior: "auto" });
   } catch (error) {
     showMessage("刪除未登錄提醒失敗：" + error.message, "error", true);
+  }
+}
+
+
+// ==================================================
+// 7-0-1. 恢復已排除的未登錄提醒
+// ==================================================
+
+async function restoreMissingReminder(exclusionId) {
+  const overviewScrollY = window.scrollY;
+  const overviewFilters = {
+    search: $("overviewSearch") ? $("overviewSearch").value : "",
+    examId: $("overviewExam") ? $("overviewExam").value : "",
+    className: $("overviewClass") ? $("overviewClass").value : "",
+    subject: $("overviewSubject") ? $("overviewSubject").value : "",
+    status: $("overviewStatus") ? $("overviewStatus").value : "all"
+  };
+  const exclusion = missingExclusionsCache.find(item => String(item.id) === String(exclusionId));
+  if (!exclusion) {
+    showMessage("找不到這筆已排除提醒，請重新整理。", "error", true);
+    return;
+  }
+
+  const student = studentsCache.find(item => String(item.id) === String(exclusion.student_id));
+  const exam = examsCache.find(item => String(item.id) === String(exclusion.exam_id));
+  if (!student || !exam) {
+    showMessage("找不到對應的學生或考試資料，請重新整理。", "error", true);
+    return;
+  }
+
+  if (!confirm(
+    "確定要恢復這筆未登錄提醒嗎？\n\n" +
+    "學生：" + student.full_name + "\n" +
+    "班級：" + student.class_name + "\n" +
+    "考試：" + formatDateRange(exam) + "\n" +
+    "科目：" + exclusion.subject + "\n" +
+    "考試範圍：" + (exclusion.scope || "—") + "\n\n" +
+    "恢復後，系統會重新檢查並顯示這筆未登錄提醒。"
+  )) return;
+
+  try {
+    const result = await db.from("score_missing_exclusions")
+      .delete()
+      .eq("id", exclusionId);
+    if (result.error) throw result.error;
+
+    missingExclusionsCache = missingExclusionsCache.filter(
+      item => String(item.id) !== String(exclusionId)
+    );
+    renderOverview(overviewFilters);
+    const systemMessage = $("systemMessage");
+    if (systemMessage) systemMessage.style.display = "none";
+    window.scrollTo({ top: overviewScrollY, behavior: "auto" });
+  } catch (error) {
+    showMessage("恢復未登錄提醒失敗：" + error.message, "error", true);
   }
 }
 
