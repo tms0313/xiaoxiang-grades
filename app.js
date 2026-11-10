@@ -89,7 +89,7 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
-function showMessage(message, type) {
+function showMessage(message, type, keepScrollPosition) {
   const box = $("systemMessage");
 
   if (!box) {
@@ -100,7 +100,9 @@ function showMessage(message, type) {
   box.textContent = message;
   box.className = "system-message " + (type || "");
   box.style.display = "block";
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (!keepScrollPosition) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 }
 
 function formatDate(value) {
@@ -1468,7 +1470,7 @@ async function saveScore(event) {
   const scope = $("scoreScope").value.trim();
   const student = studentsCache.find(item => String(item.id) === String(studentId));
   if (!student || !examId || !subject || !scope) {
-    showMessage("請完整選擇考試週期、學生、科目並填寫考試範圍。", "error");
+    showMessage("請完整選擇考試週期、學生、科目並填寫考試範圍。", "error", true);
     return;
   }
 
@@ -1481,26 +1483,26 @@ async function saveScore(event) {
   if (grade3Math) {
     gradeLevel = $("grade3MathGrade").value;
     if (!GRADE_OPTIONS.includes(gradeLevel)) {
-      showMessage("請選擇正確的模擬考等級。", "error");
+      showMessage("請選擇正確的模擬考等級。", "error", true);
       return;
     }
     if (gradeLevel !== "缺考" && gradeLevel !== "請假") {
       scoreValue = Number($("grade3MathScore").value);
       if ($("grade3MathScore").value === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-        showMessage("國三數學請輸入 0～100 分。", "error");
+        showMessage("國三數學請輸入 0～100 分。", "error", true);
         return;
       }
     }
   } else if (grade3) {
     gradeLevel = $("gradeLevel").value;
     if (!GRADE_OPTIONS.includes(gradeLevel)) {
-      showMessage("請選擇正確的模擬考等級。", "error");
+      showMessage("請選擇正確的模擬考等級。", "error", true);
       return;
     }
     if (gradeLevel !== "缺考" && gradeLevel !== "請假") {
       correctCount = Number($("correctCount").value);
       if ($("correctCount").value === "" || !Number.isInteger(correctCount) || correctCount < 0) {
-        showMessage("請輸入正確的答對題數。", "error");
+        showMessage("請輸入正確的答對題數。", "error", true);
         return;
       }
     }
@@ -1509,7 +1511,7 @@ async function saveScore(event) {
   } else {
     scoreValue = Number($("scoreValue").value);
     if ($("scoreValue").value === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-      showMessage("一般成績請輸入 0～100。", "error");
+      showMessage("一般成績請輸入 0～100。", "error", true);
       return;
     }
   }
@@ -1557,9 +1559,9 @@ async function saveScore(event) {
     const counter = $("scoreEntryCounter");
     if (counter) counter.textContent = "本次頁面已成功登錄 " + scoreEntrySavedCount + " 筆";
     showMessage((duplicate ? "原有成績已成功覆蓋。" : "成績已成功儲存。") +
-      "本次頁面累計完成 " + scoreEntrySavedCount + " 筆。", "success");
+      "本次頁面累計完成 " + scoreEntrySavedCount + " 筆。", "success", true);
   } catch (error) {
-    showMessage("成績儲存失敗，原輸入資料已保留。原因：" + error.message, "error");
+    showMessage("成績儲存失敗，原輸入資料已保留。原因：" + error.message, "error", true);
   } finally {
     saveButton.disabled = false;
     saveButton.textContent = "儲存成績";
