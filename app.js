@@ -475,6 +475,8 @@ style.textContent = [
   ".parent-bottom-nav .parent-password-btn { background:#315f8b; }",
   ".parent-bottom-nav .parent-logout-btn { background:#a83e45; }",
   ".parent-bottom-nav .parent-action-btn:hover { transform:none; box-shadow:none; }",
+  ".teacher-bottom-nav .parent-action-btn { flex:1 1 100%; }",
+  ".teacher-page { padding-bottom:88px; }",
 
   ".student-management-table { min-width:650px; }",
   ".overview-table { min-width:1050px; }",
@@ -3115,6 +3117,7 @@ async function renderParentDashboard() {
 
 async function renderTeacherDashboard() {
   document.body.classList.remove("parent-page");
+  document.body.classList.add("teacher-page");
   showLoading("正在載入教師授課資料……");
 
   const results = await Promise.all([
@@ -3142,9 +3145,10 @@ async function renderTeacherDashboard() {
 
   if (!teacherAssignmentsCache.length) {
     appRoot.innerHTML =
-      "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區</small></div><button class='tab-btn' id='logoutButton'>登出</button></div>" +
-      "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>";
-    $("logoutButton").addEventListener("click", handleLogout);
+      "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區</small></div></div>" +
+      "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>" +
+      "<nav class='parent-bottom-nav teacher-bottom-nav' aria-label='教師功能'><button class='parent-action-btn parent-logout-btn teacher-logout' type='button' title='登出系統' aria-label='登出系統'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg><span>登出</span></button></nav>";
+    document.querySelectorAll(".teacher-logout").forEach(button => button.addEventListener("click", handleLogout));
     return;
   }
 
@@ -3265,8 +3269,7 @@ function renderTeacherResults() {
     ).join("");
 
   appRoot.innerHTML =
-    "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區｜僅供查詢</small></div>" +
-      "<button class='tab-btn' id='logoutButton'>登出</button></div>" +
+    "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區｜僅供查詢</small></div></div>" +
     "<main class='dashboard teacher-dashboard'><div class='toolbar teacher-toolbar'>" +
       "<label for='teacherExamSelect'><strong>考試週期：</strong></label>" +
       "<select id='teacherExamSelect'>" + (examOptions || "<option value=''>目前沒有考試週期</option>") + "</select>" +
@@ -3276,9 +3279,10 @@ function renderTeacherResults() {
     "</div>" +
     (selectedExam ? "<p class='muted'>目前顯示：" + escapeHtml(formatDateRange(selectedExam)) + "</p>" : "") +
     (classSections || "<div class='empty'>目前選擇的班級沒有授權範圍內的在學學生。</div>") +
-    "</main><div class='footer'>© 小象文教機構</div>";
+    "</main><div class='footer'>© 小象文教機構</div>" +
+    "<nav class='parent-bottom-nav teacher-bottom-nav' aria-label='教師功能'><button class='parent-action-btn parent-logout-btn teacher-logout' type='button' title='登出系統' aria-label='登出系統'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg><span>登出</span></button></nav>";
 
-  $("logoutButton").addEventListener("click", handleLogout);
+  document.querySelectorAll(".teacher-logout").forEach(button => button.addEventListener("click", handleLogout));
   if ($("teacherExamSelect")) {
     $("teacherExamSelect").value = teacherSelectedExamId;
     $("teacherExamSelect").addEventListener("change", function () {
