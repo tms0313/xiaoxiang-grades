@@ -260,6 +260,9 @@ style.textContent = [
   ".btn-secondary { background:#64748b; }",
   ".btn-danger { background:#bd4242; }",
   ".btn-success { background:#27845b; }",
+  "#scorePrevStudent { background:#27845b; }",
+  "#scoreNextStudent { background:#64748b; }",
+  "#scorePrevStudent:disabled, #scoreNextStudent:disabled { opacity:1; }",
   ".btn-small { padding:5px 9px; font-size:12px; margin:0; white-space:nowrap; }",
   ".login-card .btn { width:100%; padding:13px; }",
   ".btn:disabled { opacity:.6; cursor:not-allowed; }",
@@ -1311,7 +1314,7 @@ function renderScoreEntry() {
     "<div class='panel'><h3>成績登錄</h3><form id='scoreForm'><div class='form-grid'>" +
     "<div class='field'><label>考試週期</label><select id='scoreExam' required><option value=''>請先選擇考試週期</option>" + examOptions + "</select></div>" +
     "<div class='field'><label>班級篩選</label><select id='scoreClass'><option value=''>全部班級</option><option value='國一班'>國一班</option><option value='國二班'>國二班</option><option value='國三班'>國三班</option></select></div>" +
-    "<div class='field'><label>學生</label><select id='scoreStudent' required><option value=''>請選擇學生</option></select><small id='scoreStudentCount' class='muted'></small></div>" +
+    "<div class='field'><label>學生</label><select id='scoreStudent' required><option value=''>請選擇學生</option></select></div>" +
     "<div class='field'><label>科目</label><select id='scoreSubject' required><option value=''>請選擇科目</option>" +
     SUBJECTS.map(s => "<option>" + escapeHtml(s) + "</option>").join("") +
     "</select></div>" +
