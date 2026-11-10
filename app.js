@@ -1309,9 +1309,9 @@ async function editScore(scoreId) {
       : grade3Math ? scoreValue + " 分／" + gradeLevel
       : grade3 ? correctCount + " 題／" + gradeLevel
       : scoreValue + " 分";
-    if (!confirm("確認修改這筆成績嗎？\\n\\n學生：" + student.full_name +
-      "\\n科目：" + subject + "\\n考試範圍：" + scope + "\\n成績：" + resultLabel +
-      "\\n\\n此操作會更新原有資料，不會新增另一筆成績。")) return;
+    if (!confirm("確認修改這筆成績嗎？\n\n學生：" + student.full_name +
+      "\n科目：" + subject + "\n考試範圍：" + scope + "\n成績：" + resultLabel +
+      "\n\n此操作會更新原有資料，不會新增另一筆成績。")) return;
 
     const payload = {
       subject: subject,
@@ -1700,12 +1700,12 @@ async function saveScore(event) {
       grade3Math ? scoreValue + " 分／" + gradeLevel :
       grade3 ? correctCount + " 題／" + gradeLevel : scoreValue + " 分";
     const exam = examsCache.find(item => String(item.id) === String(examId));
-    if (!confirm("發現相同資料，是否覆蓋原有成績？\\n\\n" +
-      "考試：" + formatDateRange(exam) + "\\n" +
-      "學生：" + student.full_name + "（" + student.class_name + "）\\n" +
-      "科目：" + subject + "\\n範圍：" + scope + "\\n\\n" +
-      "原有成績：" + oldResult + "\\n新輸入成績：" + newResult +
-      "\\n\\n確認後會更新原有資料，不會新增第二筆。")) return;
+    if (!confirm("發現相同資料，是否覆蓋原有成績？\n\n" +
+      "考試：" + formatDateRange(exam) + "\n" +
+      "學生：" + student.full_name + "（" + student.class_name + "）\n" +
+      "科目：" + subject + "\n範圍：" + scope + "\n\n" +
+      "原有成績：" + oldResult + "\n新輸入成績：" + newResult +
+      "\n\n確認後會更新原有資料，不會新增第二筆。")) return;
   }
 
   const payload = {
@@ -2730,7 +2730,7 @@ async function createTeacherAccount(event) {
   const button = $("createTeacherButton");
   if (!email) return;
 
-  if (!confirm("確定建立教師帳號？\\n\\n登入帳號：" + email + "\\n角色：教師")) return;
+  if (!confirm("確定建立教師帳號？\n\n登入帳號：" + email + "\n角色：教師")) return;
   button.disabled = true;
   button.textContent = "建立中……";
 
@@ -2748,9 +2748,9 @@ async function createTeacherAccount(event) {
     await loadAdminData();
     renderTeacherManagement();
     const copyPassword = confirm(
-      "教師帳號建立成功！\\n\\n登入帳號：" + (data.email || email) +
-      "\\n臨時密碼：" + data.temporaryPassword +
-      "\\n\\n請將臨時密碼透過 LINE 提供給教師；教師首次登入必須先更改為至少 8 個字元的新密碼。\\n\\n按「確定」複製臨時密碼。"
+      "教師帳號建立成功！\n\n登入帳號：" + (data.email || email) +
+      "\n臨時密碼：" + data.temporaryPassword +
+      "\n\n請將臨時密碼透過 LINE 提供給教師；教師首次登入必須先更改為至少 8 個字元的新密碼。\n\n按「確定」複製臨時密碼。"
     );
     if (copyPassword) {
       try { await navigator.clipboard.writeText(data.temporaryPassword); showMessage("教師臨時密碼已複製。", "success"); }
@@ -2773,13 +2773,13 @@ async function manageTeacherAccount(action, teacherId, email) {
 
   if (isDelete) {
     const confirmed = confirm(
-      "確定永久刪除這位教師的 Email 登入帳號？\\n\\n" +
-      "教師帳號：" + email + "\\n\\n" +
+      "確定永久刪除這位教師的 Email 登入帳號？\n\n" +
+      "教師帳號：" + email + "\n\n" +
       "刪除後將無法登入，該教師的所有授課權限也會一併移除。此操作無法復原。"
     );
     if (!confirmed) return;
   } else {
-    if (!confirm("確定重設這位教師的登入密碼？\\n\\n教師帳號：" + email)) return;
+    if (!confirm("確定重設這位教師的登入密碼？\n\n教師帳號：" + email)) return;
   }
 
   try {
@@ -2804,10 +2804,10 @@ async function manageTeacherAccount(action, teacherId, email) {
     if (!data.temporaryPassword) throw new Error("密碼已重設，但沒有取得臨時密碼。");
 
     const copied = confirm(
-      "教師密碼已重設成功！\\n\\n" +
-      "登入帳號：" + (data.email || email) + "\\n" +
+      "教師密碼已重設成功！\n\n" +
+      "登入帳號：" + (data.email || email) + "\n" +
       "臨時密碼：" + data.temporaryPassword +
-      "\\n\\n請將密碼透過 LINE 提供給教師；教師首次登入必須先更改密碼。\\n\\n按「確定」複製臨時密碼。"
+      "\n\n請將密碼透過 LINE 提供給教師；教師首次登入必須先更改密碼。\n\n按「確定」複製臨時密碼。"
     );
 
     if (copied) {
