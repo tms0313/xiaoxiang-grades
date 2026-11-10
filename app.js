@@ -2872,7 +2872,7 @@ function renderTeacherManagement() {
       const teacher = teacherProfilesCache.find(
         profile => String(profile.id) === String(item.teacher_id)
       );
-      return "<tr>" +
+      return "<tr data-teacher-assignment-row='" + escapeHtml(item.id) + "'>" +
         "<td>" + escapeHtml(teacher ? teacher.email : "教師帳號") + "</td>" +
         "<td>" + escapeHtml(item.class_name) + "</td>" +
         "<td>" + escapeHtml(item.subject) + "</td>" +
@@ -2950,7 +2950,7 @@ function renderTeacherManagement() {
       .filter(item => !selected || String(item.teacher_id) === String(selected))
       .map(function (item) {
         const teacher = teacherProfilesCache.find(profile => String(profile.id) === String(item.teacher_id));
-        return "<tr><td>" + escapeHtml(teacher ? teacher.email : "教師帳號") + "</td>" +
+        return "<tr data-teacher-assignment-row='" + escapeHtml(item.id) + "'><td>" + escapeHtml(teacher ? teacher.email : "教師帳號") + "</td>" +
           "<td>" + escapeHtml(item.class_name) + "</td><td>" + escapeHtml(item.subject) + "</td>" +
           "<td><button class='btn btn-danger btn-small' data-delete-teacher-assignment='" + escapeHtml(item.id) + "'>移除</button></td></tr>";
       }).join("");
@@ -2974,7 +2974,7 @@ function renderTeacherManagement() {
 
     const assignmentButton = event.target.closest("[data-delete-teacher-assignment]");
     if (assignmentButton) {
-      await deleteTeacherAssignment(assignmentButton.dataset.deleteTeacherAssignment);
+      await deleteTeacherAssignment(assignmentButton.dataset.deleteTeacherAssignment, assignmentButton);
       return;
     }
 
@@ -3185,16 +3185,50 @@ async function saveTeacherAssignment(event) {
   }
 }
 
-async function deleteTeacherAssignment(id) {
+async function deleteTeacherAssignment(id, button) {
   if (!confirm("確定移除此筆教師授課權限？")) return;
+
+  const currentRow = button ? button.closest("tr") : null;
+  const nextRow = currentRow ? currentRow.nextElementSibling : null;
+  const previousRow = currentRow ? currentRow.previousElementSibling : null;
+  const anchorRowId = nextRow && nextRow.dataset.teacherAssignmentRow
+    ? nextRow.dataset.teacherAssignmentRow
+    : previousRow && previousRow.dataset.teacherAssignmentRow
+      ? previousRow.dataset.teacherAssignmentRow
+      : "";
+  const anchorTop = currentRow ? currentRow.getBoundingClientRect().top : null;
+  const assignmentPanel = currentRow ? currentRow.closest(".panel") : null;
+  const panelTop = assignmentPanel ? assignmentPanel.getBoundingClientRect().top : null;
+
   try {
     const result = await db.from("teacher_assignments").delete().eq("id", id);
     if (result.error) throw result.error;
     await loadAdminData();
     renderTeacherManagement();
-    showMessage("教師授課權限已移除。", "success");
+    showMessage("教師授課權限已移除。", "success", true);
+
+    requestAnimationFrame(function () {
+      const refreshedRow = anchorRowId
+        ? document.querySelector("[data-teacher-assignment-row='" + anchorRowId + "']")
+        : null;
+      if (refreshedRow && anchorTop !== null) {
+        window.scrollBy({
+          top: refreshedRow.getBoundingClientRect().top - anchorTop,
+          behavior: "auto"
+        });
+      } else if (panelTop !== null) {
+        const refreshedPanel = $("teacherAssignmentRows");
+        const panel = refreshedPanel ? refreshedPanel.closest(".panel") : null;
+        if (panel) {
+          window.scrollBy({
+            top: panel.getBoundingClientRect().top - panelTop,
+            behavior: "auto"
+          });
+        }
+      }
+    });
   } catch (error) {
-    showMessage("移除教師授課權限失敗：" + error.message, "error");
+    showMessage("移除教師授課權限失敗：" + error.message, "error", true);
   }
 }
 
