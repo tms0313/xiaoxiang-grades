@@ -841,6 +841,9 @@ function renderAdminTab() {
   const dashboard = document.querySelector(".dashboard");
   const adminTabs = $("adminTabs");
   if (systemMessage && dashboard && adminTabs) dashboard.insertBefore(systemMessage, adminTabs);
+  if (systemMessage && activeTab === "overview") {
+    systemMessage.style.display = "none";
+  }
 
   document.querySelectorAll(".tab-btn").forEach(function (button) {
     button.classList.toggle("active", button.dataset.tab === activeTab);
@@ -989,10 +992,14 @@ function renderOverview(preservedFilters) {
       return { score: score, student: getStudent(score.student_id), exam: getExam(score.exam_id) };
     }).filter(item => item.exam);
 
-    // 只要選定考試週期，就依目前班級／科目篩選條件檢查漏登。
-    // 每個班級、科目、範圍獨立比對；至少一位學生有非請假紀錄才啟動提示。
-    if (examId) {
-      const selectedExam = getExam(examId);
+    // 未選考試週期時，逐一檢查所有考試；選定週期時只檢查該次考試。
+    // 每個考試、班級、科目及範圍獨立比對，至少一位學生有非請假紀錄才啟動提示。
+    const examsToCheck = examId
+      ? [getExam(examId)].filter(Boolean)
+      : sortByDateDesc(examsCache, "start_date");
+
+    examsToCheck.forEach(function (selectedExam) {
+      const currentExamId = String(selectedExam.id);
       const classNames = Array.from(new Set(
         studentsCache.filter(student => student.is_active !== false && matchesStudent(student))
           .map(student => student.class_name)
@@ -1014,8 +1021,7 @@ function renderOverview(preservedFilters) {
 
           const classScopeScores = scoresCache.filter(function (score) {
             const student = getStudent(score.student_id);
-            return selectedExam &&
-              String(score.exam_id) === String(examId) &&
+            return String(score.exam_id) === currentExamId &&
               score.subject === targetSubject &&
               score.grade_level !== "請假" &&
               student &&
@@ -1038,7 +1044,7 @@ function renderOverview(preservedFilters) {
 
             enrolledStudents.forEach(function (student) {
               const matchingRecord = scoresCache.find(function (score) {
-                return String(score.exam_id) === String(examId) &&
+                return String(score.exam_id) === currentExamId &&
                   String(score.student_id) === String(student.id) &&
                   score.subject === targetSubject &&
                   String(score.scope || "").trim() === scope;
@@ -1057,7 +1063,7 @@ function renderOverview(preservedFilters) {
           });
         });
       });
-    }
+    });
 
     const filteredRows = rows.filter(function (item) {
       if (status === "all") return true;
@@ -1092,10 +1098,10 @@ function renderOverview(preservedFilters) {
     const missingCount = rows.filter(item => item.missing).length;
     const hint = $("overviewFilterHint");
     if (hint) {
-      hint.textContent = examId && subject
+      hint.textContent = examId
         ? "目前篩選：" + formatDateRange(getExam(examId)) + "／" + (className || "全部班級") + "／" + (subject || "全部科目") +
           "；依各班、各科目已登錄的範圍比對修課學生，尚有 " + missingCount + " 筆未登錄提醒；已標記請假的學生不會列入。"
-        : "選擇考試週期後，系統會依目前班級及科目篩選條件，比對各班已有人登錄的科目範圍。";
+        : "目前顯示全部考試週期；系統會依各次考試、班級及科目已登錄的範圍，自動比對修課學生並提示未登錄。";
     }
 
     $("overviewRows").innerHTML =
