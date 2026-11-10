@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "reset_password") {
-      const temporaryPassword = makeTemporaryPassword();
+      const temporaryPassword = "123456";
       const { data: authTeacher, error: getTeacherError } = await adminClient.auth.admin.getUserById(teacherId);
       if (getTeacherError || !authTeacher.user) {
         return json({ success: false, error: "無法讀取教師登入帳號" }, 400);
