@@ -1318,8 +1318,8 @@ function renderScoreEntry() {
     "<div class='field'><label>考試範圍</label><input id='scoreScope' placeholder='例如：第 1～2 課' required></div></div>" +
     "<div class='toolbar' style='display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:4px 0 16px'>" +
     "<div style='display:flex;flex-direction:row;align-items:center;gap:10px;flex-wrap:nowrap;width:100%'>" +
-    "<button class='btn btn-success btn-small' style='flex:1' type='button' id='scorePrevStudent'>上一位學生</button>" +
-    "<button class='btn btn-secondary btn-small' style='flex:1' type='button' id='scoreNextStudent'>下一位學生</button></div>" +
+    "<button class='btn btn-success' style='flex:1' type='button' id='scorePrevStudent'>上一位學生</button>" +
+    "<button class='btn btn-secondary' style='flex:1' type='button' id='scoreNextStudent'>下一位學生</button></div>" +
     "<span class='muted' id='scoreEntryCounter'>本次頁面已成功登錄 " + scoreEntrySavedCount + " 筆</span></div>" +
     "<div id='generalAttendanceField' class='field'><label>出席狀態</label><select id='generalAttendance'><option value='normal'>正常出席</option><option value='請假'>請假</option></select></div>" +
     "<div id='normalScoreField' class='field'><label>一般成績</label><input id='scoreValue' type='number' min='0' max='100' step='0.1' placeholder='請輸入分數'></div>" +
