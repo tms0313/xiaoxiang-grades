@@ -3084,6 +3084,7 @@ async function manageTeacherAccount(action, teacherId, email) {
 
 async function saveTeacherAssignment(event) {
   event.preventDefault();
+  const scrollY = window.scrollY;
   const teacherId = $("teacherAccountSelect").value;
   const className = $("teacherClassSelect").value;
   const subject = $("teacherSubjectSelect").value;
@@ -3104,7 +3105,11 @@ async function saveTeacherAssignment(event) {
     }
     await loadAdminData();
     renderTeacherManagement();
-    showMessage("教師授課權限已新增。", "success");
+    if ($("teacherAccountSelect")) $("teacherAccountSelect").value = teacherId;
+    if ($("teacherClassSelect")) $("teacherClassSelect").value = className;
+    if ($("teacherSubjectSelect")) $("teacherSubjectSelect").value = subject;
+    showMessage("教師授課權限已新增。", "success", true);
+    window.scrollTo({ top: scrollY, behavior: "auto" });
   } catch (error) {
     showMessage("新增授課權限失敗：" + error.message, "error");
   }
