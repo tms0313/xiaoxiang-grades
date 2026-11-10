@@ -129,9 +129,19 @@ Deno.serve(async (req) => {
       return json({ success: false, error: "清除教師授課權限失敗：" + assignmentDeleteError.message }, 500);
     }
 
-    const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(teacherId);
-    if (deleteAuthError) {
-      return json({ success: false, error: "刪除教師登入帳號失敗：" + deleteAuthError.message }, 400);
+    // A previous partial deletion may already have removed the Auth user but left its profile row.
+    const { data: authTeacher, error: authLookupError } = await adminClient.auth.admin.getUserById(teacherId);
+    const authUserMissing = !!authLookupError && /user not found|not found/i.test(authLookupError.message);
+
+    if (authLookupError && !authUserMissing) {
+      return json({ success: false, error: "確認教師登入帳號時失敗：" + authLookupError.message }, 400);
+    }
+
+    if (authTeacher && authTeacher.user) {
+      const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(teacherId);
+      if (deleteAuthError) {
+        return json({ success: false, error: "刪除教師登入帳號失敗：" + deleteAuthError.message }, 400);
+      }
     }
 
     // Explicit cleanup also covers projects where profile-related foreign keys are not cascading.
