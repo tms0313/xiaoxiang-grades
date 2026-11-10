@@ -905,7 +905,7 @@ function renderOverview() {
     );
   }
 
-  function buildMissingOverviewRow(student, exam, subject) {
+  function buildMissingOverviewRow(student, exam, subject, scope) {
     return (
       "<tr class='overview-missing-row'>" +
         "<td>" + escapeHtml(formatDateRange(exam)) + "</td>" +
@@ -913,8 +913,8 @@ function renderOverview() {
         "<td>" + escapeHtml(student.student_code) + "</td>" +
         "<td>" + escapeHtml(student.full_name) + "</td>" +
         "<td>" + escapeHtml(subject) + "</td>" +
-        "<td>—</td>" +
-        "<td><strong style='color:#d97706'>尚未登錄</strong></td>" +
+        "<td>" + escapeHtml(scope || "—") + "</td>" +
+        "<td><strong style='color:#dc2626;font-weight:900'>未登錄</strong></td>" +
         "<td>—</td>" +
       "</tr>"
     );
@@ -938,7 +938,7 @@ function renderOverview() {
       "</select>" +
       "<button class='btn btn-secondary' id='overviewRefresh'>重新整理</button>" +
     "</div>" +
-    "<p id='overviewFilterHint' class='muted' style='margin:0 0 10px'>選擇考試週期及科目後，可一併查看尚未登錄該科成績的學生。</p>" +
+    "<p id='overviewFilterHint' class='muted' style='margin:0 0 10px'>選擇考試週期及科目後，系統會依已登錄的科目範圍比對同班修課學生。</p>" +
     "<div class='table-wrap'><table class='overview-table'>" +
       "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績／狀態</th><th>操作</th></tr></thead>" +
       "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
@@ -969,26 +969,70 @@ function renderOverview() {
       return { score: score, student: getStudent(score.student_id), exam: getExam(score.exam_id) };
     }).filter(item => item.exam);
 
-    // 只針對有修讀所選科目的在學學生檢查漏登。
+    // 只有同一考試、同一班級、同一科目範圍已有人登錄，
+    // 才檢查該班其他有修課的學生是否漏登；「請假」紀錄不列為漏登。
     if (examId && subject) {
       const selectedExam = getExam(examId);
-      const targetStudents = studentsCache.filter(student =>
-        student.is_active !== false && matchesStudent(student) &&
-        studentSubjectsCache.some(function (item) {
-          return String(item.student_id) === String(student.id) &&
-            item.subject === subject && item.is_active === true;
-        })
-      );
-      targetStudents.forEach(function (student) {
-        const hasSubjectScore = scoresCache.some(function (score) {
-          return String(score.exam_id) === String(examId) &&
-            String(score.student_id) === String(student.id) &&
-            score.subject === subject;
+      const classNames = Array.from(new Set(
+        studentsCache.filter(student => student.is_active !== false && matchesStudent(student))
+          .map(student => student.class_name)
+      ));
+
+      classNames.forEach(function (targetClass) {
+        const enrolledStudents = studentsCache.filter(function (student) {
+          return student.is_active !== false &&
+            student.class_name === targetClass &&
+            matchesStudent(student) &&
+            studentSubjectsCache.some(function (item) {
+              return String(item.student_id) === String(student.id) &&
+                item.subject === subject &&
+                item.is_active === true;
+            });
         });
 
-        if (!hasSubjectScore && selectedExam) {
-          rows.push({ missing: true, student: student, exam: selectedExam, subject: subject });
-        }
+        const classScopeScores = scoresCache.filter(function (score) {
+          const student = getStudent(score.student_id);
+          return selectedExam &&
+            String(score.exam_id) === String(examId) &&
+            score.subject === subject &&
+            student &&
+            student.class_name === targetClass &&
+            String(score.scope || "").trim() !== "";
+        });
+
+        const registeredScopes = Array.from(new Set(
+          classScopeScores.map(score => String(score.scope).trim())
+        ));
+
+        registeredScopes.forEach(function (scope) {
+          const studentsWithThisScope = new Set(
+            classScopeScores
+              .filter(score => String(score.scope).trim() === scope)
+              .map(score => String(score.student_id))
+          );
+
+          // 至少一位同班學生已登錄此範圍，才對其他修課學生提示。
+          if (studentsWithThisScope.size === 0) return;
+
+          enrolledStudents.forEach(function (student) {
+            const matchingRecord = scoresCache.find(function (score) {
+              return String(score.exam_id) === String(examId) &&
+                String(score.student_id) === String(student.id) &&
+                score.subject === subject &&
+                String(score.scope || "").trim() === scope;
+            });
+
+            if (!matchingRecord) {
+              rows.push({
+                missing: true,
+                student: student,
+                exam: selectedExam,
+                subject: subject,
+                scope: scope
+              });
+            }
+          });
+        });
       });
     }
 
@@ -998,9 +1042,14 @@ function renderOverview() {
       if (dateA !== dateB) return dateB.localeCompare(dateA);
       const classCompare = String(a.student.class_name || "").localeCompare(String(b.student.class_name || ""), "zh-Hant");
       if (classCompare !== 0) return classCompare;
-      // 同一班級內，已登錄的學生排前面，尚未登錄者集中排在班級最底下。
       if (!!a.missing !== !!b.missing) return a.missing ? 1 : -1;
-      return String(a.student.student_code || "").localeCompare(String(b.student.student_code || ""), undefined, { numeric: true });
+      const codeCompare = String(a.student.student_code || "").localeCompare(
+        String(b.student.student_code || ""), undefined, { numeric: true }
+      );
+      if (codeCompare !== 0) return codeCompare;
+      return String(a.scope || (a.score && a.score.scope) || "").localeCompare(
+        String(b.scope || (b.score && b.score.scope) || ""), "zh-Hant"
+      );
     });
 
     const missingCount = rows.filter(item => item.missing).length;
@@ -1008,14 +1057,14 @@ function renderOverview() {
     if (hint) {
       hint.textContent = examId && subject
         ? "目前篩選：" + formatDateRange(getExam(examId)) + "／" + (className || "全部班級") + "／" + subject +
-          "；依學生修課設定檢查，尚未登錄 " + missingCount + " 位。未修讀該科的學生不列入檢查。"
-        : "選擇考試週期及科目後，系統會依學生修課設定檢查尚未登錄名單。";
+          "；只比對同班已有人登錄的科目範圍，修課學生中尚有 " + missingCount + " 筆未登錄提醒；已標記請假的學生不會列入。"
+        : "選擇考試週期及科目後，系統會比對同班已有人登錄的科目範圍，找出其他修課學生的漏登情形。";
     }
 
     $("overviewRows").innerHTML =
       rows.map(function (item) {
         return item.missing
-          ? buildMissingOverviewRow(item.student, item.exam, item.subject)
+          ? buildMissingOverviewRow(item.student, item.exam, item.subject, item.scope)
           : buildOverviewRow(item.score);
       }).join("") ||
       "<tr><td colspan='8' class='empty'>沒有符合的成績資料</td></tr>";
