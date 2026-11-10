@@ -1003,8 +1003,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     "<div class='table-wrap'><table class='overview-table'>" +
       "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績／狀態</th><th>操作</th></tr></thead>" +
       "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
-    "</table></div>" +
-
+    "</table></div>";
 
   function filterRows() {
     const search = $("overviewSearch").value.trim().toLowerCase();
