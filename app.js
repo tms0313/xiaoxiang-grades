@@ -794,7 +794,7 @@ function renderAdminDashboard() {
         "<button class='tab-btn' data-tab='overview'>成績總覽</button>" +
         "<button class='tab-btn' data-tab='scores'>成績登錄</button>" +
         "<button class='tab-btn' data-tab='students'>學生管理</button>" +
-        "<button class='tab-btn' data-tab='exams'>考試管理</button>" +
+        
         "<button class='tab-btn' data-tab='guardians'>家長綁定</button>" +
         "<button class='tab-btn' data-tab='teachers'>教師管理</button>" +
         "<button class='tab-btn' data-tab='passwords'>家長密碼</button>" +
@@ -825,7 +825,6 @@ function renderAdminTab() {
   if (activeTab === "overview") renderOverview();
   if (activeTab === "scores") renderScoreEntry();
   if (activeTab === "students") renderStudents();
-  if (activeTab === "exams") renderExams();
   if (activeTab === "guardians") renderGuardians();
   if (activeTab === "teachers") renderTeacherManagement();
   if (activeTab === "passwords") renderPasswords();
@@ -1282,9 +1281,32 @@ function renderScoreEntry() {
     return "<option value='" + escapeHtml(grade) + "'>" + escapeHtml(grade) + "</option>";
   }).join("");
 
+  const examRows = sortByDateDesc(examsCache, "start_date").map(function (exam) {
+    return "<tr>" +
+      "<td>" + escapeHtml(formatDate(exam.start_date)) + "</td>" +
+      "<td>" + escapeHtml(formatDate(exam.end_date)) + "</td>" +
+      "<td class='action-cell'><div class='action-buttons'>" +
+        "<button class='btn btn-small' data-edit-exam='" + escapeHtml(exam.id) + "'>修改</button>" +
+        "<button class='btn btn-danger btn-small' data-delete-exam='" + escapeHtml(exam.id) + "'>刪除</button>" +
+      "</div></td></tr>";
+  }).join("");
+
   content.innerHTML =
     "<h2 class='section-title'>成績登錄</h2>" +
-    "<div class='panel'><form id='scoreForm'><div class='form-grid'>" +
+    "<div class='panel'><h3 id='examFormTitle'>新增考試</h3>" +
+      "<form id='examForm'><input type='hidden' id='examEditId'>" +
+        "<div class='form-grid'>" +
+          "<div class='field'><label>開始日期</label><input id='examStart' type='date' required></div>" +
+          "<div class='field'><label>結束日期</label><input id='examEnd' type='date' required></div>" +
+        "</div>" +
+        "<button class='btn btn-success' type='submit'>儲存考試</button> " +
+        "<button class='btn btn-secondary' type='button' id='examCancel'>清除</button>" +
+      "</form></div>" +
+    "<div class='table-wrap'><table class='exam-management-table'>" +
+      "<thead><tr><th>開始日期</th><th>結束日期</th><th>操作</th></tr></thead>" +
+      "<tbody>" + (examRows || "<tr><td colspan='3' class='empty'>尚無考試資料</td></tr>") + "</tbody>" +
+    "</table></div>" +
+    "<div class='panel'><h3>成績登錄</h3><form id='scoreForm'><div class='form-grid'>" +
     "<div class='field'><label>考試週期</label><select id='scoreExam' required><option value=''>請先選擇考試週期</option>" + examOptions + "</select></div>" +
     "<div class='field'><label>班級篩選</label><select id='scoreClass'><option value=''>全部班級</option><option value='國一班'>國一班</option><option value='國二班'>國二班</option><option value='國三班'>國三班</option></select></div>" +
     "<div class='field'><label>學生</label><select id='scoreStudent' required><option value=''>請選擇學生</option></select><small id='scoreStudentCount' class='muted'></small></div>" +
@@ -1329,6 +1351,14 @@ function renderScoreEntry() {
   $("scorePrevStudent").addEventListener("click", function () { moveScoreStudent(-1); saveScoreEntryProgress(); });
   $("scoreNextStudent").addEventListener("click", function () { moveScoreStudent(1); saveScoreEntryProgress(); });
   $("scoreForm").addEventListener("submit", saveScore);
+  $("examForm").addEventListener("submit", saveExam);
+  $("examCancel").addEventListener("click", clearExamForm);
+  content.onclick = async function (event) {
+    const editButton = event.target.closest("[data-edit-exam]");
+    const deleteButton = event.target.closest("[data-delete-exam]");
+    if (editButton) editExam(editButton.dataset.editExam);
+    if (deleteButton) await deleteExam(deleteButton.dataset.deleteExam);
+  };
   updateScoreStudentOptions(false);
   updateScoreMode();
   restoreScoreEntryProgress();
@@ -1765,49 +1795,6 @@ async function deleteStudent(id) {
 // 10. 考試管理
 // ==================================================
 
-function renderExams() {
-  const content = $("adminContent");
-
-  const rows = sortByDateDesc(examsCache, "start_date").map(function (exam) {
-    return "<tr>" +
-      "<td>" + escapeHtml(formatDate(exam.start_date)) + "</td>" +
-      "<td>" + escapeHtml(formatDate(exam.end_date)) + "</td>" +
-      "<td class='action-cell'>" +
-        "<div class='action-buttons'>" +
-          "<button class='btn btn-small' data-edit-exam='" + escapeHtml(exam.id) + "'>修改</button>" +
-          "<button class='btn btn-danger btn-small' data-delete-exam='" + escapeHtml(exam.id) + "'>刪除</button>" +
-        "</div>" +
-      "</td>" +
-      "</tr>";
-  }).join("");
-
-  content.innerHTML =
-    "<h2 class='section-title'>考試管理</h2>" +
-    "<div class='panel'><h3 id='examFormTitle'>新增考試</h3>" +
-      "<form id='examForm'><input type='hidden' id='examEditId'>" +
-        "<div class='form-grid'>" +
-          "<div class='field'><label>開始日期</label><input id='examStart' type='date' required></div>" +
-          "<div class='field'><label>結束日期</label><input id='examEnd' type='date' required></div>" +
-        "</div>" +
-        "<button class='btn btn-success' type='submit'>儲存考試</button> " +
-        "<button class='btn btn-secondary' type='button' id='examCancel'>清除</button>" +
-      "</form></div>" +
-      "<div class='table-wrap'><table class='exam-management-table'>" +
-        "<thead><tr><th>開始日期</th><th>結束日期</th><th>操作</th></tr></thead>" +
-        "<tbody>" + (rows || "<tr><td colspan='3' class='empty'>尚無考試資料</td></tr>") + "</tbody>" +
-      "</table></div>";
-
-  $("examForm").addEventListener("submit", saveExam);
-  $("examCancel").addEventListener("click", clearExamForm);
-
-  content.onclick = async function (event) {
-    const editButton = event.target.closest("[data-edit-exam]");
-    const deleteButton = event.target.closest("[data-delete-exam]");
-
-    if (editButton) editExam(editButton.dataset.editExam);
-    if (deleteButton) await deleteExam(deleteButton.dataset.deleteExam);
-  };
-}
 
 function clearExamForm() {
   $("examForm").reset();
@@ -1862,7 +1849,7 @@ async function saveExam(event) {
     if (result.error) throw result.error;
 
     await loadAdminData();
-    renderExams();
+    renderScoreEntry();
     showMessage(id ? "考試日期已更新。" : "考試場次已新增。", "success");
 
   } catch (error) {
@@ -1884,7 +1871,7 @@ async function deleteExam(id) {
     if (result.error) throw result.error;
 
     await loadAdminData();
-    renderExams();
+    renderScoreEntry();
     showMessage("考試資料已刪除。", "success");
 
   } catch (error) {
