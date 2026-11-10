@@ -2307,8 +2307,7 @@ function renderTeacherManagement() {
       "</div><button class='btn btn-success' type='submit' id='createTeacherButton'>建立教師帳號</button></form>" +
     "</div>" +
     "<div class='panel'><h3>教師帳號管理</h3>" +
-      "<p class='muted'>教師預設密碼為 123456；首次登入必須先更改為至少 8 個字元的新密碼。</p>" +
-      "<button class='btn btn-secondary' type='button' id='resetAllTeacherPasswords'>全部教師密碼重設為 123456</button>" +
+      "<p class='muted'>建立帳號或重設密碼時，系統會產生一次性臨時密碼。教師首次登入後，必須先更改為至少 8 個字元的新密碼，才能查詢成績。</p>" +
       "<div class='table-wrap'><table class='teacher-account-table'><thead><tr><th>教師登入 Email</th><th>操作</th></tr></thead>" +
       "<tbody id='teacherAccountRows'>" +
         (teacherProfilesCache.map(function (profile) {
@@ -2359,29 +2358,6 @@ function renderTeacherManagement() {
   }
 
   content.onclick = async function (event) {
-    const resetAllButton = event.target.closest("#resetAllTeacherPasswords");
-    if (resetAllButton) {
-      if (!confirm("確定將所有教師帳號的密碼統一重設為 123456？\\n\\n所有教師下次登入時都必須先更改密碼，完成後才能查看成績。")) return;
-      resetAllButton.disabled = true;
-      resetAllButton.textContent = "重設中……";
-      try {
-        const result = await db.functions.invoke("admin-manage-teacher-account", {
-          body: { action: "reset_all_passwords" }
-        });
-        if (result.error) throw new Error(result.data && result.data.error ? result.data.error : result.error.message);
-        if (!result.data || !result.data.success) throw new Error(result.data && result.data.error ? result.data.error : "批次重設失敗。");
-        alert("已完成教師密碼重設。\\n成功：" + result.data.updatedCount + " 個\\n失敗：" + (result.data.failedCount || 0) + " 個" +
-          (result.data.failures && result.data.failures.length ? "\\n\\n失敗帳號：\\n" + result.data.failures.join("\\n") : ""));
-        showMessage("教師預設密碼已批次重設。", "success");
-      } catch (error) {
-        showMessage("批次重設教師密碼失敗：" + error.message, "error");
-      } finally {
-        resetAllButton.disabled = false;
-        resetAllButton.textContent = "全部教師密碼重設為 123456";
-      }
-      return;
-    }
-
     const resetButton = event.target.closest("[data-reset-teacher]");
     if (resetButton) {
       const profile = teacherProfilesCache.find(item => String(item.id) === String(resetButton.dataset.resetTeacher));
@@ -2419,16 +2395,20 @@ async function createTeacherAccount(event) {
       throw new Error(result.data && result.data.error ? result.data.error : result.error.message);
     }
     const data = result.data || {};
-    if (!data.success || !data.initialPassword) {
+    if (!data.success || !data.temporaryPassword) {
       throw new Error(data.error || "教師帳號建立結果不完整，請確認 Edge Function 已部署。");
     }
     await loadAdminData();
     renderTeacherManagement();
-    alert(
+    const copyPassword = confirm(
       "教師帳號建立成功！\\n\\n登入帳號：" + (data.email || email) +
-      "\\n臨時密碼：" + data.initialPassword +
-      "\\n\\n請將臨時密碼透過 LINE 提供給教師。"
+      "\\n臨時密碼：" + data.temporaryPassword +
+      "\\n\\n請將臨時密碼透過 LINE 提供給教師；教師首次登入必須先更改為至少 8 個字元的新密碼。\\n\\n按「確定」複製臨時密碼。"
     );
+    if (copyPassword) {
+      try { await navigator.clipboard.writeText(data.temporaryPassword); showMessage("教師臨時密碼已複製。", "success"); }
+      catch (copyError) { showMessage("教師臨時密碼：" + data.temporaryPassword, "success"); }
+    }
     showMessage("教師帳號「" + email + "」已建立。", "success");
   } catch (error) {
     showMessage("建立教師帳號失敗：" + error.message, "error");
