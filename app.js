@@ -2276,6 +2276,17 @@ function renderTeacherManagement() {
         "<div class='field'><label>教師 Email（登入帳號）</label><input id='newTeacherEmail' type='email' autocomplete='off' placeholder='請輸入教師 Email' required></div>" +
       "</div><button class='btn btn-success' type='submit' id='createTeacherButton'>建立教師帳號</button></form>" +
     "</div>" +
+    "<div class='panel'><h3>教師帳號管理</h3>" +
+      "<p class='muted'>可重設教師登入密碼，或永久刪除教師 Email 帳號及其授課權限。</p>" +
+      "<div class='table-wrap'><table><thead><tr><th>教師登入 Email</th><th>操作</th></tr></thead>" +
+      "<tbody id='teacherAccountRows'>" +
+        (teacherProfilesCache.map(function (profile) {
+          return "<tr><td>" + escapeHtml(profile.email || profile.display_name || "—") + "</td>" +
+            "<td><button class='btn btn-small' data-reset-teacher='" + escapeHtml(profile.id) + "'>重設密碼</button> " +
+            "<button class='btn btn-danger btn-small' data-delete-teacher='" + escapeHtml(profile.id) + "'>刪除帳號</button></td></tr>";
+        }).join("") || "<tr><td colspan='2' class='empty'>目前沒有教師帳號</td></tr>") +
+      "</tbody></table></div>" +
+    "</div>" +
     "<div class='panel'><h3>設定授課班級與科目</h3>" +
       (teacherProfilesCache.length
         ? "<form id='teacherAssignmentForm'><div class='form-grid'>" +
@@ -2315,9 +2326,22 @@ function renderTeacherManagement() {
   }
 
   content.onclick = async function (event) {
-    const button = event.target.closest("[data-delete-teacher-assignment]");
-    if (!button) return;
-    await deleteTeacherAssignment(button.dataset.deleteTeacherAssignment);
+    const resetButton = event.target.closest("[data-reset-teacher]");
+    if (resetButton) {
+      const profile = teacherProfilesCache.find(item => String(item.id) === String(resetButton.dataset.resetTeacher));
+      if (profile) await manageTeacherAccount("reset_password", profile.id, profile.email || "");
+      return;
+    }
+
+    const deleteButton = event.target.closest("[data-delete-teacher]");
+    if (deleteButton) {
+      const profile = teacherProfilesCache.find(item => String(item.id) === String(deleteButton.dataset.deleteTeacher));
+      if (profile) await manageTeacherAccount("delete", profile.id, profile.email || "");
+      return;
+    }
+
+    const assignmentButton = event.target.closest("[data-delete-teacher-assignment]");
+    if (assignmentButton) await deleteTeacherAssignment(assignmentButton.dataset.deleteTeacherAssignment);
   };
 }
 
@@ -2358,6 +2382,63 @@ async function createTeacherAccount(event) {
       currentButton.disabled = false;
       currentButton.textContent = "建立教師帳號";
     }
+  }
+}
+
+async function manageTeacherAccount(action, teacherId, email) {
+  const isDelete = action === "delete";
+
+  if (isDelete) {
+    const confirmed = confirm(
+      "確定永久刪除這位教師的 Email 登入帳號？\\n\\n" +
+      "教師帳號：" + email + "\\n\\n" +
+      "刪除後將無法登入，該教師的所有授課權限也會一併移除。此操作無法復原。"
+    );
+    if (!confirmed) return;
+  } else {
+    if (!confirm("確定重設這位教師的登入密碼？\\n\\n教師帳號：" + email)) return;
+  }
+
+  try {
+    const result = await db.functions.invoke("admin-manage-teacher-account", {
+      body: { action: action, teacherId: teacherId }
+    });
+
+    if (result.error) {
+      throw new Error(result.data && result.data.error ? result.data.error : result.error.message);
+    }
+
+    const data = result.data || {};
+    if (!data.success) throw new Error(data.error || "教師帳號操作失敗。");
+
+    if (isDelete) {
+      await loadAdminData();
+      renderTeacherManagement();
+      showMessage("教師帳號已刪除，授課權限也已清除。", "success");
+      return;
+    }
+
+    if (!data.temporaryPassword) throw new Error("密碼已重設，但沒有取得臨時密碼。");
+
+    const copied = confirm(
+      "教師臨時密碼已重設成功！\\n\\n" +
+      "登入帳號：" + (data.email || email) + "\\n" +
+      "臨時密碼：" + data.temporaryPassword +
+      "\\n\\n請先記下這組密碼，再透過 LINE 提供給教師。\\n\\n按「確定」複製臨時密碼。"
+    );
+
+    if (copied) {
+      try {
+        await navigator.clipboard.writeText(data.temporaryPassword);
+        showMessage("教師臨時密碼已複製。", "success");
+      } catch (copyError) {
+        showMessage("教師臨時密碼：" + data.temporaryPassword, "success");
+      }
+    } else {
+      showMessage("臨時密碼已產生，請記下剛才顯示的密碼。", "success");
+    }
+  } catch (error) {
+    showMessage((isDelete ? "刪除教師帳號" : "重設教師密碼") + "失敗：" + error.message, "error");
   }
 }
 
