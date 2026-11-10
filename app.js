@@ -1361,13 +1361,8 @@ async function excludeMissingReminder(item) {
     renderOverview(overviewFilters, true);
     const systemMessage = $("systemMessage");
     if (systemMessage) systemMessage.style.display = "none";
-    const excludedPanel = $("excludedRemindersPanel");
-    if (excludedPanel) {
-      const panelTop = window.scrollY + excludedPanel.getBoundingClientRect().top - 24;
-      window.scrollTo({ top: Math.max(0, panelTop), behavior: "auto" });
-    } else {
-      window.scrollTo({ top: overviewScrollY, behavior: "auto" });
-    }
+    // 排除提醒後維持原本的捲動位置，讓使用者留在剛才操作的學生附近。
+    window.scrollTo({ top: overviewScrollY, behavior: "auto" });
   } catch (error) {
     showMessage("刪除未登錄提醒失敗：" + error.message, "error", true);
   }
