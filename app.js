@@ -730,6 +730,62 @@ function switchAccountMode() {
 // 5. 重新讀取資料
 // ==================================================
 
+function hasLatestExamReachedReleaseTime(exam) {
+  if (!exam || !exam.end_date) return false;
+
+  const endDate = new Date(String(exam.end_date).slice(0, 10) + "T00:00:00Z");
+  if (Number.isNaN(endDate.getTime())) return false;
+
+  const daysUntilSaturday = (6 - endDate.getUTCDay() + 7) % 7;
+  endDate.setUTCDate(endDate.getUTCDate() + daysUntilSaturday);
+
+  const releaseDate = endDate.getUTCFullYear() + "-" +
+    String(endDate.getUTCMonth() + 1).padStart(2, "0") + "-" +
+    String(endDate.getUTCDate()).padStart(2, "0");
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(new Date());
+  const now = {};
+  parts.forEach(part => { now[part.type] = part.value; });
+  const today = now.year + "-" + now.month + "-" + now.day;
+
+  return today > releaseDate ||
+    (today === releaseDate &&
+      (Number(now.hour) > 20 ||
+        (Number(now.hour) === 20 && Number(now.minute) >= 0)));
+}
+
+async function cleanupPreviousWeekExclusions() {
+  const datedExams = sortByDateDesc(
+    examsCache.filter(exam => exam.start_date || exam.end_date),
+    "start_date"
+  );
+
+  // 必須有本週與上一週兩筆考試，且本週成績已到週六 20:00 開放時間。
+  if (datedExams.length < 2 || !hasLatestExamReachedReleaseTime(datedExams[0])) {
+    return;
+  }
+
+  const previousExamId = datedExams[1].id;
+  const result = await db.from("score_missing_exclusions")
+    .delete()
+    .eq("exam_id", previousExamId);
+
+  if (result.error) throw result.error;
+
+  // 同步更新前端快取，避免本次畫面仍顯示已清除的名單。
+  missingExclusionsCache = missingExclusionsCache.filter(
+    item => String(item.exam_id) !== String(previousExamId)
+  );
+}
+
 async function loadAdminData() {
   const results = await Promise.all([
     db.from("students").select("*").order("student_code"),
@@ -762,6 +818,14 @@ async function loadAdminData() {
   teacherAssignmentsCache = results[7].data || [];
   profileRolesCache = results[9].data || [];
   missingExclusionsCache = results[10].data || [];
+
+  // 新一週成績於週六 20:00 開放時，自動清除上一週的已排除提醒名單。
+  try {
+    await cleanupPreviousWeekExclusions();
+  } catch (error) {
+    console.error("清除上一週已排除提醒失敗：", error);
+  }
+
   const additionalTeacherIds = new Set(profileRolesCache.map(item => String(item.user_id)));
   const allProfiles = results[8].data || [];
   const teacherMap = new Map();
