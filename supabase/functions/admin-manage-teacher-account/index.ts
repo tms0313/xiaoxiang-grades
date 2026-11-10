@@ -118,21 +118,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(teacherId);
-    if (deleteAuthError) {
-      return json({ success: false, error: "刪除教師登入帳號失敗：" + deleteAuthError.message }, 400);
-    }
-
-    // Explicit cleanup also covers projects where profile-related foreign keys are not cascading.
+    // Remove dependent teaching assignments before deleting the Auth user.
+    // Otherwise a foreign-key constraint may block Auth deletion and leave the teacher visible.
     const { error: assignmentDeleteError } = await adminClient
       .from("teacher_assignments")
       .delete()
       .eq("teacher_id", teacherId);
 
     if (assignmentDeleteError) {
-      return json({ success: false, error: "登入帳號已刪除，但清除授課權限時發生錯誤：" + assignmentDeleteError.message }, 500);
+      return json({ success: false, error: "清除教師授課權限失敗：" + assignmentDeleteError.message }, 500);
     }
 
+    const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(teacherId);
+    if (deleteAuthError) {
+      return json({ success: false, error: "刪除教師登入帳號失敗：" + deleteAuthError.message }, 400);
+    }
+
+    // Explicit cleanup also covers projects where profile-related foreign keys are not cascading.
     const { error: profileDeleteError } = await adminClient
       .from("profiles")
       .delete()
