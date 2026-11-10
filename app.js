@@ -277,6 +277,10 @@ style.textContent = [
   ".parent-logout-btn:hover { background:#c04d55; }",
   ".parent-action-icon { width:18px; height:18px; flex:0 0 18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }",
   ".parent-bottom-nav { display:none; }",
+  ".teacher-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex !important; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
+  ".teacher-bottom-nav .parent-action-btn { flex:1 1 100%; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:9px; color:#fff; font-size:12px; font-weight:750; padding:5px 8px; background:#a83e45; }",
+  ".teacher-bottom-nav .parent-action-icon { width:19px; height:19px; flex:0 0 19px; stroke-width:1.9; }",
+  ".teacher-page { padding-bottom:88px; }",
   ".parent-page { padding-bottom:94px; }",
 
   ".dashboard { width:min(1200px,94%); margin:30px auto; background:#fff; padding:28px; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
