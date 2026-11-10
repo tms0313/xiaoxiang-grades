@@ -866,7 +866,7 @@ function renderAdminTab() {
 // 7. 成績總覽
 // ==================================================
 
-function renderOverview(preservedFilters) {
+function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   const content = $("adminContent");
 
   function getStudent(id) {
@@ -1183,6 +1183,13 @@ function renderOverview(preservedFilters) {
     }
   });
 
+  if (keepExcludedPanelOpen) {
+    const excludedPanel = $("excludedRemindersPanel");
+    const toggleButton = $("toggleExcludedReminders");
+    if (excludedPanel) excludedPanel.style.display = "block";
+    if (toggleButton) toggleButton.textContent = "收合已排除提醒";
+  }
+
   content.onclick = async function (event) {
     const editButton = event.target.closest("[data-edit-score]");
     const deleteButton = event.target.closest("[data-delete-score]");
@@ -1257,10 +1264,16 @@ async function excludeMissingReminder(item) {
       );
     });
     missingExclusionsCache.push(result.data);
-    renderOverview(overviewFilters);
+    renderOverview(overviewFilters, true);
     const systemMessage = $("systemMessage");
     if (systemMessage) systemMessage.style.display = "none";
-    window.scrollTo({ top: overviewScrollY, behavior: "auto" });
+    const excludedPanel = $("excludedRemindersPanel");
+    if (excludedPanel) {
+      const panelTop = window.scrollY + excludedPanel.getBoundingClientRect().top - 24;
+      window.scrollTo({ top: Math.max(0, panelTop), behavior: "auto" });
+    } else {
+      window.scrollTo({ top: overviewScrollY, behavior: "auto" });
+    }
   } catch (error) {
     showMessage("刪除未登錄提醒失敗：" + error.message, "error", true);
   }
