@@ -72,6 +72,8 @@ let teacherSelectedExamId = "";
 let teacherSelectedClassName = "";
 let scoreEntrySavedCount = 0;
 let activeTab = "overview";
+let overviewAutoRefreshTimer = null;
+let overviewAutoRefreshBusy = false;
 
 // ==================================================
 // 1. 基本工具
@@ -840,6 +842,10 @@ function renderAdminDashboard() {
 }
 
 function renderAdminTab() {
+  if (activeTab !== "overview" && overviewAutoRefreshTimer) {
+    clearInterval(overviewAutoRefreshTimer);
+    overviewAutoRefreshTimer = null;
+  }
   const systemMessage = $("systemMessage");
   const dashboard = document.querySelector(".dashboard");
   const adminTabs = $("adminTabs");
@@ -982,7 +988,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       "<select id='overviewStatus' aria-label='成績狀態篩選'>" +
         "<option value='all'>全部狀態</option><option value='low'>低於 60 分</option><option value='leave'>請假</option><option value='absent'>缺考</option><option value='missing'>未登錄</option>" +
       "</select>" +
-      "<button class='btn btn-secondary' id='overviewRefresh'>重新整理</button>" +
+      "<span class='muted' style='font-size:13px;white-space:nowrap'>每 60 秒自動更新</span>" +
       "<button class='btn btn-secondary' id='toggleExcludedReminders'>已排除提醒（" + missingExclusionsCache.length + "）</button>" +
     "</div>" +
     "<p id='overviewFilterHint' class='muted' style='margin:0 0 10px'>選擇考試週期及科目後，系統會依已登錄的科目範圍比對同班修課學生。</p>" +
@@ -1173,16 +1179,6 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     this.textContent = (opening ? "收合已排除提醒" : "已排除提醒（" + missingExclusionsCache.length + "）");
   });
 
-  $("overviewRefresh").addEventListener("click", async function () {
-    try {
-      await loadAdminData();
-      renderOverview();
-      showMessage("成績資料已更新。", "success");
-    } catch (error) {
-      showMessage("更新成績失敗：" + error.message, "error");
-    }
-  });
-
   if (keepExcludedPanelOpen) {
     const excludedPanel = $("excludedRemindersPanel");
     const toggleButton = $("toggleExcludedReminders");
@@ -1213,6 +1209,35 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   };
 
   filterRows();
+
+  if (overviewAutoRefreshTimer) clearInterval(overviewAutoRefreshTimer);
+  overviewAutoRefreshTimer = setInterval(async function () {
+    if (activeTab !== "overview" || overviewAutoRefreshBusy || !$("overviewRows")) return;
+
+    overviewAutoRefreshBusy = true;
+    const currentFilters = {
+      search: $("overviewSearch") ? $("overviewSearch").value : "",
+      examId: $("overviewExam") ? $("overviewExam").value : "",
+      className: $("overviewClass") ? $("overviewClass").value : "",
+      subject: $("overviewSubject") ? $("overviewSubject").value : "",
+      status: $("overviewStatus") ? $("overviewStatus").value : "all"
+    };
+    const currentScrollY = window.scrollY;
+    const excludedPanel = $("excludedRemindersPanel");
+    const keepPanelOpen = !!(excludedPanel && excludedPanel.style.display !== "none");
+
+    try {
+      await loadAdminData();
+      if (activeTab === "overview" && $("overviewRows")) {
+        renderOverview(currentFilters, keepPanelOpen);
+        window.scrollTo({ top: currentScrollY, behavior: "auto" });
+      }
+    } catch (error) {
+      console.error("成績總覽自動更新失敗：", error);
+    } finally {
+      overviewAutoRefreshBusy = false;
+    }
+  }, 60000);
 }
 
 // ==================================================
