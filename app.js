@@ -310,6 +310,8 @@ style.textContent = [
   ".overview-table .action-buttons { gap:3px; }",
   ".overview-table .action-buttons .btn { padding:2.5px 4.5px; font-size:6px; line-height:1.35; border-radius:5px; }",
   ".overview-table .action-buttons .btn { width:30px !important; min-width:30px !important; height:21px !important; min-height:21px !important; padding:0 !important; font-size:8px !important; line-height:21px !important; border-radius:4px !important; }",
+  ".teacher-account-table .action-buttons { gap:3px; }",
+  ".teacher-account-table .action-buttons .btn { width:30px !important; min-width:30px !important; height:21px !important; min-height:21px !important; padding:0 !important; font-size:8px !important; line-height:21px !important; border-radius:4px !important; }",
 
   ".action-cell { min-width:155px; white-space:nowrap; }",
   ".action-buttons { display:flex; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:5px; white-space:nowrap; }",
@@ -2278,7 +2280,7 @@ function renderTeacherManagement() {
     "</div>" +
     "<div class='panel'><h3>教師帳號管理</h3>" +
       "<p class='muted'>可重設教師登入密碼，或永久刪除教師 Email 帳號及其授課權限。</p>" +
-      "<div class='table-wrap'><table><thead><tr><th>教師登入 Email</th><th>操作</th></tr></thead>" +
+      "<div class='table-wrap'><table class='teacher-account-table'><thead><tr><th>教師登入 Email</th><th>操作</th></tr></thead>" +
       "<tbody id='teacherAccountRows'>" +
         (teacherProfilesCache.map(function (profile) {
           return "<tr><td>" + escapeHtml(profile.email || profile.display_name || "—") + "</td>" +
