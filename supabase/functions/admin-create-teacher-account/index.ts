@@ -53,16 +53,14 @@ Deno.serve(async (req) => {
       return json({ success: false, error: "請提供有效的教師 Email" }, 400);
     }
 
-    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$";
-    const random = new Uint32Array(14);
-    crypto.getRandomValues(random);
-    const initialPassword = Array.from(random, value => alphabet[value % alphabet.length]).join("");
+    const initialPassword = "123456";
 
     const { data: created, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password: initialPassword,
       email_confirm: true,
-      user_metadata: { role: "teacher" }
+      user_metadata: { role: "teacher" },
+      app_metadata: { must_change_password: true }
     });
 
     if (createError || !created.user) {
