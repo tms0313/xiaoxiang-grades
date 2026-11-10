@@ -1299,8 +1299,10 @@ function renderScoreEntry() {
           "<div class='field'><label>開始日期</label><input id='examStart' type='date' required></div>" +
           "<div class='field'><label>結束日期</label><input id='examEnd' type='date' required></div>" +
         "</div>" +
-        "<button class='btn btn-success' type='submit'>儲存考試</button> " +
-        "<button class='btn btn-secondary' type='button' id='examCancel'>清除</button>" +
+        "<div class='toolbar' style='display:flex;flex-direction:row;align-items:center;gap:10px;flex-wrap:nowrap;margin-top:12px'>" +
+          "<button class='btn btn-success' type='submit'>儲存考試</button>" +
+          "<button class='btn btn-secondary' type='button' id='examCancel'>清除</button>" +
+        "</div>" +
       "</form></div>" +
     "<div class='table-wrap'><table class='exam-management-table'>" +
       "<thead><tr><th>開始日期</th><th>結束日期</th><th>操作</th></tr></thead>" +
