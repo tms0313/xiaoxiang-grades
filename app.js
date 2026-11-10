@@ -58,6 +58,13 @@ let profilesCache = [];
 let scoresCache = [];
 let guardianLinksCache = [];
 let studentSubjectsCache = [];
+let teacherProfilesCache = [];
+let teacherAssignmentsCache = [];
+let teacherStudentsCache = [];
+let teacherExamsCache = [];
+let teacherScoresCache = [];
+let teacherStudentSubjectsCache = [];
+let teacherSelectedExamId = "";
 let scoreEntrySavedCount = 0;
 let activeTab = "overview";
 
@@ -310,6 +317,12 @@ style.textContent = [
 
   /* 家長成績：電腦與手機統一採用科目卡片式呈現 */
   ".parent-page .dashboard { max-width:960px; }",
+  ".teacher-dashboard { max-width:1050px; }",
+  ".teacher-student-panel { margin-bottom:14px; }",
+  ".teacher-student-panel h3 { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:12px; }",
+  ".teacher-student-panel h3 small { color:#718096; font-size:13px; font-weight:600; }",
+  ".teacher-subject-card { max-width:780px; margin:8px auto; }",
+  ".teacher-score-missing { display:inline-block; padding:5px 9px; border-radius:7px; background:#fff4df; color:#a35b08; font-size:14px; font-weight:800; white-space:nowrap; }",
   ".parent-score-list { display:flex; flex-direction:column; gap:10px; width:100%; max-width:780px; margin:0 auto; }",
   ".parent-subject-card { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:14px; border:1px solid #dfe7ef; border-radius:12px; padding:14px 16px; margin:0; background:#fff; }",
   ".parent-subject-info { min-width:0; }",
@@ -570,7 +583,7 @@ async function loadCurrentProfile() {
 
   currentProfile = result.data;
 
-  if (!["admin", "parent"].includes(currentProfile.role)) {
+  if (!["admin", "parent", "teacher"].includes(currentProfile.role)) {
     await db.auth.signOut();
     loginPage();
     showMessage("此帳號沒有系統使用權限。", "error");
@@ -597,10 +610,12 @@ async function loadAdminData() {
     db.from("profiles").select("*").eq("role", "parent"),
     db.from("scores").select("*"),
     db.from("guardian_students").select("*"),
-    db.from("student_subjects").select("*")
+    db.from("student_subjects").select("*"),
+    db.from("profiles").select("*").eq("role", "teacher"),
+    db.from("teacher_assignments").select("*")
   ]);
 
-  const names = ["學生資料", "考試資料", "家長帳號", "成績資料", "家長綁定資料", "學生修課資料"];
+  const names = ["學生資料", "考試資料", "家長帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師帳號", "教師授課權限"];
 
   for (let i = 0; i < results.length; i++) {
     if (results[i].error) {
@@ -614,6 +629,8 @@ async function loadAdminData() {
   scoresCache = results[3].data || [];
   guardianLinksCache = results[4].data || [];
   studentSubjectsCache = results[5].data || [];
+  teacherProfilesCache = results[6].data || [];
+  teacherAssignmentsCache = results[7].data || [];
 }
 
 async function renderDashboard() {
@@ -623,6 +640,8 @@ async function renderDashboard() {
     if (currentProfile.role === "admin") {
       await loadAdminData();
       renderAdminDashboard();
+    } else if (currentProfile.role === "teacher") {
+      await renderTeacherDashboard();
     } else {
       await renderParentDashboard();
     }
@@ -656,6 +675,7 @@ function renderAdminDashboard() {
         "<button class='tab-btn' data-tab='students'>學生管理</button>" +
         "<button class='tab-btn' data-tab='exams'>考試管理</button>" +
         "<button class='tab-btn' data-tab='guardians'>家長綁定</button>" +
+        "<button class='tab-btn' data-tab='teachers'>教師管理</button>" +
         "<button class='tab-btn' data-tab='passwords'>家長密碼</button>" +
         "<button class='tab-btn' data-tab='logs'>登入紀錄</button>" +
         "<button class='tab-btn' data-tab='export'>成績匯出</button>" +
@@ -686,6 +706,7 @@ function renderAdminTab() {
   if (activeTab === "students") renderStudents();
   if (activeTab === "exams") renderExams();
   if (activeTab === "guardians") renderGuardians();
+  if (activeTab === "teachers") renderTeacherManagement();
   if (activeTab === "passwords") renderPasswords();
   if (activeTab === "logs") renderLoginLogs();
   if (activeTab === "export") renderExport();
@@ -2218,6 +2239,170 @@ async function removeGuardianBinding(guardianId, studentId) {
 }
 
 // ==================================================
+// 11-5. 教師帳號與授課權限管理
+// ==================================================
+
+function renderTeacherManagement() {
+  const content = $("adminContent");
+  const teacherOptions = teacherProfilesCache.map(function (profile) {
+    return "<option value='" + escapeHtml(profile.id) + "'>" +
+      escapeHtml(profile.email || profile.display_name || profile.id) +
+      "</option>";
+  }).join("");
+
+  const selectedTeacherId = $("teacherAccountSelect")
+    ? $("teacherAccountSelect").value
+    : "";
+
+  const assignmentRows = teacherAssignmentsCache
+    .filter(item => !selectedTeacherId || String(item.teacher_id) === String(selectedTeacherId))
+    .map(function (item) {
+      const teacher = teacherProfilesCache.find(
+        profile => String(profile.id) === String(item.teacher_id)
+      );
+      return "<tr>" +
+        "<td>" + escapeHtml(teacher ? teacher.email : "教師帳號") + "</td>" +
+        "<td>" + escapeHtml(item.class_name) + "</td>" +
+        "<td>" + escapeHtml(item.subject) + "</td>" +
+        "<td><button class='btn btn-danger btn-small' data-delete-teacher-assignment='" + escapeHtml(item.id) + "'>移除</button></td>" +
+      "</tr>";
+    }).join("");
+
+  content.innerHTML =
+    "<h2 class='section-title'>教師管理</h2>" +
+    "<div class='panel'><h3>建立教師帳號</h3>" +
+      "<p class='muted'>輸入教師 Email，系統會建立教師登入帳號並產生臨時密碼。教師登入後可自行修改密碼。</p>" +
+      "<form id='createTeacherForm'><div class='form-grid'>" +
+        "<div class='field'><label>教師 Email（登入帳號）</label><input id='newTeacherEmail' type='email' autocomplete='off' placeholder='請輸入教師 Email' required></div>" +
+      "</div><button class='btn btn-success' type='submit' id='createTeacherButton'>建立教師帳號</button></form>" +
+    "</div>" +
+    "<div class='panel'><h3>設定授課班級與科目</h3>" +
+      (teacherProfilesCache.length
+        ? "<form id='teacherAssignmentForm'><div class='form-grid'>" +
+            "<div class='field'><label>教師帳號</label><select id='teacherAccountSelect' required><option value=''>請選擇教師</option>" + teacherOptions + "</select></div>" +
+            "<div class='field'><label>授課班級</label><select id='teacherClassSelect' required><option value=''>請選擇班級</option><option>國一班</option><option>國二班</option><option>國三班</option></select></div>" +
+            "<div class='field'><label>授課科目</label><select id='teacherSubjectSelect' required><option value=''>請選擇科目</option>" + SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") + "</select></div>" +
+          "</div><button class='btn btn-success' type='submit'>新增授課權限</button></form>"
+        : "<div class='empty'>目前尚無教師帳號，請先建立教師帳號。</div>") +
+    "</div>" +
+    "<div class='panel'><h3>教師授課權限清單</h3>" +
+      "<div class='toolbar'><label for='teacherAssignmentFilter'><strong>教師：</strong></label><select id='teacherAssignmentFilter'><option value=''>全部教師</option>" + teacherOptions + "</select></div>" +
+      "<div class='table-wrap'><table><thead><tr><th>教師帳號</th><th>班級</th><th>科目</th><th>操作</th></tr></thead>" +
+      "<tbody id='teacherAssignmentRows'>" + (assignmentRows || "<tr><td colspan='4' class='empty'>目前沒有授課權限設定</td></tr>") + "</tbody></table></div>" +
+    "</div>";
+
+  $("createTeacherForm").addEventListener("submit", createTeacherAccount);
+  if ($("teacherAssignmentForm")) {
+    $("teacherAssignmentForm").addEventListener("submit", saveTeacherAssignment);
+    $("teacherAccountSelect").addEventListener("change", function () {
+      $("teacherAssignmentFilter").value = this.value;
+      refreshTeacherAssignmentRows();
+    });
+  }
+  $("teacherAssignmentFilter").addEventListener("change", refreshTeacherAssignmentRows);
+
+  function refreshTeacherAssignmentRows() {
+    const selected = $("teacherAssignmentFilter").value;
+    const rows = teacherAssignmentsCache
+      .filter(item => !selected || String(item.teacher_id) === String(selected))
+      .map(function (item) {
+        const teacher = teacherProfilesCache.find(profile => String(profile.id) === String(item.teacher_id));
+        return "<tr><td>" + escapeHtml(teacher ? teacher.email : "教師帳號") + "</td>" +
+          "<td>" + escapeHtml(item.class_name) + "</td><td>" + escapeHtml(item.subject) + "</td>" +
+          "<td><button class='btn btn-danger btn-small' data-delete-teacher-assignment='" + escapeHtml(item.id) + "'>移除</button></td></tr>";
+      }).join("");
+    $("teacherAssignmentRows").innerHTML = rows || "<tr><td colspan='4' class='empty'>目前沒有授課權限設定</td></tr>";
+  }
+
+  content.onclick = async function (event) {
+    const button = event.target.closest("[data-delete-teacher-assignment]");
+    if (!button) return;
+    await deleteTeacherAssignment(button.dataset.deleteTeacherAssignment);
+  };
+}
+
+async function createTeacherAccount(event) {
+  event.preventDefault();
+  const email = $("newTeacherEmail").value.trim().toLowerCase();
+  const button = $("createTeacherButton");
+  if (!email) return;
+
+  if (!confirm("確定建立教師帳號？\\n\\n登入帳號：" + email + "\\n角色：教師")) return;
+  button.disabled = true;
+  button.textContent = "建立中……";
+
+  try {
+    const result = await db.functions.invoke("admin-create-teacher-account", {
+      body: { email: email }
+    });
+    if (result.error) {
+      throw new Error(result.data && result.data.error ? result.data.error : result.error.message);
+    }
+    const data = result.data || {};
+    if (!data.success || !data.initialPassword) {
+      throw new Error(data.error || "教師帳號建立結果不完整，請確認 Edge Function 已部署。");
+    }
+    await loadAdminData();
+    renderTeacherManagement();
+    alert(
+      "教師帳號建立成功！\\n\\n登入帳號：" + (data.email || email) +
+      "\\n臨時密碼：" + data.initialPassword +
+      "\\n\\n請將臨時密碼透過 LINE 提供給教師。"
+    );
+    showMessage("教師帳號「" + email + "」已建立。", "success");
+  } catch (error) {
+    showMessage("建立教師帳號失敗：" + error.message, "error");
+  } finally {
+    const currentButton = $("createTeacherButton");
+    if (currentButton) {
+      currentButton.disabled = false;
+      currentButton.textContent = "建立教師帳號";
+    }
+  }
+}
+
+async function saveTeacherAssignment(event) {
+  event.preventDefault();
+  const teacherId = $("teacherAccountSelect").value;
+  const className = $("teacherClassSelect").value;
+  const subject = $("teacherSubjectSelect").value;
+  if (!teacherId || !className || !subject) {
+    showMessage("請選擇教師、班級及科目。", "error");
+    return;
+  }
+
+  try {
+    const result = await db.from("teacher_assignments").insert({
+      teacher_id: teacherId,
+      class_name: className,
+      subject: subject
+    });
+    if (result.error) {
+      if (result.error.code === "23505") throw new Error("這位教師已經有相同的授課權限。");
+      throw result.error;
+    }
+    await loadAdminData();
+    renderTeacherManagement();
+    showMessage("教師授課權限已新增。", "success");
+  } catch (error) {
+    showMessage("新增授課權限失敗：" + error.message, "error");
+  }
+}
+
+async function deleteTeacherAssignment(id) {
+  if (!confirm("確定移除此筆教師授課權限？")) return;
+  try {
+    const result = await db.from("teacher_assignments").delete().eq("id", id);
+    if (result.error) throw result.error;
+    await loadAdminData();
+    renderTeacherManagement();
+    showMessage("教師授課權限已移除。", "success");
+  } catch (error) {
+    showMessage("移除教師授課權限失敗：" + error.message, "error");
+  }
+}
+
+// ==================================================
 // 12. 家長密碼管理
 // ==================================================
 
@@ -2791,6 +2976,148 @@ async function renderParentDashboard() {
     buildParentBottomNav();
 
   bindParentActionButtons();
+}
+
+// ==================================================
+// 教師端：僅查詢授權範圍內的最新成績
+// ==================================================
+
+async function renderTeacherDashboard() {
+  document.body.classList.remove("parent-page");
+  showLoading("正在載入教師授課資料……");
+
+  const results = await Promise.all([
+    db.from("teacher_assignments").select("*"),
+    db.from("students").select("*").eq("is_active", true).order("student_code"),
+    db.from("exams").select("*"),
+    db.from("student_subjects").select("*").eq("is_active", true),
+    db.from("scores").select("*")
+  ]);
+
+  const labels = ["授課權限", "學生資料", "考試資料", "學生修課資料", "成績資料"];
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].error) {
+      throw new Error(labels[i] + "讀取失敗：" + results[i].error.message);
+    }
+  }
+
+  teacherAssignmentsCache = results[0].data || [];
+  teacherStudentsCache = results[1].data || [];
+  teacherExamsCache = (results[2].data || []).sort(function (a, b) {
+    return String(b.end_date || b.start_date || "").localeCompare(String(a.end_date || a.start_date || ""));
+  });
+  teacherStudentSubjectsCache = results[3].data || [];
+  teacherScoresCache = results[4].data || [];
+
+  if (!teacherAssignmentsCache.length) {
+    appRoot.innerHTML =
+      "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區</small></div><button class='tab-btn' id='logoutButton'>登出</button></div>" +
+      "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>";
+    $("logoutButton").addEventListener("click", handleLogout);
+    return;
+  }
+
+  teacherSelectedExamId = teacherExamsCache.length ? String(teacherExamsCache[0].id) : "";
+  renderTeacherResults();
+}
+
+function renderTeacherResults() {
+  const examOptions = teacherExamsCache.map(function (exam) {
+    return "<option value='" + escapeHtml(exam.id) + "'>" +
+      escapeHtml(formatDateRange(exam)) + "</option>";
+  }).join("");
+
+  const selectedExam = teacherExamsCache.find(
+    exam => String(exam.id) === String(teacherSelectedExamId)
+  );
+
+  const permittedSubjects = Array.from(new Set(teacherAssignmentsCache.map(item => item.subject)));
+  const permittedClasses = Array.from(new Set(teacherAssignmentsCache.map(item => item.class_name)));
+
+  const studentRows = teacherStudentsCache
+    .filter(student => permittedClasses.includes(student.class_name))
+    .filter(student => teacherStudentSubjectsCache.some(function (item) {
+      return String(item.student_id) === String(student.id) &&
+        permittedSubjects.includes(item.subject) &&
+        teacherAssignmentsCache.some(assignment =>
+          assignment.class_name === student.class_name &&
+          assignment.subject === item.subject
+        );
+    }))
+    .map(function (student) {
+      const subjects = permittedSubjects.filter(function (subject) {
+        return teacherAssignmentsCache.some(assignment =>
+          assignment.class_name === student.class_name && assignment.subject === subject
+        ) && teacherStudentSubjectsCache.some(item =>
+          String(item.student_id) === String(student.id) &&
+          item.subject === subject &&
+          item.is_active === true
+        );
+      });
+
+      const subjectCards = subjects.map(function (subject) {
+        const score = teacherScoresCache.find(function (item) {
+          return selectedExam &&
+            String(item.student_id) === String(student.id) &&
+            String(item.exam_id) === String(selectedExam.id) &&
+            item.subject === subject;
+        });
+
+        let resultText = "<span class='teacher-score-missing'>尚未登錄</span>";
+        let scopeText = "—";
+        if (score) {
+          scopeText = score.scope || "—";
+          if (score.grade_level === "請假" || score.grade_level === "缺考") {
+            resultText = gradeTag(score.grade_level);
+          } else if (isGrade3Math(student.class_name, subject)) {
+            resultText = "<span class='parent-score-number " + scoreClass(score.score, student.class_name, subject) + "'>" +
+              escapeHtml(score.score == null ? "—" : score.score) + " 分</span> " + gradeTag(score.grade_level);
+          } else if (isGrade3Class(student.class_name)) {
+            resultText = "<span class='parent-score-number'>" +
+              escapeHtml(score.correct_count == null ? "—" : score.correct_count) + " 題</span> " + gradeTag(score.grade_level);
+          } else {
+            resultText = "<span class='parent-score-number " + scoreClass(score.score, student.class_name, subject) + "'>" +
+              escapeHtml(score.score == null ? "—" : score.score) + " 分</span>";
+          }
+        }
+
+        return "<div class='parent-subject-card teacher-subject-card'>" +
+          "<div class='parent-subject-info'><div class='parent-subject-name'>" + escapeHtml(subject) + "</div>" +
+          "<div class='parent-subject-scope'><span class='parent-subject-scope-text'>" + escapeHtml(scopeText) + "</span></div></div>" +
+          "<div class='parent-subject-result'><div class='parent-subject-result-label'>成績</div>" +
+          "<div class='parent-subject-result-value'>" + resultText + "</div></div></div>";
+      }).join("");
+
+      return "<section class='panel teacher-student-panel'><h3>" +
+        escapeHtml(student.full_name) + " <small>" + escapeHtml(student.class_name) +
+        "｜" + escapeHtml(student.student_code) + "</small></h3>" +
+        (subjectCards || "<div class='empty'>目前沒有授權科目的修課資料。</div>") +
+      "</section>";
+    }).join("");
+
+  appRoot.innerHTML =
+    "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區｜僅供查詢</small></div>" +
+      "<button class='tab-btn' id='logoutButton'>登出</button></div>" +
+    "<main class='dashboard teacher-dashboard'><div class='toolbar teacher-toolbar'>" +
+      "<label for='teacherExamSelect'><strong>考試週期：</strong></label>" +
+      "<select id='teacherExamSelect'>" + (examOptions || "<option value=''>目前沒有考試週期</option>") + "</select>" +
+      "<button class='btn btn-secondary' id='teacherRefreshButton'>重新整理</button>" +
+    "</div>" +
+    (selectedExam ? "<p class='muted'>目前顯示：" + escapeHtml(formatDateRange(selectedExam)) + "</p>" : "") +
+    (studentRows || "<div class='empty'>目前授權範圍內沒有在學且有修讀指定科目的學生。</div>") +
+    "</main><div class='footer'>© 小象文教機構</div>";
+
+  $("logoutButton").addEventListener("click", handleLogout);
+  if ($("teacherExamSelect")) {
+    $("teacherExamSelect").value = teacherSelectedExamId;
+    $("teacherExamSelect").addEventListener("change", function () {
+      teacherSelectedExamId = this.value;
+      renderTeacherResults();
+    });
+  }
+  $("teacherRefreshButton").addEventListener("click", async function () {
+    await renderTeacherDashboard();
+  });
 }
 
 // ==================================================
