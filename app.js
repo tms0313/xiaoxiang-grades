@@ -65,6 +65,7 @@ let teacherExamsCache = [];
 let teacherScoresCache = [];
 let teacherStudentSubjectsCache = [];
 let teacherSelectedExamId = "";
+let teacherSelectedClassName = "";
 let scoreEntrySavedCount = 0;
 let activeTab = "overview";
 
@@ -3162,13 +3163,19 @@ function renderTeacherResults() {
   );
 
   const permittedClasses = Array.from(new Set(teacherAssignmentsCache.map(item => item.class_name)));
-  const permittedSubjects = Array.from(new Set(teacherAssignmentsCache.map(item => item.subject)));
-  const classSections = permittedClasses.map(function (className) {
-    const subjects = permittedSubjects.filter(function (subject) {
-      return teacherAssignmentsCache.some(item =>
-        item.class_name === className && item.subject === subject
-      );
-    });
+  const classOrder = ["國一班", "國二班", "國三班"];
+  const visibleClasses = classOrder.filter(function (className) {
+    return permittedClasses.includes(className) &&
+      (!teacherSelectedClassName || teacherSelectedClassName === className);
+  });
+
+  const classSections = visibleClasses.map(function (className) {
+    const permittedSubjects = Array.from(new Set(
+      teacherAssignmentsCache
+        .filter(item => item.class_name === className)
+        .map(item => item.subject)
+    ));
+    const subjects = SUBJECTS.filter(subject => permittedSubjects.includes(subject));
 
     const subjectSections = subjects.map(function (subject) {
       const students = teacherStudentsCache.filter(function (student) {
@@ -3182,33 +3189,41 @@ function renderTeacherResults() {
 
       const groups = new Map();
       students.forEach(function (student) {
-        const score = teacherScoresCache.find(function (item) {
+        const studentScores = teacherScoresCache.filter(function (item) {
           return selectedExam &&
             String(item.student_id) === String(student.id) &&
             String(item.exam_id) === String(selectedExam.id) &&
             item.subject === subject;
         });
-        const scope = score && score.scope ? String(score.scope).trim() : "尚未登錄範圍";
-        if (!groups.has(scope)) groups.set(scope, []);
-        let resultText = "<span class='teacher-score-missing'>尚未登錄</span>";
-        if (score) {
-          if (score.grade_level === "請假" || score.grade_level === "缺考") {
-            resultText = gradeTag(score.grade_level);
-          } else if (isGrade3Math(student.class_name, subject)) {
-            resultText = "<span class='parent-score-number " + scoreClass(score.score, student.class_name, subject) + "'>" +
-              escapeHtml(score.score == null ? "—" : score.score) + " 分</span> " + gradeTag(score.grade_level);
-          } else if (isGrade3Class(student.class_name)) {
-            resultText = "<span class='parent-score-number'>" +
-              escapeHtml(score.correct_count == null ? "—" : score.correct_count) + " 題</span> " + gradeTag(score.grade_level);
-          } else {
-            resultText = "<span class='parent-score-number " + scoreClass(score.score, student.class_name, subject) + "'>" +
-              escapeHtml(score.score == null ? "—" : score.score) + " 分</span>";
+
+        const records = studentScores.length ? studentScores : [null];
+        records.forEach(function (score) {
+          const scope = score && score.scope
+            ? String(score.scope).trim()
+            : "尚未登錄範圍";
+          if (!groups.has(scope)) groups.set(scope, []);
+
+          let resultText = "<span class='teacher-score-missing'>尚未登錄</span>";
+          if (score) {
+            if (score.grade_level === "請假" || score.grade_level === "缺考") {
+              resultText = gradeTag(score.grade_level);
+            } else if (isGrade3Math(student.class_name, subject)) {
+              resultText = "<span class='parent-score-number " + scoreClass(score.score, student.class_name, subject) + "'>" +
+                escapeHtml(score.score == null ? "—" : score.score) + " 分</span> " + gradeTag(score.grade_level);
+            } else if (isGrade3Class(student.class_name)) {
+              resultText = "<span class='parent-score-number'>" +
+                escapeHtml(score.correct_count == null ? "—" : score.correct_count) + " 題</span> " + gradeTag(score.grade_level);
+            } else {
+              resultText = "<span class='parent-score-number " + scoreClass(score.score, student.class_name, subject) + "'>" +
+                escapeHtml(score.score == null ? "—" : score.score) + " 分</span>";
+            }
           }
-        }
-        groups.get(scope).push({
-          student: student,
-          resultText: resultText,
-          code: String(student.student_code || "")
+
+          groups.get(scope).push({
+            student: student,
+            resultText: resultText,
+            code: String(student.student_code || "")
+          });
         });
       });
 
@@ -3243,16 +3258,24 @@ function renderTeacherResults() {
     "</section>";
   }).join("");
 
+  const classOptions =
+    "<option value=''>全部</option>" +
+    classOrder.map(className =>
+      "<option value='" + escapeHtml(className) + "'>" + escapeHtml(className) + "</option>"
+    ).join("");
+
   appRoot.innerHTML =
     "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區｜僅供查詢</small></div>" +
       "<button class='tab-btn' id='logoutButton'>登出</button></div>" +
     "<main class='dashboard teacher-dashboard'><div class='toolbar teacher-toolbar'>" +
       "<label for='teacherExamSelect'><strong>考試週期：</strong></label>" +
       "<select id='teacherExamSelect'>" + (examOptions || "<option value=''>目前沒有考試週期</option>") + "</select>" +
+      "<label for='teacherClassSelect'><strong>班級：</strong></label>" +
+      "<select id='teacherClassSelect'>" + classOptions + "</select>" +
       "<button class='btn btn-secondary' id='teacherRefreshButton'>重新整理</button>" +
     "</div>" +
     (selectedExam ? "<p class='muted'>目前顯示：" + escapeHtml(formatDateRange(selectedExam)) + "</p>" : "") +
-    (classSections || "<div class='empty'>目前授權範圍內沒有在學且有修讀指定科目的學生。</div>") +
+    (classSections || "<div class='empty'>目前選擇的班級沒有授權範圍內的在學學生。</div>") +
     "</main><div class='footer'>© 小象文教機構</div>";
 
   $("logoutButton").addEventListener("click", handleLogout);
@@ -3260,6 +3283,13 @@ function renderTeacherResults() {
     $("teacherExamSelect").value = teacherSelectedExamId;
     $("teacherExamSelect").addEventListener("change", function () {
       teacherSelectedExamId = this.value;
+      renderTeacherResults();
+    });
+  }
+  if ($("teacherClassSelect")) {
+    $("teacherClassSelect").value = teacherSelectedClassName;
+    $("teacherClassSelect").addEventListener("change", function () {
+      teacherSelectedClassName = this.value;
       renderTeacherResults();
     });
   }
