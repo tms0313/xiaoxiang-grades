@@ -490,6 +490,13 @@ style.textContent = [
   ".exam-management-table { min-width:600px; }",
   ".export-panel { padding:14px; }",
   ".export-period-item { padding:12px; }",
+  ".teacher-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex !important; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
+  ".teacher-bottom-nav .parent-action-btn { flex:1 1 50%; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:9px; color:#fff; font-size:12px; font-weight:750; padding:5px 8px; }",
+  ".teacher-bottom-nav .parent-action-icon { width:19px; height:19px; flex:0 0 19px; stroke-width:1.9; }",
+  ".teacher-bottom-nav .parent-password-btn { background:#315f8b; }",
+  ".teacher-bottom-nav .parent-logout-btn { background:#a83e45; }",
+  ".teacher-bottom-nav .parent-action-btn:hover { transform:none; box-shadow:none; }",
+  ".teacher-page { padding-bottom:94px; }",
   "}"
 ].join("\n");
 
@@ -3309,8 +3316,8 @@ async function renderTeacherDashboard() {
       "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區</small></div>" +
         (currentHasTeacher && currentProfile.role === "parent" ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") + "</div>" +
       "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>" +
-      "<nav class='parent-bottom-nav teacher-bottom-nav' aria-label='教師功能'><button class='parent-action-btn parent-logout-btn teacher-logout' type='button' title='登出系統' aria-label='登出系統'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg><span>登出</span></button></nav>";
-    document.querySelectorAll(".teacher-logout").forEach(button => button.addEventListener("click", handleLogout));
+      buildParentBottomNav();
+    bindParentActionButtons();
     if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
     return;
   }
@@ -3444,7 +3451,7 @@ function renderTeacherResults() {
     (selectedExam ? "<p class='muted'>目前顯示：" + escapeHtml(formatDateRange(selectedExam)) + "</p>" : "") +
     (classSections || "<div class='empty'>目前選擇的班級沒有授權範圍內的在學學生。</div>") +
     "</main><div class='footer'>© 小象文教機構</div>" +
-    "<nav class='parent-bottom-nav teacher-bottom-nav' aria-label='教師功能'><button class='parent-action-btn parent-logout-btn teacher-logout' type='button' title='登出系統' aria-label='登出系統'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg><span>登出</span></button></nav>";
+    buildParentBottomNav();
 
   document.querySelectorAll(".teacher-logout").forEach(button => button.addEventListener("click", handleLogout));
   if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
