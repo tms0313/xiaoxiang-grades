@@ -995,6 +995,7 @@ function renderOverview() {
           return selectedExam &&
             String(score.exam_id) === String(examId) &&
             score.subject === subject &&
+            score.grade_level !== "請假" &&
             student &&
             student.class_name === targetClass &&
             String(score.scope || "").trim() !== "";
