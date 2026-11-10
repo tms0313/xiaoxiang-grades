@@ -1365,6 +1365,14 @@ async function editScore(scoreId) {
 // ==================================================
 
 async function deleteScore(scoreId) {
+  const overviewScrollY = window.scrollY;
+  const overviewFilters = {
+    search: $("overviewSearch") ? $("overviewSearch").value : "",
+    examId: $("overviewExam") ? $("overviewExam").value : "",
+    className: $("overviewClass") ? $("overviewClass").value : "",
+    subject: $("overviewSubject") ? $("overviewSubject").value : "",
+    status: $("overviewStatus") ? $("overviewStatus").value : "all"
+  };
   const score = scoresCache.find(item => String(item.id) === String(scoreId));
 
   if (!score) {
@@ -1408,9 +1416,12 @@ async function deleteScore(scoreId) {
     if (result.error) throw result.error;
 
     await loadAdminData();
-    renderOverview();
+    renderOverview(overviewFilters);
 
-    showMessage("已成功刪除「" + student.full_name + "」的「" + score.subject + "」成績。", "success");
+    // 成績總覽刪除後保留原篩選條件與捲動位置，不顯示系統通知。
+    const systemMessage = $("systemMessage");
+    if (systemMessage) systemMessage.style.display = "none";
+    window.scrollTo({ top: overviewScrollY, behavior: "auto" });
 
   } catch (error) {
     showMessage("刪除成績失敗：" + error.message, "error");
