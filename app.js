@@ -969,69 +969,71 @@ function renderOverview() {
       return { score: score, student: getStudent(score.student_id), exam: getExam(score.exam_id) };
     }).filter(item => item.exam);
 
-    // 只有同一考試、同一班級、同一科目範圍已有人登錄，
-    // 才檢查該班其他有修課的學生是否漏登；「請假」紀錄不列為漏登。
-    if (examId && subject) {
+    // 只要選定考試週期，就依目前班級／科目篩選條件檢查漏登。
+    // 每個班級、科目、範圍獨立比對；至少一位學生有非請假紀錄才啟動提示。
+    if (examId) {
       const selectedExam = getExam(examId);
       const classNames = Array.from(new Set(
         studentsCache.filter(student => student.is_active !== false && matchesStudent(student))
           .map(student => student.class_name)
       ));
+      const targetSubjects = subject ? [subject] : SUBJECTS;
 
       classNames.forEach(function (targetClass) {
-        const enrolledStudents = studentsCache.filter(function (student) {
-          return student.is_active !== false &&
-            student.class_name === targetClass &&
-            matchesStudent(student) &&
-            studentSubjectsCache.some(function (item) {
-              return String(item.student_id) === String(student.id) &&
-                item.subject === subject &&
-                item.is_active === true;
-            });
-        });
-
-        const classScopeScores = scoresCache.filter(function (score) {
-          const student = getStudent(score.student_id);
-          return selectedExam &&
-            String(score.exam_id) === String(examId) &&
-            score.subject === subject &&
-            score.grade_level !== "請假" &&
-            student &&
-            student.class_name === targetClass &&
-            String(score.scope || "").trim() !== "";
-        });
-
-        const registeredScopes = Array.from(new Set(
-          classScopeScores.map(score => String(score.scope).trim())
-        ));
-
-        registeredScopes.forEach(function (scope) {
-          const studentsWithThisScope = new Set(
-            classScopeScores
-              .filter(score => String(score.scope).trim() === scope)
-              .map(score => String(score.student_id))
-          );
-
-          // 至少一位同班學生已登錄此範圍，才對其他修課學生提示。
-          if (studentsWithThisScope.size === 0) return;
-
-          enrolledStudents.forEach(function (student) {
-            const matchingRecord = scoresCache.find(function (score) {
-              return String(score.exam_id) === String(examId) &&
-                String(score.student_id) === String(student.id) &&
-                score.subject === subject &&
-                String(score.scope || "").trim() === scope;
-            });
-
-            if (!matchingRecord) {
-              rows.push({
-                missing: true,
-                student: student,
-                exam: selectedExam,
-                subject: subject,
-                scope: scope
+        targetSubjects.forEach(function (targetSubject) {
+          const enrolledStudents = studentsCache.filter(function (student) {
+            return student.is_active !== false &&
+              student.class_name === targetClass &&
+              matchesStudent(student) &&
+              studentSubjectsCache.some(function (item) {
+                return String(item.student_id) === String(student.id) &&
+                  item.subject === targetSubject &&
+                  item.is_active === true;
               });
-            }
+          });
+
+          const classScopeScores = scoresCache.filter(function (score) {
+            const student = getStudent(score.student_id);
+            return selectedExam &&
+              String(score.exam_id) === String(examId) &&
+              score.subject === targetSubject &&
+              score.grade_level !== "請假" &&
+              student &&
+              student.class_name === targetClass &&
+              String(score.scope || "").trim() !== "";
+          });
+
+          const registeredScopes = Array.from(new Set(
+            classScopeScores.map(score => String(score.scope).trim())
+          ));
+
+          registeredScopes.forEach(function (scope) {
+            const studentsWithThisScope = new Set(
+              classScopeScores
+                .filter(score => String(score.scope).trim() === scope)
+                .map(score => String(score.student_id))
+            );
+
+            if (studentsWithThisScope.size === 0) return;
+
+            enrolledStudents.forEach(function (student) {
+              const matchingRecord = scoresCache.find(function (score) {
+                return String(score.exam_id) === String(examId) &&
+                  String(score.student_id) === String(student.id) &&
+                  score.subject === targetSubject &&
+                  String(score.scope || "").trim() === scope;
+              });
+
+              if (!matchingRecord) {
+                rows.push({
+                  missing: true,
+                  student: student,
+                  exam: selectedExam,
+                  subject: targetSubject,
+                  scope: scope
+                });
+              }
+            });
           });
         });
       });
@@ -1057,9 +1059,9 @@ function renderOverview() {
     const hint = $("overviewFilterHint");
     if (hint) {
       hint.textContent = examId && subject
-        ? "目前篩選：" + formatDateRange(getExam(examId)) + "／" + (className || "全部班級") + "／" + subject +
-          "；只比對同班已有人登錄的科目範圍，修課學生中尚有 " + missingCount + " 筆未登錄提醒；已標記請假的學生不會列入。"
-        : "選擇考試週期及科目後，系統會比對同班已有人登錄的科目範圍，找出其他修課學生的漏登情形。";
+        ? "目前篩選：" + formatDateRange(getExam(examId)) + "／" + (className || "全部班級") + "／" + (subject || "全部科目") +
+          "；依各班、各科目已登錄的範圍比對修課學生，尚有 " + missingCount + " 筆未登錄提醒；已標記請假的學生不會列入。"
+        : "選擇考試週期後，系統會依目前班級及科目篩選條件，比對各班已有人登錄的科目範圍。";
     }
 
     $("overviewRows").innerHTML =
