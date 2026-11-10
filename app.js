@@ -3305,7 +3305,7 @@ function renderTeacherFirstLoginPasswordChange() {
     "<main class='dashboard' style='max-width:560px'>" +
       "<div class='panel'>" +
         "<h2>首次登入請更改密碼</h2>" +
-        "<p class='muted'>目前使用的是系統預設密碼。為保障帳號安全，請先設定新密碼，完成後才能進入教師成績查詢。</p>" +
+        "<p class='muted'>目前使用的是管理員提供的臨時密碼。為保障帳號安全，請先設定至少 8 個字元的新密碼；完成修改前，無法進入教師成績查詢。</p>" +
         "<form id='teacherFirstLoginPasswordForm'>" +
           "<div class='field'><label for='teacherFirstNewPassword'>新密碼（至少 8 個字元）</label><input id='teacherFirstNewPassword' type='password' autocomplete='new-password' minlength='8' required></div>" +
           "<div class='field'><label for='teacherFirstConfirmPassword'>再次輸入新密碼</label><input id='teacherFirstConfirmPassword' type='password' autocomplete='new-password' minlength='8' required></div>" +
