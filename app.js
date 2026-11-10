@@ -365,7 +365,7 @@ style.textContent = [
   ".teacher-score-value .parent-score-number { font-size:21px; font-weight:900; }",
   ".teacher-score-value .grade-tag { padding:4px 10px; font-size:15px !important; }",
   ".teacher-score-value .grade-missing { padding:4px 10px; font-size:14px; }",
-  "@media(max-width:600px) { .teacher-class-panel { padding:10px; } .teacher-score-row { min-height:46px; column-gap:10px; padding:6px 2px; } .teacher-score-student { font-size:17px; } .teacher-scope-heading { font-size:16px; } .teacher-score-student small { font-size:12px; } .teacher-score-value { justify-self:end; width:max-content; min-width:82px; padding-left:10px; font-size:16px; } .teacher-score-value .parent-score-number { font-size:19px; } .teacher-score-value .grade-tag { font-size:13px !important; } .teacher-score-value .grade-missing { font-size:13px; } }",
+  "@media(max-width:600px) { .teacher-class-panel { padding:10px; } .teacher-score-row { min-height:46px; column-gap:10px; padding:6px 2px; } .teacher-score-student { font-size:17px; } .teacher-scope-heading { font-size:16px; } .teacher-score-student small { font-size:12px; } .teacher-score-value { justify-self:end; justify-content:flex-start; width:124px; min-width:124px; margin-left:auto; padding-left:10px; text-align:left; font-size:16px; } .teacher-score-value .parent-score-number { font-size:19px; } .teacher-score-value .grade-tag { font-size:13px !important; } .teacher-score-value .grade-missing { font-size:13px; } }",
   ".teacher-student-panel { margin-bottom:14px; }",
   ".teacher-student-panel h3 { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:12px; }",
   ".teacher-student-panel h3 small { color:#718096; font-size:13px; font-weight:600; }",
