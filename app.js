@@ -59,6 +59,7 @@ let studentsCache = [];
 let examsCache = [];
 let profilesCache = [];
 let scoresCache = [];
+let missingExclusionsCache = [];
 let guardianLinksCache = [];
 let studentSubjectsCache = [];
 let teacherProfilesCache = [];
@@ -738,10 +739,11 @@ async function loadAdminData() {
     db.from("profiles").select("*").eq("role", "teacher"),
     db.from("teacher_assignments").select("*"),
     db.from("profiles").select("*"),
-    db.from("profile_roles").select("user_id, role").eq("role", "teacher")
+    db.from("profile_roles").select("user_id, role").eq("role", "teacher"),
+    db.from("score_missing_exclusions").select("*")
   ]);
 
-  const names = ["學生資料", "考試資料", "家長帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師帳號", "教師授課權限", "全部帳號", "額外身分資料"];
+  const names = ["學生資料", "考試資料", "家長帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師帳號", "教師授課權限", "全部帳號", "額外身分資料", "未登錄排除資料"];
 
   for (let i = 0; i < results.length; i++) {
     if (results[i].error) {
@@ -757,6 +759,7 @@ async function loadAdminData() {
   studentSubjectsCache = results[5].data || [];
   teacherAssignmentsCache = results[7].data || [];
   profileRolesCache = results[9].data || [];
+  missingExclusionsCache = results[10].data || [];
   const additionalTeacherIds = new Set(profileRolesCache.map(item => String(item.user_id)));
   const allProfiles = results[8].data || [];
   const teacherMap = new Map();
@@ -934,7 +937,11 @@ function renderOverview(preservedFilters) {
         "<td>" + escapeHtml(subject) + "</td>" +
         "<td>" + escapeHtml(scope || "—") + "</td>" +
         "<td><span class='grade-missing'>未登錄</span></td>" +
-        "<td>—</td>" +
+        "<td class='action-cell'><div class='action-buttons'>" +
+          "<button class='btn btn-danger btn-small' data-exclude-missing='1' data-exam-id='" + escapeHtml(exam.id) +
+          "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
+          "' data-scope='" + escapeHtml(scope || "") + "'>刪除</button>" +
+        "</div></td>" +
       "</tr>"
     );
   }
@@ -1050,7 +1057,14 @@ function renderOverview(preservedFilters) {
                   String(score.scope || "").trim() === scope;
               });
 
-              if (!matchingRecord) {
+              const exclusionExists = missingExclusionsCache.some(function (item) {
+                return String(item.exam_id) === currentExamId &&
+                  String(item.student_id) === String(student.id) &&
+                  item.subject === targetSubject &&
+                  String(item.scope || "").trim() === scope;
+              });
+
+              if (!matchingRecord && !exclusionExists) {
                 rows.push({
                   missing: true,
                   student: student,
@@ -1140,12 +1154,79 @@ function renderOverview(preservedFilters) {
   content.onclick = async function (event) {
     const editButton = event.target.closest("[data-edit-score]");
     const deleteButton = event.target.closest("[data-delete-score]");
+    const excludeButton = event.target.closest("[data-exclude-missing]");
 
     if (editButton) await editScore(editButton.dataset.editScore);
     if (deleteButton) await deleteScore(deleteButton.dataset.deleteScore);
+    if (excludeButton) {
+      await excludeMissingReminder({
+        examId: excludeButton.dataset.examId,
+        studentId: excludeButton.dataset.studentId,
+        subject: excludeButton.dataset.subject,
+        scope: excludeButton.dataset.scope
+      });
+    }
   };
 
   filterRows();
+}
+
+// ==================================================
+// 7-0. 排除單筆未登錄提醒
+// ==================================================
+
+async function excludeMissingReminder(item) {
+  const overviewScrollY = window.scrollY;
+  const overviewFilters = {
+    search: $("overviewSearch") ? $("overviewSearch").value : "",
+    examId: $("overviewExam") ? $("overviewExam").value : "",
+    className: $("overviewClass") ? $("overviewClass").value : "",
+    subject: $("overviewSubject") ? $("overviewSubject").value : "",
+    status: $("overviewStatus") ? $("overviewStatus").value : "all"
+  };
+  const student = studentsCache.find(row => String(row.id) === String(item.studentId));
+  const exam = examsCache.find(row => String(row.id) === String(item.examId));
+  if (!student || !exam) {
+    showMessage("找不到學生或考試資料，請重新整理。", "error");
+    return;
+  }
+
+  const confirmed = confirm(
+    "確定要刪除此筆未登錄提醒嗎？\n\n" +
+    "學生：" + student.full_name + "\n" +
+    "班級：" + student.class_name + "\n" +
+    "考試：" + formatDateRange(exam) + "\n" +
+    "科目：" + item.subject + "\n" +
+    "考試範圍：" + (item.scope || "—") + "\n\n" +
+    "只會排除此學生本次考試、此科目及範圍的提醒，不會刪除學生或成績資料。"
+  );
+  if (!confirmed) return;
+
+  try {
+    const result = await db.from("score_missing_exclusions").upsert({
+      exam_id: item.examId,
+      student_id: item.studentId,
+      subject: item.subject,
+      scope: item.scope || ""
+    }, { onConflict: "exam_id,student_id,subject,scope" }).select("*").single();
+
+    if (result.error) throw result.error;
+    missingExclusionsCache = missingExclusionsCache.filter(function (row) {
+      return !(
+        String(row.exam_id) === String(item.examId) &&
+        String(row.student_id) === String(item.studentId) &&
+        row.subject === item.subject &&
+        String(row.scope || "") === String(item.scope || "")
+      );
+    });
+    missingExclusionsCache.push(result.data);
+    renderOverview(overviewFilters);
+    const systemMessage = $("systemMessage");
+    if (systemMessage) systemMessage.style.display = "none";
+    window.scrollTo({ top: overviewScrollY, behavior: "auto" });
+  } catch (error) {
+    showMessage("刪除未登錄提醒失敗：" + error.message, "error", true);
+  }
 }
 
 // ==================================================
