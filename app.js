@@ -3838,7 +3838,12 @@ function renderTeacherResults() {
             student: student,
             resultText: resultText,
             code: String(student.student_code || ""),
-            isLeaveOrAbsent: !!(score && (score.grade_level === "請假" || score.grade_level === "缺考"))
+            isLeaveOrAbsent: !!(score && (score.grade_level === "請假" || score.grade_level === "缺考")),
+            sortScore: !score || score.grade_level === "請假" || score.grade_level === "缺考"
+              ? -Infinity
+              : Number(isGrade3Class(student.class_name) && !isGrade3Math(student.class_name, subject)
+                ? score.correct_count
+                : score.score)
           });
         });
       });
@@ -3847,6 +3852,7 @@ function renderTeacherResults() {
         const scope = entry[0];
         const rows = entry[1].sort((a, b) =>
           Number(a.isLeaveOrAbsent) - Number(b.isLeaveOrAbsent) ||
+          (b.sortScore - a.sortScore) ||
           a.code.localeCompare(b.code, "zh-Hant", { numeric: true }) ||
           String(a.student.full_name).localeCompare(String(b.student.full_name), "zh-Hant")
         ).map(function (item) {
