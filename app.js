@@ -1613,8 +1613,10 @@ function renderStudents() {
         "<div class='field student-subject-field'><label>勾選科目</label><div class='student-subject-options'>" +
           SUBJECTS.map(subject => "<label class='student-subject-option'><input type='checkbox' name='studentSubject' value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</label>").join("") +
         "</div><small class='muted'>請勾選學生實際修讀的科目；未勾選的科目不會列入漏登檢查。日後修課異動可在此修改。</small></div>" +
-        "<button class='btn btn-success' type='submit'>儲存學生資料</button> " +
-        "<button class='btn btn-secondary' type='button' id='studentCancel'>清除</button>" +
+        "<div class='toolbar' style='display:flex;flex-direction:row;align-items:center;gap:10px;flex-wrap:nowrap;margin-top:12px'>" +
+          "<button class='btn btn-success' type='submit' style='flex:1'>儲存學生資料</button>" +
+          "<button class='btn btn-secondary' type='button' id='studentCancel' style='flex:1'>清除</button>" +
+        "</div>" +
       "</form></div>" +
       "<div class='toolbar'>" +
         "<label for='studentStatusFilter'><strong>學生狀態：</strong></label>" +
