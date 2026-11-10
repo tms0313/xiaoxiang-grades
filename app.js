@@ -837,6 +837,11 @@ function renderAdminDashboard() {
 }
 
 function renderAdminTab() {
+  const systemMessage = $("systemMessage");
+  const dashboard = document.querySelector(".dashboard");
+  const adminTabs = $("adminTabs");
+  if (systemMessage && dashboard && adminTabs) dashboard.insertBefore(systemMessage, adminTabs);
+
   document.querySelectorAll(".tab-btn").forEach(function (button) {
     button.classList.toggle("active", button.dataset.tab === activeTab);
   });
@@ -1518,6 +1523,14 @@ function renderScoreEntry() {
     "<p id='absenceHint' class='muted hidden' style='color:#8a5a00;font-weight:800'>已選擇特殊狀態，不需要輸入分數或答對題數。</p>" +
     "<button class='btn btn-success' type='submit' id='saveScoreButton'>儲存成績</button></form></div>" +
     "<p class='muted'>請先選擇考試週期，再依班級篩選學生。儲存後會保留考試、班級、學生、科目及範圍，方便連續登錄；可使用上一位／下一位學生快速切換。遇到重複資料時，系統會顯示原有與新成績供確認。</p>";
+
+  const scoreMessage = $("systemMessage");
+  const scoreSaveButton = $("saveScoreButton");
+  if (scoreMessage && scoreSaveButton && scoreSaveButton.parentNode) {
+    scoreSaveButton.parentNode.insertBefore(scoreMessage, scoreSaveButton.nextSibling);
+    scoreMessage.style.margin = "12px 0 0";
+    scoreMessage.style.scrollMarginTop = "16px";
+  }
 
   $("scoreExam").addEventListener("change", saveScoreEntryProgress);
   $("scoreClass").addEventListener("change", function () {
