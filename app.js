@@ -361,7 +361,7 @@ style.textContent = [
   ".teacher-score-row:last-child { border-bottom:0; }",
   ".teacher-score-student { display:flex; align-items:baseline; gap:7px; min-width:0; color:#263445; font-size:18px; font-weight:700; }",
   ".teacher-score-student small { color:#8a96a5; font-size:13px; font-weight:500; white-space:nowrap; }",
-  ".teacher-score-value { display:flex; flex-direction:row; align-items:center; justify-content:center; flex-wrap:nowrap; gap:6px; width:max-content; min-width:150px; max-width:none; flex-shrink:0; padding-left:14px; border-left:1px solid #e8edf3; text-align:center; white-space:nowrap; font-size:18px; font-weight:900; }",
+  ".teacher-score-value { display:flex; flex-direction:row; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:6px; width:max-content; min-width:150px; max-width:none; flex-shrink:0; padding-left:14px; border-left:1px solid #e8edf3; text-align:left; white-space:nowrap; font-size:18px; font-weight:900; }",
   ".teacher-score-value .parent-score-number { font-size:21px; font-weight:900; }",
   ".teacher-score-value .grade-tag { padding:4px 10px; font-size:15px !important; }",
   ".teacher-score-value .grade-missing { padding:4px 10px; font-size:14px; }",
