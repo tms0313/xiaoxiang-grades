@@ -2282,8 +2282,10 @@ function renderTeacherManagement() {
       "<tbody id='teacherAccountRows'>" +
         (teacherProfilesCache.map(function (profile) {
           return "<tr><td>" + escapeHtml(profile.email || profile.display_name || "—") + "</td>" +
-            "<td><button class='btn btn-small' data-reset-teacher='" + escapeHtml(profile.id) + "'>重設密碼</button> " +
-            "<button class='btn btn-danger btn-small' data-delete-teacher='" + escapeHtml(profile.id) + "'>刪除帳號</button></td></tr>";
+            "<td class='action-cell'><div class='action-buttons'>" +
+              "<button class='btn btn-small' data-reset-teacher='" + escapeHtml(profile.id) + "'>重設密碼</button>" +
+              "<button class='btn btn-danger btn-small' data-delete-teacher='" + escapeHtml(profile.id) + "'>刪除帳號</button>" +
+            "</div></td></tr>";
         }).join("") || "<tr><td colspan='2' class='empty'>目前沒有教師帳號</td></tr>") +
       "</tbody></table></div>" +
     "</div>" +
