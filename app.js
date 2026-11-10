@@ -989,21 +989,22 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "<select id='overviewStatus' aria-label='成績狀態篩選'>" +
           "<option value='all'>全部狀態</option><option value='low'>低於 60 分</option><option value='leave'>請假</option><option value='absent'>缺考</option><option value='missing'>未登錄</option>" +
         "</select>" +
-        "<button class='btn btn-secondary' id='toggleExcludedReminders' style='white-space:nowrap'>已排除提醒（" + missingExclusionsCache.length + "）</button>" +
+        "<button class='btn btn-secondary' id='toggleExcludedReminders' style='height:40px;min-height:40px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1;white-space:nowrap'>已排除提醒（" + missingExclusionsCache.length + "）</button>" +
       "</div>" +
       "<span class='muted' style='font-size:13px;white-space:nowrap'>每 60 秒自動更新</span>" +
     "</div>" +
     "<p id='overviewFilterHint' class='muted' style='margin:0 0 10px'>選擇考試週期及科目後，系統會依已登錄的科目範圍比對同班修課學生。</p>" +
-    "<div class='table-wrap'><table class='overview-table'>" +
-      "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績／狀態</th><th>操作</th></tr></thead>" +
-      "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
-    "</table></div>" +
     "<div id='excludedRemindersPanel' class='panel' style='display:none;margin-top:18px'>" +
       "<h3>已排除的未登錄提醒</h3>" +
       "<p class='muted'>這裡只管理已排除的提醒；按下「恢復提醒」後，該筆資料會重新列入未登錄清單。</p>" +
       "<div class='table-wrap'><table><thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>操作</th></tr></thead>" +
       "<tbody id='excludedReminderRows'>" + (buildExcludedReminderRows() || "<tr><td colspan='7' class='empty'>目前沒有已排除的提醒</td></tr>") + "</tbody></table></div>" +
     "</div>";
+    "<div class='table-wrap'><table class='overview-table'>" +
+      "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績／狀態</th><th>操作</th></tr></thead>" +
+      "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
+    "</table></div>" +
+
 
   function filterRows() {
     const search = $("overviewSearch").value.trim().toLowerCase();
