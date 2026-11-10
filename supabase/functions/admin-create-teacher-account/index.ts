@@ -6,6 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS"
 };
 
+function makeTemporaryPassword() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$";
+  const random = new Uint32Array(14);
+  crypto.getRandomValues(random);
+  return Array.from(random, value => alphabet[value % alphabet.length]).join("");
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -53,11 +60,11 @@ Deno.serve(async (req) => {
       return json({ success: false, error: "請提供有效的教師 Email" }, 400);
     }
 
-    const initialPassword = "123456";
+    const temporaryPassword = makeTemporaryPassword();
 
     const { data: created, error: createError } = await adminClient.auth.admin.createUser({
       email,
-      password: initialPassword,
+      password: temporaryPassword,
       email_confirm: true,
       user_metadata: { role: "teacher" },
       app_metadata: { must_change_password: true }
@@ -85,7 +92,7 @@ Deno.serve(async (req) => {
       success: true,
       email,
       teacherId: created.user.id,
-      initialPassword
+      temporaryPassword
     });
   } catch (error) {
     return json({
