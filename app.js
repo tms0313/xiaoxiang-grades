@@ -350,13 +350,13 @@ style.textContent = [
   ".teacher-score-value { min-width:94px; max-width:48%; padding-left:14px; border-left:1px solid #e8edf3; text-align:center; font-size:18px; font-weight:900; }",
   ".teacher-score-value .parent-score-number { font-size:21px; font-weight:900; }",
   ".teacher-score-value .grade-tag { padding:4px 10px; font-size:15px !important; }",
-  ".teacher-score-value .teacher-score-missing { padding:4px 10px; font-size:14px; }",
-  "@media(max-width:600px) { .teacher-class-panel { padding:10px; } .teacher-score-row { min-height:46px; column-gap:10px; padding:6px 2px; } .teacher-score-student { font-size:17px; } .teacher-scope-heading { font-size:16px; } .teacher-score-student small { font-size:12px; } .teacher-score-value { min-width:82px; padding-left:10px; font-size:16px; } .teacher-score-value .parent-score-number { font-size:19px; } .teacher-score-value .grade-tag { font-size:13px !important; } .teacher-score-value .teacher-score-missing { font-size:13px; } }",
+  ".teacher-score-value .grade-missing { padding:4px 10px; font-size:14px; }",
+  "@media(max-width:600px) { .teacher-class-panel { padding:10px; } .teacher-score-row { min-height:46px; column-gap:10px; padding:6px 2px; } .teacher-score-student { font-size:17px; } .teacher-scope-heading { font-size:16px; } .teacher-score-student small { font-size:12px; } .teacher-score-value { min-width:82px; padding-left:10px; font-size:16px; } .teacher-score-value .parent-score-number { font-size:19px; } .teacher-score-value .grade-tag { font-size:13px !important; } .teacher-score-value .grade-missing { font-size:13px; } }",
   ".teacher-student-panel { margin-bottom:14px; }",
   ".teacher-student-panel h3 { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:12px; }",
   ".teacher-student-panel h3 small { color:#718096; font-size:13px; font-weight:600; }",
   ".teacher-subject-card { max-width:780px; margin:8px auto; }",
-  ".teacher-score-missing { display:inline-block; padding:5px 9px; border-radius:7px; background:#fff4df; color:#a35b08; font-size:14px; font-weight:800; white-space:nowrap; }",
+  ".grade-missing { display:inline-block; padding:5px 9px; border-radius:7px; background:#fff4df; color:#a35b08; font-size:14px; font-weight:800; white-space:nowrap; }",
   ".parent-score-list { display:flex; flex-direction:column; gap:10px; width:100%; max-width:780px; margin:0 auto; }",
   ".parent-subject-card { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:14px; border:1px solid #dfe7ef; border-radius:12px; padding:14px 16px; margin:0; background:#fff; }",
   ".parent-subject-info { min-width:0; }",
@@ -844,7 +844,7 @@ function renderAdminTab() {
 // 7. 成績總覽
 // ==================================================
 
-function renderOverview() {
+function renderOverview(preservedFilters) {
   const content = $("adminContent");
 
   function getStudent(id) {
@@ -914,7 +914,7 @@ function renderOverview() {
         "<td>" + escapeHtml(student.full_name) + "</td>" +
         "<td>" + escapeHtml(subject) + "</td>" +
         "<td>" + escapeHtml(scope || "—") + "</td>" +
-        "<td><strong style='color:#dc2626;font-weight:900'>未登錄</strong></td>" +
+        "<td><span class='grade-missing'>未登錄</span></td>" +
         "<td>—</td>" +
       "</tr>"
     );
@@ -1073,6 +1073,13 @@ function renderOverview() {
       "<tr><td colspan='8' class='empty'>沒有符合的成績資料</td></tr>";
   }
 
+  if (preservedFilters) {
+    $("overviewSearch").value = preservedFilters.search || "";
+    $("overviewExam").value = preservedFilters.examId || "";
+    $("overviewClass").value = preservedFilters.className || "";
+    $("overviewSubject").value = preservedFilters.subject || "";
+  }
+
   $("overviewSearch").addEventListener("input", filterRows);
   $("overviewExam").addEventListener("change", filterRows);
   $("overviewClass").addEventListener("change", filterRows);
@@ -1104,6 +1111,13 @@ function renderOverview() {
 // ==================================================
 
 async function editScore(scoreId) {
+  const overviewScrollY = window.scrollY;
+  const overviewFilters = {
+    search: $("overviewSearch") ? $("overviewSearch").value : "",
+    examId: $("overviewExam") ? $("overviewExam").value : "",
+    className: $("overviewClass") ? $("overviewClass").value : "",
+    subject: $("overviewSubject") ? $("overviewSubject").value : ""
+  };
   const score = scoresCache.find(item => String(item.id) === String(scoreId));
 
   if (!score) {
@@ -1215,8 +1229,9 @@ async function editScore(scoreId) {
     const result = await db.from("scores").update(payload).eq("id", scoreId);
     if (result.error) throw result.error;
     await loadAdminData();
-    renderOverview();
-    showMessage("「" + student.full_name + "」的成績已修改成功。", "success");
+    renderOverview(overviewFilters);
+    showMessage("「" + student.full_name + "」的成績已修改成功。", "success", true);
+    window.scrollTo({ top: overviewScrollY, behavior: "auto" });
   } catch (error) {
     showMessage("修改成績失敗：" + error.message, "error");
   }
@@ -3434,7 +3449,7 @@ function renderTeacherResults() {
             : "尚未登錄範圍";
           if (!groups.has(scope)) groups.set(scope, []);
 
-          let resultText = "<span class='teacher-score-missing'>尚未登錄</span>";
+          let resultText = "<span class='grade-missing'>尚未登錄</span>";
           if (score) {
             if (score.grade_level === "請假" || score.grade_level === "缺考") {
               resultText = gradeTag(score.grade_level);
