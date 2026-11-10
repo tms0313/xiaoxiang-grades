@@ -1202,26 +1202,27 @@ async function editScore(scoreId) {
 
   function renderValueFields() {
     const subject = $("scoreEditSubject").value;
+    const sameSubject = subject === score.subject;
     const grade3Math = isGrade3Math(student.class_name, subject);
     const valueBox = $("scoreEditValueFields");
     if (grade3Math) {
       valueBox.innerHTML =
         "<div class='field'><label for='scoreEditGrade'>模擬考等級／出席狀態</label><select id='scoreEditGrade' required>" + gradeOptions + "</select></div>" +
         "<div class='field' id='scoreEditNumericField'><label for='scoreEditNumeric'>數學分數（0～100）</label><input id='scoreEditNumeric' type='number' min='0' max='100' step='any' inputmode='decimal'></div>";
-      $("scoreEditGrade").value = score.grade_level || "";
-      $("scoreEditNumeric").value = score.score == null ? "" : score.score;
+      $("scoreEditGrade").value = sameSubject ? (score.grade_level || "") : "";
+      $("scoreEditNumeric").value = sameSubject && score.score != null ? score.score : "";
     } else if (grade3) {
       valueBox.innerHTML =
         "<div class='field'><label for='scoreEditGrade'>模擬考等級／出席狀態</label><select id='scoreEditGrade' required>" + gradeOptions + "</select></div>" +
         "<div class='field' id='scoreEditNumericField'><label for='scoreEditNumeric'>答對題數</label><input id='scoreEditNumeric' type='number' min='0' step='1' inputmode='numeric'></div>";
-      $("scoreEditGrade").value = score.grade_level || "";
-      $("scoreEditNumeric").value = score.correct_count == null ? "" : score.correct_count;
+      $("scoreEditGrade").value = sameSubject ? (score.grade_level || "") : "";
+      $("scoreEditNumeric").value = sameSubject && score.correct_count != null ? score.correct_count : "";
     } else {
       valueBox.innerHTML =
         "<div class='field'><label for='scoreEditAttendance'>出席狀態</label><select id='scoreEditAttendance'><option value='normal'>正常出席</option><option value='請假'>請假</option></select></div>" +
         "<div class='field' id='scoreEditNumericField'><label for='scoreEditNumeric'>成績（0～100）</label><input id='scoreEditNumeric' type='number' min='0' max='100' step='any' inputmode='decimal'></div>";
-      $("scoreEditAttendance").value = score.grade_level === "請假" ? "請假" : "normal";
-      $("scoreEditNumeric").value = score.score == null ? "" : score.score;
+      $("scoreEditAttendance").value = sameSubject && score.grade_level === "請假" ? "請假" : "normal";
+      $("scoreEditNumeric").value = sameSubject && score.score != null ? score.score : "";
     }
     const gradeControl = $("scoreEditGrade") || $("scoreEditAttendance");
     if (gradeControl) gradeControl.addEventListener("change", updateNumericVisibility);
