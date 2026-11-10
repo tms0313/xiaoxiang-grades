@@ -2918,7 +2918,7 @@ function renderTeacherManagement() {
         }).join("") || "<tr><td colspan='2' class='empty'>目前沒有教師帳號</td></tr>") +
       "</tbody></table></div>" +
     "</div>" +
-    "<div class='panel'><h3>設定授課班級與科目</h3>" +
+    "<div class='panel' id='teacherAssignmentPanel'><h3>設定授課班級與科目</h3>" +
       (teacherProfilesCache.length
         ? "<form id='teacherAssignmentForm'><div class='form-grid'>" +
             "<div class='field'><label>教師帳號</label><select id='teacherAccountSelect' required><option value=''>請選擇教師</option>" + teacherOptions + "</select></div>" +
@@ -3143,7 +3143,10 @@ async function manageTeacherAccount(action, teacherId, email) {
 
 async function saveTeacherAssignment(event) {
   event.preventDefault();
-  const scrollY = window.scrollY;
+  const assignmentPanel = $("teacherAssignmentPanel");
+  const assignmentPanelTop = assignmentPanel
+    ? assignmentPanel.getBoundingClientRect().top
+    : null;
   const teacherId = $("teacherAccountSelect").value;
   const className = $("teacherClassSelect").value;
   const subject = $("teacherSubjectSelect").value;
@@ -3168,7 +3171,15 @@ async function saveTeacherAssignment(event) {
     if ($("teacherClassSelect")) $("teacherClassSelect").value = className;
     if ($("teacherSubjectSelect")) $("teacherSubjectSelect").value = subject;
     showMessage("教師授課權限已新增。", "success", true);
-    window.scrollTo({ top: scrollY, behavior: "auto" });
+
+    // 以「設定授課班級與科目」區塊作為定位基準，重新 render 後校正位置。
+    requestAnimationFrame(function () {
+      const refreshedPanel = $("teacherAssignmentPanel");
+      if (refreshedPanel && assignmentPanelTop !== null) {
+        const newTop = refreshedPanel.getBoundingClientRect().top;
+        window.scrollBy({ top: newTop - assignmentPanelTop, behavior: "auto" });
+      }
+    });
   } catch (error) {
     showMessage("新增授課權限失敗：" + error.message, "error");
   }
