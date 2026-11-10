@@ -320,6 +320,22 @@ style.textContent = [
   /* 家長成績：電腦與手機統一採用科目卡片式呈現 */
   ".parent-page .dashboard { max-width:960px; }",
   ".teacher-dashboard { max-width:1050px; }",
+  ".teacher-class-panel { margin-bottom:10px; padding:12px 15px; }",
+  ".teacher-class-heading { margin:0 0 9px; padding-bottom:7px; border-bottom:2px solid #dce7f1; color:#23466b; font-size:18px; }",
+  ".teacher-subject-section { margin:8px 0 10px; }",
+  ".teacher-subject-heading { margin:0 0 5px; color:#315d86; font-size:15px; }",
+  ".teacher-scope-group { margin:0 0 7px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; }",
+  ".teacher-scope-heading { padding:5px 9px; background:#edf5f0; color:#267447; font-size:13px; font-weight:800; line-height:1.4; }",
+  ".teacher-score-rows { padding:0 9px; }",
+  ".teacher-score-row { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:31px; padding:4px 2px; border-bottom:1px solid #edf0f3; }",
+  ".teacher-score-row:last-child { border-bottom:0; }",
+  ".teacher-score-student { display:flex; align-items:baseline; gap:7px; min-width:0; color:#263445; font-size:14px; font-weight:700; }",
+  ".teacher-score-student small { color:#8a96a5; font-size:11px; font-weight:500; white-space:nowrap; }",
+  ".teacher-score-value { flex:0 0 auto; text-align:right; font-size:14px; font-weight:800; }",
+  ".teacher-score-value .parent-score-number { font-size:15px; }",
+  ".teacher-score-value .grade-tag { padding:2px 7px; font-size:12px !important; }",
+  ".teacher-score-value .teacher-score-missing { padding:2px 7px; font-size:12px; }",
+  "@media(max-width:600px) { .teacher-class-panel { padding:10px; } .teacher-score-row { min-height:29px; gap:7px; } .teacher-score-student { font-size:13px; } .teacher-score-value { font-size:13px; } }",
   ".teacher-student-panel { margin-bottom:14px; }",
   ".teacher-student-panel h3 { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:12px; }",
   ".teacher-student-panel h3 small { color:#718096; font-size:13px; font-weight:600; }",
@@ -3116,42 +3132,37 @@ function renderTeacherResults() {
     exam => String(exam.id) === String(teacherSelectedExamId)
   );
 
-  const permittedSubjects = Array.from(new Set(teacherAssignmentsCache.map(item => item.subject)));
   const permittedClasses = Array.from(new Set(teacherAssignmentsCache.map(item => item.class_name)));
+  const permittedSubjects = Array.from(new Set(teacherAssignmentsCache.map(item => item.subject)));
+  const classSections = permittedClasses.map(function (className) {
+    const subjects = permittedSubjects.filter(function (subject) {
+      return teacherAssignmentsCache.some(item =>
+        item.class_name === className && item.subject === subject
+      );
+    });
 
-  const studentRows = teacherStudentsCache
-    .filter(student => permittedClasses.includes(student.class_name))
-    .filter(student => teacherStudentSubjectsCache.some(function (item) {
-      return String(item.student_id) === String(student.id) &&
-        permittedSubjects.includes(item.subject) &&
-        teacherAssignmentsCache.some(assignment =>
-          assignment.class_name === student.class_name &&
-          assignment.subject === item.subject
-        );
-    }))
-    .map(function (student) {
-      const subjects = permittedSubjects.filter(function (subject) {
-        return teacherAssignmentsCache.some(assignment =>
-          assignment.class_name === student.class_name && assignment.subject === subject
-        ) && teacherStudentSubjectsCache.some(item =>
-          String(item.student_id) === String(student.id) &&
-          item.subject === subject &&
-          item.is_active === true
-        );
+    const subjectSections = subjects.map(function (subject) {
+      const students = teacherStudentsCache.filter(function (student) {
+        return student.class_name === className &&
+          teacherStudentSubjectsCache.some(item =>
+            String(item.student_id) === String(student.id) &&
+            item.subject === subject &&
+            item.is_active === true
+          );
       });
 
-      const subjectCards = subjects.map(function (subject) {
+      const groups = new Map();
+      students.forEach(function (student) {
         const score = teacherScoresCache.find(function (item) {
           return selectedExam &&
             String(item.student_id) === String(student.id) &&
             String(item.exam_id) === String(selectedExam.id) &&
             item.subject === subject;
         });
-
+        const scope = score && score.scope ? String(score.scope).trim() : "尚未登錄範圍";
+        if (!groups.has(scope)) groups.set(scope, []);
         let resultText = "<span class='teacher-score-missing'>尚未登錄</span>";
-        let scopeText = "—";
         if (score) {
-          scopeText = score.scope || "—";
           if (score.grade_level === "請假" || score.grade_level === "缺考") {
             resultText = gradeTag(score.grade_level);
           } else if (isGrade3Math(student.class_name, subject)) {
@@ -3165,20 +3176,43 @@ function renderTeacherResults() {
               escapeHtml(score.score == null ? "—" : score.score) + " 分</span>";
           }
         }
+        groups.get(scope).push({
+          student: student,
+          resultText: resultText,
+          code: String(student.student_code || "")
+        });
+      });
 
-        return "<div class='parent-subject-card teacher-subject-card'>" +
-          "<div class='parent-subject-info'><div class='parent-subject-name'>" + escapeHtml(subject) + "</div>" +
-          "<div class='parent-subject-scope'><span class='parent-subject-scope-text'>" + escapeHtml(scopeText) + "</span></div></div>" +
-          "<div class='parent-subject-result'><div class='parent-subject-result-label'>成績</div>" +
-          "<div class='parent-subject-result-value'>" + resultText + "</div></div></div>";
+      const scopeGroups = Array.from(groups.entries()).map(function (entry) {
+        const scope = entry[0];
+        const rows = entry[1].sort((a, b) =>
+          a.code.localeCompare(b.code, "zh-Hant", { numeric: true }) ||
+          String(a.student.full_name).localeCompare(String(b.student.full_name), "zh-Hant")
+        ).map(function (item) {
+          return "<div class='teacher-score-row'>" +
+            "<div class='teacher-score-student'>" + escapeHtml(item.student.full_name) +
+              "<small>" + escapeHtml(item.student.student_code || "") + "</small></div>" +
+            "<div class='teacher-score-value'>" + item.resultText + "</div>" +
+          "</div>";
+        }).join("");
+
+        return "<section class='teacher-scope-group'>" +
+          "<div class='teacher-scope-heading'>" + escapeHtml(scope) + "</div>" +
+          "<div class='teacher-score-rows'>" + rows + "</div>" +
+        "</section>";
       }).join("");
 
-      return "<section class='panel teacher-student-panel'><h3>" +
-        escapeHtml(student.full_name) + " <small>" + escapeHtml(student.class_name) +
-        "｜" + escapeHtml(student.student_code) + "</small></h3>" +
-        (subjectCards || "<div class='empty'>目前沒有授權科目的修課資料。</div>") +
+      return "<section class='teacher-subject-section'>" +
+        "<h4 class='teacher-subject-heading'>" + escapeHtml(subject) + "</h4>" +
+        (scopeGroups || "<div class='empty'>目前沒有修讀此科目的在學學生。</div>") +
       "</section>";
     }).join("");
+
+    return "<section class='panel teacher-class-panel'>" +
+      "<h3 class='teacher-class-heading'>" + escapeHtml(className) + "</h3>" +
+      (subjectSections || "<div class='empty'>目前沒有授權科目。</div>") +
+    "</section>";
+  }).join("");
 
   appRoot.innerHTML =
     "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區｜僅供查詢</small></div>" +
@@ -3189,7 +3223,7 @@ function renderTeacherResults() {
       "<button class='btn btn-secondary' id='teacherRefreshButton'>重新整理</button>" +
     "</div>" +
     (selectedExam ? "<p class='muted'>目前顯示：" + escapeHtml(formatDateRange(selectedExam)) + "</p>" : "") +
-    (studentRows || "<div class='empty'>目前授權範圍內沒有在學且有修讀指定科目的學生。</div>") +
+    (classSections || "<div class='empty'>目前授權範圍內沒有在學且有修讀指定科目的學生。</div>") +
     "</main><div class='footer'>© 小象文教機構</div>";
 
   $("logoutButton").addEventListener("click", handleLogout);
