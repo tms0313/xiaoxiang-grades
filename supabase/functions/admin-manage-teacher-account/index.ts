@@ -50,16 +50,69 @@ Deno.serve(async (req) => {
       .eq("id", callerData.user.id)
       .maybeSingle();
 
-    if (profileError || !callerProfile || callerProfile.role !== "admin") {
-      return json({ success: false, error: "只有管理員可以管理教師帳號" }, 403);
+    if (profileError || !callerProfile) {
+      return json({ success: false, error: "找不到登入者資料" }, 403);
     }
 
     const body = await req.json();
     const action = String(body.action || "");
     const teacherId = String(body.teacherId || "").trim();
 
-    if (!["reset_password", "delete"].includes(action)) {
+    if (action === "complete_password_change") {
+      if (callerProfile.role !== "teacher") {
+        return json({ success: false, error: "只有教師帳號可以完成此操作" }, 403);
+      }
+      const { data: authUser, error: authUserError } = await adminClient.auth.admin.getUserById(callerData.user.id);
+      if (authUserError || !authUser.user) {
+        return json({ success: false, error: "無法讀取教師帳號資料" }, 400);
+      }
+      const { error: metadataError } = await adminClient.auth.admin.updateUserById(callerData.user.id, {
+        app_metadata: { ...(authUser.user.app_metadata || {}), must_change_password: false }
+      });
+      if (metadataError) return json({ success: false, error: "完成密碼設定失敗：" + metadataError.message }, 400);
+      return json({ success: true, action });
+    }
+
+    if (callerProfile.role !== "admin") {
+      return json({ success: false, error: "只有管理員可以管理教師帳號" }, 403);
+    }
+
+    if (!["reset_password", "reset_all_passwords", "delete"].includes(action)) {
       return json({ success: false, error: "不支援的教師帳號操作" }, 400);
+    }
+
+    if (action === "reset_all_passwords") {
+      const { data: teachers, error: teachersError } = await adminClient
+        .from("profiles")
+        .select("id, email")
+        .eq("role", "teacher");
+      if (teachersError) return json({ success: false, error: "讀取教師帳號失敗：" + teachersError.message }, 500);
+
+      const failures: string[] = [];
+      let updatedCount = 0;
+      for (const teacher of teachers || []) {
+        const { data: authTeacher, error: getTeacherError } = await adminClient.auth.admin.getUserById(teacher.id);
+        if (getTeacherError || !authTeacher.user) {
+          failures.push((teacher.email || teacher.id) + "：無法讀取帳號");
+          continue;
+        }
+        const { error: updateError } = await adminClient.auth.admin.updateUserById(teacher.id, {
+          password: "123456",
+          app_metadata: { ...(authTeacher.user.app_metadata || {}), must_change_password: true }
+        });
+        if (updateError) {
+          failures.push((teacher.email || teacher.id) + "：" + updateError.message);
+        } else {
+          updatedCount++;
+        }
+      }
+      return json({
+        success: failures.length === 0,
+        action,
+        updatedCount,
+        failedCount: failures.length,
+        failures
+      }, failures.length ? 207 : 200);
     }
 
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(teacherId)) {
@@ -78,8 +131,13 @@ Deno.serve(async (req) => {
 
     if (action === "reset_password") {
       const temporaryPassword = makeTemporaryPassword();
+      const { data: authTeacher, error: getTeacherError } = await adminClient.auth.admin.getUserById(teacherId);
+      if (getTeacherError || !authTeacher.user) {
+        return json({ success: false, error: "無法讀取教師登入帳號" }, 400);
+      }
       const { error: updateError } = await adminClient.auth.admin.updateUserById(teacherId, {
-        password: temporaryPassword
+        password: temporaryPassword,
+        app_metadata: { ...(authTeacher.user.app_metadata || {}), must_change_password: true }
       });
 
       if (updateError) {
