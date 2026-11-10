@@ -989,7 +989,10 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "<select id='overviewStatus' aria-label='成績狀態篩選' style='height:40px;min-height:40px;box-sizing:border-box;align-self:center'>" +
           "<option value='all'>全部狀態</option><option value='low'>低於 60 分</option><option value='leave'>請假</option><option value='absent'>缺考</option><option value='missing'>未登錄</option>" +
         "</select>" +
-        "<button class='btn btn-secondary' id='toggleExcludedReminders' style='height:40px;min-height:40px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1;white-space:nowrap'>已排除提醒（" + missingExclusionsCache.length + "）</button>" +
+        "<select id='toggleExcludedReminders' aria-label='已排除提醒' style='height:40px;min-height:40px;box-sizing:border-box;align-self:center;min-width:150px'>" +
+          "<option value='closed'>已排除提醒（" + missingExclusionsCache.length + "）</option>" +
+          "<option value='open'>查看已排除提醒</option>" +
+        "</select>" +
       "</div>" +
       "<span class='muted' style='font-size:13px;white-space:nowrap'>每 60 秒自動更新</span>" +
     "</div>" +
@@ -1173,19 +1176,19 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   $("overviewSubject").addEventListener("change", filterRows);
   $("overviewStatus").addEventListener("change", filterRows);
 
-  $("toggleExcludedReminders").addEventListener("click", function () {
+  $("toggleExcludedReminders").addEventListener("change", function () {
     const panel = $("excludedRemindersPanel");
     if (!panel) return;
-    const opening = panel.style.display === "none";
+    const opening = this.value === "open";
     panel.style.display = opening ? "block" : "none";
-    this.textContent = (opening ? "收合已排除提醒" : "已排除提醒（" + missingExclusionsCache.length + "）");
+    this.value = opening ? "open" : "closed";
   });
 
   if (keepExcludedPanelOpen) {
     const excludedPanel = $("excludedRemindersPanel");
     const toggleButton = $("toggleExcludedReminders");
     if (excludedPanel) excludedPanel.style.display = "block";
-    if (toggleButton) toggleButton.textContent = "收合已排除提醒";
+    if (toggleButton) toggleButton.value = "open";
   }
 
   content.onclick = async function (event) {
