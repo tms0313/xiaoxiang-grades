@@ -273,6 +273,17 @@ style.textContent = [
   ".system-message { display:none; padding:12px 15px; border-radius:8px; margin-bottom:16px; background:#fff3cd; color:#765b13; }",
   ".system-message.error { background:#fde8e8; color:#a32626; }",
   ".system-message.success { background:#e3f5e9; color:#20683d; }",
+  ".score-edit-overlay { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; padding:18px; background:rgba(20,34,50,.58); overflow-y:auto; }",
+  ".score-edit-dialog { width:min(480px,100%); max-height:calc(100vh - 36px); overflow-y:auto; background:#fff; border-radius:16px; padding:22px; box-shadow:0 18px 55px rgba(0,0,0,.24); }",
+  ".score-edit-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:18px; }",
+  ".score-edit-header h3 { margin:0 0 6px; color:#23466b; font-size:20px; }",
+  ".score-edit-header p { margin:0; color:#64748b; font-size:13px; line-height:1.6; }",
+  ".score-edit-close { border:0; background:#eef2f6; color:#475569; border-radius:8px; width:34px; height:34px; font-size:24px; line-height:1; }",
+  ".score-edit-dialog .field input,.score-edit-dialog .field select { min-height:44px; }",
+  ".score-edit-note { margin:4px 0 16px; color:#64748b; font-size:13px; line-height:1.6; }",
+  ".score-edit-actions { display:flex; gap:10px; justify-content:flex-end; }",
+  ".score-edit-actions .btn { min-width:104px; }",
+  "@media(max-width:600px) { .score-edit-overlay { align-items:flex-end; padding:10px; } .score-edit-dialog { max-height:88vh; padding:18px; border-radius:16px 16px 12px 12px; } .score-edit-actions { position:sticky; bottom:-18px; background:#fff; padding:12px 0 2px; } .score-edit-actions .btn { flex:1; } }",
 
   ".topbar { background:#23466b; color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap; }",
   ".topbar h1 { font-size:20px; margin:0; color:#fff; }",
@@ -936,6 +947,9 @@ function renderOverview(preservedFilters) {
       "<select id='overviewSubject'><option value=''>全部科目</option>" +
         SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") +
       "</select>" +
+      "<select id='overviewStatus' aria-label='成績狀態篩選'>" +
+        "<option value='all'>全部狀態</option><option value='low'>低於 60 分</option><option value='leave'>請假</option><option value='absent'>缺考</option><option value='missing'>未登錄</option>" +
+      "</select>" +
       "<button class='btn btn-secondary' id='overviewRefresh'>重新整理</button>" +
     "</div>" +
     "<p id='overviewFilterHint' class='muted' style='margin:0 0 10px'>選擇考試週期及科目後，系統會依已登錄的科目範圍比對同班修課學生。</p>" +
@@ -949,6 +963,7 @@ function renderOverview(preservedFilters) {
     const examId = $("overviewExam").value;
     const className = $("overviewClass").value;
     const subject = $("overviewSubject").value;
+    const status = $("overviewStatus").value;
 
     const matchesStudent = function (student) {
       return student &&
@@ -1039,6 +1054,20 @@ function renderOverview(preservedFilters) {
       });
     }
 
+    const filteredRows = rows.filter(function (item) {
+      if (status === "all") return true;
+      if (status === "missing") return !!item.missing;
+      if (item.missing || !item.score) return false;
+      if (status === "leave") return item.score.grade_level === "請假";
+      if (status === "absent") return item.score.grade_level === "缺考";
+      if (status === "low") return item.score.grade_level !== "請假" && item.score.grade_level !== "缺考" &&
+        scoreClass(item.score.score, item.student.class_name, item.score.subject) === "low-score";
+      return true;
+    });
+
+    rows.length = 0;
+    rows.push.apply(rows, filteredRows);
+
     rows.sort(function (a, b) {
       const dateA = String((a.exam && (a.exam.end_date || a.exam.start_date)) || "");
       const dateB = String((b.exam && (b.exam.end_date || b.exam.start_date)) || "");
@@ -1078,12 +1107,14 @@ function renderOverview(preservedFilters) {
     $("overviewExam").value = preservedFilters.examId || "";
     $("overviewClass").value = preservedFilters.className || "";
     $("overviewSubject").value = preservedFilters.subject || "";
+    $("overviewStatus").value = preservedFilters.status || "all";
   }
 
   $("overviewSearch").addEventListener("input", filterRows);
   $("overviewExam").addEventListener("change", filterRows);
   $("overviewClass").addEventListener("change", filterRows);
   $("overviewSubject").addEventListener("change", filterRows);
+  $("overviewStatus").addEventListener("change", filterRows);
 
   $("overviewRefresh").addEventListener("click", async function () {
     try {
@@ -1110,131 +1141,193 @@ function renderOverview(preservedFilters) {
 // 7-1. 修改既有成績
 // ==================================================
 
+function closeScoreEditModal() {
+  const modal = $("scoreEditModal");
+  if (modal) modal.remove();
+  document.removeEventListener("keydown", handleScoreEditEscape);
+}
+
+function handleScoreEditEscape(event) {
+  if (event.key === "Escape") closeScoreEditModal();
+}
+
 async function editScore(scoreId) {
   const overviewScrollY = window.scrollY;
   const overviewFilters = {
     search: $("overviewSearch") ? $("overviewSearch").value : "",
     examId: $("overviewExam") ? $("overviewExam").value : "",
     className: $("overviewClass") ? $("overviewClass").value : "",
-    subject: $("overviewSubject") ? $("overviewSubject").value : ""
+    subject: $("overviewSubject") ? $("overviewSubject").value : "",
+    status: $("overviewStatus") ? $("overviewStatus").value : "all"
   };
   const score = scoresCache.find(item => String(item.id) === String(scoreId));
-
   if (!score) {
     showMessage("找不到這筆成績資料，請重新整理。", "error");
     return;
   }
-
   const student = studentsCache.find(item => String(item.id) === String(score.student_id));
-  if (!student) {
-    showMessage("找不到學生資料，無法修改成績。", "error");
-    return;
-  }
-
-  const subjectInput = prompt("請輸入科目：國文、英文、數學、自然", score.subject || "");
-  if (subjectInput === null) return;
-  const subject = subjectInput.trim();
-  if (!SUBJECTS.includes(subject)) {
-    showMessage("科目只能選擇：國文、英文、數學、自然。", "error");
-    return;
-  }
-
-  const scopeInput = prompt("請輸入考試範圍：", score.scope || "");
-  if (scopeInput === null) return;
-  const scope = scopeInput.trim();
-  if (!scope) {
-    showMessage("考試範圍不可空白。", "error");
+  const exam = examsCache.find(item => String(item.id) === String(score.exam_id));
+  if (!student || !exam) {
+    showMessage("找不到學生或考試資料，無法修改成績。", "error");
     return;
   }
 
   const grade3 = isGrade3Class(student.class_name);
-  const grade3Math = isGrade3Math(student.class_name, subject);
-  let scoreValue = null;
-  let correctCount = null;
-  let gradeLevel = null;
+  const gradeOptions = GRADE_OPTIONS.map(function (grade) {
+    return "<option value='" + escapeHtml(grade) + "'>" + escapeHtml(grade) + "</option>";
+  }).join("");
+  const subjectOptions = SUBJECTS.map(function (subject) {
+    return "<option value='" + escapeHtml(subject) + "'" + (subject === score.subject ? " selected" : "") + ">" + escapeHtml(subject) + "</option>";
+  }).join("");
 
-  if (grade3Math || grade3) {
-    const grade = prompt(
-      "請輸入模擬考等級（A++、A+、A、B++、B+、B、C、缺考、請假）：",
-      score.grade_level || ""
-    );
-    if (grade === null) return;
-    gradeLevel = grade.trim();
-    if (!GRADE_OPTIONS.includes(gradeLevel)) {
-      showMessage("請輸入正確的模擬考等級。", "error");
+  const modal = document.createElement("div");
+  modal.id = "scoreEditModal";
+  modal.className = "score-edit-overlay";
+  modal.innerHTML =
+    "<div class='score-edit-dialog' role='dialog' aria-modal='true' aria-labelledby='scoreEditTitle'>" +
+      "<div class='score-edit-header'><div><h3 id='scoreEditTitle'>修改成績</h3><p>" +
+        escapeHtml(student.full_name) + "｜" + escapeHtml(student.class_name) + "｜" + escapeHtml(formatDateRange(exam)) +
+      "</p></div><button type='button' class='score-edit-close' id='scoreEditClose' aria-label='關閉'>×</button></div>" +
+      "<form id='scoreEditForm'>" +
+        "<div class='field'><label for='scoreEditSubject'>科目</label><select id='scoreEditSubject' required>" + subjectOptions + "</select></div>" +
+        "<div class='field'><label for='scoreEditScope'>考試範圍</label><input id='scoreEditScope' type='text' maxlength='120' required value='" + escapeHtml(score.scope || "") + "'></div>" +
+        "<div id='scoreEditValueFields'></div>" +
+        "<p class='score-edit-note'>修改後會更新原有紀錄，不會新增另一筆成績。</p>" +
+        "<div class='score-edit-actions'><button type='button' class='btn btn-secondary' id='scoreEditCancel'>取消</button><button type='submit' class='btn btn-success' id='scoreEditSave'>儲存修改</button></div>" +
+      "</form>" +
+    "</div>";
+
+  document.body.appendChild(modal);
+
+  function renderValueFields() {
+    const subject = $("scoreEditSubject").value;
+    const grade3Math = isGrade3Math(student.class_name, subject);
+    const valueBox = $("scoreEditValueFields");
+    if (grade3Math) {
+      valueBox.innerHTML =
+        "<div class='field'><label for='scoreEditGrade'>模擬考等級／出席狀態</label><select id='scoreEditGrade' required>" + gradeOptions + "</select></div>" +
+        "<div class='field' id='scoreEditNumericField'><label for='scoreEditNumeric'>數學分數（0～100）</label><input id='scoreEditNumeric' type='number' min='0' max='100' step='any' inputmode='decimal'></div>";
+      $("scoreEditGrade").value = score.grade_level || "";
+      $("scoreEditNumeric").value = score.score == null ? "" : score.score;
+    } else if (grade3) {
+      valueBox.innerHTML =
+        "<div class='field'><label for='scoreEditGrade'>模擬考等級／出席狀態</label><select id='scoreEditGrade' required>" + gradeOptions + "</select></div>" +
+        "<div class='field' id='scoreEditNumericField'><label for='scoreEditNumeric'>答對題數</label><input id='scoreEditNumeric' type='number' min='0' step='1' inputmode='numeric'></div>";
+      $("scoreEditGrade").value = score.grade_level || "";
+      $("scoreEditNumeric").value = score.correct_count == null ? "" : score.correct_count;
+    } else {
+      valueBox.innerHTML =
+        "<div class='field'><label for='scoreEditAttendance'>出席狀態</label><select id='scoreEditAttendance'><option value='normal'>正常出席</option><option value='請假'>請假</option></select></div>" +
+        "<div class='field' id='scoreEditNumericField'><label for='scoreEditNumeric'>成績（0～100）</label><input id='scoreEditNumeric' type='number' min='0' max='100' step='any' inputmode='decimal'></div>";
+      $("scoreEditAttendance").value = score.grade_level === "請假" ? "請假" : "normal";
+      $("scoreEditNumeric").value = score.score == null ? "" : score.score;
+    }
+    const gradeControl = $("scoreEditGrade") || $("scoreEditAttendance");
+    if (gradeControl) gradeControl.addEventListener("change", updateNumericVisibility);
+    updateNumericVisibility();
+  }
+
+  function updateNumericVisibility() {
+    const gradeControl = $("scoreEditGrade") || $("scoreEditAttendance");
+    const numericField = $("scoreEditNumericField");
+    if (!gradeControl || !numericField) return;
+    const status = gradeControl.value;
+    numericField.style.display = status === "請假" || status === "缺考" ? "none" : "block";
+  }
+
+  $("scoreEditSubject").addEventListener("change", renderValueFields);
+  $("scoreEditClose").addEventListener("click", closeScoreEditModal);
+  $("scoreEditCancel").addEventListener("click", closeScoreEditModal);
+  modal.addEventListener("click", function (event) {
+    if (event.target === modal) closeScoreEditModal();
+  });
+  document.addEventListener("keydown", handleScoreEditEscape);
+  renderValueFields();
+  $("scoreEditScope").focus();
+
+  $("scoreEditForm").addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const saveButton = $("scoreEditSave");
+    if (saveButton.disabled) return;
+    const subject = $("scoreEditSubject").value;
+    const scope = $("scoreEditScope").value.trim();
+    if (!SUBJECTS.includes(subject) || !scope) {
+      showMessage("請確認科目及考試範圍均已填寫。", "error", true);
       return;
     }
 
-    if (gradeLevel !== "缺考" && gradeLevel !== "請假") {
-      if (grade3Math) {
-        const value = prompt("請輸入國三數學分數（0～100）：", score.score == null ? "" : String(score.score));
-        if (value === null) return;
-        scoreValue = Number(value);
-        if (value.trim() === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-          showMessage("國三數學分數必須是 0～100。", "error");
+    const grade3Math = isGrade3Math(student.class_name, subject);
+    let scoreValue = null;
+    let correctCount = null;
+    let gradeLevel = null;
+    if (grade3 || grade3Math) {
+      gradeLevel = $("scoreEditGrade").value;
+      if (!GRADE_OPTIONS.includes(gradeLevel)) {
+        showMessage("請選擇正確的模擬考等級或出席狀態。", "error", true);
+        return;
+      }
+      if (gradeLevel !== "缺考" && gradeLevel !== "請假") {
+        const value = $("scoreEditNumeric").value;
+        if (value.trim() === "") {
+          showMessage("請輸入成績數值。", "error", true);
           return;
         }
-      } else {
-        const value = prompt("請輸入答對題數：", score.correct_count == null ? "" : String(score.correct_count));
-        if (value === null) return;
-        correctCount = Number(value);
-        if (value.trim() === "" || !Number.isInteger(correctCount) || correctCount < 0) {
-          showMessage("答對題數必須是 0 或正整數。", "error");
-          return;
+        if (grade3Math) {
+          scoreValue = Number(value);
+          if (!Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+            showMessage("國三數學分數必須是 0～100。", "error", true);
+            return;
+          }
+        } else {
+          correctCount = Number(value);
+          if (!Number.isInteger(correctCount) || correctCount < 0) {
+            showMessage("答對題數必須是 0 或正整數。", "error", true);
+            return;
+          }
         }
       }
-    }
-  } else {
-    const defaultValue = score.grade_level === "請假" ? "請假" : (score.score == null ? "" : String(score.score));
-    const value = prompt("請輸入一般成績（0～100），或輸入「請假」：", defaultValue);
-    if (value === null) return;
-    if (value.trim() === "請假") {
+    } else if ($("scoreEditAttendance").value === "請假") {
       gradeLevel = "請假";
     } else {
-      scoreValue = Number(value);
-      if (value.trim() === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
-        showMessage("一般成績必須是 0～100，或輸入「請假」。", "error");
+      scoreValue = Number($("scoreEditNumeric").value);
+      if ($("scoreEditNumeric").value.trim() === "" || !Number.isFinite(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+        showMessage("一般成績必須是 0～100。", "error", true);
         return;
       }
     }
-  }
 
-  const resultLabel = gradeLevel === "請假" || gradeLevel === "缺考"
-    ? gradeLevel
-    : grade3Math
-      ? scoreValue + " 分／" + gradeLevel
-      : grade3
-        ? correctCount + " 題／" + gradeLevel
-        : scoreValue + " 分";
+    const resultLabel = gradeLevel === "請假" || gradeLevel === "缺考"
+      ? gradeLevel
+      : grade3Math ? scoreValue + " 分／" + gradeLevel
+      : grade3 ? correctCount + " 題／" + gradeLevel
+      : scoreValue + " 分";
+    if (!confirm("確認修改這筆成績嗎？\\n\\n學生：" + student.full_name +
+      "\\n科目：" + subject + "\\n考試範圍：" + scope + "\\n成績：" + resultLabel +
+      "\\n\\n此操作會更新原有資料，不會新增另一筆成績。")) return;
 
-  const confirmed = confirm(
-    "確認修改這筆成績嗎？\n\n" +
-    "學生：" + student.full_name + "\n" +
-    "科目：" + subject + "\n" +
-    "考試範圍：" + scope + "\n" +
-    "成績：" + resultLabel + "\n" +
-    "此操作會更新原有資料，不會新增另一筆成績。"
-  );
-  if (!confirmed) return;
-
-  const payload = {
-    subject: subject,
-    scope: scope,
-    score: scoreValue,
-    correct_count: correctCount,
-    grade_level: gradeLevel
-  };
-
-  try {
-    const result = await db.from("scores").update(payload).eq("id", scoreId);
-    if (result.error) throw result.error;
-    await loadAdminData();
-    renderOverview(overviewFilters);
-    showMessage("「" + student.full_name + "」的成績已修改成功。", "success", true);
-    window.scrollTo({ top: overviewScrollY, behavior: "auto" });
-  } catch (error) {
-    showMessage("修改成績失敗：" + error.message, "error");
-  }
+    const payload = {
+      subject: subject,
+      scope: scope,
+      score: scoreValue,
+      correct_count: correctCount,
+      grade_level: gradeLevel
+    };
+    saveButton.disabled = true;
+    saveButton.textContent = "儲存中……";
+    try {
+      const result = await db.from("scores").update(payload).eq("id", scoreId);
+      if (result.error) throw result.error;
+      await loadAdminData();
+      closeScoreEditModal();
+      renderOverview(overviewFilters);
+      showMessage("「" + student.full_name + "」的成績已修改成功。", "success", true);
+      window.scrollTo({ top: overviewScrollY, behavior: "auto" });
+    } catch (error) {
+      saveButton.disabled = false;
+      saveButton.textContent = "儲存修改";
+      showMessage("修改成績失敗，原資料未變更。原因：" + error.message, "error", true);
+    }
+  });
 }
 
 // ==================================================
@@ -1625,8 +1718,14 @@ async function saveScore(event) {
     updateScoreMode();
     const counter = $("scoreEntryCounter");
     if (counter) counter.textContent = "本次頁面已成功登錄 " + scoreEntrySavedCount + " 筆";
+    const savedExam = examsCache.find(item => String(item.id) === String(examId));
+    const savedResultText = gradeLevel === "請假" || gradeLevel === "缺考" ? gradeLevel :
+      grade3Math ? scoreValue + " 分／" + gradeLevel :
+      grade3 ? correctCount + " 題／" + gradeLevel : scoreValue + " 分";
     showMessage((duplicate ? "原有成績已成功覆蓋。" : "成績已成功儲存。") +
-      "本次頁面累計完成 " + scoreEntrySavedCount + " 筆。", "success", true);
+      " 學生：" + student.full_name + "（" + student.class_name + "）；考試：" + formatDateRange(savedExam) +
+      "；科目：" + subject + "；範圍：" + scope + "；結果：" + savedResultText +
+      "。本次頁面累計完成 " + scoreEntrySavedCount + " 筆。", "success", true);
   } catch (error) {
     showMessage("成績儲存失敗，原輸入資料已保留。原因：" + error.message, "error", true);
   } finally {
