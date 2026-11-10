@@ -2307,7 +2307,7 @@ function renderTeacherManagement() {
       "</div><button class='btn btn-success' type='submit' id='createTeacherButton'>建立教師帳號</button></form>" +
     "</div>" +
     "<div class='panel'><h3>教師帳號管理</h3>" +
-      "<p class='muted'>新建教師帳號的預設密碼為 123456；若教師忘記密碼，可由管理員個別重設並取得臨時密碼。每次新建或重設後，教師登入都必須先更改為至少 8 個字元的新密碼，才能查詢成績。</p>" +
+      "<p class='muted'>教師帳號建立後，管理員會私下提供登入資訊。教師首次登入或密碼重設後，必須先更改為至少 8 個字元的新密碼，才能查詢成績。</p>" +
       "<div class='table-wrap'><table class='teacher-account-table'><thead><tr><th>教師登入 Email</th><th>操作</th></tr></thead>" +
       "<tbody id='teacherAccountRows'>" +
         (teacherProfilesCache.map(function (profile) {
