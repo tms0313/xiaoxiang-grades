@@ -343,6 +343,12 @@ style.textContent = [
   ".alumni-score-total strong { font-size:20px; }",
   ".alumni-score-table { min-width:920px; }",
   ".alumni-score-table td,.alumni-score-table th { text-align:center; white-space:nowrap; }",
+  ".alumni-score-table th { padding:8px 9px; }",
+  ".alumni-score-table td { padding:5px 9px; line-height:1.25; }",
+  ".alumni-filter-row { display:flex; align-items:center; flex-wrap:nowrap; gap:10px; margin:0 0 14px; }",
+  ".alumni-filter-row select,.alumni-filter-row input { box-sizing:border-box; width:auto; min-width:180px; flex:1 1 0; padding:10px 12px; border:1px solid #ccd4df; border-radius:8px; background:#fff; }",
+  ".alumni-filter-row .btn { flex:0 0 auto; white-space:nowrap; }",
+  "@media(max-width:600px) { .alumni-filter-row { gap:6px; } .alumni-filter-row select,.alumni-filter-row input { min-width:0; width:100%; padding:9px 7px; font-size:13px; } .alumni-filter-row .btn { padding:8px 9px; font-size:12px; } }",
   ".alumni-score-table td:nth-child(2),.alumni-score-table th:nth-child(2),.alumni-score-table td:nth-child(3),.alumni-score-table th:nth-child(3) { text-align:left; }",
   ".alumni-score-actions { display:flex; gap:5px; justify-content:center; }",
   "@media(max-width:760px) { .alumni-score-basic-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .alumni-score-subject-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }",
@@ -3968,8 +3974,8 @@ async function renderAlumniMockScores() {
       "</form>" +
     "</div>" +
     "<h3 style='color:#23466b;margin:0 0 10px'>歷屆成績資料</h3>" +
-    "<div class='toolbar'>" +
-      "<input id='alumniYearFilter' type='text' placeholder='依學年度查詢'>" +
+    "<div class='alumni-filter-row'>" +
+      "<select id='alumniYearFilter' aria-label='依學年度查詢'><option value=''>全部學年度</option></select>" +
       "<input id='alumniNameFilter' type='text' placeholder='搜尋學生姓名'>" +
       "<button class='btn btn-secondary' id='alumniClearFilter' type='button'>清除條件</button>" +
     "</div>" +
@@ -4068,13 +4074,25 @@ async function renderAlumniMockScores() {
       return;
     }
     records = result.data || [];
+    const yearSelect = $("alumniYearFilter");
+    const selectedYear = yearSelect.value;
+    const years = Array.from(new Set(records.map(function (record) {
+      return String(record.academic_year || "").trim();
+    }).filter(Boolean))).sort(function (a, b) {
+      return b.localeCompare(a, "zh-Hant", { numeric: true });
+    });
+    yearSelect.innerHTML = "<option value=''>全部學年度</option>" +
+      years.map(function (year) {
+        return "<option value='" + escapeHtml(year) + "'>" + escapeHtml(year) + "</option>";
+      }).join("");
+    if (years.includes(selectedYear)) yearSelect.value = selectedYear;
     renderRows();
   }
 
   fields.forEach(function (item) {
     $(item[1]).addEventListener("input", updateTotalPreview);
   });
-  $("alumniYearFilter").addEventListener("input", renderRows);
+  $("alumniYearFilter").addEventListener("change", renderRows);
   $("alumniNameFilter").addEventListener("input", renderRows);
   $("alumniClearFilter").addEventListener("click", function () {
     $("alumniYearFilter").value = "";
