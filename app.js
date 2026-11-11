@@ -343,6 +343,7 @@ style.textContent = [
   ".alumni-score-total strong { font-size:20px; }",
   ".alumni-score-table { min-width:920px; }",
   ".alumni-score-table td { text-align:left; white-space:nowrap; }",
+  ".alumni-score-table td.alumni-score-number { text-align:center; }",
   ".alumni-score-table th { text-align:center; white-space:nowrap; }",
   ".alumni-score-table th { padding:8px 9px; }",
   ".alumni-score-table td { padding:5px 9px; line-height:1.25; }",
@@ -4122,19 +4123,19 @@ async function renderAlumniMockScores() {
     ].filter(function (item) { return !subjectQuery || item[0] === subjectQuery; });
     const rows = filtered.map(function (record) {
       const subjectCells = subjectColumns.map(function (item) {
-        return "<td>" + escapeHtml(record[item[0]]) + "</td>";
+        return "<td class='alumni-score-number'>" + escapeHtml(record[item[0]]) + "</td>";
       }).join("");
       return "<tr>" +
         "<td>" + escapeHtml(record.academic_year) + "</td>" +
         "<td>" + escapeHtml(record.student_name) + "</td>" +
         "<td>" + escapeHtml(record.exam_scope === "正式模考" ? "北北基" : record.exam_scope === "班內模考" ? "班內" : record.exam_scope) + "</td>" +
         (isOnlyCeesExam ? "" : "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
-        "<td>" + (record.exam_scope === "正式模考" && record.district_gender_rank != null ? escapeHtml(Number(record.district_gender_rank).toLocaleString("en-US")) : "—") + "</td>" +
-        "<td>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(Number(record.district_rank).toLocaleString("en-US")) : "—") + "</td>") +
-        "<td>" + (record.composition_score != null && (record.exam_scope === "正式模考" || record.exam_scope === "會考") ? escapeHtml(record.composition_score) : "—") + "</td>" +
+        "<td class='alumni-score-number'>" + (record.exam_scope === "正式模考" && record.district_gender_rank != null ? escapeHtml(Number(record.district_gender_rank).toLocaleString("en-US")) : "—") + "</td>" +
+        "<td class='alumni-score-number'>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(Number(record.district_rank).toLocaleString("en-US")) : "—") + "</td>") +
         "<td>" + (record.exam_scope === "會考" ? escapeHtml(record.admission_school || "—") : "—") + "</td>" +
         subjectCells +
-        "<td><strong>" + escapeHtml(record.total_grade) + "</strong></td>" +
+        "<td class='alumni-score-number'>" + (record.composition_score != null && (record.exam_scope === "正式模考" || record.exam_scope === "會考") ? escapeHtml(record.composition_score) : "—") + "</td>" +
+        "<td class='alumni-score-number'><strong>" + escapeHtml(record.total_grade) + "</strong></td>" +
         "<td><div class='alumni-score-actions'>" +
           "<button type='button' class='btn btn-small' data-alumni-edit='" + escapeHtml(record.id) + "'>修改</button>" +
           "<button type='button' class='btn btn-danger btn-small' data-alumni-delete='" + escapeHtml(record.id) + "'>刪除</button>" +
@@ -4145,7 +4146,7 @@ async function renderAlumniMockScores() {
     }).join("");
     $("alumniScoreTableArea").innerHTML =
       "<div class='table-wrap'><table class='alumni-score-table'>" +
-        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th>" + (isOnlyCeesExam ? "" : "<th>考試範圍</th><th>區（男／女）排名</th><th>區排名</th>") + "<th>作文</th><th>錄取學校</th>" + subjectHeaders + "<th>總級分</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th>" + (isOnlyCeesExam ? "" : "<th>考試範圍</th><th>區（男／女）排名</th><th>區排名</th>") + "<th>錄取學校</th>" + subjectHeaders + "<th>作文</th><th>總級分</th><th>操作</th></tr></thead>" +
         "<tbody>" + rows + "</tbody></table></div>" +
       "<p class='muted'>共 " + filtered.length + " 筆資料</p>";
   }
