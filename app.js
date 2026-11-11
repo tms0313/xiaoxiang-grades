@@ -353,6 +353,7 @@ style.textContent = [
   ".parent-brand { display:flex; flex-direction:column; gap:4px; }",
   ".parent-brand h1 { font-size:26px; line-height:1.25; letter-spacing:.6px; font-weight:850; }",
   ".parent-brand small { color:rgba(255,255,255,.94); font-size:15px; line-height:1.5; font-weight:650; letter-spacing:.4px; }",
+  ".parent-brand-subtitle { display:block; color:rgba(255,255,255,.94); font-size:14px; line-height:1.5; font-weight:600; letter-spacing:.3px; }",
   ".teacher-dashboard { max-width:1050px; }",
   ".teacher-class-panel { margin-bottom:10px; padding:12px 15px; }",
   ".teacher-class-heading { margin:0 0 9px; padding-bottom:7px; border-bottom:2px solid #dce7f1; color:#23466b; font-size:18px; }",
@@ -3615,7 +3616,7 @@ async function renderParentDashboard() {
   if (studentIds.length === 0) {
     content.innerHTML =
       "<div class='topbar'>" +
-        "<div class='parent-brand'><h1>小象文教機構</h1><small>親愛的家長，您好！</small></div>" +
+        "<div class='parent-brand'><h1>小象文教機構</h1><small>親愛的家長，您好！</small><span class='parent-brand-subtitle'>孩子的學習成績一覽</span></div>" +
         "<div class='parent-top-actions'>" +
           (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換教師模式</button>" : "") +
           "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
@@ -3817,7 +3818,7 @@ async function renderParentDashboard() {
 
   content.innerHTML =
     "<div class='topbar'>" +
-      "<div class='parent-brand'><h1>小象文教機構</h1><small>親愛的家長，您好！</small></div>" +
+      "<div class='parent-brand'><h1>小象文教機構</h1><small>親愛的家長，您好！</small><span class='parent-brand-subtitle'>孩子的學習成績一覽</span></div>" +
       "<div class='parent-top-actions'>" +
         (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換教師模式</button>" : "") +
       "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
