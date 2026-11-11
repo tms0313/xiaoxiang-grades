@@ -345,9 +345,10 @@ style.textContent = [
   ".alumni-score-table td,.alumni-score-table th { text-align:center; white-space:nowrap; }",
   ".alumni-score-table th { padding:8px 9px; }",
   ".alumni-score-table td { padding:5px 9px; line-height:1.25; }",
-  ".alumni-filter-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; gap:8px; margin:0 0 14px; width:100%; }",
-  ".alumni-filter-row select,.alumni-filter-row input { box-sizing:border-box; display:block; width:100%; min-width:0; max-width:none; height:40px; min-height:40px; margin:0; padding:9px 10px; border:1px solid #ccd4df; border-radius:8px; background:#fff; font-size:14px; line-height:20px; }",
-  "@media(max-width:600px) { .alumni-filter-row { gap:6px; } .alumni-filter-row select,.alumni-filter-row input { padding:9px 7px; font-size:13px; } }",
+  ".alumni-filter-row { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); align-items:stretch; gap:8px; margin:0 0 14px; width:100%; }",
+  ".alumni-filter-row select,.alumni-filter-row input { box-sizing:border-box; display:block; width:100%; min-width:0; max-width:none; height:40px; min-height:40px; margin:0; padding:9px 8px; border:1px solid #ccd4df; border-radius:8px; background:#fff; font-size:13px; line-height:20px; }",
+  "@media(max-width:900px) { .alumni-filter-row { grid-template-columns:repeat(3,minmax(0,1fr)); } }",
+  "@media(max-width:600px) { .alumni-filter-row { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; } .alumni-filter-row select,.alumni-filter-row input { padding:9px 7px; font-size:13px; } }",
   ".alumni-score-table td:nth-child(2),.alumni-score-table th:nth-child(2),.alumni-score-table td:nth-child(3),.alumni-score-table th:nth-child(3) { text-align:left; }",
   ".alumni-score-actions { display:flex; gap:3px; justify-content:center; }",
   ".alumni-score-actions .btn { flex:0 0 auto !important; width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }",
@@ -3977,7 +3978,10 @@ async function renderAlumniMockScores() {
     "<h3 style='color:#23466b;margin:0 0 10px'>歷屆成績資料</h3>" +
     "<div class='alumni-filter-row'>" +
       "<select id='alumniYearFilter' aria-label='依學年度查詢'><option value=''>全部學年度</option></select>" +
-      "<input id='alumniNameFilter' type='text' placeholder='搜尋學生姓名'>" +
+      "<input id='alumniNameFilter' type='text' placeholder='搜尋學生姓名' aria-label='搜尋學生姓名'>" +
+      "<select id='alumniTypeFilter' aria-label='依模考類型篩選'><option value=''>全部模考類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option></select>" +
+      "<select id='alumniRangeFilter' aria-label='依考試範圍篩選'><option value=''>全部考試範圍</option></select>" +
+      "<select id='alumniSubjectFilter' aria-label='依考試科目篩選'><option value=''>全部考試科目</option><option value='chinese'>國文</option><option value='math'>數學</option><option value='english'>英文</option><option value='social_studies'>社會</option><option value='natural_science'>自然</option></select>" +
     "</div>" +
     "<div id='alumniScoreTableArea'><div class='muted'>資料載入中……</div></div>";
 
@@ -4035,35 +4039,49 @@ async function renderAlumniMockScores() {
   function renderRows() {
     const yearQuery = $("alumniYearFilter").value.trim().toLowerCase();
     const nameQuery = $("alumniNameFilter").value.trim().toLowerCase();
+    const typeQuery = $("alumniTypeFilter").value;
+    const rangeQuery = $("alumniRangeFilter").value;
+    const subjectQuery = $("alumniSubjectFilter").value;
     const filtered = records.filter(function (record) {
       return String(record.academic_year || "").toLowerCase().includes(yearQuery) &&
-        String(record.student_name || "").toLowerCase().includes(nameQuery);
+        String(record.student_name || "").toLowerCase().includes(nameQuery) &&
+        (!typeQuery || String(record.exam_scope || "") === typeQuery) &&
+        (!rangeQuery || String(record.exam_range || "") === rangeQuery);
     });
     if (!filtered.length) {
       $("alumniScoreTableArea").innerHTML = "<div class='empty'>" +
         (records.length ? "沒有符合查詢條件的資料。" : "目前尚無歷屆模考成績。") + "</div>";
       return;
     }
+    const subjectColumns = [
+      ["chinese", "國文"],
+      ["math", "數學"],
+      ["english", "英文"],
+      ["social_studies", "社會"],
+      ["natural_science", "自然"]
+    ].filter(function (item) { return !subjectQuery || item[0] === subjectQuery; });
     const rows = filtered.map(function (record) {
+      const subjectCells = subjectColumns.map(function (item) {
+        return "<td>" + escapeHtml(record[item[0]]) + "</td>";
+      }).join("");
       return "<tr>" +
         "<td>" + escapeHtml(record.academic_year) + "</td>" +
         "<td>" + escapeHtml(record.student_name) + "</td>" +
         "<td>" + escapeHtml(record.exam_scope) + "</td>" +
         "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
-        "<td>" + escapeHtml(record.chinese) + "</td>" +
-        "<td>" + escapeHtml(record.math) + "</td>" +
-        "<td>" + escapeHtml(record.english) + "</td>" +
-        "<td>" + escapeHtml(record.social_studies) + "</td>" +
-        "<td>" + escapeHtml(record.natural_science) + "</td>" +
+        subjectCells +
         "<td><strong>" + escapeHtml(record.total_grade) + " / 35</strong></td>" +
         "<td><div class='alumni-score-actions'>" +
           "<button type='button' class='btn btn-small' data-alumni-edit='" + escapeHtml(record.id) + "'>修改</button>" +
           "<button type='button' class='btn btn-danger btn-small' data-alumni-delete='" + escapeHtml(record.id) + "'>刪除</button>" +
         "</div></td></tr>";
     }).join("");
+    const subjectHeaders = subjectColumns.map(function (item) {
+      return "<th>" + item[1] + "</th>";
+    }).join("");
     $("alumniScoreTableArea").innerHTML =
       "<div class='table-wrap'><table class='alumni-score-table'>" +
-        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th><th>考試範圍</th><th>國文</th><th>數學</th><th>英文</th><th>社會</th><th>自然</th><th>總級分</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th><th>考試範圍</th>" + subjectHeaders + "<th>總級分</th><th>操作</th></tr></thead>" +
         "<tbody>" + rows + "</tbody></table></div>" +
       "<p class='muted'>共 " + filtered.length + " 筆資料</p>";
   }
@@ -4094,6 +4112,18 @@ async function renderAlumniMockScores() {
         return "<option value='" + escapeHtml(year) + "'>" + escapeHtml(year) + "</option>";
       }).join("");
     if (years.includes(selectedYear)) yearSelect.value = selectedYear;
+    const rangeSelect = $("alumniRangeFilter");
+    const selectedRange = rangeSelect.value;
+    const ranges = Array.from(new Set(records.map(function (record) {
+      return String(record.exam_range || "").trim();
+    }).filter(Boolean))).sort(function (a, b) {
+      return a.localeCompare(b, "zh-Hant", { numeric: true });
+    });
+    rangeSelect.innerHTML = "<option value=''>全部考試範圍</option>" +
+      ranges.map(function (range) {
+        return "<option value='" + escapeHtml(range) + "'>" + escapeHtml(range) + "</option>";
+      }).join("");
+    if (ranges.includes(selectedRange)) rangeSelect.value = selectedRange;
     renderRows();
   }
 
@@ -4102,6 +4132,9 @@ async function renderAlumniMockScores() {
   });
   $("alumniYearFilter").addEventListener("change", renderRows);
   $("alumniNameFilter").addEventListener("input", renderRows);
+  $("alumniTypeFilter").addEventListener("change", renderRows);
+  $("alumniRangeFilter").addEventListener("change", renderRows);
+  $("alumniSubjectFilter").addEventListener("change", renderRows);
   $("alumniCancelEdit").addEventListener("click", resetForm);
 
   $("alumniScoreForm").addEventListener("submit", async function (event) {
