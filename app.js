@@ -348,6 +348,7 @@ style.textContent = [
   ".alumni-filter-row { display:flex; align-items:stretch; flex-wrap:nowrap; gap:8px; margin:0 0 14px; width:100%; }",
   ".alumni-filter-row select,.alumni-filter-row input,.alumni-filter-row .btn { box-sizing:border-box; flex:1 1 0; width:0; min-width:0; max-width:none; }",
   ".alumni-filter-row select,.alumni-filter-row input { padding:10px 9px; border:1px solid #ccd4df; border-radius:8px; background:#fff; }",
+  " .alumni-filter-row select { height:40px; min-height:40px; padding:9px; font-size:14px; }",
   ".alumni-filter-row .btn { padding:10px 6px; white-space:nowrap; font-size:13px; }",
   "@media(max-width:600px) { .alumni-filter-row { gap:5px; } .alumni-filter-row select,.alumni-filter-row input { padding:9px 5px; font-size:12px; } .alumni-filter-row .btn { padding:9px 3px; font-size:11px; } }",
   ".alumni-score-table td:nth-child(2),.alumni-score-table th:nth-child(2),.alumni-score-table td:nth-child(3),.alumni-score-table th:nth-child(3) { text-align:left; }",
