@@ -942,7 +942,7 @@ function renderAdminDashboard() {
         
         "<button class='tab-btn' data-tab='guardians'>家長綁定</button>" +
         "<button class='tab-btn' data-tab='teachers'>教師管理</button>" +
-        "<button class='tab-btn' data-tab='passwords'>家長密碼</button>" +
+        "<button class='tab-btn' data-tab='passwords'>家長帳號管理</button>" +
         "<button class='tab-btn' data-tab='logs'>登入紀錄</button>" +
         "<button class='tab-btn' data-tab='export'>成績匯出</button>" +
       "</div>" +
@@ -3389,67 +3389,92 @@ function renderPasswords() {
   const content = $("adminContent");
 
   const rows = profilesCache.map(function (profile) {
+    const loginAccount = profile.email || profile.phone || "—";
     return "<tr>" +
       "<td>" + escapeHtml(profile.display_name || "—") + "</td>" +
-      "<td>" + escapeHtml(profile.email) + "</td>" +
-      "<td><button class='btn btn-small' data-reset-parent='" + escapeHtml(profile.id) + "'>重設家長密碼</button></td>" +
+      "<td>" + escapeHtml(loginAccount) + "</td>" +
+      "<td><div class='action-buttons'>" +
+        "<button class='btn btn-small' data-reset-parent='" + escapeHtml(profile.id) + "'>重設密碼</button>" +
+        "<button class='btn btn-danger btn-small' data-delete-parent='" + escapeHtml(profile.id) + "'>刪除帳號</button>" +
+      "</div></td>" +
       "</tr>";
   }).join("");
 
   content.innerHTML =
-    "<h2 class='section-title'>家長密碼管理</h2>" +
-    "<p class='muted'>透過既有 Edge Function 重設家長帳號密碼。</p>" +
+    "<h2 class='section-title'>家長帳號管理</h2>" +
+    "<p class='muted'>可重設家長登入密碼，或刪除不再使用的家長帳號。刪除帳號後，該家長將無法再登入，且會解除其學生綁定；學生資料及成績不會刪除。</p>" +
     "<div class='table-wrap password-table-wrap'><table class='password-management-table'>" +
-      "<thead><tr><th>家長姓名</th><th>登入帳號</th><th>操作</th></tr></thead>" +
+      "<thead><tr><th>家長姓名</th><th>登入帳號（Email／手機）</th><th>操作</th></tr></thead>" +
       "<tbody>" + (rows || "<tr><td colspan='3' class='empty'>目前沒有家長帳號</td></tr>") + "</tbody>" +
     "</table></div>";
 
   content.onclick = async function (event) {
-    const button = event.target.closest("[data-reset-parent]");
-    if (button) await resetParentPassword(button.dataset.resetParent);
+    const resetButton = event.target.closest("[data-reset-parent]");
+    if (resetButton) {
+      await resetParentPassword(resetButton.dataset.resetParent);
+      return;
+    }
+
+    const deleteButton = event.target.closest("[data-delete-parent]");
+    if (deleteButton) {
+      await deleteParentAccount(deleteButton.dataset.deleteParent);
+    }
   };
 }
 
-async function resetParentPassword(parentUserId) {
-  if (!confirm("確定要重設這位家長的登入密碼？")) return;
+async function deleteParentAccount(parentUserId) {
+  const parent = profilesCache.find(function (profile) {
+    return String(profile.id) === String(parentUserId);
+  });
+
+  if (!parent) {
+    showMessage("找不到這筆家長帳號資料，請重新整理後再試。", "error");
+    return;
+  }
+
+  const loginAccount = parent.email || parent.phone || "未設定";
+  const confirmed = confirm(
+    "確定要永久刪除以下家長帳號？\n\n" +
+    "家長姓名：" + (parent.display_name || "未命名") + "\n" +
+    "登入帳號：" + loginAccount + "\n\n" +
+    "刪除後：\n" +
+    "1. 該家長將無法再登入。\n" +
+    "2. 該家長與學生的綁定將解除。\n" +
+    "3. 學生資料及考試成績會保留。\n\n" +
+    "此操作無法復原，確定要刪除嗎？"
+  );
+  if (!confirmed) return;
+
+  const button = document.querySelector("[data-delete-parent='" + parentUserId + "']");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "刪除中…";
+  }
 
   try {
-    const result = await db.functions.invoke(
-      "admin-reset-parent-password",
-      {
-        body: { parentUserId: parentUserId }
-      }
-    );
+    const result = await db.functions.invoke("admin-delete-parent-account", {
+      body: { parentId: parentUserId }
+    });
 
-    if (result.error) throw result.error;
+    if (result.error) {
+      const detail = result.data && result.data.error ? result.data.error : result.error.message;
+      throw new Error(detail || "刪除家長帳號失敗。");
+    }
 
     const data = result.data || {};
-
-    if (!data.success || !data.temporaryPassword) {
-      throw new Error(data.error || "重設成功，但沒有取得臨時密碼。");
+    if (!data.success) {
+      throw new Error(data.error || "刪除家長帳號失敗。");
     }
 
-    const temporaryPassword = data.temporaryPassword;
-
-    const copied = confirm(
-      "家長臨時密碼已重設成功！\n\n" +
-      "臨時密碼：\n" + temporaryPassword +
-      "\n\n請先記下這組密碼，再透過 LINE 提供給家長。\n\n按「確定」複製臨時密碼。"
-    );
-
-    if (copied) {
-      try {
-        await navigator.clipboard.writeText(temporaryPassword);
-        showMessage("臨時密碼已複製，可以貼到 LINE 傳給家長。", "success");
-      } catch (copyError) {
-        showMessage("臨時密碼：" + temporaryPassword, "success");
-      }
-    } else {
-      showMessage("臨時密碼已產生，請記下剛才顯示的密碼。", "success");
-    }
-
+    await loadAdminData();
+    renderPasswords();
+    showMessage("家長帳號已刪除，學生資料及成績均已保留。", "success");
   } catch (error) {
-    showMessage("密碼重設失敗：" + error.message, "error");
+    if (button) {
+      button.disabled = false;
+      button.textContent = "刪除帳號";
+    }
+    showMessage("刪除家長帳號失敗：" + error.message, "error");
   }
 }
 
