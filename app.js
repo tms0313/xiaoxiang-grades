@@ -360,8 +360,8 @@ style.textContent = [
   ".overview-table .action-buttons { gap:3px; }",
   ".overview-table .action-buttons .btn { padding:2.5px 4.5px; font-size:6px; line-height:1.35; border-radius:5px; }",
   ".overview-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; line-height:30px !important; border-radius:6px !important; }",
-  ".teacher-account-table .action-buttons { display:inline-flex; align-items:center; gap:9px; white-space:nowrap; }",
-  ".teacher-account-table .action-buttons .btn { min-width:0 !important; height:30px !important; min-height:30px !important; padding:0 8px !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; }",
+  ".teacher-account-table .action-buttons { display:inline-flex; align-items:center; flex-wrap:nowrap; gap:4px; white-space:nowrap; }",
+  ".teacher-account-table .action-buttons .btn { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:27px !important; min-height:27px !important; padding:0 7px !important; font-size:11px !important; font-weight:700 !important; line-height:27px !important; border-radius:5px !important; white-space:nowrap; }",
 
   ".action-cell { min-width:155px; white-space:nowrap; }",
   ".action-buttons { display:flex; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:5px; white-space:nowrap; }",
