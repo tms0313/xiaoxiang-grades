@@ -4132,7 +4132,7 @@ async function renderAlumniMockScores() {
         (isOnlyCeesExam ? "" : "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
         "<td class='alumni-score-number'>" + (record.exam_scope === "正式模考" && record.district_gender_rank != null ? escapeHtml(Number(record.district_gender_rank).toLocaleString("en-US")) : "—") + "</td>" +
         "<td class='alumni-score-number'>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(Number(record.district_rank).toLocaleString("en-US")) : "—") + "</td>") +
-        "<td>" + (record.exam_scope === "會考" ? escapeHtml(record.admission_school || "—") : "—") + "</td>" +
+        "<td>" + (record.exam_scope === "會考" ? escapeHtml(record.admission_school || "") : "") + "</td>" +
         subjectCells +
         "<td class='alumni-score-number'>" + (record.composition_score != null && (record.exam_scope === "正式模考" || record.exam_scope === "會考") ? escapeHtml(record.composition_score) : "—") + "</td>" +
         "<td class='alumni-score-number'><strong>" + escapeHtml(record.total_grade) + "</strong></td>" +
