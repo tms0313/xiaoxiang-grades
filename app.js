@@ -3982,7 +3982,7 @@ async function renderAlumniMockScores() {
     "<div class='alumni-filter-row'>" +
       "<select id='alumniYearFilter' aria-label='依學年度查詢'><option value=''>全部學年度</option></select>" +
       "<input id='alumniNameFilter' type='text' placeholder='搜尋學生姓名' aria-label='搜尋學生姓名'>" +
-      "<select id='alumniTypeFilter' aria-label='依模考類型篩選'><option value=''>全部模考類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option></select>" +
+      "<select id='alumniTypeFilter' aria-label='依類型篩選'><option value=''>全部類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option><option value='會考'>會考</option></select>" +
       "<select id='alumniRangeFilter' aria-label='依考試範圍篩選'><option value=''>全部考試範圍</option></select>" +
       "<select id='alumniSubjectFilter' aria-label='依考試科目篩選'><option value=''>全部考試科目</option><option value='chinese'>國文</option><option value='math'>數學</option><option value='english'>英文</option><option value='social_studies'>社會</option><option value='natural_science'>自然</option></select>" +
     "</div>" +
@@ -4186,7 +4186,7 @@ async function renderAlumniMockScores() {
   $("alumniRangeFilter").addEventListener("change", renderRows);
   $("alumniSubjectFilter").addEventListener("change", renderRows);
   $("alumniCancelEdit").addEventListener("click", resetForm);
-  $("alumniExamScope").addEventListener("change", updateRankFields);
+  $("alumniExamScope").addEventListener("change", function () { updateRankFields(); updateTotalPreview(); });
   updateRankFields();
 
   $("alumniScoreForm").addEventListener("submit", async function (event) {
