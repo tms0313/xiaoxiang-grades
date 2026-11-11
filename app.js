@@ -3986,7 +3986,7 @@ async function renderAlumniMockScores() {
           "<div class='field'><label for='alumniAcademicYear'>學年度（新增後會保留，可自行更改）</label><input id='alumniAcademicYear' type='text' placeholder='例如：114學年度' maxlength='30' required></div>" +
           "<div class='field'><label for='alumniStudentName'>學生姓名</label><input id='alumniStudentName' type='text' maxlength='50' required></div>" +
           "<div class='field'><label for='alumniExamScope'>新增類型（新增後會保留，可自行更改）</label><select id='alumniExamScope' required><option value=''>請選擇類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>北北基模考</option><option value='會考'>會考</option></select></div>" +
-          "<div class='field'><label for='alumniExamRange'>考試範圍</label><input id='alumniExamRange' type='text' maxlength='100' placeholder='例如：第一次模擬考全範圍' required></div>" +
+          "<div class='field' id='alumniExamRangeField'><label for='alumniExamRange'>考試範圍</label><input id='alumniExamRange' type='text' maxlength='100' placeholder='例如：第一次模擬考全範圍' required></div>" +
           "<div class='field alumni-rank-field' id='alumniGenderRankField' style='display:none'><label for='alumniGenderRank'>區（男／女）排名</label><input id='alumniGenderRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>" +
           "<div class='field alumni-rank-field' id='alumniDistrictRankField' style='display:none'><label for='alumniDistrictRank'>區排名</label><input id='alumniDistrictRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>" +
           "<div class='field alumni-rank-field' id='alumniCompositionScoreField' style='display:none'><label for='alumniCompositionScore'>作文（0～1.2分）</label><input id='alumniCompositionScore' type='number' min='0' max='1.2' step='0.1' placeholder='0～1.2'></div><div class='field' id='alumniAdmissionSchoolField' style='display:none'><label for='alumniAdmissionSchool'>錄取學校</label><input id='alumniAdmissionSchool' type='text' maxlength='100' placeholder='請輸入錄取學校'></div>" +
@@ -4029,6 +4029,8 @@ async function renderAlumniMockScores() {
     const examType = $("alumniExamScope").value;
     const isFormal = examType === "正式模考";
     const isExam = examType === "會考";
+    $("alumniExamRangeField").style.display = isExam ? "none" : "block";
+    $("alumniExamRange").required = !isExam;
     $("alumniGenderRankField").style.display = isFormal ? "block" : "none";
     $("alumniDistrictRankField").style.display = isFormal ? "block" : "none";
     $("alumniCompositionScoreField").style.display = (isFormal || isExam) ? "block" : "none";
@@ -4105,6 +4107,7 @@ async function renderAlumniMockScores() {
         (!typeQuery || String(record.exam_scope || "") === typeQuery) &&
         (!rangeQuery || String(record.exam_range || "") === rangeQuery);
     });
+    const isOnlyCeesExam = typeQuery === "會考";
     if (!filtered.length) {
       $("alumniScoreTableArea").innerHTML = "<div class='empty'>" +
         (records.length ? "沒有符合查詢條件的資料。" : "目前尚無模考成績。") + "</div>";
@@ -4125,9 +4128,9 @@ async function renderAlumniMockScores() {
         "<td>" + escapeHtml(record.academic_year) + "</td>" +
         "<td>" + escapeHtml(record.student_name) + "</td>" +
         "<td>" + escapeHtml(record.exam_scope === "正式模考" ? "北北基" : record.exam_scope === "班內模考" ? "班內" : record.exam_scope) + "</td>" +
-        "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
+        (isOnlyCeesExam ? "" : "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
         "<td>" + (record.exam_scope === "正式模考" && record.district_gender_rank != null ? escapeHtml(Number(record.district_gender_rank).toLocaleString("en-US")) : "—") + "</td>" +
-        "<td>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(Number(record.district_rank).toLocaleString("en-US")) : "—") + "</td>" +
+        "<td>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(Number(record.district_rank).toLocaleString("en-US")) : "—") + "</td>") +
         "<td>" + (record.composition_score != null && (record.exam_scope === "正式模考" || record.exam_scope === "會考") ? escapeHtml(record.composition_score) : "—") + "</td>" +
         "<td>" + (record.exam_scope === "會考" ? escapeHtml(record.admission_school || "—") : "—") + "</td>" +
         subjectCells +
@@ -4142,7 +4145,7 @@ async function renderAlumniMockScores() {
     }).join("");
     $("alumniScoreTableArea").innerHTML =
       "<div class='table-wrap'><table class='alumni-score-table'>" +
-        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th><th>考試範圍</th><th>區（男／女）排名</th><th>區排名</th><th>作文</th><th>錄取學校</th>" + subjectHeaders + "<th>總級分</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th>" + (isOnlyCeesExam ? "" : "<th>考試範圍</th><th>區（男／女）排名</th><th>區排名</th>") + "<th>作文</th><th>錄取學校</th>" + subjectHeaders + "<th>總級分</th><th>操作</th></tr></thead>" +
         "<tbody>" + rows + "</tbody></table></div>" +
       "<p class='muted'>共 " + filtered.length + " 筆資料</p>";
   }
@@ -4229,7 +4232,7 @@ async function renderAlumniMockScores() {
       academic_year: $("alumniAcademicYear").value.trim(),
       student_name: $("alumniStudentName").value.trim(),
       exam_scope: $("alumniExamScope").value.trim(),
-      exam_range: $("alumniExamRange").value.trim(),
+      exam_range: $("alumniExamScope").value === "會考" ? "" : $("alumniExamRange").value.trim(),
       district_gender_rank: null,
       district_rank: null,
       composition_score: null,
@@ -4277,8 +4280,11 @@ async function renderAlumniMockScores() {
       }
       payload[item[0]] = value;
     }
-    if (!payload.academic_year || !payload.student_name || !payload.exam_scope || !payload.exam_range) {
-      alert("學年度、學生姓名、模考類型及考試範圍都必須填寫。");
+    if (!payload.academic_year || !payload.student_name || !payload.exam_scope ||
+        (payload.exam_scope !== "會考" && !payload.exam_range)) {
+      alert(payload.exam_scope === "會考"
+        ? "學年度、學生姓名及模考類型都必須填寫。"
+        : "學年度、學生姓名、模考類型及考試範圍都必須填寫。");
       return;
     }
     // 同一場模考（學年度＋模考類型＋考試範圍）不可重複登錄同一位學生。
