@@ -1827,8 +1827,8 @@ function renderScoreEntry() {
     "<div class='panel'><h3 id='examFormTitle'>新增考試</h3>" +
       "<form id='examForm'><input type='hidden' id='examEditId'>" +
         "<div class='form-grid'>" +
-          "<div class='field'><label>開始日期</label><input id='examStart' type='date' required></div>" +
-          "<div class='field'><label>結束日期</label><input id='examEnd' type='date' required></div>" +
+          "<div class='field'><label>開始日期</label><input id='examStart' type='date' style='width:100%;max-width:180px;box-sizing:border-box' required></div>" +
+          "<div class='field'><label>結束日期</label><input id='examEnd' type='date' style='width:100%;max-width:180px;box-sizing:border-box' required></div>" +
         "</div>" +
         "<div class='toolbar' style='display:flex;flex-direction:row;align-items:center;gap:10px;flex-wrap:nowrap;margin-top:12px'>" +
           "<button class='btn btn-success' type='submit'>儲存考試</button>" +
