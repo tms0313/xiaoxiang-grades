@@ -3962,6 +3962,7 @@ async function renderAlumniMockScores() {
           "<div class='field'><label for='alumniExamRange'>考試範圍</label><input id='alumniExamRange' type='text' maxlength='100' placeholder='例如：第一次模擬考全範圍' required></div>" +
           "<div class='field alumni-rank-field' id='alumniGenderRankField' style='display:none'><label for='alumniGenderRank'>區（男／女）排名</label><input id='alumniGenderRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>" +
           "<div class='field alumni-rank-field' id='alumniDistrictRankField' style='display:none'><label for='alumniDistrictRank'>區排名</label><input id='alumniDistrictRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>" +
+          "<div class='field alumni-rank-field' id='alumniCompositionScoreField' style='display:none'><label for='alumniCompositionScore'>作文成績（0～1.2分）</label><input id='alumniCompositionScore' type='number' min='0' max='1.2' step='0.1' placeholder='0～1.2'></div>" +
         "</div>" +
         "<div class='alumni-score-subject-grid'>" +
           "<div class='field'><label for='alumniChinese'>國文級分（0～7）</label><input id='alumniChinese' type='number' min='0' max='7' step='1' required></div>" +
@@ -4001,6 +4002,7 @@ async function renderAlumniMockScores() {
     const isFormal = $("alumniExamScope").value === "正式模考";
     $("alumniGenderRankField").style.display = isFormal ? "block" : "none";
     $("alumniDistrictRankField").style.display = isFormal ? "block" : "none";
+    $("alumniCompositionScoreField").style.display = isFormal ? "block" : "none";
   }
 
   function updateTotalPreview() {
@@ -4024,6 +4026,7 @@ async function renderAlumniMockScores() {
     $("alumniExamRange").value = keepExamRange;
     $("alumniGenderRank").value = "";
     $("alumniDistrictRank").value = "";
+    $("alumniCompositionScore").value = "";
     updateRankFields();
     $("alumniFormTitle").textContent = "新增歷屆模考成績";
     $("alumniSaveButton").disabled = false;
@@ -4040,6 +4043,7 @@ async function renderAlumniMockScores() {
     $("alumniExamRange").value = record.exam_range || "";
     $("alumniGenderRank").value = record.district_gender_rank == null ? "" : record.district_gender_rank;
     $("alumniDistrictRank").value = record.district_rank == null ? "" : record.district_rank;
+    $("alumniCompositionScore").value = record.composition_score == null ? "" : record.composition_score;
     updateRankFields();
     fields.forEach(function (item) { $(item[1]).value = record[item[0]]; });
     $("alumniFormTitle").textContent = "修改歷屆模考成績";
@@ -4085,6 +4089,7 @@ async function renderAlumniMockScores() {
         "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
         "<td>" + (record.exam_scope === "正式模考" && record.district_gender_rank != null ? escapeHtml(record.district_gender_rank) : "—") + "</td>" +
         "<td>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(record.district_rank) : "—") + "</td>" +
+        "<td>" + (record.exam_scope === "正式模考" && record.composition_score != null ? escapeHtml(record.composition_score) : "—") + "</td>" +
         subjectCells +
         "<td><strong>" + escapeHtml(record.total_grade) + " / 35</strong></td>" +
         "<td><div class='alumni-score-actions'>" +
@@ -4097,7 +4102,7 @@ async function renderAlumniMockScores() {
     }).join("");
     $("alumniScoreTableArea").innerHTML =
       "<div class='table-wrap'><table class='alumni-score-table'>" +
-        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th><th>考試範圍</th><th>區（男／女）排名</th><th>區排名</th>" + subjectHeaders + "<th>總級分</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th><th>考試範圍</th><th>區（男／女）排名</th><th>區排名</th><th>作文成績</th>" + subjectHeaders + "<th>總級分</th><th>操作</th></tr></thead>" +
         "<tbody>" + rows + "</tbody></table></div>" +
       "<p class='muted'>共 " + filtered.length + " 筆資料</p>";
   }
@@ -4185,7 +4190,8 @@ async function renderAlumniMockScores() {
       exam_scope: $("alumniExamScope").value.trim(),
       exam_range: $("alumniExamRange").value.trim(),
       district_gender_rank: null,
-      district_rank: null
+      district_rank: null,
+      composition_score: null
     };
     if (payload.exam_scope === "正式模考") {
       const genderRankRaw = $("alumniGenderRank").value.trim();
@@ -4202,6 +4208,17 @@ async function renderAlumniMockScores() {
       }
       payload.district_gender_rank = genderRankRaw === "" ? null : Number(genderRankRaw);
       payload.district_rank = districtRankRaw === "" ? null : Number(districtRankRaw);
+      const compositionRaw = $("alumniCompositionScore").value.trim();
+      if (compositionRaw !== "") {
+        const compositionValue = Number(compositionRaw);
+        if (!Number.isFinite(compositionValue) || compositionValue < 0 || compositionValue > 1.2 ||
+            Math.abs(compositionValue * 10 - Math.round(compositionValue * 10)) > 1e-8) {
+          alert("作文成績請輸入 0～1.2 分，最多至小數點後 1 位。");
+          $("alumniCompositionScore").focus();
+          return;
+        }
+        payload.composition_score = compositionValue;
+      }
     }
     for (const item of fields) {
       const raw = $(item[1]).value;
