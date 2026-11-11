@@ -335,14 +335,18 @@ style.textContent = [
   ".teacher-toolbar #teacherRefreshButton { align-self:flex-start; }",
   ".form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }",
   ".alumni-score-form { background:#f7f9fc; border:1px solid #dfe7ef; border-radius:12px; padding:18px; margin-bottom:20px; }",
-  ".alumni-score-form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:12px; }",
-  ".alumni-score-form .field { margin-bottom:8px; }",
-  ".alumni-score-total { display:flex; align-items:center; gap:8px; padding:10px 13px; background:#eaf2f9; border-radius:8px; color:#23466b; font-weight:800; }",
+  ".alumni-score-basic-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }",
+  ".alumni-score-subject-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; align-items:end; margin-top:8px; }",
+  ".alumni-score-form .field { margin-bottom:8px; min-width:0; }",
+  ".alumni-score-form .field input,.alumni-score-form .field select { box-sizing:border-box; min-width:0; }",
+  ".alumni-score-total { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:6px; min-height:70px; box-sizing:border-box; padding:10px 8px; background:#eaf2f9; border-radius:8px; color:#23466b; font-weight:800; text-align:center; }",
+  ".alumni-score-total strong { font-size:20px; }",
   ".alumni-score-table { min-width:920px; }",
   ".alumni-score-table td,.alumni-score-table th { text-align:center; white-space:nowrap; }",
   ".alumni-score-table td:nth-child(2),.alumni-score-table th:nth-child(2),.alumni-score-table td:nth-child(3),.alumni-score-table th:nth-child(3) { text-align:left; }",
   ".alumni-score-actions { display:flex; gap:5px; justify-content:center; }",
-  "@media(max-width:600px) { .alumni-score-form { padding:13px; } .alumni-score-form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }",
+  "@media(max-width:760px) { .alumni-score-basic-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .alumni-score-subject-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }",
+  "@media(max-width:600px) { .alumni-score-form { padding:13px; } .alumni-score-basic-grid { grid-template-columns:1fr; } .alumni-score-subject-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }",
   ".score-entry-fields-wrap { width:100%; overflow-x:auto; padding-bottom:4px; }",
   ".score-entry-fields { display:grid; grid-template-columns:repeat(6,minmax(130px,1fr)); gap:12px; min-width:852px; }",
   ".score-entry-fields .field { margin-bottom:0; }",
@@ -3944,10 +3948,12 @@ async function renderAlumniMockScores() {
     "<div class='alumni-score-form'>" +
       "<h3 id='alumniFormTitle' style='margin:0 0 14px;color:#23466b'>新增歷屆模考成績</h3>" +
       "<form id='alumniScoreForm'>" +
-        "<div class='alumni-score-form-grid'>" +
+        "<div class='alumni-score-basic-grid'>" +
           "<div class='field'><label for='alumniAcademicYear'>學年度</label><input id='alumniAcademicYear' type='text' placeholder='例如：114學年度' maxlength='30' required></div>" +
           "<div class='field'><label for='alumniStudentName'>學生姓名</label><input id='alumniStudentName' type='text' maxlength='50' required></div>" +
-          "<div class='field'><label for='alumniExamScope'>考試範圍</label><input id='alumniExamScope' type='text' placeholder='例如：第一次模擬考' maxlength='100' required></div>" +
+          "<div class='field'><label for='alumniExamScope'>新增類型</label><select id='alumniExamScope' required><option value=''>請選擇模考類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option></select></div>" +
+        "</div>" +
+        "<div class='alumni-score-subject-grid'>" +
           "<div class='field'><label for='alumniChinese'>國文級分（1～7）</label><input id='alumniChinese' type='number' min='1' max='7' step='1' required></div>" +
           "<div class='field'><label for='alumniMath'>數學級分（1～7）</label><input id='alumniMath' type='number' min='1' max='7' step='1' required></div>" +
           "<div class='field'><label for='alumniEnglish'>英文級分（1～7）</label><input id='alumniEnglish' type='number' min='1' max='7' step='1' required></div>" +
@@ -4090,7 +4096,7 @@ async function renderAlumniMockScores() {
       payload[item[0]] = value;
     }
     if (!payload.academic_year || !payload.student_name || !payload.exam_scope) {
-      alert("學年度、學生姓名及考試範圍都必須填寫。");
+      alert("學年度、學生姓名及模考類型都必須選擇或填寫。");
       return;
     }
     const button = $("alumniSaveButton");
