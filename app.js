@@ -248,8 +248,8 @@ style.textContent = [
 
   ".login-wrap { min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; }",
   ".login-card { width:min(420px,100%); background:#fff; padding:35px; border-radius:18px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
-  ".login-card h1 { text-align:center; font-size:25px; margin:0 0 8px; color:#23466b; }",
-  ".login-card p { text-align:center; color:#788493; margin-bottom:25px; }",
+  ".login-card h1 { text-align:center; font-size:29px; margin:0 0 8px; color:#23466b; }",
+  ".login-card p { text-align:center; color:#315d86; font-size:19px; font-weight:750; margin-bottom:25px; }",
 
   ".field { margin-bottom:16px; }",
   ".field label { display:block; font-weight:700; margin-bottom:7px; }",
@@ -559,7 +559,7 @@ function loginPage() {
     "<div class='login-wrap'>" +
       "<div class='login-card'>" +
         "<h1>小象文教機構</h1>" +
-        "<p>成績管理系統</p>" +
+        " <p>成績查詢系統</p>" +
         "<div id='systemMessage' class='system-message'></div>" +
         "<form id='loginForm'>" +
           "<div class='field'><label for='email'>登入帳號</label>" +
