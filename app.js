@@ -3961,7 +3961,7 @@ async function renderAlumniMockScores() {
           "<div class='field'><label for='alumniExamScope'>新增類型（新增後會保留，可自行更改）</label><select id='alumniExamScope' required><option value=''>請選擇模考類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option></select></div>" +
           "<div class='field'><label for='alumniExamRange'>考試範圍</label><input id='alumniExamRange' type='text' maxlength='100' placeholder='例如：第一次模擬考全範圍' required></div>" +
           "<div class='field alumni-rank-field' id='alumniGenderRankField' style='display:none'><label for='alumniGenderRank'>區（男／女）排名</label><input id='alumniGenderRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>" +
-          "<div class='field alumni-rank-field' id='alumniDistrictRankField' style='display:none'><label for='alumniDistrictRank'>區排名</label><input id='alumniDistrictRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>"
+          "<div class='field alumni-rank-field' id='alumniDistrictRankField' style='display:none'><label for='alumniDistrictRank'>區排名</label><input id='alumniDistrictRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>" +
         "</div>" +
         "<div class='alumni-score-subject-grid'>" +
           "<div class='field'><label for='alumniChinese'>國文級分（0～7）</label><input id='alumniChinese' type='number' min='0' max='7' step='1' required></div>" +
