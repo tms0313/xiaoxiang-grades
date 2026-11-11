@@ -543,10 +543,10 @@ style.textContent = [
 ].join("\n");
 
 style.textContent += "\n" +
-  ".parent-review-action { display:flex; justify-content:flex-end; margin-top:16px; padding-top:13px; border-top:1px solid #e7edf3; }" +
+  ".parent-review-action { display:flex; justify-content:flex-end; margin-top:6px; padding-top:0; border-top:0; }" +
   ".parent-review-btn { width:100%; max-width:320px; min-height:44px; border:0; border-radius:9px; padding:10px 14px; background:#27845b; color:#fff; font-size:15px; font-weight:800; }" +
   ".parent-review-btn:disabled { background:#e2e7ec; color:#64748b; border:1px solid #d2d9e1; opacity:1; cursor:not-allowed; box-shadow:none; }" +
-  "@media(max-width:600px) { .parent-review-action { margin-top:13px; } .parent-review-btn { max-width:none; min-height:46px; font-size:15px; } }";
+  "@media(max-width:600px) { .parent-review-action { margin-top:5px; } .parent-review-btn { max-width:none; min-height:46px; font-size:15px; } }";
 
 document.head.appendChild(style);
 
