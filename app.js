@@ -4097,7 +4097,7 @@ async function renderAlumniMockScores() {
       return "<tr>" +
         "<td>" + escapeHtml(record.academic_year) + "</td>" +
         "<td>" + escapeHtml(record.student_name) + "</td>" +
-        "<td>" + escapeHtml(record.exam_scope) + "</td>" +
+        "<td>" + escapeHtml(record.exam_scope === "正式模考" ? "北北基模考" : record.exam_scope) + "</td>" +
         "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
         "<td>" + (record.exam_scope === "正式模考" && record.district_gender_rank != null ? escapeHtml(record.district_gender_rank) : "—") + "</td>" +
         "<td>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(record.district_rank) : "—") + "</td>" +
