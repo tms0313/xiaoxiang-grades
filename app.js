@@ -3950,7 +3950,7 @@ function bindParentActionButtons() {
 async function renderAlumniMockScores() {
   const content = $("adminContent");
   content.innerHTML =
-    "<h2 class='section-title'>歷屆畢業學生模考成績</h2>" +
+    "<h2 class='section-title'>歷屆模考成績</h2>" +
     "<p class='muted'>此區資料獨立保存，不會影響目前在籍學生、家長查詢或教師查詢。</p>" +
     "<div class='alumni-score-form'>" +
       "<h3 id='alumniFormTitle' style='margin:0 0 14px;color:#23466b'>新增歷屆模考成績</h3>" +
@@ -3960,6 +3960,8 @@ async function renderAlumniMockScores() {
           "<div class='field'><label for='alumniStudentName'>學生姓名</label><input id='alumniStudentName' type='text' maxlength='50' required></div>" +
           "<div class='field'><label for='alumniExamScope'>新增類型（新增後會保留，可自行更改）</label><select id='alumniExamScope' required><option value=''>請選擇模考類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</select></div>" +
           "<div class='field'><label for='alumniExamRange'>考試範圍</label><input id='alumniExamRange' type='text' maxlength='100' placeholder='例如：第一次模擬考全範圍' required></div>" +
+          "<div class='field alumni-rank-field' id='alumniGenderRankField' style='display:none'><label for='alumniGenderRank'>區（男／女）排名</label><input id='alumniGenderRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>" +
+          "<div class='field alumni-rank-field' id='alumniDistrictRankField' style='display:none'><label for='alumniDistrictRank'>區排名</label><input id='alumniDistrictRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>"
         "</div>" +
         "<div class='alumni-score-subject-grid'>" +
           "<div class='field'><label for='alumniChinese'>國文級分（0～7）</label><input id='alumniChinese' type='number' min='0' max='7' step='1' required></div>" +
@@ -3995,6 +3997,12 @@ async function renderAlumniMockScores() {
     ["natural_science", "alumniScience"]
   ];
 
+  function updateRankFields() {
+    const isFormal = $("alumniExamScope").value === "正式模考";
+    $("alumniGenderRankField").style.display = isFormal ? "block" : "none";
+    $("alumniDistrictRankField").style.display = isFormal ? "block" : "none";
+  }
+
   function updateTotalPreview() {
     const total = fields.reduce(function (sum, item) {
       const raw = $(item[1]).value;
@@ -4014,6 +4022,9 @@ async function renderAlumniMockScores() {
     $("alumniAcademicYear").value = keepAcademicYear;
     $("alumniExamScope").value = keepExamScope;
     $("alumniExamRange").value = keepExamRange;
+    $("alumniGenderRank").value = "";
+    $("alumniDistrictRank").value = "";
+    updateRankFields();
     $("alumniFormTitle").textContent = "新增歷屆模考成績";
     $("alumniSaveButton").disabled = false;
     $("alumniSaveButton").textContent = "新增成績";
@@ -4027,6 +4038,9 @@ async function renderAlumniMockScores() {
     $("alumniStudentName").value = record.student_name || "";
     $("alumniExamScope").value = record.exam_scope || "";
     $("alumniExamRange").value = record.exam_range || "";
+    $("alumniGenderRank").value = record.district_gender_rank == null ? "" : record.district_gender_rank;
+    $("alumniDistrictRank").value = record.district_rank == null ? "" : record.district_rank;
+    updateRankFields();
     fields.forEach(function (item) { $(item[1]).value = record[item[0]]; });
     $("alumniFormTitle").textContent = "修改歷屆模考成績";
     $("alumniSaveButton").disabled = false;
@@ -4069,6 +4083,8 @@ async function renderAlumniMockScores() {
         "<td>" + escapeHtml(record.student_name) + "</td>" +
         "<td>" + escapeHtml(record.exam_scope) + "</td>" +
         "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
+        "<td>" + (record.exam_scope === "正式模考" && record.district_gender_rank != null ? escapeHtml(record.district_gender_rank) : "—") + "</td>" +
+        "<td>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(record.district_rank) : "—") + "</td>" +
         subjectCells +
         "<td><strong>" + escapeHtml(record.total_grade) + " / 35</strong></td>" +
         "<td><div class='alumni-score-actions'>" +
@@ -4081,7 +4097,7 @@ async function renderAlumniMockScores() {
     }).join("");
     $("alumniScoreTableArea").innerHTML =
       "<div class='table-wrap'><table class='alumni-score-table'>" +
-        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th><th>考試範圍</th>" + subjectHeaders + "<th>總級分</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th><th>考試範圍</th><th>區（男／女）排名</th><th>區排名</th>" + subjectHeaders + "<th>總級分</th><th>操作</th></tr></thead>" +
         "<tbody>" + rows + "</tbody></table></div>" +
       "<p class='muted'>共 " + filtered.length + " 筆資料</p>";
   }
@@ -4158,6 +4174,7 @@ async function renderAlumniMockScores() {
   $("alumniRangeFilter").addEventListener("change", renderRows);
   $("alumniSubjectFilter").addEventListener("change", renderRows);
   $("alumniCancelEdit").addEventListener("click", resetForm);
+  $("alumniExamScope").addEventListener("change", updateRankFields);
 
   $("alumniScoreForm").addEventListener("submit", async function (event) {
     event.preventDefault();
@@ -4165,8 +4182,26 @@ async function renderAlumniMockScores() {
       academic_year: $("alumniAcademicYear").value.trim(),
       student_name: $("alumniStudentName").value.trim(),
       exam_scope: $("alumniExamScope").value.trim(),
-      exam_range: $("alumniExamRange").value.trim()
+      exam_range: $("alumniExamRange").value.trim(),
+      district_gender_rank: null,
+      district_rank: null
     };
+    if (payload.exam_scope === "正式模考") {
+      const genderRankRaw = $("alumniGenderRank").value.trim();
+      const districtRankRaw = $("alumniDistrictRank").value.trim();
+      if (genderRankRaw !== "" && (!Number.isInteger(Number(genderRankRaw)) || Number(genderRankRaw) < 1)) {
+        alert("區（男／女）排名請填寫大於 0 的整數。");
+        $("alumniGenderRank").focus();
+        return;
+      }
+      if (districtRankRaw !== "" && (!Number.isInteger(Number(districtRankRaw)) || Number(districtRankRaw) < 1)) {
+        alert("區排名請填寫大於 0 的整數。");
+        $("alumniDistrictRank").focus();
+        return;
+      }
+      payload.district_gender_rank = genderRankRaw === "" ? null : Number(genderRankRaw);
+      payload.district_rank = districtRankRaw === "" ? null : Number(districtRankRaw);
+    }
     for (const item of fields) {
       const raw = $(item[1]).value;
       const value = Number(raw);
