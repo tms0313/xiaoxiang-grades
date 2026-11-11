@@ -334,6 +334,15 @@ style.textContent = [
   ".teacher-filter-group select { width:100%; box-sizing:border-box; }",
   ".teacher-toolbar #teacherRefreshButton { align-self:flex-start; }",
   ".form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }",
+  ".alumni-score-form { background:#f7f9fc; border:1px solid #dfe7ef; border-radius:12px; padding:18px; margin-bottom:20px; }",
+  ".alumni-score-form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:12px; }",
+  ".alumni-score-form .field { margin-bottom:8px; }",
+  ".alumni-score-total { display:flex; align-items:center; gap:8px; padding:10px 13px; background:#eaf2f9; border-radius:8px; color:#23466b; font-weight:800; }",
+  ".alumni-score-table { min-width:920px; }",
+  ".alumni-score-table td,.alumni-score-table th { text-align:center; white-space:nowrap; }",
+  ".alumni-score-table td:nth-child(2),.alumni-score-table th:nth-child(2),.alumni-score-table td:nth-child(3),.alumni-score-table th:nth-child(3) { text-align:left; }",
+  ".alumni-score-actions { display:flex; gap:5px; justify-content:center; }",
+  "@media(max-width:600px) { .alumni-score-form { padding:13px; } .alumni-score-form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }",
   ".score-entry-fields-wrap { width:100%; overflow-x:auto; padding-bottom:4px; }",
   ".score-entry-fields { display:grid; grid-template-columns:repeat(6,minmax(130px,1fr)); gap:12px; min-width:852px; }",
   ".score-entry-fields .field { margin-bottom:0; }",
@@ -949,6 +958,7 @@ function renderAdminDashboard() {
         "<button class='tab-btn' data-tab='passwords'>家長帳號管理</button>" +
         "<button class='tab-btn' data-tab='logs'>登入紀錄</button>" +
         "<button class='tab-btn' data-tab='export'>成績匯出</button>" +
+        "<button class='tab-btn' data-tab='alumni'>歷屆畢業學生模考成績</button>" +
       "</div>" +
       "<section id='adminContent'></section>" +
     "</main>" +
@@ -992,6 +1002,7 @@ function renderAdminTab() {
   if (activeTab === "logs") renderLoginLogs();
   if (activeTab === "reviews") renderStudentReviewRecords();
   if (activeTab === "export") renderExport();
+  if (activeTab === "alumni") renderAlumniMockScores();
 }
 
 // ==================================================
@@ -3919,6 +3930,225 @@ function bindParentActionButtons() {
     button.addEventListener("click", handleLogout);
   });
 }
+
+
+// ==================================================
+// 歷屆畢業學生模考成績管理（獨立資料表）
+// ==================================================
+
+async function renderAlumniMockScores() {
+  const content = $("adminContent");
+  content.innerHTML =
+    "<h2 class='section-title'>歷屆畢業學生模考成績</h2>" +
+    "<p class='muted'>此區資料獨立保存，不會影響目前在籍學生、家長查詢或教師查詢。</p>" +
+    "<div class='alumni-score-form'>" +
+      "<h3 id='alumniFormTitle' style='margin:0 0 14px;color:#23466b'>新增歷屆模考成績</h3>" +
+      "<form id='alumniScoreForm'>" +
+        "<div class='alumni-score-form-grid'>" +
+          "<div class='field'><label for='alumniAcademicYear'>學年度</label><input id='alumniAcademicYear' type='text' placeholder='例如：114學年度' maxlength='30' required></div>" +
+          "<div class='field'><label for='alumniStudentName'>學生姓名</label><input id='alumniStudentName' type='text' maxlength='50' required></div>" +
+          "<div class='field'><label for='alumniExamScope'>考試範圍</label><input id='alumniExamScope' type='text' placeholder='例如：第一次模擬考' maxlength='100' required></div>" +
+          "<div class='field'><label for='alumniChinese'>國文級分（1～7）</label><input id='alumniChinese' type='number' min='1' max='7' step='1' required></div>" +
+          "<div class='field'><label for='alumniMath'>數學級分（1～7）</label><input id='alumniMath' type='number' min='1' max='7' step='1' required></div>" +
+          "<div class='field'><label for='alumniEnglish'>英文級分（1～7）</label><input id='alumniEnglish' type='number' min='1' max='7' step='1' required></div>" +
+          "<div class='field'><label for='alumniSocial'>社會級分（1～7）</label><input id='alumniSocial' type='number' min='1' max='7' step='1' required></div>" +
+          "<div class='field'><label for='alumniScience'>自然級分（1～7）</label><input id='alumniScience' type='number' min='1' max='7' step='1' required></div>" +
+          "<div class='alumni-score-total'><span>五科總級分</span><strong id='alumniTotalPreview'>0 / 35</strong></div>" +
+        "</div>" +
+        "<div class='toolbar' style='margin-bottom:0'>" +
+          "<button class='btn btn-success' id='alumniSaveButton' type='submit'>新增成績</button>" +
+          "<button class='btn btn-secondary' id='alumniCancelEdit' type='button' style='display:none'>取消修改</button>" +
+        "</div>" +
+      "</form>" +
+    "</div>" +
+    "<h3 style='color:#23466b;margin:0 0 10px'>歷屆成績資料</h3>" +
+    "<div class='toolbar'>" +
+      "<input id='alumniYearFilter' type='text' placeholder='依學年度查詢'>" +
+      "<input id='alumniNameFilter' type='text' placeholder='搜尋學生姓名'>" +
+      "<button class='btn btn-secondary' id='alumniClearFilter' type='button'>清除條件</button>" +
+    "</div>" +
+    "<div id='alumniScoreTableArea'><div class='muted'>資料載入中……</div></div>";
+
+  let editingId = "";
+  let records = [];
+  const fields = [
+    ["chinese", "alumniChinese"],
+    ["math", "alumniMath"],
+    ["english", "alumniEnglish"],
+    ["social_studies", "alumniSocial"],
+    ["natural_science", "alumniScience"]
+  ];
+
+  function updateTotalPreview() {
+    const total = fields.reduce(function (sum, item) {
+      const raw = $(item[1]).value;
+      const value = Number(raw);
+      return sum + (raw !== "" && Number.isInteger(value) && value >= 1 && value <= 7 ? value : 0);
+    }, 0);
+    $("alumniTotalPreview").textContent = total + " / 35";
+  }
+
+  function resetForm() {
+    editingId = "";
+    $("alumniScoreForm").reset();
+    $("alumniFormTitle").textContent = "新增歷屆模考成績";
+    $("alumniSaveButton").textContent = "新增成績";
+    $("alumniCancelEdit").style.display = "none";
+    updateTotalPreview();
+  }
+
+  function startEdit(record) {
+    editingId = String(record.id);
+    $("alumniAcademicYear").value = record.academic_year || "";
+    $("alumniStudentName").value = record.student_name || "";
+    $("alumniExamScope").value = record.exam_scope || "";
+    fields.forEach(function (item) { $(item[1]).value = record[item[0]]; });
+    $("alumniFormTitle").textContent = "修改歷屆模考成績";
+    $("alumniSaveButton").textContent = "儲存修改";
+    $("alumniCancelEdit").style.display = "inline-block";
+    updateTotalPreview();
+    $("alumniScoreForm").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function renderRows() {
+    const yearQuery = $("alumniYearFilter").value.trim().toLowerCase();
+    const nameQuery = $("alumniNameFilter").value.trim().toLowerCase();
+    const filtered = records.filter(function (record) {
+      return String(record.academic_year || "").toLowerCase().includes(yearQuery) &&
+        String(record.student_name || "").toLowerCase().includes(nameQuery);
+    });
+    if (!filtered.length) {
+      $("alumniScoreTableArea").innerHTML = "<div class='empty'>" +
+        (records.length ? "沒有符合查詢條件的資料。" : "目前尚無歷屆模考成績。") + "</div>";
+      return;
+    }
+    const rows = filtered.map(function (record) {
+      return "<tr>" +
+        "<td>" + escapeHtml(record.academic_year) + "</td>" +
+        "<td>" + escapeHtml(record.student_name) + "</td>" +
+        "<td>" + escapeHtml(record.exam_scope) + "</td>" +
+        "<td>" + escapeHtml(record.chinese) + "</td>" +
+        "<td>" + escapeHtml(record.math) + "</td>" +
+        "<td>" + escapeHtml(record.english) + "</td>" +
+        "<td>" + escapeHtml(record.social_studies) + "</td>" +
+        "<td>" + escapeHtml(record.natural_science) + "</td>" +
+        "<td><strong>" + escapeHtml(record.total_grade) + " / 35</strong></td>" +
+        "<td><div class='alumni-score-actions'>" +
+          "<button type='button' class='btn btn-small' data-alumni-edit='" + escapeHtml(record.id) + "'>修改</button>" +
+          "<button type='button' class='btn btn-danger btn-small' data-alumni-delete='" + escapeHtml(record.id) + "'>刪除</button>" +
+        "</div></td></tr>";
+    }).join("");
+    $("alumniScoreTableArea").innerHTML =
+      "<div class='table-wrap'><table class='alumni-score-table'>" +
+        "<thead><tr><th>學年度</th><th>學生姓名</th><th>考試範圍</th><th>國文</th><th>數學</th><th>英文</th><th>社會</th><th>自然</th><th>總級分</th><th>操作</th></tr></thead>" +
+        "<tbody>" + rows + "</tbody></table></div>" +
+      "<p class='muted'>共 " + filtered.length + " 筆資料</p>";
+  }
+
+  async function loadRecords() {
+    const result = await db.from("alumni_mock_scores").select("*")
+      .order("academic_year", { ascending: false })
+      .order("student_name", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (result.error) {
+      $("alumniScoreTableArea").innerHTML =
+        "<div class='system-message error' style='display:block'>讀取歷屆成績失敗：" +
+        escapeHtml(result.error.message) + "</div>";
+      return;
+    }
+    records = result.data || [];
+    renderRows();
+  }
+
+  fields.forEach(function (item) {
+    $(item[1]).addEventListener("input", updateTotalPreview);
+  });
+  $("alumniYearFilter").addEventListener("input", renderRows);
+  $("alumniNameFilter").addEventListener("input", renderRows);
+  $("alumniClearFilter").addEventListener("click", function () {
+    $("alumniYearFilter").value = "";
+    $("alumniNameFilter").value = "";
+    renderRows();
+  });
+  $("alumniCancelEdit").addEventListener("click", resetForm);
+
+  $("alumniScoreForm").addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const payload = {
+      academic_year: $("alumniAcademicYear").value.trim(),
+      student_name: $("alumniStudentName").value.trim(),
+      exam_scope: $("alumniExamScope").value.trim()
+    };
+    for (const item of fields) {
+      const raw = $(item[1]).value;
+      const value = Number(raw);
+      if (raw === "" || !Number.isInteger(value) || value < 1 || value > 7) {
+        alert("五科級分都必須填寫 1～7 的整數。");
+        $(item[1]).focus();
+        return;
+      }
+      payload[item[0]] = value;
+    }
+    if (!payload.academic_year || !payload.student_name || !payload.exam_scope) {
+      alert("學年度、學生姓名及考試範圍都必須填寫。");
+      return;
+    }
+    const button = $("alumniSaveButton");
+    button.disabled = true;
+    button.textContent = "儲存中……";
+    try {
+      let result;
+      if (editingId) {
+        result = await db.from("alumni_mock_scores")
+          .update(Object.assign({}, payload, { updated_at: new Date().toISOString() }))
+          .eq("id", editingId);
+      } else {
+        result = await db.from("alumni_mock_scores").insert(payload);
+      }
+      if (result.error) throw result.error;
+      const wasEditing = !!editingId;
+      resetForm();
+      await loadRecords();
+      showMessage(wasEditing ? "歷屆模考成績已修改。" : "歷屆模考成績已新增。", "success", true);
+    } catch (error) {
+      alert("儲存歷屆成績失敗：" + error.message);
+      button.disabled = false;
+      button.textContent = editingId ? "儲存修改" : "新增成績";
+    }
+  });
+
+  $("alumniScoreTableArea").addEventListener("click", async function (event) {
+    const editButton = event.target.closest("[data-alumni-edit]");
+    if (editButton) {
+      const record = records.find(item => String(item.id) === String(editButton.dataset.alumniEdit));
+      if (record) startEdit(record);
+      return;
+    }
+    const deleteButton = event.target.closest("[data-alumni-delete]");
+    if (deleteButton) {
+      const record = records.find(item => String(item.id) === String(deleteButton.dataset.alumniDelete));
+      if (!record) return;
+      if (!confirm("確定要刪除「" + record.student_name + "」的「" + record.exam_scope + "」成績嗎？此動作無法復原。")) return;
+      deleteButton.disabled = true;
+      const result = await db.from("alumni_mock_scores").delete().eq("id", record.id);
+      if (result.error) {
+        alert("刪除歷屆成績失敗：" + result.error.message);
+        deleteButton.disabled = false;
+        return;
+      }
+      if (editingId === String(record.id)) resetForm();
+      await loadRecords();
+      showMessage("歷屆模考成績已刪除。", "success", true);
+    }
+  });
+
+  updateTotalPreview();
+  await loadRecords();
+}
+
+// ==================================================
+// 歷屆模考成績管理結束
+// ==================================================
 
 // ==================================================
 // 15. 家長端畫面
