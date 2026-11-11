@@ -362,6 +362,8 @@ style.textContent = [
   ".overview-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; line-height:30px !important; border-radius:6px !important; }",
   ".teacher-account-table .action-buttons { display:inline-flex; align-items:center; flex-wrap:nowrap; gap:4px; white-space:nowrap; }",
   ".teacher-account-table .action-buttons .btn { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:27px !important; min-height:27px !important; padding:0 7px !important; font-size:11px !important; font-weight:700 !important; line-height:27px !important; border-radius:5px !important; white-space:nowrap; }",
+  ".teacher-assignment-table td:last-child { white-space:nowrap; }",
+  ".teacher-assignment-table td:last-child .btn { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:27px !important; min-height:27px !important; padding:0 7px !important; font-size:11px !important; font-weight:700 !important; line-height:27px !important; border-radius:5px !important; white-space:nowrap; }",
 
   ".action-cell { min-width:155px; white-space:nowrap; }",
   ".action-buttons { display:flex; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:5px; white-space:nowrap; }",
@@ -3027,7 +3029,7 @@ function renderTeacherManagement() {
         "<td>" + escapeHtml(teacher ? teacher.email : "教師帳號") + "</td>" +
         "<td>" + escapeHtml(item.class_name) + "</td>" +
         "<td>" + escapeHtml(item.subject) + "</td>" +
-        "<td><button class='btn btn-danger btn-small' data-delete-teacher-assignment='" + escapeHtml(item.id) + "'>移除</button></td>" +
+        "<td><button class='btn btn-danger btn-small' data-delete-teacher-assignment='" + escapeHtml(item.id) + "'>移除綁定</button></td>" +
       "</tr>";
     }).join("");
 
@@ -3080,7 +3082,7 @@ function renderTeacherManagement() {
     "</div>" +
     "<div class='panel'><h3>教師授課權限清單</h3>" +
       "<div class='toolbar'><label for='teacherAssignmentFilter'><strong>教師：</strong></label><select id='teacherAssignmentFilter'><option value=''>全部教師</option>" + teacherOptions + "</select></div>" +
-      "<div class='table-wrap'><table><thead><tr><th>教師帳號</th><th>班級</th><th>科目</th><th>操作</th></tr></thead>" +
+      "<div class='table-wrap'><table class='teacher-assignment-table'><thead><tr><th>教師帳號</th><th>班級</th><th>科目</th><th>操作</th></tr></thead>" +
       "<tbody id='teacherAssignmentRows'>" + (assignmentRows || "<tr><td colspan='4' class='empty'>目前沒有授課權限設定</td></tr>") + "</tbody></table></div>" +
     "</div>";
 
@@ -3103,7 +3105,7 @@ function renderTeacherManagement() {
         const teacher = teacherProfilesCache.find(profile => String(profile.id) === String(item.teacher_id));
         return "<tr data-teacher-assignment-row='" + escapeHtml(item.id) + "'><td>" + escapeHtml(teacher ? teacher.email : "教師帳號") + "</td>" +
           "<td>" + escapeHtml(item.class_name) + "</td><td>" + escapeHtml(item.subject) + "</td>" +
-          "<td><button class='btn btn-danger btn-small' data-delete-teacher-assignment='" + escapeHtml(item.id) + "'>移除</button></td></tr>";
+          "<td><button class='btn btn-danger btn-small' data-delete-teacher-assignment='" + escapeHtml(item.id) + "'>移除綁定</button></td></tr>";
       }).join("");
     $("teacherAssignmentRows").innerHTML = rows || "<tr><td colspan='4' class='empty'>目前沒有授課權限設定</td></tr>";
   }
