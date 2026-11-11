@@ -3941,7 +3941,7 @@ async function renderTeacherDashboard() {
 
   if (!teacherAssignmentsCache.length) {
     appRoot.innerHTML =
-      "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區</small></div>" +
+      "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1><small>教師專區</small></div>" +
         "<div class='parent-top-actions'>" +
           (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
         "</div></div>" +
@@ -4077,7 +4077,7 @@ function renderTeacherResults() {
     ).join("");
 
   appRoot.innerHTML =
-    "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區｜僅供查詢</small></div>" +
+    "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1></div>" +
       "<div class='parent-top-actions'>" +
         (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
       "</div></div>" +
@@ -4120,7 +4120,7 @@ function renderTeacherResults() {
 
 function renderTeacherFirstLoginPasswordChange() {
   appRoot.innerHTML =
-    "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>首次登入安全設定</small></div>" +
+    "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1><small>首次登入安全設定</small></div>" +
       "<button class='tab-btn' id='teacherFirstLoginLogout'>登出</button></div>" +
     "<main class='dashboard' style='max-width:560px'>" +
       "<div class='panel'>" +
