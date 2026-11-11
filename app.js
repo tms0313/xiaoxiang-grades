@@ -4014,6 +4014,7 @@ async function renderAlumniMockScores() {
     $("alumniExamScope").value = keepExamScope;
     $("alumniExamRange").value = keepExamRange;
     $("alumniFormTitle").textContent = "新增歷屆模考成績";
+    $("alumniSaveButton").disabled = false;
     $("alumniSaveButton").textContent = "新增成績";
     $("alumniCancelEdit").style.display = "none";
     updateTotalPreview();
@@ -4027,6 +4028,7 @@ async function renderAlumniMockScores() {
     $("alumniExamRange").value = record.exam_range || "";
     fields.forEach(function (item) { $(item[1]).value = record[item[0]]; });
     $("alumniFormTitle").textContent = "修改歷屆模考成績";
+    $("alumniSaveButton").disabled = false;
     $("alumniSaveButton").textContent = "儲存修改";
     $("alumniCancelEdit").style.display = "inline-block";
     updateTotalPreview();
