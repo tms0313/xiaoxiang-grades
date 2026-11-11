@@ -4070,8 +4070,10 @@ async function renderAlumniMockScores() {
   async function loadRecords() {
     const result = await db.from("alumni_mock_scores").select("*")
       .order("academic_year", { ascending: false })
-      .order("student_name", { ascending: true })
-      .order("created_at", { ascending: false });
+      .order("exam_scope", { ascending: true })
+      .order("exam_range", { ascending: true })
+      .order("total_grade", { ascending: false })
+      .order("student_name", { ascending: true });
     if (result.error) {
       $("alumniScoreTableArea").innerHTML =
         "<div class='system-message error' style='display:block'>讀取歷屆成績失敗：" +
