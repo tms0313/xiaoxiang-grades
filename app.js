@@ -969,7 +969,7 @@ function renderAdminDashboard() {
         "<button class='tab-btn' data-tab='passwords'>家長帳號管理</button>" +
         "<button class='tab-btn' data-tab='logs'>登入紀錄</button>" +
         "<button class='tab-btn' data-tab='export'>成績匯出</button>" +
-        "<button class='tab-btn' data-tab='alumni'>歷屆模考成績</button>" +
+        "<button class='tab-btn' data-tab='alumni'>模考成績</button>" +
       "</div>" +
       "<section id='adminContent'></section>" +
     "</main>" +
@@ -3950,15 +3950,15 @@ function bindParentActionButtons() {
 async function renderAlumniMockScores() {
   const content = $("adminContent");
   content.innerHTML =
-    "<h2 class='section-title'>歷屆模考成績</h2>" +
+    "<h2 class='section-title'>模考成績</h2>" +
     "<p class='muted'>此區資料獨立保存，不會影響目前在籍學生、家長查詢或教師查詢。</p>" +
     "<div class='alumni-score-form'>" +
-      "<h3 id='alumniFormTitle' style='margin:0 0 7px;color:#23466b'>新增歷屆模考成績</h3>" +
+      "<h3 id='alumniFormTitle' style='margin:0 0 7px;color:#23466b'>新增模考成績</h3>" +
       "<form id='alumniScoreForm'>" +
         "<div class='alumni-score-basic-grid'>" +
           "<div class='field'><label for='alumniAcademicYear'>學年度（新增後會保留，可自行更改）</label><input id='alumniAcademicYear' type='text' placeholder='例如：114學年度' maxlength='30' required></div>" +
           "<div class='field'><label for='alumniStudentName'>學生姓名</label><input id='alumniStudentName' type='text' maxlength='50' required></div>" +
-          "<div class='field'><label for='alumniExamScope'>新增類型（新增後會保留，可自行更改）</label><select id='alumniExamScope' required><option value=''>請選擇類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option><option value='會考'>會考</option></select></div>" +
+          "<div class='field'><label for='alumniExamScope'>新增類型（新增後會保留，可自行更改）</label><select id='alumniExamScope' required><option value=''>請選擇類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>北北基模考</option><option value='會考'>會考</option></select></div>" +
           "<div class='field'><label for='alumniExamRange'>考試範圍</label><input id='alumniExamRange' type='text' maxlength='100' placeholder='例如：第一次模擬考全範圍' required></div>" +
           "<div class='field alumni-rank-field' id='alumniGenderRankField' style='display:none'><label for='alumniGenderRank'>區（男／女）排名</label><input id='alumniGenderRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>" +
           "<div class='field alumni-rank-field' id='alumniDistrictRankField' style='display:none'><label for='alumniDistrictRank'>區排名</label><input id='alumniDistrictRank' type='number' min='1' step='1' placeholder='請輸入名次'></div>" +
@@ -3982,7 +3982,7 @@ async function renderAlumniMockScores() {
     "<div class='alumni-filter-row'>" +
       "<select id='alumniYearFilter' aria-label='依學年度查詢'><option value=''>全部學年度</option></select>" +
       "<input id='alumniNameFilter' type='text' placeholder='搜尋學生姓名' aria-label='搜尋學生姓名'>" +
-      "<select id='alumniTypeFilter' aria-label='依類型篩選'><option value=''>全部類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option><option value='會考'>會考</option></select>" +
+      "<select id='alumniTypeFilter' aria-label='依類型篩選'><option value=''>全部類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>北北基模考</option><option value='會考'>會考</option></select>" +
       "<select id='alumniRangeFilter' aria-label='依考試範圍篩選'><option value=''>全部考試範圍</option></select>" +
       "<select id='alumniSubjectFilter' aria-label='依考試科目篩選'><option value=''>全部考試科目</option><option value='chinese'>國文</option><option value='math'>數學</option><option value='english'>英文</option><option value='social_studies'>社會</option><option value='natural_science'>自然</option></select>" +
     "</div>" +
@@ -4039,7 +4039,7 @@ async function renderAlumniMockScores() {
     $("alumniCompositionScore").value = "";
     $("alumniAdmissionSchool").value = "";
     updateRankFields();
-    $("alumniFormTitle").textContent = "新增歷屆模考成績";
+    $("alumniFormTitle").textContent = "新增模考成績";
     $("alumniSaveButton").disabled = false;
     $("alumniSaveButton").textContent = "新增成績";
     $("alumniCancelEdit").style.display = "none";
@@ -4058,7 +4058,7 @@ async function renderAlumniMockScores() {
     $("alumniAdmissionSchool").value = record.admission_school || "";
     updateRankFields();
     fields.forEach(function (item) { $(item[1]).value = record[item[0]]; });
-    $("alumniFormTitle").textContent = "修改歷屆模考成績";
+    $("alumniFormTitle").textContent = "修改模考成績";
     $("alumniSaveButton").disabled = false;
     $("alumniSaveButton").textContent = "儲存修改";
     $("alumniCancelEdit").style.display = "inline-block";
@@ -4080,7 +4080,7 @@ async function renderAlumniMockScores() {
     });
     if (!filtered.length) {
       $("alumniScoreTableArea").innerHTML = "<div class='empty'>" +
-        (records.length ? "沒有符合查詢條件的資料。" : "目前尚無歷屆模考成績。") + "</div>";
+        (records.length ? "沒有符合查詢條件的資料。" : "目前尚無模考成績。") + "</div>";
       return;
     }
     const subjectColumns = [
@@ -4287,7 +4287,7 @@ async function renderAlumniMockScores() {
       const wasEditing = !!editingId;
       resetForm();
       await loadRecords();
-      showMessage(wasEditing ? "歷屆模考成績已修改。" : "歷屆模考成績已新增。", "success", true);
+      showMessage(wasEditing ? "模考成績已修改。" : "模考成績已新增。", "success", true);
     } catch (error) {
       alert("儲存歷屆成績失敗：" + error.message);
       button.disabled = false;
@@ -4316,7 +4316,7 @@ async function renderAlumniMockScores() {
       }
       if (editingId === String(record.id)) resetForm();
       await loadRecords();
-      showMessage("歷屆模考成績已刪除。", "success", true);
+      showMessage("模考成績已刪除。", "success", true);
     }
   });
 
@@ -4325,7 +4325,7 @@ async function renderAlumniMockScores() {
 }
 
 // ==================================================
-// 歷屆模考成績管理結束
+// 模考成績管理結束
 // ==================================================
 
 // ==================================================
