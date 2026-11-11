@@ -4006,12 +4006,18 @@ async function renderAlumniMockScores() {
   }
 
   function updateTotalPreview() {
-    const total = fields.reduce(function (sum, item) {
+    const subjectTotal = fields.reduce(function (sum, item) {
       const raw = $(item[1]).value;
       const value = Number(raw);
       return sum + (raw !== "" && Number.isInteger(value) && value >= 0 && value <= 7 ? value : 0);
     }, 0);
-    $("alumniTotalPreview").textContent = total + " / 35";
+    const isFormal = $("alumniExamScope").value === "正式模考";
+    const compositionRaw = $("alumniCompositionScore").value;
+    const composition = isFormal && compositionRaw !== "" ? Number(compositionRaw) : 0;
+    const total = subjectTotal + (Number.isFinite(composition) ? composition : 0);
+    $("alumniTotalPreview").textContent = (Number.isInteger(total) ? total : total.toFixed(1)) + (isFormal ? " / 36.2" : " / 35");
+    const totalLabel = $("alumniTotalPreview").previousElementSibling;
+    if (totalLabel) totalLabel.textContent = isFormal ? "六科總級分" : "五科總級分";
   }
 
   function resetForm() {
@@ -4091,7 +4097,7 @@ async function renderAlumniMockScores() {
         "<td>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(record.district_rank) : "—") + "</td>" +
         "<td>" + (record.exam_scope === "正式模考" && record.composition_score != null ? escapeHtml(record.composition_score) : "—") + "</td>" +
         subjectCells +
-        "<td><strong>" + escapeHtml(record.total_grade) + " / 35</strong></td>" +
+        "<td><strong>" + escapeHtml(record.total_grade) + (record.exam_scope === "正式模考" ? " / 36.2" : " / 35") + "</strong></td>" +
         "<td><div class='alumni-score-actions'>" +
           "<button type='button' class='btn btn-small' data-alumni-edit='" + escapeHtml(record.id) + "'>修改</button>" +
           "<button type='button' class='btn btn-danger btn-small' data-alumni-delete='" + escapeHtml(record.id) + "'>刪除</button>" +
@@ -4173,6 +4179,7 @@ async function renderAlumniMockScores() {
   fields.forEach(function (item) {
     $(item[1]).addEventListener("input", updateTotalPreview);
   });
+  $("alumniCompositionScore").addEventListener("input", updateTotalPreview);
   $("alumniYearFilter").addEventListener("change", renderRows);
   $("alumniNameFilter").addEventListener("input", renderRows);
   $("alumniTypeFilter").addEventListener("change", renderRows);
