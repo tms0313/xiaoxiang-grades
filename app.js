@@ -342,14 +342,15 @@ style.textContent = [
   ".alumni-score-total { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:6px; min-height:70px; box-sizing:border-box; padding:10px 8px; background:#eaf2f9; border-radius:8px; color:#23466b; font-weight:800; text-align:center; }",
   ".alumni-score-total strong { font-size:20px; }",
   ".alumni-score-table { min-width:920px; }",
-  ".alumni-score-table td,.alumni-score-table th { text-align:center; white-space:nowrap; }",
+  ".alumni-score-table td { text-align:left; white-space:nowrap; }",
+  ".alumni-score-table th { text-align:center; white-space:nowrap; }",
   ".alumni-score-table th { padding:8px 9px; }",
   ".alumni-score-table td { padding:5px 9px; line-height:1.25; }",
   ".alumni-filter-row { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); align-items:stretch; gap:8px; margin:0 0 14px; width:100%; }",
   ".alumni-filter-row select,.alumni-filter-row input { box-sizing:border-box; display:block; width:100%; min-width:0; max-width:none; height:40px; min-height:40px; margin:0; padding:9px 8px; border:1px solid #ccd4df; border-radius:8px; background:#fff; font-size:13px; line-height:20px; }",
   "@media(max-width:900px) { .alumni-filter-row { grid-template-columns:repeat(3,minmax(0,1fr)); } }",
   "@media(max-width:600px) { .alumni-filter-row { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; } .alumni-filter-row select,.alumni-filter-row input { padding:9px 7px; font-size:13px; } }",
-  ".alumni-score-table td:nth-child(2),.alumni-score-table th:nth-child(2),.alumni-score-table td:nth-child(3),.alumni-score-table th:nth-child(3) { text-align:left; }",
+  ".alumni-score-table th:nth-child(2),.alumni-score-table th:nth-child(3) { text-align:left; }",
   ".alumni-score-actions { display:flex; gap:3px; justify-content:center; }",
   ".alumni-score-actions .btn { flex:0 0 auto !important; width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }",
   "@media(max-width:760px) { .alumni-score-basic-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .alumni-score-subject-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }",
@@ -4099,8 +4100,8 @@ async function renderAlumniMockScores() {
         "<td>" + escapeHtml(record.student_name) + "</td>" +
         "<td>" + escapeHtml(record.exam_scope === "正式模考" ? "北北基模考" : record.exam_scope) + "</td>" +
         "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
-        "<td>" + (record.exam_scope === "正式模考" && record.district_gender_rank != null ? escapeHtml(record.district_gender_rank) : "—") + "</td>" +
-        "<td>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(record.district_rank) : "—") + "</td>" +
+        "<td>" + (record.exam_scope === "正式模考" && record.district_gender_rank != null ? escapeHtml(Number(record.district_gender_rank).toLocaleString("en-US")) : "—") + "</td>" +
+        "<td>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(Number(record.district_rank).toLocaleString("en-US")) : "—") + "</td>" +
         "<td>" + (record.composition_score != null && (record.exam_scope === "正式模考" || record.exam_scope === "會考") ? escapeHtml(record.composition_score) : "—") + "</td>" +
         "<td>" + (record.exam_scope === "會考" ? escapeHtml(record.admission_school || "—") : "—") + "</td>" +
         subjectCells +
