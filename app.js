@@ -3971,7 +3971,7 @@ async function renderAlumniMockScores() {
           "<div class='field'><label for='alumniEnglish'>英文級分（0～7）</label><input id='alumniEnglish' type='number' min='0' max='7' step='1' required></div>" +
           "<div class='field'><label for='alumniSocial'>社會級分（0～7）</label><input id='alumniSocial' type='number' min='0' max='7' step='1' required></div>" +
           "<div class='field'><label for='alumniScience'>自然級分（0～7）</label><input id='alumniScience' type='number' min='0' max='7' step='1' required></div>" +
-          "<div class='alumni-score-total'><span>五科總級分</span><strong id='alumniTotalPreview'>0 / 35</strong></div>" +
+          "<div class='alumni-score-total'><span>五科總級分</span><strong id='alumniTotalPreview'>0</strong></div>" +
         "</div>" +
         "<div class='toolbar' style='margin-bottom:0'>" +
           "<button class='btn btn-success' id='alumniSaveButton' type='submit'>新增成績</button>" +
@@ -4020,7 +4020,7 @@ async function renderAlumniMockScores() {
     const compositionRaw = $("alumniCompositionScore").value;
     const composition = includesComposition && compositionRaw !== "" ? Number(compositionRaw) : 0;
     const total = subjectTotal + (Number.isFinite(composition) ? composition : 0);
-    $("alumniTotalPreview").textContent = (Number.isInteger(total) ? total : total.toFixed(1)) + (includesComposition ? " / 36.2" : " / 35");
+    $("alumniTotalPreview").textContent = Number.isInteger(total) ? String(total) : total.toFixed(1);
     const totalLabel = $("alumniTotalPreview").previousElementSibling;
     if (totalLabel) totalLabel.textContent = includesComposition ? "六科總級分" : "五科總級分";
   }
@@ -4105,7 +4105,7 @@ async function renderAlumniMockScores() {
         "<td>" + (record.composition_score != null && (record.exam_scope === "正式模考" || record.exam_scope === "會考") ? escapeHtml(record.composition_score) : "—") + "</td>" +
         "<td>" + (record.exam_scope === "會考" ? escapeHtml(record.admission_school || "—") : "—") + "</td>" +
         subjectCells +
-        "<td><strong>" + escapeHtml(record.total_grade) + ((record.exam_scope === "正式模考" || record.exam_scope === "會考") ? " / 36.2" : " / 35") + "</strong></td>" +
+        "<td><strong>" + escapeHtml(record.total_grade) + "</strong></td>" +
         "<td><div class='alumni-score-actions'>" +
           "<button type='button' class='btn btn-small' data-alumni-edit='" + escapeHtml(record.id) + "'>修改</button>" +
           "<button type='button' class='btn btn-danger btn-small' data-alumni-delete='" + escapeHtml(record.id) + "'>刪除</button>" +
