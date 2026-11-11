@@ -448,6 +448,8 @@ style.textContent = [
   ".password-management-table th:nth-child(1),.password-management-table td:nth-child(1) { width:24%; }",
   ".password-management-table th:nth-child(2),.password-management-table td:nth-child(2) { width:48%; }",
   ".password-management-table th:nth-child(3),.password-management-table td:nth-child(3) { width:28%; }",
+  ".password-management-table .action-buttons { display:flex; align-items:center; flex-wrap:nowrap; gap:4px; }",
+  ".password-management-table .action-buttons .btn { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:27px !important; min-height:27px !important; padding:0 7px !important; font-size:11px !important; line-height:27px !important; border-radius:5px !important; white-space:nowrap; }",
   ".guardian-status-unbound { display:inline-block; padding:4px 8px; border-radius:6px; background:#fff0cf; color:#8a5a00; font-weight:800; white-space:nowrap; }",
 
   ".low-score { color:#d32626; font-weight:800; }",
