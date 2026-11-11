@@ -335,9 +335,9 @@ style.textContent = [
   ".teacher-toolbar #teacherRefreshButton { align-self:flex-start; }",
   ".form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }",
   ".alumni-score-form { background:#f7f9fc; border:1px solid #dfe7ef; border-radius:12px; padding:18px; margin-bottom:20px; }",
-  ".alumni-score-basic-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }",
-  ".alumni-score-subject-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; align-items:end; margin-top:8px; }",
-  ".alumni-score-form .field { margin-bottom:8px; min-width:0; }",
+  ".alumni-score-basic-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); column-gap:12px; row-gap:5px; }",
+  ".alumni-score-subject-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); column-gap:12px; row-gap:5px; align-items:end; margin-top:5px; }",
+  ".alumni-score-form .field { margin-bottom:2px; min-width:0; }",
   ".alumni-score-form .field input,.alumni-score-form .field select { box-sizing:border-box; min-width:0; }",
   ".alumni-score-total { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:6px; min-height:70px; box-sizing:border-box; padding:10px 8px; background:#eaf2f9; border-radius:8px; color:#23466b; font-weight:800; text-align:center; }",
   ".alumni-score-total strong { font-size:20px; }",
@@ -969,7 +969,7 @@ function renderAdminDashboard() {
         "<button class='tab-btn' data-tab='passwords'>家長帳號管理</button>" +
         "<button class='tab-btn' data-tab='logs'>登入紀錄</button>" +
         "<button class='tab-btn' data-tab='export'>成績匯出</button>" +
-        "<button class='tab-btn' data-tab='alumni'>歷屆畢業學生模考成績</button>" +
+        "<button class='tab-btn' data-tab='alumni'>歷屆模考成績</button>" +
       "</div>" +
       "<section id='adminContent'></section>" +
     "</main>" +
@@ -3953,7 +3953,7 @@ async function renderAlumniMockScores() {
     "<h2 class='section-title'>歷屆模考成績</h2>" +
     "<p class='muted'>此區資料獨立保存，不會影響目前在籍學生、家長查詢或教師查詢。</p>" +
     "<div class='alumni-score-form'>" +
-      "<h3 id='alumniFormTitle' style='margin:0 0 14px;color:#23466b'>新增歷屆模考成績</h3>" +
+      "<h3 id='alumniFormTitle' style='margin:0 0 7px;color:#23466b'>新增歷屆模考成績</h3>" +
       "<form id='alumniScoreForm'>" +
         "<div class='alumni-score-basic-grid'>" +
           "<div class='field'><label for='alumniAcademicYear'>學年度（新增後會保留，可自行更改）</label><input id='alumniAcademicYear' type='text' placeholder='例如：114學年度' maxlength='30' required></div>" +
