@@ -906,6 +906,7 @@ function renderAdminDashboard() {
       "<div id='systemMessage' class='system-message'></div>" +
       "<div class='tabs' id='adminTabs'>" +
         "<button class='tab-btn' data-tab='overview'>成績總覽</button>" +
+        "<button class='tab-btn' data-tab='reviews'>週考檢閱紀錄</button>" +
         "<button class='tab-btn' data-tab='scores'>成績登錄</button>" +
         "<button class='tab-btn' data-tab='students'>學生管理</button>" +
         
@@ -913,7 +914,6 @@ function renderAdminDashboard() {
         "<button class='tab-btn' data-tab='teachers'>教師管理</button>" +
         "<button class='tab-btn' data-tab='passwords'>家長密碼</button>" +
         "<button class='tab-btn' data-tab='logs'>登入紀錄</button>" +
-        "<button class='tab-btn' data-tab='reviews'>週考檢閱紀錄</button>" +
         "<button class='tab-btn' data-tab='export'>成績匯出</button>" +
       "</div>" +
       "<section id='adminContent'></section>" +
