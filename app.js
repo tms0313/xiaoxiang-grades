@@ -4090,7 +4090,6 @@ async function renderAlumniMockScores() {
     const result = await db.from("alumni_mock_scores").select("*")
       .order("academic_year", { ascending: false })
       .order("exam_scope", { ascending: true })
-      .order("exam_range", { ascending: true })
       .order("total_grade", { ascending: false })
       .order("student_name", { ascending: true });
     if (result.error) {
@@ -4100,6 +4099,31 @@ async function renderAlumniMockScores() {
       return;
     }
     records = result.data || [];
+    function compareExamRange(a, b) {
+      const left = String(a || "").trim();
+      const right = String(b || "").trim();
+      const leftIsRange = /[~～至-]/.test(left);
+      const rightIsRange = /[~～至-]/.test(right);
+      if (leftIsRange !== rightIsRange) return leftIsRange ? 1 : -1;
+      return left.localeCompare(right, "zh-Hant", { numeric: true });
+    }
+    records.sort(function (a, b) {
+      const yearOrder = String(b.academic_year || "").localeCompare(
+        String(a.academic_year || ""), "zh-Hant", { numeric: true }
+      );
+      if (yearOrder) return yearOrder;
+      const typeOrder = String(a.exam_scope || "").localeCompare(
+        String(b.exam_scope || ""), "zh-Hant", { numeric: true }
+      );
+      if (typeOrder) return typeOrder;
+      const rangeOrder = compareExamRange(a.exam_range, b.exam_range);
+      if (rangeOrder) return rangeOrder;
+      const scoreOrder = Number(b.total_grade || 0) - Number(a.total_grade || 0);
+      if (scoreOrder) return scoreOrder;
+      return String(a.student_name || "").localeCompare(
+        String(b.student_name || ""), "zh-Hant", { numeric: true }
+      );
+    });
     const yearSelect = $("alumniYearFilter");
     const selectedYear = yearSelect.value;
     const years = Array.from(new Set(records.map(function (record) {
@@ -4116,9 +4140,7 @@ async function renderAlumniMockScores() {
     const selectedRange = rangeSelect.value;
     const ranges = Array.from(new Set(records.map(function (record) {
       return String(record.exam_range || "").trim();
-    }).filter(Boolean))).sort(function (a, b) {
-      return a.localeCompare(b, "zh-Hant", { numeric: true });
-    });
+    }).filter(Boolean))).sort(compareExamRange);
     rangeSelect.innerHTML = "<option value=''>全部考試範圍</option>" +
       ranges.map(function (range) {
         return "<option value='" + escapeHtml(range) + "'>" + escapeHtml(range) + "</option>";
