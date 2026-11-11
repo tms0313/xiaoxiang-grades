@@ -349,6 +349,9 @@ style.textContent = [
 
   /* 家長成績：電腦與手機統一採用科目卡片式呈現 */
   ".parent-page .dashboard { max-width:960px; }",
+  ".parent-brand { display:flex; flex-direction:column; gap:4px; }",
+  ".parent-brand h1 { font-size:23px; letter-spacing:.5px; }",
+  ".parent-brand small { color:rgba(255,255,255,.92); font-size:14px; font-weight:600; letter-spacing:.3px; }",
   ".teacher-dashboard { max-width:1050px; }",
   ".teacher-class-panel { margin-bottom:10px; padding:12px 15px; }",
   ".teacher-class-heading { margin:0 0 9px; padding-bottom:7px; border-bottom:2px solid #dce7f1; color:#23466b; font-size:18px; }",
@@ -468,9 +471,11 @@ style.textContent = [
   ".empty { padding:25px; text-align:center; color:#8491a0; }",
   ".loading-message { position:fixed; top:15px; right:15px; z-index:9999; background:#23466b; color:#fff; padding:12px 18px; border-radius:8px; box-shadow:0 3px 12px rgba(0,0,0,.2); }",
   ".student-card { max-width:900px; border:1px solid #e2e8ef; border-radius:12px; padding:22px; margin:18px auto; }",
-  ".student-card .student-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:0 12px; margin:0 0 16px; color:#23466b; line-height:1.35; }",
+  ".student-card .student-heading { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; margin:0 0 16px; padding:0 0 13px; border-bottom:1px solid #e6edf4; color:#23466b; line-height:1.35; }",
   ".student-card .student-name { font-size:25px; font-weight:850; letter-spacing:.3px; color:#1e4165; }",
-  ".student-card .student-class { font-size:18px; font-weight:700; color:#64748b; }",
+  ".student-card .student-class { display:inline-flex; align-items:center; min-height:28px; padding:4px 11px; border-radius:7px; background:#edf4fa; color:#315d86; font-size:14px; font-weight:800; }",
+  ".student-card .student-name { font-size:25px; font-weight:850; letter-spacing:.3px; color:#1e4165; }",
+  ".student-card .student-class { display:inline-flex; align-items:center; min-height:28px; padding:4px 11px; border-radius:7px; background:#edf4fa; color:#315d86; font-size:14px; font-weight:800; }",
   ".footer { text-align:center; color:#8995a2; padding:25px; font-size:13px; }",
   ".hidden { display:none !important; }",
 
@@ -481,6 +486,11 @@ style.textContent = [
   ".parent-score-list { max-width:none; }",
   ".topbar { padding:14px; }",
   ".topbar h1 { font-size:17px; }",
+  ".parent-brand h1 { font-size:19px; }",
+  ".parent-brand small { font-size:13px; }",
+  ".student-card .student-heading { align-items:center; }",
+  ".student-card .student-name { font-size:22px; }",
+  ".student-card .student-class { font-size:13px; }",
   ".login-card { padding:24px; }",
   ".tabs { gap:5px; }",
   ".tab-btn { padding:8px 10px; font-size:13px; }",
@@ -3598,7 +3608,7 @@ async function renderParentDashboard() {
   if (studentIds.length === 0) {
     content.innerHTML =
       "<div class='topbar'>" +
-        "<div><h1>小象文教機構｜成績查詢</h1></div>" +
+        "<div class='parent-brand'><h1>小象文教機構</h1><small>親愛的家長，您好！</small></div>" +
         "<div class='parent-top-actions'>" +
           (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換教師模式</button>" : "") +
           "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
@@ -3800,7 +3810,7 @@ async function renderParentDashboard() {
 
   content.innerHTML =
     "<div class='topbar'>" +
-      "<div><h1>小象文教機構｜成績查詢</h1></div>" +
+      "<div class='parent-brand'><h1>小象文教機構</h1><small>親愛的家長，您好！</small></div>" +
       "<div class='parent-top-actions'>" +
         (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換教師模式</button>" : "") +
       "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
