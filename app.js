@@ -3962,11 +3962,11 @@ async function renderAlumniMockScores() {
           "<div class='field'><label for='alumniExamRange'>考試範圍</label><input id='alumniExamRange' type='text' maxlength='100' placeholder='例如：第一次模擬考全範圍' required></div>" +
         "</div>" +
         "<div class='alumni-score-subject-grid'>" +
-          "<div class='field'><label for='alumniChinese'>國文級分（1～7）</label><input id='alumniChinese' type='number' min='1' max='7' step='1' required></div>" +
-          "<div class='field'><label for='alumniMath'>數學級分（1～7）</label><input id='alumniMath' type='number' min='1' max='7' step='1' required></div>" +
-          "<div class='field'><label for='alumniEnglish'>英文級分（1～7）</label><input id='alumniEnglish' type='number' min='1' max='7' step='1' required></div>" +
-          "<div class='field'><label for='alumniSocial'>社會級分（1～7）</label><input id='alumniSocial' type='number' min='1' max='7' step='1' required></div>" +
-          "<div class='field'><label for='alumniScience'>自然級分（1～7）</label><input id='alumniScience' type='number' min='1' max='7' step='1' required></div>" +
+          "<div class='field'><label for='alumniChinese'>國文級分（0～7）</label><input id='alumniChinese' type='number' min='0' max='7' step='1' required></div>" +
+          "<div class='field'><label for='alumniMath'>數學級分（0～7）</label><input id='alumniMath' type='number' min='0' max='7' step='1' required></div>" +
+          "<div class='field'><label for='alumniEnglish'>英文級分（0～7）</label><input id='alumniEnglish' type='number' min='0' max='7' step='1' required></div>" +
+          "<div class='field'><label for='alumniSocial'>社會級分（0～7）</label><input id='alumniSocial' type='number' min='0' max='7' step='1' required></div>" +
+          "<div class='field'><label for='alumniScience'>自然級分（0～7）</label><input id='alumniScience' type='number' min='0' max='7' step='1' required></div>" +
           "<div class='alumni-score-total'><span>五科總級分</span><strong id='alumniTotalPreview'>0 / 35</strong></div>" +
         "</div>" +
         "<div class='toolbar' style='margin-bottom:0'>" +
@@ -3999,7 +3999,7 @@ async function renderAlumniMockScores() {
     const total = fields.reduce(function (sum, item) {
       const raw = $(item[1]).value;
       const value = Number(raw);
-      return sum + (raw !== "" && Number.isInteger(value) && value >= 1 && value <= 7 ? value : 0);
+      return sum + (raw !== "" && Number.isInteger(value) && value >= 0 && value <= 7 ? value : 0);
     }, 0);
     $("alumniTotalPreview").textContent = total + " / 35";
   }
@@ -4148,8 +4148,8 @@ async function renderAlumniMockScores() {
     for (const item of fields) {
       const raw = $(item[1]).value;
       const value = Number(raw);
-      if (raw === "" || !Number.isInteger(value) || value < 1 || value > 7) {
-        alert("五科級分都必須填寫 1～7 的整數。");
+      if (raw === "" || !Number.isInteger(value) || value < 0 || value > 7) {
+        alert("五科級分都必須填寫 0～7 的整數。");
         $(item[1]).focus();
         return;
       }
