@@ -314,9 +314,10 @@ style.textContent = [
   ".section-title { font-size:21px; margin:0 0 18px; color:#23466b; }",
   ".toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:15px 0; align-items:center; }",
   ".toolbar input,.toolbar select { padding:9px; border:1px solid #ccd4df; border-radius:7px; }",
-  ".teacher-toolbar { flex-direction:column; align-items:stretch; gap:7px; }",
-  ".teacher-toolbar label { margin:0; }",
-  ".teacher-toolbar select { width:100%; box-sizing:border-box; }",
+  ".teacher-toolbar { display:flex; flex-direction:column; align-items:stretch; gap:10px; }",
+  ".teacher-filter-group { display:flex; flex-direction:column; align-items:stretch; gap:6px; width:100%; }",
+  ".teacher-filter-group label { margin:0; }",
+  ".teacher-filter-group select { width:100%; box-sizing:border-box; }",
   ".teacher-toolbar #teacherRefreshButton { align-self:flex-start; }",
   ".form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }",
   ".score-entry-fields-wrap { width:100%; overflow-x:auto; padding-bottom:4px; }",
@@ -516,7 +517,7 @@ style.textContent = [
   ".student-card .student-heading { gap:0 9px; margin-bottom:14px; }",
   ".student-card .student-name { font-size:23px; }",
   ".student-card .student-class { font-size:17px; }",
-  ".parent-page .parent-top-actions { display:none !important; }",
+  ".parent-page .parent-top-actions { display:flex !important; flex:0 0 100%; justify-content:center; }",
   ".parent-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
   ".parent-bottom-nav .parent-action-btn { flex:1 1 50%; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:9px; color:#fff; font-size:12px; font-weight:750; padding:5px 8px; }",
   ".parent-bottom-nav .parent-action-icon { width:19px; height:19px; flex:0 0 19px; stroke-width:1.9; }",
@@ -3620,12 +3621,6 @@ async function renderParentDashboard() {
         "<div class='parent-brand'><h1>小象文教機構 成績查詢系統</h1></div>" +
         "<div class='parent-top-actions'>" +
           (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換教師模式</button>" : "") +
-          "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'>" +
-            "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
-            "<span>修改密碼</span></button> " +
-          "<button class='parent-action-btn parent-logout-btn parent-logout' type='button' title='登出系統' aria-label='登出系統'>" +
-            "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg>" +
-            "<span>登出</span></button>" +
         "</div>" +
       "</div>" +
       "<main class='dashboard'>" +
@@ -3875,7 +3870,7 @@ async function renderTeacherDashboard() {
     appRoot.innerHTML =
       "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區</small></div>" +
         "<div class='parent-top-actions'>" +
-          (currentHasTeacher && currentProfile.role === "parent" ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
+          (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
           "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg><span>修改密碼</span></button>" +
           "<button class='parent-action-btn parent-logout-btn parent-logout' type='button' title='登出系統' aria-label='登出系統'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg><span>登出</span></button>" +
         "</div></div>" +
@@ -4013,15 +4008,15 @@ function renderTeacherResults() {
   appRoot.innerHTML =
     "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區｜僅供查詢</small></div>" +
       "<div class='parent-top-actions'>" +
-        (currentHasTeacher && currentProfile.role === "parent" ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
+        (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
         "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg><span>修改密碼</span></button>" +
         "<button class='parent-action-btn parent-logout-btn parent-logout' type='button' title='登出系統' aria-label='登出系統'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg><span>登出</span></button>" +
       "</div></div>" +
     "<main class='dashboard teacher-dashboard'><div class='toolbar teacher-toolbar'>" +
-      "<label for='teacherExamSelect'><strong>考試週期：</strong></label>" +
-      "<select id='teacherExamSelect'>" + (examOptions || "<option value=''>目前沒有考試週期</option>") + "</select>" +
-      "<label for='teacherClassSelect'><strong>班級：</strong></label>" +
-      "<select id='teacherClassSelect'>" + classOptions + "</select>" +
+      "<div class='teacher-filter-group'><label for='teacherExamSelect'><strong>考試週期</strong></label>" +
+      "<select id='teacherExamSelect'>" + (examOptions || "<option value=''>目前沒有考試週期</option>") + "</select></div>" +
+      "<div class='teacher-filter-group'><label for='teacherClassSelect'><strong>班級</strong></label>" +
+      "<select id='teacherClassSelect'>" + classOptions + "</select></div>" +
       "<button class='btn btn-secondary' id='teacherRefreshButton'>重新整理</button>" +
     "</div>" +
     (selectedExam ? "<p class='muted'>目前顯示：" + escapeHtml(formatDateRange(selectedExam)) + "</p>" : "") +
