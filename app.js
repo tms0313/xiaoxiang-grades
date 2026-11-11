@@ -367,6 +367,16 @@ style.textContent = [
   "th,td { border-bottom:1px solid #e7ebf0; padding:11px 10px; text-align:left; vertical-align:middle; }",
   "th { background:#f3f6f9; color:#40566d; white-space:nowrap; }",
   "tr:hover td { background:#fafbfd; }",
+  ".login-log-row-admin td { background:#eaf2ff; }",
+  ".login-log-row-parent td { background:#fff4e5; }",
+  ".login-log-row-teacher td { background:#e9f7ef; }",
+  ".login-log-row-unknown td { background:#f3f4f6; }",
+  ".login-log-legend { display:flex; flex-wrap:wrap; gap:10px 16px; margin:10px 0 14px; font-size:13px; }",
+  ".login-log-legend-item { display:inline-flex; align-items:center; gap:6px; }",
+  ".login-log-legend-swatch { width:13px; height:13px; border-radius:3px; border:1px solid rgba(0,0,0,.08); display:inline-block; }",
+  ".login-log-legend-admin { background:#eaf2ff; }",
+  ".login-log-legend-parent { background:#fff4e5; }",
+  ".login-log-legend-teacher { background:#e9f7ef; }",
 
   ".overview-table { min-width:1050px; table-layout:fixed; }",
   ".overview-table th:nth-child(1),.overview-table td:nth-child(1) { width:13%; }",
@@ -3532,10 +3542,13 @@ async function renderLoginLogs() {
       const profile = allProfiles.find(item => String(item.id) === String(log.user_id));
 
       let loginIdentity = "未知帳號";
+      let loginRoleClass = "login-log-row-unknown";
 
       if (profile && profile.role === "admin") {
+        loginRoleClass = "login-log-row-admin";
         loginIdentity = "管理員";
       } else if (profile && profile.role === "teacher") {
+        loginRoleClass = "login-log-row-teacher";
         const teacherNames = {
           "black951165@gmail.com": "王炫老師",
           "tingning1995120@gmail.com": "溫老師",
@@ -3544,6 +3557,7 @@ async function renderLoginLogs() {
         const teacherEmail = String(profile.email || "").trim().toLowerCase();
         loginIdentity = teacherNames[teacherEmail] || profile.email || "教師帳號";
       } else {
+        if (profile && profile.role === "parent") loginRoleClass = "login-log-row-parent";
         const linkedStudents = guardianLinksCache
           .filter(link => String(link.guardian_id) === String(log.user_id))
           .map(function (link) {
@@ -3555,7 +3569,7 @@ async function renderLoginLogs() {
         loginIdentity = Array.from(new Set(linkedStudents)).join("、") || "尚未綁定學生";
       }
 
-      return "<tr><td>" + escapeHtml(loginIdentity) + "</td><td>" +
+      return "<tr class=\"" + loginRoleClass + "\"><td>" + escapeHtml(loginIdentity) + "</td><td>" +
         escapeHtml(log.created_at ? new Date(log.created_at).toLocaleString("zh-TW") : "—") +
         "</td></tr>";
     }).join("");
@@ -3565,6 +3579,11 @@ async function renderLoginLogs() {
       "<div class='toolbar' style='display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap'>" +
         "<p class='muted' style='margin:0'>最近 200 筆登入紀錄（包含管理員、家長及教師）。</p>" +
         "<button class='btn btn-danger btn-small' type='button' id='clearLoginLogsButton'>清除全部登入紀錄</button>" +
+      "</div>" +
+      "<div class='login-log-legend'>" +
+        "<span class='login-log-legend-item'><i class='login-log-legend-swatch login-log-legend-admin'></i>管理員</span>" +
+        "<span class='login-log-legend-item'><i class='login-log-legend-swatch login-log-legend-parent'></i>家長</span>" +
+        "<span class='login-log-legend-item'><i class='login-log-legend-swatch login-log-legend-teacher'></i>老師</span>" +
       "</div>" +
       "<div class='table-wrap'><table><thead><tr><th>登入身分</th><th>登入時間</th></tr></thead>" +
       "<tbody>" + (rows || "<tr><td colspan='2' class='empty'>目前沒有登入紀錄</td></tr>") +
