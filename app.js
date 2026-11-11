@@ -350,10 +350,10 @@ style.textContent = [
 
   /* 家長成績：電腦與手機統一採用科目卡片式呈現 */
   ".parent-page .dashboard { max-width:1000px; padding:22px 24px; }",
-  ".parent-brand { display:flex; flex-direction:column; gap:4px; }",
-  ".parent-brand h1 { font-size:26px; line-height:1.25; letter-spacing:.6px; font-weight:850; }",
-  ".parent-brand small { color:rgba(255,255,255,.94); font-size:15px; line-height:1.5; font-weight:650; letter-spacing:.4px; }",
-  ".parent-brand-subtitle { display:block; color:rgba(255,255,255,.94); font-size:14px; line-height:1.5; font-weight:600; letter-spacing:.3px; }",
+  ".parent-brand { display:flex; flex-direction:column; gap:6px; }",
+  ".parent-brand h1 { font-size:30px; line-height:1.25; letter-spacing:.7px; font-weight:850; }",
+  ".parent-brand small { color:rgba(255,255,255,.96); font-size:18px; line-height:1.5; font-weight:700; letter-spacing:.5px; }",
+  ".parent-brand-subtitle { display:block; color:rgba(255,255,255,.96); font-size:17px; line-height:1.5; font-weight:650; letter-spacing:.4px; }",
   ".teacher-dashboard { max-width:1050px; }",
   ".teacher-class-panel { margin-bottom:10px; padding:12px 15px; }",
   ".teacher-class-heading { margin:0 0 9px; padding-bottom:7px; border-bottom:2px solid #dce7f1; color:#23466b; font-size:18px; }",
