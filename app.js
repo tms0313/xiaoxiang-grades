@@ -345,12 +345,9 @@ style.textContent = [
   ".alumni-score-table td,.alumni-score-table th { text-align:center; white-space:nowrap; }",
   ".alumni-score-table th { padding:8px 9px; }",
   ".alumni-score-table td { padding:5px 9px; line-height:1.25; }",
-  ".alumni-filter-row { display:flex; align-items:stretch; flex-wrap:nowrap; gap:8px; margin:0 0 14px; width:100%; }",
-  ".alumni-filter-row select,.alumni-filter-row input,.alumni-filter-row .btn { box-sizing:border-box; flex:1 1 0; width:0; min-width:0; max-width:none; }",
-  ".alumni-filter-row select,.alumni-filter-row input { padding:10px 9px; border:1px solid #ccd4df; border-radius:8px; background:#fff; }",
-  " .alumni-filter-row select { height:40px; min-height:40px; padding:9px; font-size:14px; }",
-  ".alumni-filter-row .btn { padding:10px 6px; white-space:nowrap; font-size:13px; }",
-  "@media(max-width:600px) { .alumni-filter-row { gap:5px; } .alumni-filter-row select,.alumni-filter-row input { padding:9px 5px; font-size:12px; } .alumni-filter-row .btn { padding:9px 3px; font-size:11px; } }",
+  ".alumni-filter-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; gap:8px; margin:0 0 14px; width:100%; }",
+  ".alumni-filter-row select,.alumni-filter-row input { box-sizing:border-box; display:block; width:100%; min-width:0; max-width:none; height:40px; min-height:40px; margin:0; padding:9px 10px; border:1px solid #ccd4df; border-radius:8px; background:#fff; font-size:14px; line-height:20px; }",
+  "@media(max-width:600px) { .alumni-filter-row { gap:6px; } .alumni-filter-row select,.alumni-filter-row input { padding:9px 7px; font-size:13px; } }",
   ".alumni-score-table td:nth-child(2),.alumni-score-table th:nth-child(2),.alumni-score-table td:nth-child(3),.alumni-score-table th:nth-child(3) { text-align:left; }",
   ".alumni-score-actions { display:flex; gap:5px; justify-content:center; }",
   "@media(max-width:760px) { .alumni-score-basic-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .alumni-score-subject-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }",
@@ -3980,7 +3977,6 @@ async function renderAlumniMockScores() {
     "<div class='alumni-filter-row'>" +
       "<select id='alumniYearFilter' aria-label='依學年度查詢'><option value=''>全部學年度</option></select>" +
       "<input id='alumniNameFilter' type='text' placeholder='搜尋學生姓名'>" +
-      "<button class='btn btn-secondary' id='alumniClearFilter' type='button'>清除條件</button>" +
     "</div>" +
     "<div id='alumniScoreTableArea'><div class='muted'>資料載入中……</div></div>";
 
@@ -4103,11 +4099,6 @@ async function renderAlumniMockScores() {
   });
   $("alumniYearFilter").addEventListener("change", renderRows);
   $("alumniNameFilter").addEventListener("input", renderRows);
-  $("alumniClearFilter").addEventListener("click", function () {
-    $("alumniYearFilter").value = "";
-    $("alumniNameFilter").value = "";
-    renderRows();
-  });
   $("alumniCancelEdit").addEventListener("click", resetForm);
 
   $("alumniScoreForm").addEventListener("submit", async function (event) {
