@@ -4217,6 +4217,23 @@ async function renderAlumniMockScores() {
       alert("學年度、學生姓名、模考類型及考試範圍都必須填寫。");
       return;
     }
+    // 同一場模考（學年度＋模考類型＋考試範圍）不可重複登錄同一位學生。
+    // 修改既有資料時排除目前這筆，避免自己與自己比對。
+    const normalizedName = payload.student_name.replace(/\\s+/g, "").toLocaleLowerCase();
+    const duplicate = records.find(function (record) {
+      const existingName = String(record.student_name || "").replace(/\\s+/g, "").toLocaleLowerCase();
+      return String(record.academic_year || "").trim() === payload.academic_year &&
+        String(record.exam_scope || "").trim() === payload.exam_scope &&
+        String(record.exam_range || "").trim() === payload.exam_range &&
+        existingName === normalizedName &&
+        String(record.id) !== String(editingId || "");
+    });
+    if (duplicate) {
+      alert("已有「" + payload.student_name + "」在這次考試的成績，請勿重複輸入。");
+      $("alumniStudentName").focus();
+      return;
+    }
+
     const button = $("alumniSaveButton");
     button.disabled = true;
     button.textContent = "儲存中……";
