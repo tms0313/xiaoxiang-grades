@@ -335,7 +335,7 @@ style.textContent = [
   ".teacher-toolbar #teacherRefreshButton { align-self:flex-start; }",
   ".form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }",
   ".alumni-score-form { background:#f7f9fc; border:1px solid #dfe7ef; border-radius:12px; padding:18px; margin-bottom:20px; }",
-  ".alumni-score-basic-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }",
+  ".alumni-score-basic-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }",
   ".alumni-score-subject-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:12px; align-items:end; margin-top:8px; }",
   ".alumni-score-form .field { margin-bottom:8px; min-width:0; }",
   ".alumni-score-form .field input,.alumni-score-form .field select { box-sizing:border-box; min-width:0; }",
@@ -3960,6 +3960,8 @@ async function renderAlumniMockScores() {
           "<div class='field'><label for='alumniStudentName'>學生姓名</label><input id='alumniStudentName' type='text' maxlength='50' required></div>" +
           "<div class='field'><label for='alumniExamScope'>新增類型（新增後會保留，可自行更改）</label><select id='alumniExamScope' required><option value=''>請選擇模考類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option></select></div>" +
         "</div>" +
+          "<div class='field'><label for='alumniExamRange'>考試範圍</label><input id='alumniExamRange' type='text' maxlength='100' placeholder='例如：第一次模擬考全範圍' required></div>" +
+        "</div>" +
         "<div class='alumni-score-subject-grid'>" +
           "<div class='field'><label for='alumniChinese'>國文級分（1～7）</label><input id='alumniChinese' type='number' min='1' max='7' step='1' required></div>" +
           "<div class='field'><label for='alumniMath'>數學級分（1～7）</label><input id='alumniMath' type='number' min='1' max='7' step='1' required></div>" +
@@ -4005,10 +4007,12 @@ async function renderAlumniMockScores() {
     // 新增多筆資料時保留目前選定的學年度與模考類型，避免管理員重複輸入。
     const keepAcademicYear = $("alumniAcademicYear").value;
     const keepExamScope = $("alumniExamScope").value;
+    const keepExamRange = $("alumniExamRange").value;
     editingId = "";
     $("alumniScoreForm").reset();
     $("alumniAcademicYear").value = keepAcademicYear;
     $("alumniExamScope").value = keepExamScope;
+    $("alumniExamRange").value = keepExamRange;
     $("alumniFormTitle").textContent = "新增歷屆模考成績";
     $("alumniSaveButton").textContent = "新增成績";
     $("alumniCancelEdit").style.display = "none";
@@ -4020,6 +4024,7 @@ async function renderAlumniMockScores() {
     $("alumniAcademicYear").value = record.academic_year || "";
     $("alumniStudentName").value = record.student_name || "";
     $("alumniExamScope").value = record.exam_scope || "";
+    $("alumniExamRange").value = record.exam_range || "";
     fields.forEach(function (item) { $(item[1]).value = record[item[0]]; });
     $("alumniFormTitle").textContent = "修改歷屆模考成績";
     $("alumniSaveButton").textContent = "儲存修改";
@@ -4045,6 +4050,7 @@ async function renderAlumniMockScores() {
         "<td>" + escapeHtml(record.academic_year) + "</td>" +
         "<td>" + escapeHtml(record.student_name) + "</td>" +
         "<td>" + escapeHtml(record.exam_scope) + "</td>" +
+        "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
         "<td>" + escapeHtml(record.chinese) + "</td>" +
         "<td>" + escapeHtml(record.math) + "</td>" +
         "<td>" + escapeHtml(record.english) + "</td>" +
@@ -4058,7 +4064,7 @@ async function renderAlumniMockScores() {
     }).join("");
     $("alumniScoreTableArea").innerHTML =
       "<div class='table-wrap'><table class='alumni-score-table'>" +
-        "<thead><tr><th>學年度</th><th>學生姓名</th><th>考試範圍</th><th>國文</th><th>數學</th><th>英文</th><th>社會</th><th>自然</th><th>總級分</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th><th>考試範圍</th><th>國文</th><th>數學</th><th>英文</th><th>社會</th><th>自然</th><th>總級分</th><th>操作</th></tr></thead>" +
         "<tbody>" + rows + "</tbody></table></div>" +
       "<p class='muted'>共 " + filtered.length + " 筆資料</p>";
   }
@@ -4107,7 +4113,8 @@ async function renderAlumniMockScores() {
     const payload = {
       academic_year: $("alumniAcademicYear").value.trim(),
       student_name: $("alumniStudentName").value.trim(),
-      exam_scope: $("alumniExamScope").value.trim()
+      exam_scope: $("alumniExamScope").value.trim(),
+      exam_range: $("alumniExamRange").value.trim()
     };
     for (const item of fields) {
       const raw = $(item[1]).value;
@@ -4119,8 +4126,8 @@ async function renderAlumniMockScores() {
       }
       payload[item[0]] = value;
     }
-    if (!payload.academic_year || !payload.student_name || !payload.exam_scope) {
-      alert("學年度、學生姓名及模考類型都必須選擇或填寫。");
+    if (!payload.academic_year || !payload.student_name || !payload.exam_scope || !payload.exam_range) {
+      alert("學年度、學生姓名、模考類型及考試範圍都必須填寫。");
       return;
     }
     const button = $("alumniSaveButton");
