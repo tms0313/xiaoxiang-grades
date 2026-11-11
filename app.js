@@ -3949,9 +3949,9 @@ async function renderAlumniMockScores() {
       "<h3 id='alumniFormTitle' style='margin:0 0 14px;color:#23466b'>新增歷屆模考成績</h3>" +
       "<form id='alumniScoreForm'>" +
         "<div class='alumni-score-basic-grid'>" +
-          "<div class='field'><label for='alumniAcademicYear'>學年度</label><input id='alumniAcademicYear' type='text' placeholder='例如：114學年度' maxlength='30' required></div>" +
+          "<div class='field'><label for='alumniAcademicYear'>學年度（新增後會保留，可自行更改）</label><input id='alumniAcademicYear' type='text' placeholder='例如：114學年度' maxlength='30' required></div>" +
           "<div class='field'><label for='alumniStudentName'>學生姓名</label><input id='alumniStudentName' type='text' maxlength='50' required></div>" +
-          "<div class='field'><label for='alumniExamScope'>新增類型</label><select id='alumniExamScope' required><option value=''>請選擇模考類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option></select></div>" +
+          "<div class='field'><label for='alumniExamScope'>新增類型（新增後會保留，可自行更改）</label><select id='alumniExamScope' required><option value=''>請選擇模考類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option></select></div>" +
         "</div>" +
         "<div class='alumni-score-subject-grid'>" +
           "<div class='field'><label for='alumniChinese'>國文級分（1～7）</label><input id='alumniChinese' type='number' min='1' max='7' step='1' required></div>" +
@@ -3995,8 +3995,13 @@ async function renderAlumniMockScores() {
   }
 
   function resetForm() {
+    // 新增多筆資料時保留目前選定的學年度與模考類型，避免管理員重複輸入。
+    const keepAcademicYear = $("alumniAcademicYear").value;
+    const keepExamScope = $("alumniExamScope").value;
     editingId = "";
     $("alumniScoreForm").reset();
+    $("alumniAcademicYear").value = keepAcademicYear;
+    $("alumniExamScope").value = keepExamScope;
     $("alumniFormTitle").textContent = "新增歷屆模考成績";
     $("alumniSaveButton").textContent = "新增成績";
     $("alumniCancelEdit").style.display = "none";
