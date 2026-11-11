@@ -3871,8 +3871,6 @@ async function renderTeacherDashboard() {
       "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區</small></div>" +
         "<div class='parent-top-actions'>" +
           (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
-          "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg><span>修改密碼</span></button>" +
-          "<button class='parent-action-btn parent-logout-btn parent-logout' type='button' title='登出系統' aria-label='登出系統'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg><span>登出</span></button>" +
         "</div></div>" +
       "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>" +
       buildParentBottomNav();
@@ -4009,8 +4007,6 @@ function renderTeacherResults() {
     "<div class='topbar'><div><h1>小象文教機構｜教師成績查詢</h1><small>教師專區｜僅供查詢</small></div>" +
       "<div class='parent-top-actions'>" +
         (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
-        "<button class='parent-action-btn parent-password-btn parent-change-password' type='button' title='修改登入密碼' aria-label='修改登入密碼'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg><span>修改密碼</span></button>" +
-        "<button class='parent-action-btn parent-logout-btn parent-logout' type='button' title='登出系統' aria-label='登出系統'><svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg><span>登出</span></button>" +
       "</div></div>" +
     "<main class='dashboard teacher-dashboard'><div class='toolbar teacher-toolbar'>" +
       "<div class='teacher-filter-group'><label for='teacherExamSelect'><strong>考試週期</strong></label>" +
