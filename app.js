@@ -1784,6 +1784,25 @@ function clearScoreEntryDraft() {
   saveScoreEntryProgress();
 }
 
+function getCurrentWeekExamDates() {
+  const today = new Date();
+  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const daysSinceMonday = (monday.getDay() + 6) % 7;
+  monday.setDate(monday.getDate() - daysSinceMonday);
+  const saturday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate());
+  saturday.setDate(saturday.getDate() + 5);
+  function toLocalDateString(date) {
+    return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
+  }
+  return { start: toLocalDateString(monday), end: toLocalDateString(saturday) };
+}
+
+function setDefaultExamDates() {
+  const dates = getCurrentWeekExamDates();
+  if ($("examStart")) $("examStart").value = dates.start;
+  if ($("examEnd")) $("examEnd").value = dates.end;
+}
+
 function renderScoreEntry() {
   const content = $("adminContent");
   const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
@@ -1851,6 +1870,8 @@ function renderScoreEntry() {
     scoreMessage.style.margin = "12px 0 0";
     scoreMessage.style.scrollMarginTop = "16px";
   }
+
+  setDefaultExamDates();
 
   $("scoreExam").addEventListener("change", saveScoreEntryProgress);
   $("scoreClass").addEventListener("change", function () {
@@ -2332,6 +2353,7 @@ function clearExamForm() {
   $("examForm").reset();
   $("examEditId").value = "";
   $("examFormTitle").textContent = "新增考試";
+  setDefaultExamDates();
 }
 
 function editExam(id) {
