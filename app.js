@@ -3959,8 +3959,7 @@ async function renderAlumniMockScores() {
         "<div class='alumni-score-basic-grid'>" +
           "<div class='field'><label for='alumniAcademicYear'>學年度（新增後會保留，可自行更改）</label><input id='alumniAcademicYear' type='text' placeholder='例如：114學年度' maxlength='30' required></div>" +
           "<div class='field'><label for='alumniStudentName'>學生姓名</label><input id='alumniStudentName' type='text' maxlength='50' required></div>" +
-          "<div class='field'><label for='alumniExamScope'>新增類型（新增後會保留，可自行更改）</label><select id='alumniExamScope' required><option value=''>請選擇模考類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</option></select></div>" +
-        "</div>" +
+          "<div class='field'><label for='alumniExamScope'>新增類型（新增後會保留，可自行更改）</label><select id='alumniExamScope' required><option value=''>請選擇模考類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>正式模考</select></div>" +
           "<div class='field'><label for='alumniExamRange'>考試範圍</label><input id='alumniExamRange' type='text' maxlength='100' placeholder='例如：第一次模擬考全範圍' required></div>" +
         "</div>" +
         "<div class='alumni-score-subject-grid'>" +
