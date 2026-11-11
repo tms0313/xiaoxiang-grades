@@ -574,7 +574,7 @@ function loginPage() {
         "<div id='systemMessage' class='system-message'></div>" +
         "<form id='loginForm'>" +
           "<div class='field'><label for='email'>登入帳號</label>" +
-            "<input id='email' type='email' placeholder='請輸入電子郵件' autocomplete='username' required>" +
+            "<input id='email' type='text' placeholder='請輸入電子郵件／註冊手機號碼' autocomplete='username' required>" +
           "</div>" +
           "<div class='field'><label for='password'>登入密碼</label>" +
             "<input id='password' type='password' placeholder='請輸入密碼' autocomplete='current-password' required>" +
@@ -601,7 +601,7 @@ function loginPage() {
 async function handleLogin(event) {
   event.preventDefault();
 
-  const email = $("email").value.trim();
+  const loginAccount = $("email").value.trim();
   const password = $("password").value;
   const button = $("loginButton");
 
@@ -609,7 +609,36 @@ async function handleLogin(event) {
   button.textContent = "登入中……";
 
   try {
-    const result = await db.auth.signInWithPassword({ email, password });
+    let loginCredentials;
+
+    if (loginAccount.includes("@")) {
+      // 原有 Email 帳號維持不變
+      loginCredentials = {
+        email: loginAccount.toLowerCase(),
+        password
+      };
+    } else {
+      // 台灣手機號碼轉換為 Supabase 使用的 E.164 格式
+      const compactPhone = loginAccount.replace(/[\s()-]/g, "");
+      let phone = compactPhone;
+
+      if (/^09\d{8}$/.test(compactPhone)) {
+        phone = "+886" + compactPhone.slice(1);
+      } else if (/^8869\d{8}$/.test(compactPhone)) {
+        phone = "+" + compactPhone;
+      }
+
+      if (!/^\+8869\d{8}$/.test(phone)) {
+        throw new Error("請輸入有效的電子郵件，或台灣手機號碼（例如 0912345678）。");
+      }
+
+      loginCredentials = {
+        phone,
+        password
+      };
+    }
+
+    const result = await db.auth.signInWithPassword(loginCredentials);
     if (result.error) throw result.error;
 
     currentUser = result.data.user;
