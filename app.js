@@ -3411,15 +3411,53 @@ async function renderLoginLogs() {
 
     content.innerHTML =
       "<h2 class='section-title'>登入紀錄</h2>" +
-      "<p class='muted'>最近 200 筆登入紀錄。</p>" +
+      "<div class='toolbar' style='display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap'>" +
+        "<p class='muted' style='margin:0'>最近 200 筆登入紀錄（包含管理員、家長及教師）。</p>" +
+        "<button class='btn btn-danger btn-small' type='button' id='clearLoginLogsButton'>清除全部登入紀錄</button>" +
+      "</div>" +
       "<div class='table-wrap'><table><thead><tr><th>登入身分</th><th>登入時間</th></tr></thead>" +
       "<tbody>" + (rows || "<tr><td colspan='2' class='empty'>目前沒有登入紀錄</td></tr>") +
       "</tbody></table></div>";
+
+    const clearButton = $("clearLoginLogsButton");
+    if (clearButton) clearButton.addEventListener("click", clearAllLoginLogs);
 
   } catch (error) {
     content.innerHTML =
       "<h2 class='section-title'>登入紀錄</h2>" +
       "<p class='system-message error'>讀取失敗：" + escapeHtml(error.message) + "</p>";
+  }
+}
+
+async function clearAllLoginLogs() {
+  const confirmed = confirm(
+    "確定要清除全部登入紀錄嗎？\n\n將會清除管理員、家長及教師的所有登入紀錄。\n此操作無法復原，且不會影響任何學生資料或成績。"
+  );
+  if (!confirmed) return;
+
+  const button = $("clearLoginLogsButton");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "清除中…";
+  }
+
+  try {
+    const result = await db.from("login_events")
+      .delete({ count: "exact" })
+      .not("created_at", "is", null);
+    if (result.error) throw result.error;
+
+    const remaining = await db.from("login_events").select("*", { count: "exact", head: true });
+    if (remaining.error) throw remaining.error;
+    if ((remaining.count || 0) > 0) {
+      throw new Error("仍有 " + remaining.count + " 筆登入紀錄未清除，請確認資料表是否允許管理員刪除。");
+    }
+
+    await renderLoginLogs();
+    showMessage("已清除管理員、家長及教師的全部登入紀錄；學生資料與成績不受影響。", "success");
+  } catch (error) {
+    await renderLoginLogs();
+    showMessage("清除登入紀錄失敗：" + error.message, "error");
   }
 }
 
