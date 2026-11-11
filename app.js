@@ -978,8 +978,8 @@ function renderAdminDashboard() {
         "<button class='tab-btn' data-tab='students'>學生管理</button>" +
         
         "<button class='tab-btn' data-tab='guardians'>家長綁定</button>" +
-        "<button class='tab-btn' data-tab='teachers'>教師管理</button>" +
         "<button class='tab-btn' data-tab='passwords'>家長帳號管理</button>" +
+        "<button class='tab-btn' data-tab='teachers'>教師管理</button>" +
         "<button class='tab-btn' data-tab='alumni'>模考成績</button>" +
         "<button class='tab-btn' data-tab='export'>成績匯出</button>" +
         "<button class='tab-btn' data-tab='logs'>登入紀錄</button>" +
