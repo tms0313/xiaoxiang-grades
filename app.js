@@ -542,6 +542,12 @@ style.textContent = [
   "}"
 ].join("\n");
 
+style.textContent += "\n" +
+  ".parent-review-action { display:flex; justify-content:flex-end; margin-top:16px; padding-top:13px; border-top:1px solid #e7edf3; }" +
+  ".parent-review-btn { width:100%; max-width:320px; min-height:44px; border:0; border-radius:9px; padding:10px 14px; background:#27845b; color:#fff; font-size:15px; font-weight:800; }" +
+  ".parent-review-btn:disabled { background:#e2e7ec; color:#64748b; border:1px solid #d2d9e1; opacity:1; cursor:not-allowed; box-shadow:none; }" +
+  "@media(max-width:600px) { .parent-review-action { margin-top:13px; } .parent-review-btn { max-width:none; min-height:46px; font-size:15px; } }";
+
 document.head.appendChild(style);
 
 // ==================================================
@@ -3667,6 +3673,34 @@ async function renderParentDashboard() {
 
   const parentExams = examsResult.data || [];
 
+  const sortedExams = sortByDateDesc(parentExams, "start_date");
+  const latestThreeExams = sortedExams.slice(0, 3);
+  const reviewExamIds = latestThreeExams.map(function (exam) {
+    return exam.id;
+  });
+
+  let parentReviewRecords = [];
+  if (reviewExamIds.length > 0 && studentIds.length > 0) {
+    const reviewResult = await db
+      .from("score_review_records")
+      .select("exam_id, student_id, guardian_id, reviewed_at")
+      .in("exam_id", reviewExamIds)
+      .in("student_id", studentIds);
+
+    if (reviewResult.error) {
+      throw new Error("讀取成績檢閱紀錄失敗：" + reviewResult.error.message);
+    }
+
+    parentReviewRecords = reviewResult.data || [];
+  }
+
+  function findReviewRecord(student, exam) {
+    return parentReviewRecords.find(function (record) {
+      return String(record.student_id) === String(student.id) &&
+        String(record.exam_id) === String(exam.id);
+    });
+  }
+
   function getTaiwanDateTime() {
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Taipei",
@@ -3781,13 +3815,25 @@ async function renderParentDashboard() {
     );
   }
 
-  const sortedExams = sortByDateDesc(parentExams, "start_date");
-
-  const latestThreeExams = sortedExams.slice(0, 3);
-
   const studentCards = parentStudents.map(function (student) {
     const examCards = latestThreeExams.map(function (exam) {
       const released = isExamReleased(exam);
+
+      const studentExamScores = getStudentScores(student, exam);
+      const reviewRecord = findReviewRecord(student, exam);
+      const canReview = released && studentExamScores.length > 0;
+      const reviewButton = canReview
+        ? (
+            "<div class='parent-review-action'>" +
+              "<button type='button' class='parent-review-btn' " +
+                "data-review-student='" + escapeHtml(student.id) + "' " +
+                "data-review-exam='" + escapeHtml(exam.id) + "' " +
+                (reviewRecord ? "disabled" : "") + ">" +
+                (reviewRecord ? "已完成本週成績查閱" : "我已查閱本週成績") +
+              "</button>" +
+            "</div>"
+          )
+        : "";
 
       return (
         "<div class='panel'>" +
@@ -3797,6 +3843,7 @@ async function renderParentDashboard() {
               ? buildParentScoreTable(student, exam)
               : "<div class='empty'>本次考試成績將於週六 20:00 開放查詢。</div>"
           ) +
+          reviewButton +
         "</div>"
       );
     }).join("");
@@ -3827,6 +3874,37 @@ async function renderParentDashboard() {
 
   bindParentActionButtons();
   if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
+
+  content.querySelectorAll(".parent-review-btn").forEach(function (button) {
+    button.addEventListener("click", async function () {
+      if (button.disabled) return;
+
+      const studentId = button.dataset.reviewStudent;
+      const examId = button.dataset.reviewExam;
+      if (!studentId || !examId) return;
+
+      button.disabled = true;
+      button.textContent = "正在儲存……";
+
+      const result = await db
+        .from("score_review_records")
+        .insert({
+          exam_id: examId,
+          student_id: studentId,
+          guardian_id: currentUser.id
+        });
+
+      if (result.error && result.error.code !== "23505") {
+        button.disabled = false;
+        button.textContent = "我已查閱本週成績";
+        alert("儲存檢閱紀錄失敗：" + result.error.message);
+        return;
+      }
+
+      button.textContent = "已完成本週成績查閱";
+      button.disabled = true;
+    });
+  });
 }
 
 // ==================================================
