@@ -2511,8 +2511,15 @@ function renderGuardians() {
 
   const parentOptions = profilesCache.map(function (profile) {
     const loginIdentity = profile.email || profile.phone || "未設定登入帳號";
+    const linkedStudent = guardianLinksCache
+      .filter(link => String(link.guardian_id) === String(profile.id))
+      .map(link => studentsCache.find(student => String(student.id) === String(link.student_id)))
+      .find(student => !!student);
+    const parentLabel = linkedStudent
+      ? linkedStudent.full_name + "家長"
+      : (profile.display_name || loginIdentity);
     return "<option value='" + escapeHtml(profile.id) + "'>" +
-      escapeHtml((profile.display_name || loginIdentity) + "｜" + loginIdentity) +
+      escapeHtml(parentLabel + "｜" + loginIdentity) +
       "</option>";
   }).join("");
 
