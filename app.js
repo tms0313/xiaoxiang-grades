@@ -2549,7 +2549,9 @@ function renderGuardians() {
         "<tr>" +
           "<td>" + escapeHtml(student.class_name) + "</td>" +
           "<td>" + escapeHtml(student.full_name) + "</td>" +
-          "<td>" + escapeHtml(parent ? (parent.email || parent.phone || "—") : "—") + "</td>" +
+          "<td>" + (parent
+            ? "<strong>" + escapeHtml(student.full_name + "家長") + "</strong><br><span class='muted'>" + escapeHtml(parent.email || parent.phone || "—") + "</span>"
+            : "—") + "</td>" +
           "<td><span class='guardian-status-bound'>已綁定</span></td>" +
           "<td class='action-cell'>" +
             "<div class='action-buttons'>" +
@@ -2614,7 +2616,7 @@ function renderGuardians() {
         "</select>" +
       "</div>" +
       "<div class='table-wrap'><table class='guardian-management-table'>" +
-        "<thead><tr><th>班級</th><th>學生姓名</th><th>家長帳號</th><th>綁定狀態</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>班級</th><th>學生姓名</th><th>家長名稱／帳號</th><th>綁定狀態</th><th>操作</th></tr></thead>" +
         "<tbody id='guardianRows'>" +
           (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>") +
         "</tbody>" +
