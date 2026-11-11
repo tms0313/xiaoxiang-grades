@@ -234,6 +234,20 @@ function csvCell(value) {
   return '"' + text.replace(/"/g, '""') + '"';
 }
 
+// 手機家長使用內部 Email 別名登入，不使用 Supabase Phone Auth 或 SMS
+function normalizeTaiwanMobile(value) {
+  const compact = String(value || "").replace(/[\s()-]/g, "");
+  if (/^09\d{8}$/.test(compact)) return "+886" + compact.slice(1);
+  if (/^8869\d{8}$/.test(compact)) return "+" + compact;
+  if (/^\+8869\d{8}$/.test(compact)) return compact;
+  throw new Error("請輸入有效的台灣手機號碼，例如 0912345678。");
+}
+
+function phoneLoginEmail(value) {
+  const phone = normalizeTaiwanMobile(value);
+  return phone.replace(/^\+/, "") + "@phone-login.invalid";
+}
+
 // ==================================================
 // 2. 畫面樣式
 // ==================================================
@@ -618,22 +632,9 @@ async function handleLogin(event) {
         password
       };
     } else {
-      // 台灣手機號碼轉換為 Supabase 使用的 E.164 格式
-      const compactPhone = loginAccount.replace(/[\s()-]/g, "");
-      let phone = compactPhone;
-
-      if (/^09\d{8}$/.test(compactPhone)) {
-        phone = "+886" + compactPhone.slice(1);
-      } else if (/^8869\d{8}$/.test(compactPhone)) {
-        phone = "+" + compactPhone;
-      }
-
-      if (!/^\+8869\d{8}$/.test(phone)) {
-        throw new Error("請輸入有效的電子郵件，或台灣手機號碼（例如 0912345678）。");
-      }
-
+      // 將家長輸入的手機號碼轉成固定的內部登入 Email
       loginCredentials = {
-        phone,
+        email: phoneLoginEmail(loginAccount),
         password
       };
     }
@@ -2470,8 +2471,9 @@ function renderGuardians() {
   const content = $("adminContent");
 
   const parentOptions = profilesCache.map(function (profile) {
+    const loginIdentity = profile.email || profile.phone || "未設定登入帳號";
     return "<option value='" + escapeHtml(profile.id) + "'>" +
-      escapeHtml((profile.display_name || profile.email) + "｜" + profile.email) +
+      escapeHtml((profile.display_name || loginIdentity) + "｜" + loginIdentity) +
       "</option>";
   }).join("");
 
@@ -2508,7 +2510,7 @@ function renderGuardians() {
         "<tr>" +
           "<td>" + escapeHtml(student.class_name) + "</td>" +
           "<td>" + escapeHtml(student.full_name) + "</td>" +
-          "<td>" + escapeHtml(parent ? parent.email : "—") + "</td>" +
+          "<td>" + escapeHtml(parent ? (parent.email || parent.phone || "—") : "—") + "</td>" +
           "<td><span class='guardian-status-bound'>已綁定</span></td>" +
           "<td class='action-cell'>" +
             "<div class='action-buttons'>" +
@@ -2545,9 +2547,10 @@ function renderGuardians() {
     "<h2 class='section-title'>家長綁定</h2>" +
 
     "<div class='panel'><h3>新增家長帳號</h3>" +
-      "<p class='muted'>輸入家長 Email，選擇學生後，系統會自動建立家長登入帳號並完成學生綁定。</p>" +
+      "<p class='muted'>可選擇使用 Email 或手機號碼建立家長帳號。手機帳號不需要簡訊驗證。</p>" +
       "<form id='createParentForm'><div class='form-grid'>" +
-        "<div class='field'><label>家長 Email（登入帳號）</label><input id='newParentEmail' type='email' placeholder='請輸入家長 Email' autocomplete='off' required></div>" +
+        "<div class='field'><label>帳號類型</label><select id='newParentAccountType'><option value='email'>Email 登入</option><option value='phone'>手機號碼登入</option></select></div>" +
+        "<div class='field'><label>家長 Email／手機號碼</label><input id='newParentAccount' type='text' placeholder='請輸入 Email 或 0912345678' autocomplete='off' required></div>" +
         "<div class='field'><label>綁定學生</label><select id='newParentStudent' required><option value=''>請選擇學生</option>" + studentOptions + "</select></div>" +
       "</div>" +
       "<p class='muted'>初始密碼：123456。家長首次登入後，請自行修改密碼。</p>" +
@@ -2777,18 +2780,38 @@ async function editParentAccount(parentId) {
 async function createParentAccount(event) {
   event.preventDefault();
 
-  const email = $("newParentEmail").value.trim().toLowerCase();
-  const displayName = email;
+  const accountType = $("newParentAccountType").value;
+  const accountInput = $("newParentAccount").value.trim();
   const studentId = $("newParentStudent").value;
   const button = $("createParentButton");
 
-  if (!email || !studentId) {
-    showMessage("請填寫家長 Email 並選擇綁定學生。", "error");
+  let email = null;
+  let phone = null;
+  let loginLabel = accountInput;
+
+  try {
+    if (accountType === "phone") {
+      phone = normalizeTaiwanMobile(accountInput);
+      loginLabel = phone;
+    } else {
+      email = accountInput.toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new Error("請輸入有效的 Email 地址。");
+      }
+      loginLabel = email;
+    }
+  } catch (error) {
+    showMessage(error.message, "error");
+    return;
+  }
+
+  const displayName = loginLabel;
+  if (!studentId) {
+    showMessage("請選擇要綁定的學生。", "error");
     return;
   }
 
   const student = studentsCache.find(item => String(item.id) === String(studentId));
-
   if (!student) {
     showMessage("找不到所選學生，請重新整理後再試。", "error");
     return;
@@ -2796,7 +2819,8 @@ async function createParentAccount(event) {
 
   if (!confirm(
     "請確認以下家長帳號資料：\n\n" +
-    "登入帳號：" + email + "\n" +
+    "帳號類型：" + (accountType === "phone" ? "手機號碼" : "Email") + "\n" +
+    "登入帳號：" + loginLabel + "\n" +
     "綁定學生：" + student.full_name + "\n" +
     "班級：" + student.class_name + "\n" +
     "初始密碼：123456\n\n" +
@@ -2810,7 +2834,7 @@ async function createParentAccount(event) {
     const result = await db.functions.invoke(
       "admin-create-parent-account",
       {
-        body: { email, displayName, studentId }
+        body: { email, phone, displayName, studentId }
       }
     );
 
@@ -2823,7 +2847,6 @@ async function createParentAccount(event) {
     }
 
     const data = result.data || {};
-
     if (!data.success || !data.initialPassword) {
       throw new Error(data.error || "帳號建立結果不完整，請確認 Supabase Edge Function。");
     }
@@ -2833,7 +2856,6 @@ async function createParentAccount(event) {
 
     const passwordText = data.initialPassword;
     let copied = false;
-
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(passwordText);
@@ -2845,7 +2867,7 @@ async function createParentAccount(event) {
 
     alert(
       "家長帳號建立成功！\n\n" +
-      "登入帳號：" + (data.email || email) + "\n" +
+      "登入帳號：" + loginLabel + "\n" +
       "綁定學生：" + student.full_name + "\n" +
       "初始密碼：" + passwordText + "\n\n" +
       (copied
@@ -2854,17 +2876,15 @@ async function createParentAccount(event) {
     );
 
     showMessage(
-      "家長帳號「" + email + "」已建立，並完成「" + student.full_name + "」的學生綁定。",
+      "家長帳號「" + loginLabel + "」已建立，並完成「" + student.full_name + "」的學生綁定。",
       "success"
     );
 
   } catch (error) {
     console.error("建立家長帳號失敗：", error);
     showMessage("建立家長帳號失敗：" + error.message, "error");
-
   } finally {
     const currentButton = $("createParentButton");
-
     if (currentButton) {
       currentButton.disabled = false;
       currentButton.textContent = "建立家長帳號";
