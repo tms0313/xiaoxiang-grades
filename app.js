@@ -367,10 +367,11 @@ style.textContent = [
   "th,td { border-bottom:1px solid #e7ebf0; padding:11px 10px; text-align:left; vertical-align:middle; }",
   "th { background:#f3f6f9; color:#40566d; white-space:nowrap; }",
   "tr:hover td { background:#fafbfd; }",
-  ".login-log-row-admin td { background:#eaf2ff; }",
-  ".login-log-row-parent td { background:#fff4e5; }",
-  ".login-log-row-teacher td { background:#e9f7ef; }",
-  ".login-log-row-unknown td { background:#f3f4f6; }",
+  ".login-role-badge { display:inline-block; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:800; white-space:nowrap; }",
+  ".login-role-admin { color:#2457a6; background:#eaf2ff !important; }",
+  ".login-role-parent { color:#9a5700; background:#fff4e5 !important; }",
+  ".login-role-teacher { color:#237447; background:#e9f7ef !important; }",
+  ".login-role-unknown { color:#5b6470; background:#f3f4f6 !important; }",
   ".login-log-legend { display:flex; flex-wrap:wrap; gap:10px 16px; margin:10px 0 14px; font-size:13px; }",
   ".login-log-legend-item { display:inline-flex; align-items:center; gap:6px; }",
   ".login-log-legend-swatch { width:13px; height:13px; border-radius:3px; border:1px solid rgba(0,0,0,.08); display:inline-block; }",
@@ -3542,13 +3543,16 @@ async function renderLoginLogs() {
       const profile = allProfiles.find(item => String(item.id) === String(log.user_id));
 
       let loginIdentity = "未知帳號";
-      let loginRoleClass = "login-log-row-unknown";
+      let loginRoleLabel = "未知";
+      let loginRoleBadgeClass = "login-role-unknown";
 
       if (profile && profile.role === "admin") {
-        loginRoleClass = "login-log-row-admin";
-        loginIdentity = "管理員";
+        loginRoleLabel = "管理員";
+        loginRoleBadgeClass = "login-role-admin";
+        loginIdentity = "";
       } else if (profile && profile.role === "teacher") {
-        loginRoleClass = "login-log-row-teacher";
+        loginRoleLabel = "老師";
+        loginRoleBadgeClass = "login-role-teacher";
         const teacherNames = {
           "black951165@gmail.com": "王炫老師",
           "tingning1995120@gmail.com": "溫老師",
@@ -3557,7 +3561,10 @@ async function renderLoginLogs() {
         const teacherEmail = String(profile.email || "").trim().toLowerCase();
         loginIdentity = teacherNames[teacherEmail] || profile.email || "教師帳號";
       } else {
-        if (profile && profile.role === "parent") loginRoleClass = "login-log-row-parent";
+        if (profile && profile.role === "parent") {
+          loginRoleLabel = "家長";
+          loginRoleBadgeClass = "login-role-parent";
+        }
         const linkedStudents = guardianLinksCache
           .filter(link => String(link.guardian_id) === String(log.user_id))
           .map(function (link) {
@@ -3565,11 +3572,11 @@ async function renderLoginLogs() {
             return student ? student.full_name : null;
           })
           .filter(Boolean);
-
         loginIdentity = Array.from(new Set(linkedStudents)).join("、") || "尚未綁定學生";
       }
 
-      return "<tr class=\"" + loginRoleClass + "\"><td>" + escapeHtml(loginIdentity) + "</td><td>" +
+      return "<tr><td><span class=\"login-role-badge " + loginRoleBadgeClass + "\">" + escapeHtml(loginRoleLabel) + "</span>" +
+        (loginIdentity ? " " + escapeHtml(loginIdentity) : "") + "</td><td>" +
         escapeHtml(log.created_at ? new Date(log.created_at).toLocaleString("zh-TW") : "—") +
         "</td></tr>";
     }).join("");
