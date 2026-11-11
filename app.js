@@ -2698,38 +2698,82 @@ async function editParentAccount(parentId) {
     return;
   }
 
-  const emailInput = prompt(
-    "請輸入家長登入 Email：",
-    parent.email || ""
-  );
+  const isPhoneAccount = Boolean(parent.phone) || !parent.email;
+  let email = "";
+  let phone = "";
 
-  if (emailInput === null) return;
+  if (isPhoneAccount) {
+    const phoneInput = prompt(
+      "請輸入家長登入手機號碼：",
+      parent.phone || ""
+    );
 
-  const email = emailInput.trim().toLowerCase();
+    if (phoneInput === null) return;
 
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    phone = phoneInput.trim().replace(/[\\s()-]/g, "");
 
-  if (!emailPattern.test(email)) {
-    showMessage("請輸入有效的 Email 地址。", "error");
-    return;
+    if (!/^09\\d{8}$/.test(phone) &&
+        !/^8869\\d{8}$/.test(phone) &&
+        !/^\\+8869\\d{8}$/.test(phone)) {
+      showMessage("請輸入有效的台灣手機號碼，例如 0912345678。", "error");
+      return;
+    }
+
+    if (/^09\\d{8}$/.test(phone)) {
+      phone = "+886" + phone.substring(1);
+    } else if (/^8869\\d{8}$/.test(phone)) {
+      phone = "+" + phone;
+    }
+
+    const duplicate = profilesCache.find(function (item) {
+      return String(item.id) !== String(parentId) &&
+        String(item.phone || "").replace(/[\\s()-]/g, "") === phone;
+    });
+
+    if (duplicate) {
+      showMessage("這支手機號碼已經被其他家長帳號使用。", "error");
+      return;
+    }
+  } else {
+    const emailInput = prompt(
+      "請輸入家長登入 Email：",
+      parent.email || ""
+    );
+
+    if (emailInput === null) return;
+
+    email = emailInput.trim().toLowerCase();
+
+    const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+      showMessage("請輸入有效的 Email 地址。", "error");
+      return;
+    }
+
+    const duplicate = profilesCache.find(function (item) {
+      return String(item.id) !== String(parentId) &&
+        String(item.email || "").toLowerCase() === email;
+    });
+
+    if (duplicate) {
+      showMessage("這個 Email 已經被其他家長帳號使用。", "error");
+      return;
+    }
   }
 
-  const duplicate = profilesCache.find(function (item) {
-    return String(item.id) !== String(parentId) &&
-      String(item.email || "").toLowerCase() === email;
-  });
-
-  if (duplicate) {
-    showMessage("這個 Email 已經被其他家長帳號使用。", "error");
-    return;
-  }
+  const accountLabel = isPhoneAccount ? "手機號碼" : "Email";
+  const oldAccount = isPhoneAccount
+    ? (parent.phone || "—")
+    : (parent.email || "—");
+  const newAccount = isPhoneAccount ? phone : email;
 
   if (!confirm(
-    "確認修改家長資料嗎？\n\n" +
-    "原姓名：" + (parent.display_name || "—") + "\n" +
-    "新姓名：" + displayName + "\n\n" +
-    "原 Email：" + (parent.email || "—") + "\n" +
-    "新 Email：" + email + "\n\n" +
+    "確認修改家長資料嗎？\\n\\n" +
+    "原姓名：" + (parent.display_name || "—") + "\\n" +
+    "新姓名：" + displayName + "\\n\\n" +
+    "原" + accountLabel + "：" + oldAccount + "\\n" +
+    "新" + accountLabel + "：" + newAccount + "\\n\\n" +
     "家長密碼及學生綁定不會變更。"
   )) return;
 
@@ -2737,11 +2781,17 @@ async function editParentAccount(parentId) {
     const result = await db.functions.invoke(
       "admin-update-parent-account",
       {
-        body: {
-          parentId: parentId,
-          displayName: displayName,
-          email: email
-        }
+        body: isPhoneAccount
+          ? {
+              parentId: parentId,
+              displayName: displayName,
+              phone: phone
+            }
+          : {
+              parentId: parentId,
+              displayName: displayName,
+              email: email
+            }
       }
     );
 
@@ -2763,7 +2813,7 @@ async function editParentAccount(parentId) {
     renderGuardians();
 
     showMessage(
-      "家長資料已更新，登入 Email 已同步變更。",
+      "家長姓名及登入" + accountLabel + "已成功更新。",
       "success"
     );
 
