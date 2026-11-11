@@ -913,6 +913,7 @@ function renderAdminDashboard() {
         "<button class='tab-btn' data-tab='teachers'>教師管理</button>" +
         "<button class='tab-btn' data-tab='passwords'>家長密碼</button>" +
         "<button class='tab-btn' data-tab='logs'>登入紀錄</button>" +
+        "<button class='tab-btn' data-tab='reviews'>週考檢閱紀錄</button>" +
         "<button class='tab-btn' data-tab='export'>成績匯出</button>" +
       "</div>" +
       "<section id='adminContent'></section>" +
@@ -955,6 +956,7 @@ function renderAdminTab() {
   if (activeTab === "teachers") renderTeacherManagement();
   if (activeTab === "passwords") renderPasswords();
   if (activeTab === "logs") renderLoginLogs();
+  if (activeTab === "reviews") renderStudentReviewRecords();
   if (activeTab === "export") renderExport();
 }
 
@@ -3397,6 +3399,137 @@ async function renderLoginLogs() {
       "<h2 class='section-title'>登入紀錄</h2>" +
       "<p class='system-message error'>讀取失敗：" + escapeHtml(error.message) + "</p>";
   }
+}
+
+// ==================================================
+// 13-1. 學生週考檢閱紀錄
+// ==================================================
+
+async function renderStudentReviewRecords(selectedExamId) {
+  const content = $("adminContent");
+  const examList = sortByDateDesc(examsCache, "start_date");
+  const activeStudents = studentsCache.filter(student => student.is_active === true);
+  const currentExamId = selectedExamId ||
+    (examList.length ? String(examList[0].id) : "");
+
+  content.innerHTML =
+    "<h2 class='section-title'>學生週考檢閱紀錄</h2>" +
+    "<div class='toolbar' style='align-items:flex-end'>" +
+      "<div class='field' style='margin:0;min-width:220px;flex:1'>" +
+        "<label for='reviewExamSelect'>考試週期</label>" +
+        "<select id='reviewExamSelect' style='width:100%;padding:10px;border:1px solid #ccd4df;border-radius:8px'>" +
+          examList.map(function(exam) {
+            return "<option value='" + escapeHtml(exam.id) + "' " +
+              (String(exam.id) === currentExamId ? "selected" : "") + ">" +
+              escapeHtml(formatDateRange(exam)) + "</option>";
+          }).join("") +
+        "</select>" +
+      "</div>" +
+      "<div class='field' style='margin:0;min-width:150px;flex:1'>" +
+        "<label for='reviewClassSelect'>班級</label>" +
+        "<select id='reviewClassSelect' style='width:100%;padding:10px;border:1px solid #ccd4df;border-radius:8px'>" +
+          "<option value=''>全部班級</option>" +
+          "<option value='國一班'>國一班</option>" +
+          "<option value='國二班'>國二班</option>" +
+          "<option value='國三班'>國三班</option>" +
+        "</select>" +
+      "</div>" +
+      "<button class='btn btn-secondary' id='reviewRefreshButton' type='button'>重新整理</button>" +
+    "</div>" +
+    "<div id='reviewRecordContent' class='empty'>正在讀取檢閱紀錄……</div>";
+
+  const examSelect = $("reviewExamSelect");
+  const classSelect = $("reviewClassSelect");
+  const refreshButton = $("reviewRefreshButton");
+  const recordContent = $("reviewRecordContent");
+
+  if (!examList.length) {
+    recordContent.innerHTML = "目前沒有考試週期資料。";
+    examSelect.disabled = true;
+    classSelect.disabled = true;
+    refreshButton.disabled = true;
+    return;
+  }
+
+  async function loadRecords() {
+    recordContent.innerHTML = "<div class='empty'>正在讀取檢閱紀錄……</div>";
+    refreshButton.disabled = true;
+
+    try {
+      const result = await db
+        .from("score_review_records")
+        .select("student_id, reviewed_at")
+        .eq("exam_id", examSelect.value);
+
+      if (result.error) throw result.error;
+
+      const reviewMap = new Map(
+        (result.data || []).map(record => [String(record.student_id), record])
+      );
+      const selectedClass = classSelect.value;
+      const visibleStudents = activeStudents.filter(function(student) {
+        return !selectedClass || student.class_name === selectedClass;
+      });
+
+      const reviewedCount = visibleStudents.filter(student =>
+        reviewMap.has(String(student.id))
+      ).length;
+      const pendingCount = visibleStudents.length - reviewedCount;
+      const completionRate = visibleStudents.length
+        ? Math.round(reviewedCount / visibleStudents.length * 100)
+        : 0;
+
+      const rows = visibleStudents.map(function(student) {
+        const record = reviewMap.get(String(student.id));
+        const status = record
+          ? "<span style='display:inline-block;padding:5px 10px;border-radius:20px;background:#e3f5e9;color:#20683d;font-weight:800'>已檢閱</span>"
+          : "<span style='display:inline-block;padding:5px 10px;border-radius:20px;background:#fde8e8;color:#a32626;font-weight:800'>未檢閱</span>";
+        const reviewedAt = record && record.reviewed_at
+          ? new Date(record.reviewed_at).toLocaleString("zh-TW", {
+              timeZone: "Asia/Taipei",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false
+            })
+          : "—";
+
+        return "<tr>" +
+          "<td>" + escapeHtml(student.class_name || "—") + "</td>" +
+          "<td>" + escapeHtml(student.student_code || "—") + "</td>" +
+          "<td>" + escapeHtml(student.full_name || "—") + "</td>" +
+          "<td>" + status + "</td>" +
+          "<td>" + escapeHtml(reviewedAt) + "</td>" +
+        "</tr>";
+      }).join("");
+
+      recordContent.innerHTML =
+        "<div class='grid' style='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:8px 0 18px'>" +
+          "<div class='panel' style='margin:0;padding:14px;text-align:center'><div class='muted'>已檢閱</div><div style='font-size:26px;font-weight:900;color:#27845b'>" + reviewedCount + "</div></div>" +
+          "<div class='panel' style='margin:0;padding:14px;text-align:center'><div class='muted'>未檢閱</div><div style='font-size:26px;font-weight:900;color:#bd4242'>" + pendingCount + "</div></div>" +
+          "<div class='panel' style='margin:0;padding:14px;text-align:center'><div class='muted'>完成率</div><div style='font-size:26px;font-weight:900;color:#315d86'>" + completionRate + "%</div></div>" +
+        "</div>" +
+        "<p class='muted'>統計範圍：目前在學學生，共 " + visibleStudents.length + " 人。</p>" +
+        "<div class='table-wrap'><table style='min-width:620px'><thead><tr>" +
+          "<th>班級</th><th>學生編號</th><th>學生姓名</th><th>檢閱狀態</th><th>檢閱時間</th>" +
+        "</tr></thead><tbody>" +
+          (rows || "<tr><td colspan='5' class='empty'>此班級目前沒有在學學生。</td></tr>") +
+        "</tbody></table></div>";
+    } catch (error) {
+      recordContent.innerHTML =
+        "<div class='system-message error' style='display:block'>讀取檢閱紀錄失敗：" +
+        escapeHtml(error.message) + "</div>";
+    } finally {
+      refreshButton.disabled = false;
+    }
+  }
+
+  examSelect.addEventListener("change", loadRecords);
+  classSelect.addEventListener("change", loadRecords);
+  refreshButton.addEventListener("click", loadRecords);
+  await loadRecords();
 }
 
 // ==================================================
