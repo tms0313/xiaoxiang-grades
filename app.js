@@ -1106,6 +1106,7 @@ function renderAdminClassHighestPreview() {
         valueUnit: grade3NonMath ? "題" : "分",
         highestValue: value,
         highestGradeLevel: score.grade_level || null,
+        highestStudentName: student.full_name || "未命名學生",
         validCount: 1
       });
       return;
@@ -1125,6 +1126,7 @@ function renderAdminClassHighestPreview() {
     ) {
       group.highestValue = value;
       group.highestGradeLevel = score.grade_level || null;
+      group.highestStudentName = student.full_name || "未命名學生";
     }
   });
 
@@ -1159,7 +1161,7 @@ function renderAdminClassHighestPreview() {
       );
 
     return "<tr>" +
-      "<td>" + escapeHtml(item.className) + "</td>" +
+      "<td>" + escapeHtml(item.className) + "（" + escapeHtml(item.highestStudentName) + "）</td>" +
       "<td>" + escapeHtml(item.subject) + "</td>" +
       "<td>" + escapeHtml(item.scope || "—") + "</td>" +
       "<td><strong>" + highestText + "</strong></td>" +
@@ -1177,7 +1179,7 @@ function renderAdminClassHighestPreview() {
     "<div class='table-wrap'>" +
       "<table>" +
         "<thead><tr>" +
-          "<th>班級</th><th>科目</th><th>範圍</th>" +
+          "<th>班級（最高分學生）</th><th>科目</th><th>範圍</th>" +
           "<th>班級最高</th><th>有效成績</th>" +
         "</tr></thead>" +
         "<tbody>" +
