@@ -436,7 +436,7 @@ style.textContent = [
   ".parent-subject-scope { display:block; font-size:15px; line-height:1.65; overflow-wrap:anywhere; word-break:break-word; }",
   ".parent-subject-scope-label { color:#8491a0; font-size:11px; font-weight:800; }",
   ".parent-page .parent-subject-card .parent-subject-scope-text { display:inline-block !important; min-width:0; max-width:100%; padding:5px 11px !important; border:1px solid #c8ebd3 !important; border-radius:8px !important; background:#eaf8ef !important; color:#267447 !important; font-size:15px !important; font-weight:700 !important; line-height:1.55; box-decoration-break:clone; -webkit-box-decoration-break:clone; }",
-  ".parent-subject-result { min-width:104px; max-width:48%; text-align:center; padding-left:17px; border-left:1px solid #e8edf3; color:#263445; }",
+  ".parent-subject-result { min-width:104px; max-width:48%; text-align:left; padding-left:17px; border-left:1px solid #e8edf3; color:#263445; }",
   ".parent-subject-result-label { color:#8491a0; font-size:13px; font-weight:800; margin-bottom:5px; }",
   ".parent-subject-result-value { font-size:25px; font-weight:900; line-height:1.4; color:#173f68; overflow-wrap:anywhere; }",
   ".parent-subject-result-value .parent-score-number { font-size:27px; font-weight:900; white-space:nowrap; }",
