@@ -1439,14 +1439,40 @@ async function excludeMissingReminder(item) {
   if (!confirmed) return;
 
   try {
-    const result = await db.from("score_missing_exclusions").upsert({
-      exam_id: item.examId,
-      student_id: item.studentId,
-      subject: item.subject,
-      scope: item.scope || ""
-    }, { onConflict: "exam_id,student_id,subject,scope" }).select("*").single();
+    const result = await db.from("score_missing_exclusions")
+      .insert({
+        exam_id: item.examId,
+        student_id: item.studentId,
+        subject: item.subject,
+        scope: item.scope || ""
+      })
+      .select("*")
+      .single();
 
-    if (result.error) throw result.error;
+    let exclusionRow = result.data;
+
+    if (result.error) {
+      // 若同一提醒已被其他管理員排除，將既有資料讀回即可，不執行 UPDATE。
+      if (result.error.code === "23505") {
+        const existing = await db.from("score_missing_exclusions")
+          .select("*")
+          .eq("exam_id", item.examId)
+          .eq("student_id", item.studentId)
+          .eq("subject", item.subject)
+          .eq("scope", item.scope || "")
+          .maybeSingle();
+
+        if (existing.error) throw existing.error;
+        exclusionRow = existing.data;
+      } else {
+        throw result.error;
+      }
+    }
+
+    if (!exclusionRow) {
+      throw new Error("無法確認未登錄提醒的排除紀錄，請重新整理後再試。");
+    }
+
     missingExclusionsCache = missingExclusionsCache.filter(function (row) {
       return !(
         String(row.exam_id) === String(item.examId) &&
@@ -1455,7 +1481,7 @@ async function excludeMissingReminder(item) {
         String(row.scope || "") === String(item.scope || "")
       );
     });
-    missingExclusionsCache.push(result.data);
+    missingExclusionsCache.push(exclusionRow);
     renderOverview(overviewFilters, true);
     const systemMessage = $("systemMessage");
     if (systemMessage) systemMessage.style.display = "none";
