@@ -4641,9 +4641,15 @@ async function renderParentDashboard() {
     if (scores.length === 0) {
       return "<div class='empty'>本次考試尚無成績資料。</div>";
     }
+    // 國三家長端依科目分組排序；同科目內保留原本範圍順序。
+    const displayScores = isGrade3Class(student.class_name)
+      ? scores.slice().sort(function (a, b) {
+          return SUBJECTS.indexOf(a.subject) - SUBJECTS.indexOf(b.subject);
+        })
+      : scores;
     return (
       "<div class='parent-score-list'>" +
-      scores.map(function (score) {
+      displayScores.map(function (score) {
         const grade3 = isGrade3Class(student.class_name);
         const grade3Math = isGrade3Math(student.class_name, score.subject);
         let resultText = "";
