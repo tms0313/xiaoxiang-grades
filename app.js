@@ -367,6 +367,12 @@ style.textContent = [
 
   ".table-wrap { overflow-x:auto; width:100%; -webkit-overflow-scrolling:touch; }",
   "table { border-collapse:collapse; width:100%; min-width:650px; }",
+  ".class-highest-preview-table { min-width:650px; table-layout:fixed; }",
+  ".class-highest-preview-table th:nth-child(1),.class-highest-preview-table td:nth-child(1) { width:21%; white-space:nowrap; }",
+  ".class-highest-preview-table th:nth-child(2),.class-highest-preview-table td:nth-child(2) { width:10%; white-space:nowrap; }",
+  ".class-highest-preview-table th:nth-child(3),.class-highest-preview-table td:nth-child(3) { width:32%; }",
+  ".class-highest-preview-table th:nth-child(4),.class-highest-preview-table td:nth-child(4) { width:21%; }",
+  ".class-highest-preview-table th:nth-child(5),.class-highest-preview-table td:nth-child(5) { width:16%; }",
   "th,td { border-bottom:1px solid #e7ebf0; padding:11px 10px; text-align:left; vertical-align:middle; }",
   "th { background:#f3f6f9; color:#40566d; white-space:nowrap; }",
   "tr:hover td { background:#fafbfd; }",
@@ -1161,7 +1167,7 @@ function renderAdminClassHighestPreview() {
       );
 
     return "<tr>" +
-      "<td>" + escapeHtml(item.className) + "（" + escapeHtml(item.highestStudentName) + "）</td>" +
+      "<td>" + escapeHtml(item.className) + " " + escapeHtml(item.highestStudentName) + "</td>" +
       "<td>" + escapeHtml(item.subject) + "</td>" +
       "<td>" + escapeHtml(item.scope || "—") + "</td>" +
       "<td><strong>" + highestText + "</strong></td>" +
@@ -1177,9 +1183,9 @@ function renderAdminClassHighestPreview() {
       "<select id='classHighestPreviewExam'>" + examOptions + "</select>" +
     "</div>" +
     "<div class='table-wrap'>" +
-      "<table>" +
+      "<table class='class-highest-preview-table'>" +
         "<thead><tr>" +
-          "<th>班級（最高分學生）</th><th>科目</th><th>範圍</th>" +
+          "<th>班級／學生姓名</th><th>科目</th><th>範圍</th>" +
           "<th>班級最高</th><th>有效成績</th>" +
         "</tr></thead>" +
         "<tbody>" +
