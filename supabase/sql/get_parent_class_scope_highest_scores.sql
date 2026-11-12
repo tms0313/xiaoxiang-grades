@@ -2,7 +2,9 @@
 -- 僅回傳家長已綁定學生所在班級的彙總最高值與該筆最高成績的等級，
 -- 不回傳其他學生的姓名或個別成績。
 
-CREATE OR REPLACE FUNCTION public.get_parent_class_scope_highest_scores()
+DROP FUNCTION IF EXISTS public.get_parent_class_scope_highest_scores();
+
+CREATE FUNCTION public.get_parent_class_scope_highest_scores()
 RETURNS TABLE (
   student_id uuid,
   exam_id uuid,
