@@ -4022,13 +4022,14 @@ async function renderAlumniMockScores() {
         "</div>" +
       "</form>" +
     "</div>" +
-    "<h3 style='color:#23466b;margin:0 0 10px'>歷屆成績資料</h3>" +
+    "<h3 style='color:#23466b;margin:0 0 10px'>歷屆模考資料</h3>" +
     "<div class='alumni-filter-row'>" +
       "<select id='alumniYearFilter' aria-label='依學年度查詢'><option value=''>全部學年度</option></select>" +
       "<input id='alumniNameFilter' type='text' placeholder='搜尋學生姓名' aria-label='搜尋學生姓名'>" +
       "<select id='alumniTypeFilter' aria-label='依類型篩選'><option value=''>全部類型</option><option value='班內模考'>班內模考</option><option value='正式模考'>北北基模考</option><option value='會考'>會考</option></select>" +
       "<select id='alumniRangeFilter' aria-label='依考試範圍篩選'><option value=''>全部考試範圍</option></select>" +
       "<select id='alumniSubjectFilter' aria-label='依考試科目篩選'><option value=''>全部考試科目</option><option value='chinese'>國文</option><option value='math'>數學</option><option value='english'>英文</option><option value='social_studies'>社會</option><option value='natural_science'>自然</option></select>" +
+      "<button type='button' class='btn btn-success' id='alumniFilteredExportButton' style='height:40px;min-height:40px;padding:0 10px;font-size:13px;white-space:nowrap'>匯出成績</button>" +
     "</div>" +
     "<div id='alumniScoreTableArea'><div class='muted'>資料載入中……</div></div>";
 
@@ -4128,6 +4129,7 @@ async function renderAlumniMockScores() {
     if (!filtered.length) {
       $("alumniScoreTableArea").innerHTML = "<div class='empty'>" +
         (records.length ? "沒有符合查詢條件的資料。" : "目前尚無模考成績。") + "</div>";
+      $("alumniFilteredExportButton").disabled = true;
       return;
     }
     const subjectColumns = [
@@ -4165,6 +4167,7 @@ async function renderAlumniMockScores() {
         "<thead><tr><th>學年度</th><th>學生姓名</th><th>模考類型</th>" + (isOnlyCeesExam ? "" : "<th>考試範圍</th><th>區（男／女）排名</th><th>區排名</th>") + "<th>錄取學校</th>" + subjectHeaders + "<th>作文</th><th>總級分</th><th>操作</th></tr></thead>" +
         "<tbody>" + rows + "</tbody></table></div>" +
       "<p class='muted'>共 " + filtered.length + " 筆資料</p>";
+    $("alumniFilteredExportButton").disabled = filtered.length === 0;
   }
 
   async function loadRecords() {
@@ -4239,6 +4242,51 @@ async function renderAlumniMockScores() {
   $("alumniTypeFilter").addEventListener("change", renderRows);
   $("alumniRangeFilter").addEventListener("change", renderRows);
   $("alumniSubjectFilter").addEventListener("change", renderRows);
+  $("alumniFilteredExportButton").addEventListener("click", function () {
+    const yearQuery = $("alumniYearFilter").value.trim().toLowerCase();
+    const nameQuery = $("alumniNameFilter").value.trim().toLowerCase();
+    const typeQuery = $("alumniTypeFilter").value;
+    const rangeQuery = $("alumniRangeFilter").value;
+    const subjectQuery = $("alumniSubjectFilter").value;
+    const filtered = records.filter(function (record) {
+      return String(record.academic_year || "").toLowerCase().includes(yearQuery) &&
+        String(record.student_name || "").toLowerCase().includes(nameQuery) &&
+        (!typeQuery || String(record.exam_scope || "") === typeQuery) &&
+        (!rangeQuery || String(record.exam_range || "") === rangeQuery);
+    });
+    if (!filtered.length) {
+      alert("目前沒有符合篩選條件的成績可匯出。");
+      return;
+    }
+    const subjectFields = [
+      ["chinese", "國文"],
+      ["math", "數學"],
+      ["english", "英文"],
+      ["social_studies", "社會"],
+      ["natural_science", "自然"]
+    ].filter(function (item) { return !subjectQuery || item[0] === subjectQuery; });
+    const headers = ["學年度", "學生姓名", "模考類型", "考試範圍", "區（男／女）排名", "區排名", "錄取學校"]
+      .concat(subjectFields.map(function (item) { return item[1]; }))
+      .concat(["作文", "總級分"]);
+    const rows = [headers.map(csvCell).join(",")].concat(filtered.map(function (record) {
+      return [
+        record.academic_year,
+        record.student_name,
+        record.exam_scope === "正式模考" ? "北北基模考" : record.exam_scope,
+        record.exam_range,
+        record.exam_scope === "正式模考" ? record.district_gender_rank : "",
+        record.exam_scope === "正式模考" ? record.district_rank : "",
+        record.exam_scope === "會考" ? record.admission_school : ""
+      ].concat(subjectFields.map(function (item) { return record[item[0]]; }))
+        .concat([
+          record.composition_score != null && (record.exam_scope === "正式模考" || record.exam_scope === "會考") ? record.composition_score : "",
+          record.total_grade
+        ]).map(csvCell).join(",");
+    }));
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
+    downloadText("小象歷屆模考成績_" + today + ".csv", rows.join("\r\n"), "text/csv;charset=utf-8");
+    showMessage("已匯出符合篩選條件的 " + filtered.length + " 筆模考成績。", "success");
+  });
   $("alumniCancelEdit").addEventListener("click", resetForm);
   $("alumniExamScope").addEventListener("change", function () { updateRankFields(); updateTotalPreview(); });
   updateRankFields();
