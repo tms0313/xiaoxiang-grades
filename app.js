@@ -4674,7 +4674,11 @@ async function renderParentDashboard() {
         }
         const classHighest = findClassHighestScore(student, exam, score);
         const highestText = classHighest && classHighest.highest_score != null
-          ? escapeHtml(classHighest.highest_score) + (classHighest.value_unit === "題" ? " 題" : " 分")
+          ? escapeHtml(classHighest.highest_score) +
+            (classHighest.value_unit === "題" ? " 題" : " 分") +
+            (grade3 && classHighest.highest_grade_level
+              ? " " + gradeTag(classHighest.highest_grade_level)
+              : "")
           : "—";
         return (
           "<div class='parent-subject-card'>" +
