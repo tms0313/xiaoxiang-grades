@@ -4533,6 +4533,22 @@ async function renderParentDashboard() {
     return exam.id;
   });
 
+  // 僅取得已綁定孩子所在班級的最高分統計，不讀取其他學生的個別成績。
+  const highestScoresResult = await db.rpc("get_parent_class_scope_highest_scores");
+  if (highestScoresResult.error) {
+    throw new Error("讀取班級最高分失敗：" + highestScoresResult.error.message);
+  }
+  const parentClassHighestScores = highestScoresResult.data || [];
+
+  function findClassHighestScore(student, exam, score) {
+    return parentClassHighestScores.find(function (item) {
+      return String(item.student_id) === String(student.id) &&
+        String(item.exam_id) === String(exam.id) &&
+        String(item.subject) === String(score.subject) &&
+        String(item.scope || "") === String(score.scope || "");
+    });
+  }
+
   let parentReviewRecords = [];
   if (reviewExamIds.length > 0 && studentIds.length > 0) {
     const reviewResult = await db
@@ -4650,6 +4666,10 @@ async function renderParentDashboard() {
             escapeHtml(score.score == null ? "—" : score.score) +
             " 分</span>";
         }
+        const classHighest = findClassHighestScore(student, exam, score);
+        const highestText = classHighest && classHighest.highest_score != null
+          ? escapeHtml(classHighest.highest_score) + (classHighest.value_unit === "題" ? " 題" : " 分")
+          : "—";
         return (
           "<div class='parent-subject-card'>" +
             "<div class='parent-subject-info'>" +
@@ -4661,6 +4681,8 @@ async function renderParentDashboard() {
             "<div class='parent-subject-result'>" +
               "<div class='parent-subject-result-label'>成績</div>" +
               "<div class='parent-subject-result-value'>" + resultText + "</div>" +
+              "<div class='parent-subject-result-label' style='margin-top:7px'>班級最高</div>" +
+              "<div class='parent-subject-result-value' style='font-size:0.92em;color:#315d86;font-weight:800'>" + highestText + "</div>" +
             "</div>" +
           "</div>"
         );
