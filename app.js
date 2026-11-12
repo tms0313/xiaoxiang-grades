@@ -73,6 +73,8 @@ let teacherSelectedClassName = "";
 let scoreEntrySavedCount = 0;
 let activeTab = "overview";
 let adminHighestPreviewExamId = "";
+let adminHighestPreviewClassName = "";
+let adminHighestPreviewSubject = "";
 let overviewAutoRefreshTimer = null;
 let overviewAutoRefreshBusy = false;
 
@@ -1155,7 +1157,23 @@ function renderAdminClassHighestPreview() {
     return a.scope.localeCompare(b.scope, "zh-Hant");
   });
 
-  const tableRows = rows.map(function (item) {
+  const classOptions = Array.from(new Set(
+    studentsCache.map(student => student.class_name).filter(Boolean)
+  )).sort(function (a, b) {
+    const ai = classOrder.indexOf(a);
+    const bi = classOrder.indexOf(b);
+    if (ai >= 0 && bi >= 0) return ai - bi;
+    if (ai >= 0) return -1;
+    if (bi >= 0) return 1;
+    return a.localeCompare(b, "zh-Hant");
+  });
+
+  const filteredRows = rows.filter(function (item) {
+    return (!adminHighestPreviewClassName || item.className === adminHighestPreviewClassName) &&
+      (!adminHighestPreviewSubject || item.subject === adminHighestPreviewSubject);
+  });
+
+  const tableRows = filteredRows.map(function (item) {
     const isGrade3NonMath =
       item.valueUnit === "題";
     const highestText =
@@ -1181,6 +1199,14 @@ function renderAdminClassHighestPreview() {
     "<div class='toolbar'>" +
       "<label for='classHighestPreviewExam'><strong>考試週期</strong></label>" +
       "<select id='classHighestPreviewExam'>" + examOptions + "</select>" +
+      "<label for='classHighestPreviewClass'><strong>班級</strong></label>" +
+      "<select id='classHighestPreviewClass'><option value=''>全部班級</option>" +
+        classOptions.map(className => "<option value='" + escapeHtml(className) + "'>" + escapeHtml(className) + "</option>").join("") +
+      "</select>" +
+      "<label for='classHighestPreviewSubject'><strong>科目</strong></label>" +
+      "<select id='classHighestPreviewSubject'><option value=''>全部科目</option>" +
+        SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") +
+      "</select>" +
     "</div>" +
     "<div class='table-wrap'>" +
       "<table class='class-highest-preview-table'>" +
@@ -1198,8 +1224,19 @@ function renderAdminClassHighestPreview() {
     "</div>";
 
   $("classHighestPreviewExam").value = adminHighestPreviewExamId;
+  $("classHighestPreviewClass").value = adminHighestPreviewClassName;
+  $("classHighestPreviewSubject").value = adminHighestPreviewSubject;
+
   $("classHighestPreviewExam").addEventListener("change", function () {
     adminHighestPreviewExamId = this.value;
+    renderAdminClassHighestPreview();
+  });
+  $("classHighestPreviewClass").addEventListener("change", function () {
+    adminHighestPreviewClassName = this.value;
+    renderAdminClassHighestPreview();
+  });
+  $("classHighestPreviewSubject").addEventListener("change", function () {
+    adminHighestPreviewSubject = this.value;
     renderAdminClassHighestPreview();
   });
 }
