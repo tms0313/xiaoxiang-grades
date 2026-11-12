@@ -1090,6 +1090,8 @@ function renderAdminClassHighestPreview() {
     if (!Number.isFinite(value)) return;
 
     const scope = String(score.scope || "");
+    // 補考成績保留在學生個人成績中，但不參與班級最高分比序。
+    if (scope.includes("補考")) return;
     const key = JSON.stringify([
       student.class_name,
       score.subject,
