@@ -72,6 +72,7 @@ let teacherSelectedExamId = "";
 let teacherSelectedClassName = "";
 let scoreEntrySavedCount = 0;
 let activeTab = "overview";
+let adminHighestPreviewExamId = "";
 let overviewAutoRefreshTimer = null;
 let overviewAutoRefreshBusy = false;
 
@@ -975,6 +976,7 @@ function renderAdminDashboard() {
       "<div id='systemMessage' class='system-message'></div>" +
       "<div class='tabs' id='adminTabs'>" +
         "<button class='tab-btn' data-tab='overview'>成績總覽</button>" +
+        "<button class='tab-btn' data-tab='highestPreview'>班級最高分預覽</button>" +
         "<button class='tab-btn' data-tab='reviews'>週考檢閱紀錄</button>" +
         "<button class='tab-btn' data-tab='scores'>成績登錄</button>" +
         "<button class='tab-btn' data-tab='students'>學生管理</button>" +
@@ -1020,6 +1022,7 @@ function renderAdminTab() {
   });
 
   if (activeTab === "overview") renderOverview();
+  if (activeTab === "highestPreview") renderAdminClassHighestPreview();
   if (activeTab === "scores") renderScoreEntry();
   if (activeTab === "students") renderStudents();
   if (activeTab === "guardians") renderGuardians();
@@ -1029,6 +1032,166 @@ function renderAdminTab() {
   if (activeTab === "reviews") renderStudentReviewRecords();
   if (activeTab === "export") renderExport();
   if (activeTab === "alumni") renderAlumniMockScores();
+}
+
+// ==================================================
+// 管理員專用：班級最高分預覽
+// 不受家長端週六 20:00 開放時間限制；不顯示其他學生個別成績。
+// ==================================================
+
+function renderAdminClassHighestPreview() {
+  const content = $("adminContent");
+  if (!content) return;
+
+  const latestThreeExams = sortByDateDesc(
+    examsCache.filter(exam => exam.start_date || exam.end_date),
+    "start_date"
+  ).slice(0, 3);
+
+  if (!latestThreeExams.length) {
+    content.innerHTML =
+      "<h2 class='section-title'>班級最高分預覽</h2>" +
+      "<div class='empty'>目前沒有可預覽的考試週期。</div>";
+    return;
+  }
+
+  const availableExamIds = latestThreeExams.map(exam => String(exam.id));
+  if (!availableExamIds.includes(String(adminHighestPreviewExamId))) {
+    adminHighestPreviewExamId = String(latestThreeExams[0].id);
+  }
+
+  const selectedExam = latestThreeExams.find(
+    exam => String(exam.id) === String(adminHighestPreviewExamId)
+  );
+
+  const examOptions = latestThreeExams.map(function (exam) {
+    return "<option value='" + escapeHtml(exam.id) + "'>" +
+      escapeHtml(formatDateRange(exam)) + "</option>";
+  }).join("");
+
+  const studentMap = new Map(
+    studentsCache.map(student => [String(student.id), student])
+  );
+  const groups = new Map();
+
+  scoresCache.forEach(function (score) {
+    if (String(score.exam_id) !== String(selectedExam.id)) return;
+    if (score.grade_level === "請假" || score.grade_level === "缺考") return;
+
+    const student = studentMap.get(String(score.student_id));
+    if (!student || !student.class_name) return;
+
+    const grade3NonMath =
+      isGrade3Class(student.class_name) && score.subject !== "數學";
+    const rawValue = grade3NonMath ? score.correct_count : score.score;
+    if (rawValue === null || rawValue === undefined || rawValue === "") return;
+
+    const value = Number(rawValue);
+    if (!Number.isFinite(value)) return;
+
+    const scope = String(score.scope || "");
+    const key = JSON.stringify([
+      student.class_name,
+      score.subject,
+      scope
+    ]);
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        className: student.class_name,
+        subject: score.subject,
+        scope: scope,
+        valueUnit: grade3NonMath ? "題" : "分",
+        highestValue: value,
+        highestGradeLevel: score.grade_level || null,
+        validCount: 1
+      });
+      return;
+    }
+
+    const group = groups.get(key);
+    group.validCount += 1;
+
+    if (
+      value > group.highestValue ||
+      (
+        value === group.highestValue &&
+        String(score.grade_level || "").localeCompare(
+          String(group.highestGradeLevel || "")
+        ) < 0
+      )
+    ) {
+      group.highestValue = value;
+      group.highestGradeLevel = score.grade_level || null;
+    }
+  });
+
+  const classOrder = ["國一班", "國二班", "國三班"];
+  const rows = Array.from(groups.values()).sort(function (a, b) {
+    const classDiff =
+      classOrder.indexOf(a.className) - classOrder.indexOf(b.className);
+    if (classDiff !== 0) {
+      if (classOrder.includes(a.className) && classOrder.includes(b.className)) {
+        return classDiff;
+      }
+      if (classOrder.includes(a.className)) return -1;
+      if (classOrder.includes(b.className)) return 1;
+      return a.className.localeCompare(b.className, "zh-Hant");
+    }
+
+    const subjectDiff =
+      SUBJECTS.indexOf(a.subject) - SUBJECTS.indexOf(b.subject);
+    if (subjectDiff !== 0) return subjectDiff;
+    return a.scope.localeCompare(b.scope, "zh-Hant");
+  });
+
+  const tableRows = rows.map(function (item) {
+    const isGrade3NonMath =
+      item.valueUnit === "題";
+    const highestText =
+      escapeHtml(item.highestValue) + " " + item.valueUnit +
+      (
+        isGrade3NonMath && item.highestGradeLevel
+          ? " " + gradeTag(item.highestGradeLevel)
+          : ""
+      );
+
+    return "<tr>" +
+      "<td>" + escapeHtml(item.className) + "</td>" +
+      "<td>" + escapeHtml(item.subject) + "</td>" +
+      "<td>" + escapeHtml(item.scope || "—") + "</td>" +
+      "<td><strong>" + highestText + "</strong></td>" +
+      "<td>" + escapeHtml(item.validCount) + " 筆</td>" +
+    "</tr>";
+  }).join("");
+
+  content.innerHTML =
+    "<h2 class='section-title'>班級最高分預覽</h2>" +
+    "<p class='muted'>管理員測試功能：可提前查看計算結果，不受家長端週六 20:00 開放時間限制。此頁只顯示各班各科各範圍的最高成績，不列出其他學生的個別成績。</p>" +
+    "<div class='toolbar'>" +
+      "<label for='classHighestPreviewExam'><strong>考試週期</strong></label>" +
+      "<select id='classHighestPreviewExam'>" + examOptions + "</select>" +
+    "</div>" +
+    "<div class='table-wrap'>" +
+      "<table>" +
+        "<thead><tr>" +
+          "<th>班級</th><th>科目</th><th>範圍</th>" +
+          "<th>班級最高</th><th>有效成績</th>" +
+        "</tr></thead>" +
+        "<tbody>" +
+          (
+            tableRows ||
+            "<tr><td colspan='5' class='empty'>此考試週期目前沒有可計算的有效成績。</td></tr>"
+          ) +
+        "</tbody>" +
+      "</table>" +
+    "</div>";
+
+  $("classHighestPreviewExam").value = adminHighestPreviewExamId;
+  $("classHighestPreviewExam").addEventListener("change", function () {
+    adminHighestPreviewExamId = this.value;
+    renderAdminClassHighestPreview();
+  });
 }
 
 // ==================================================
