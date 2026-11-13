@@ -4250,7 +4250,7 @@ async function renderTermExamEntry() {
 
   content.innerHTML =
     "<h2 class='section-title'>段考成績登錄</h2>" +
-    "<style>.term-exam-form .form-grid{row-gap:8px!important;column-gap:12px!important}.term-exam-form .field{margin-bottom:0!important}.term-exam-form h3{margin:10px 0 6px!important}</style>" +
+    "<style>.term-exam-form .form-grid{row-gap:3px!important;column-gap:12px!important;margin-top:0!important;margin-bottom:0!important}.term-exam-form .field{margin:0!important;padding:0!important}.term-exam-form .field label{margin:3px 0 3px!important;line-height:1.25!important}.term-exam-form input,.term-exam-form select{margin-top:0!important}.term-exam-form h3{margin:7px 0 4px!important}</style>" +
     "<div class='panel'><form id='termExamForm' class='term-exam-form'>" +
       "<div class='form-grid'>" +
         "<div class='field'><label for='termAcademicYear'>學年度</label><input id='termAcademicYear' type='text' maxlength='20' placeholder='例如：115' required></div>" +
@@ -4259,7 +4259,7 @@ async function renderTermExamEntry() {
         "<div class='field'><label for='termClass'>班級</label><select id='termClass' required><option value=''>請選擇班級</option>" + classNames.map(c => "<option value='" + c + "'>" + c + "</option>").join("") + "</select></div>" +
         "<div class='field'><label for='termStudent'>學生</label><select id='termStudent' required><option value=''>請先選擇班級</option></select></div>" +
       "</div>" +
-      "<h3 style='margin:18px 0 10px;color:#23466b'>各科成績（0～100 分）</h3>" +
+      "<h3 style='margin:7px 0 4px;color:#23466b'>各科成績（0～100 分）</h3>" +
       "<div class='form-grid'>" + subjects.map(function(subject, index) {
         return "<div class='field'><label for='termSubject" + index + "'>" + subject + "</label><input id='termSubject" + index + "' type='number' min='0' max='100' step='0.01' inputmode='decimal' required></div>";
       }).join("") +
