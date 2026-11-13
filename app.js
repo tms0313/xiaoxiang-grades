@@ -4243,6 +4243,7 @@ function bindParentActionButtons() {
 async function renderTermExamEntry() {
   const content = $("adminContent");
   const subjects = ["國文", "英文", "數學", "歷史", "地理", "公民", "自然"];
+  const subjectKeys = ["subject_chinese", "subject_english", "subject_math", "subject_history", "subject_geography", "subject_civics", "subject_natural"];
   const classNames = ["國一班", "國二班", "國三班"];
   let records = [];
   let editingId = "";
@@ -4303,7 +4304,7 @@ async function renderTermExamEntry() {
     $("termClass").value = record.class_name || "";
     updateStudentOptions();
     $("termStudent").value = record.student_id;
-    subjects.forEach((subject, index) => $("termSubject" + index).value = record["subject_" + index] == null ? "" : record["subject_" + index]);
+    subjects.forEach((subject, index) => $("termSubject" + index).value = record[subjectKeys[index]] == null ? "" : record[subjectKeys[index]]);
     $("termClassRank").value = record.class_rank == null ? "" : record.class_rank;
     $("termSchoolRank").value = record.school_rank == null ? "" : record.school_rank;
     updateTotal();
@@ -4318,7 +4319,7 @@ async function renderTermExamEntry() {
         " 第" + (["","一次","二次","三次"][Number(record.exam_number)] || "") + "段考";
       return "<tr><td>" + escapeHtml(examName) + "</td><td>" + escapeHtml(record.class_name) + "</td><td>" +
         escapeHtml(student ? student.full_name : "學生資料不存在") + "</td>" +
-        subjects.map((subject,index) => "<td>" + escapeHtml(record["subject_" + index]) + "</td>").join("") +
+        subjects.map((subject,index) => "<td>" + escapeHtml(record[subjectKeys[index]]) + "</td>").join("") +
         "<td><strong>" + escapeHtml(record.total_score) + "</strong></td><td>" +
         (record.class_rank == null ? "—" : escapeHtml(record.class_rank)) + "</td><td>" +
         (record.school_rank == null ? "—" : escapeHtml(record.school_rank)) + "</td>" +
@@ -4389,8 +4390,9 @@ async function renderTermExamEntry() {
         ? await db.from("term_exam_scores").update(payload).eq("id",editingId)
         : await db.from("term_exam_scores").upsert(payload,{onConflict:"academic_year,semester,exam_number,student_id"});
       if (result.error) throw result.error;
+      const wasEditing = !!editingId;
       resetForm(); await loadRecords();
-      showMessage(editingId ? "段考成績已更新。" : "段考成績已儲存。","success",true);
+      showMessage(wasEditing ? "段考成績已更新。" : "段考成績已儲存。","success",true);
     } catch(error) {
       button.disabled = false; button.textContent = editingId ? "儲存修改" : "儲存段考成績";
       alert("儲存段考成績失敗：" + error.message);
