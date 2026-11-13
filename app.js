@@ -384,6 +384,7 @@ style.textContent = [
   ".login-log-table th,.login-log-table td { padding:9px 8px; }",
   ".login-log-table td:first-child { font-size:15px; }",
   ".login-log-table .login-role-badge { font-size:15px; }",
+  "#clearLoginLogsButton { font-size:16px; }",
   ".login-role-badge { display:inline-block; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:800; white-space:nowrap; }",
   ".login-role-admin { color:#2457a6; background:#eaf2ff !important; }",
   ".login-role-parent { color:#9a5700; background:#fff4e5 !important; }",
