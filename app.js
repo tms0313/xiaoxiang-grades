@@ -4334,16 +4334,21 @@ async function renderTermExamEntry() {
       year: root.querySelector("#termFilterYear")?.value || "",
       semester: root.querySelector("#termFilterSemester")?.value || "",
       exam: root.querySelector("#termFilterExam")?.value || "",
-      subject: root.querySelector("#termFilterSubject")?.value || "subject_chinese"
+      subject: root.querySelector("#termFilterSubject")?.value || "total_score"
     };
     const years = [...new Set(records.map(r => String(r.academic_year || "")))].filter(Boolean)
       .sort((a,b) => b.localeCompare(a, "zh-Hant", {numeric:true}));
     const subjectOptions = subjects.map((name,index) => ({key:subjectKeys[index],name}))
       .concat([{key:"total_score",name:"總分"},{key:"class_rank",name:"班排名"},{key:"school_rank",name:"校排名"}]);
+    const classOrder = {"國一班":1,"國二班":2,"國三班":3};
     const filtered = records.filter(r =>
       (!previous.year || String(r.academic_year) === previous.year) &&
       (!previous.semester || r.semester === previous.semester) &&
       (!previous.exam || String(r.exam_number) === previous.exam)
+    ).sort((a,b) =>
+      String(b.academic_year || "").localeCompare(String(a.academic_year || ""), "zh-Hant", {numeric:true}) ||
+      (classOrder[a.class_name] || 99) - (classOrder[b.class_name] || 99) ||
+      Number(b.total_score || 0) - Number(a.total_score || 0)
     );
     const selectedSubject = subjectOptions.find(x => x.key === previous.subject) || subjectOptions[0];
     const rows = filtered.map(record => {
