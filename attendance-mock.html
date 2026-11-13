@@ -66,6 +66,10 @@ const $=id=>document.getElementById(id);
 const dayNames=["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
 let selected=null;
 let saved=JSON.parse(localStorage.getItem("xiaoxiang_attendance_mock")||"{}");
+// 舊版「缺席」紀錄統一轉為「請假」，並清除遲到與打卡資料。
+let migrated=false;
+Object.values(saved).forEach(records=>Object.values(records||{}).forEach(r=>{if(r.status==="absent"){r.status="leave";r.late=0;r.checkin=null;migrated=true}}));
+if(migrated)localStorage.setItem("xiaoxiang_attendance_mock",JSON.stringify(saved));
 function dateISO(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day}
 function key(date,s){return [date,s.cls,s.subject,s.time].join("|")}
 function updateSessions(){
@@ -79,15 +83,15 @@ function updateSessions(){
 function renderRoster(){
  const date=$("datePicker").value,k=key(date,selected),records=saved[k]||{};
  const list=students.filter(s=>s.cls===selected.cls);
- $("roster").innerHTML='<h3>'+date+"　"+selected.time+"　"+selected.cls+"　"+selected.subject+'</h3><p class="muted">正常出席必須選擇打卡狀態；請假／缺席會自動清除打卡並將遲到分鐘歸零。</p><div class="table-wrap"><table><thead><tr><th>學生編號</th><th>姓名</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th></tr></thead><tbody>'+
- list.map(s=>{const r=records[s.id]||{status:"normal",late:0,checkin:""};return '<tr data-id="'+s.id+'"><td>'+s.code+'</td><td><b>'+s.name+'</b></td><td><select class="status"><option value="normal" '+(r.status==="normal"?"selected":"")+'>正常</option><option value="leave" '+(r.status==="leave"?"selected":"")+'>請假</option><option value="absent" '+(r.status==="absent"?"selected":"")+'>缺席</option></select></td><td><input class="late" type="number" min="0" step="1" value="'+(r.status==="normal"?r.late:0)+'" '+(r.status!=="normal"?"disabled":"")+'></td><td><select class="checkin" '+(r.status!=="normal"?"disabled":"")+'><option value="">請選擇</option><option value="checked_in" '+(r.checkin==="checked_in"?"selected":"")+'>已打卡</option><option value="not_checked_in" '+(r.checkin==="not_checked_in"?"selected":"")+'>未打卡</option></select></td></tr>'}).join("")+
+ $("roster").innerHTML='<h3>'+date+"　"+selected.time+"　"+selected.cls+"　"+selected.subject+'</h3><p class="muted">出席必須選擇打卡狀態；請假會自動清除打卡並將遲到分鐘歸零。</p><div class="table-wrap"><table><thead><tr><th>學生編號</th><th>姓名</th><th>出席狀態</th><th>遲到分鐘</th><th>打卡狀態</th></tr></thead><tbody>'+
+ list.map(s=>{const r=records[s.id]||{status:"normal",late:0,checkin:""};return '<tr data-id="'+s.id+'"><td>'+s.code+'</td><td><b>'+s.name+'</b></td><td><select class="status"><option value="normal" '+(r.status==="normal"?"selected":"")+'>出席</option><option value="leave" '+(r.status==="leave"?"selected":"")+'>請假</option></select></td><td><input class="late" type="number" min="0" step="1" value="'+(r.status==="normal"?r.late:0)+'" '+(r.status!=="normal"?"disabled":"")+'></td><td><select class="checkin" '+(r.status!=="normal"?"disabled":"")+'><option value="">請選擇</option><option value="checked_in" '+(r.checkin==="checked_in"?"selected":"")+'>已打卡</option><option value="not_checked_in" '+(r.checkin==="not_checked_in"?"selected":"")+'>未打卡</option></select></td></tr>'}).join("")+
  '</tbody></table></div><div class="actions"><button class="primary" id="save">儲存全班模擬紀錄</button><button id="reload">重新載入</button></div><div id="message" class="msg"></div>';
  $("roster").querySelectorAll("tr[data-id]").forEach(row=>row.querySelector(".status").onchange=e=>{const normal=e.target.value==="normal";row.querySelector(".late").disabled=!normal;row.querySelector(".checkin").disabled=!normal;if(!normal){row.querySelector(".late").value=0;row.querySelector(".checkin").value=""}});
  $("save").onclick=()=>{
   const out={};
   for(const row of $("roster").querySelectorAll("tr[data-id]")){
    const status=row.querySelector(".status").value,raw=row.querySelector(".late").value,late=Number(raw),checkin=row.querySelector(".checkin").value;
-   if(status==="normal"&&!["checked_in","not_checked_in"].includes(checkin)){ $("message").textContent="請完成所有正常出席學生的打卡選擇。";return}
+   if(status==="normal"&&!["checked_in","not_checked_in"].includes(checkin)){ $("message").textContent="請完成所有出席學生的打卡選擇。";return}
    if(raw===""||!Number.isInteger(late)||late<0){$("message").textContent="遲到分鐘必須是大於或等於 0 的整數。";return}
    out[row.dataset.id]={status,late:status==="normal"?late:0,checkin:status==="normal"?checkin:null};
   }
