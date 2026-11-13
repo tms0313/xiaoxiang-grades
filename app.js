@@ -4249,6 +4249,13 @@ async function renderTermExamEntry() {
   const subjects = ["國文", "英文", "數學", "歷史", "地理", "公民", "自然"];
   const subjectKeys = ["subject_chinese", "subject_english", "subject_math", "subject_history", "subject_geography", "subject_civics", "subject_natural"];
   const classNames = ["國一班", "國二班", "國三班"];
+  function getAvailableClasses(year) {
+    return String(year).trim() === "114" ? ["國一班", "國二班"] : classNames;
+  }
+  function getRosterClass(year, className) {
+    if (String(year).trim() !== "114") return className;
+    return ({ "國一班": "國二班", "國二班": "國三班" })[className] || "";
+  }
   let records = [];
   let editingId = "";
 
@@ -4282,10 +4289,19 @@ async function renderTermExamEntry() {
     const vals = getSubjectValues();
     $("termTotalScore").value = vals.reduce((sum, value) => sum + value, 0).toFixed(2).replace(/\\.00$/, "").replace(/(\\.\\d)0$/, "$1");
   }
+  function updateClassOptions() {
+    const select = $("termClass");
+    const previous = select.value;
+    const available = getAvailableClasses($("termAcademicYear").value);
+    select.innerHTML = "<option value=''>請選擇班級</option>" +
+      available.map(c => "<option value='" + c + "'>" + c + "</option>").join("");
+    select.value = available.includes(previous) ? previous : "";
+  }
   function updateStudentOptions() {
     const className = $("termClass").value;
+    const rosterClass = getRosterClass($("termAcademicYear").value, className);
     const previous = $("termStudent").value;
-    const students = studentsCache.filter(s => s.class_name === className && s.is_active !== false)
+    const students = studentsCache.filter(s => rosterClass && s.class_name === rosterClass && s.is_active !== false)
       .sort((a,b) => String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant", {numeric:true}));
     $("termStudent").innerHTML = "<option value=''>請選擇學生</option>" + students.map(s =>
       "<option value='" + escapeHtml(s.id) + "'>" + escapeHtml(s.full_name) + "</option>"
@@ -4315,6 +4331,7 @@ async function renderTermExamEntry() {
   function startEdit(record) {
     editingId = String(record.id);
     $("termAcademicYear").value = record.academic_year || "";
+    updateClassOptions();
     $("termSemester").value = record.semester || "";
     $("termExamNumber").value = String(record.exam_number || "");
     $("termClass").value = record.class_name || "";
@@ -4396,6 +4413,12 @@ async function renderTermExamEntry() {
     renderRecords();
   }
 
+  $("termAcademicYear").addEventListener("input", function() {
+    const previousClass = $("termClass").value;
+    updateClassOptions();
+    if ($("termClass").value !== previousClass) $("termStudent").value = "";
+    updateStudentOptions();
+  });
   $("termClass").addEventListener("change", updateStudentOptions);
   subjects.forEach((subject,index) => $("termSubject" + index).addEventListener("input", updateTotal));
   $("termCancelButton").addEventListener("click", resetForm);
