@@ -4338,8 +4338,8 @@ async function renderTermExamEntry() {
       const value = record[selectedSubject.key];
       return "<tr><td>" + escapeHtml(examName) + "</td><td>" + escapeHtml(record.class_name) + "</td><td>" +
         escapeHtml(student ? student.full_name : "學生資料不存在") + "</td><td>" +
-        (value == null ? "—" : escapeHtml(value)) + "</td><td>" +
-        "<div class='action-buttons'><button class='btn btn-small' data-term-edit='" + escapeHtml(record.id) + "'>修改</button>" +
+        (value == null ? "—" : escapeHtml(value)) + "</td>" +
+        "<td class='action-cell'><div class='action-buttons'><button class='btn btn-small' data-term-edit='" + escapeHtml(record.id) + "'>修改</button>" +
         "<button class='btn btn-danger btn-small' data-term-delete='" + escapeHtml(record.id) + "'>刪除</button></div></td></tr>";
     }).join("");
     root.innerHTML =
