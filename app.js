@@ -4356,9 +4356,14 @@ async function renderTermExamEntry() {
       const examName = (record.academic_year || "") + " (" + (record.semester === "上學期" ? "上" : "下") + ") " +
         (["","第一次","第二次","第三次"][Number(record.exam_number)] || "");
       const value = record[selectedSubject.key];
+      const isScoreField = selectedSubject.key !== "class_rank" && selectedSubject.key !== "school_rank";
+      const valueHtml = value == null ? "—" :
+        (isScoreField && Number.isFinite(Number(value)) && Number(value) < 60
+          ? "<span class='low-score'>" + escapeHtml(value) + "</span>"
+          : escapeHtml(value));
       return "<tr><td>" + escapeHtml(examName) + "</td><td>" + escapeHtml(record.class_name) + "</td><td>" +
         escapeHtml(student ? student.full_name : "學生資料不存在") + "</td><td>" +
-        (value == null ? "—" : escapeHtml(value)) + "</td>" +
+        valueHtml + "</td>" +
         "<td class='action-cell'><div class='action-buttons'><button class='btn btn-small' data-term-edit='" + escapeHtml(record.id) + "'>修改</button>" +
         "<button class='btn btn-danger btn-small' data-term-delete='" + escapeHtml(record.id) + "'>刪除</button></div></td></tr>";
     }).join("");
