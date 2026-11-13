@@ -4351,7 +4351,8 @@ async function renderTermExamEntry() {
       year: root.querySelector("#termFilterYear")?.value || "",
       semester: root.querySelector("#termFilterSemester")?.value || "",
       exam: root.querySelector("#termFilterExam")?.value || "",
-      subject: root.querySelector("#termFilterSubject")?.value || "total_score"
+      subject: root.querySelector("#termFilterSubject")?.value || "total_score",
+      studentName: root.querySelector("#termFilterStudentName")?.value || ""
     };
     const years = [...new Set(records.map(r => String(r.academic_year || "")))].filter(Boolean)
       .sort((a,b) => b.localeCompare(a, "zh-Hant", {numeric:true}));
@@ -4359,10 +4360,15 @@ async function renderTermExamEntry() {
       .concat([{key:"total_score",name:"總分"},{key:"class_rank",name:"班排名"},{key:"school_rank",name:"校排名"}]);
     const classOrder = {"國一班":1,"國二班":2,"國三班":3};
     const selectedSubject = subjectOptions.find(x => x.key === previous.subject) || subjectOptions[0];
-    const filtered = records.filter(r =>
-      (!previous.year || String(r.academic_year) === previous.year) &&
+    const nameQuery = previous.studentName.trim().toLocaleLowerCase();
+    const filtered = records.filter(r => {
+      const student = studentsCache.find(s => String(s.id) === String(r.student_id));
+      const studentName = String(student?.full_name || "").toLocaleLowerCase();
+      return (!previous.year || String(r.academic_year) === previous.year) &&
       (!previous.semester || r.semester === previous.semester) &&
-      (!previous.exam || String(r.exam_number) === previous.exam)
+      (!previous.exam || String(r.exam_number) === previous.exam) &&
+      (!nameQuery || studentName.includes(nameQuery));
+    }
     ).sort((a,b) =>
       String(b.academic_year || "").localeCompare(String(a.academic_year || ""), "zh-Hant", {numeric:true}) ||
       (classOrder[a.class_name] || 99) - (classOrder[b.class_name] || 99) ||
@@ -4392,6 +4398,7 @@ async function renderTermExamEntry() {
         "<div class='field'><label for='termFilterExam'>段考</label><select id='termFilterExam'><option value=''>全部段考</option><option value='1'>第一次</option><option value='2'>第二次</option><option value='3'>第三次</option></select></div>" +
         "<div class='field'><label for='termFilterSubject'>科目</label><select id='termFilterSubject'>" +
           subjectOptions.map(x => "<option value='" + x.key + "'>" + x.name + "</option>").join("") + "</select></div>" +
+        "<div class='field'><label for='termFilterStudentName'>學生姓名</label><input id='termFilterStudentName' type='text' placeholder='手動輸入學生姓名搜尋' autocomplete='off'></div>" +
       "</div>" +
       (filtered.length
         ? "<div class='table-wrap'><table class='term-exam-overview-table'><thead><tr><th>考試</th><th>班級</th><th>學生</th><th>" + selectedSubject.name + "</th><th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>"
@@ -4400,8 +4407,15 @@ async function renderTermExamEntry() {
     root.querySelector("#termFilterSemester").value = previous.semester;
     root.querySelector("#termFilterExam").value = previous.exam;
     root.querySelector("#termFilterSubject").value = selectedSubject.key;
-    ["termFilterYear","termFilterSemester","termFilterExam","termFilterSubject"].forEach(id => {
+    root.querySelector("#termFilterStudentName").value = previous.studentName;
+    ["termFilterYear","termFilterSemester","termFilterExam","termFilterSubject","termFilterStudentName"].forEach(id => {
       root.querySelector("#" + id).addEventListener("change", renderRecords);
+    });
+    root.querySelector("#termFilterStudentName").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        renderRecords();
+      }
     });
   }
   async function loadRecords() {
