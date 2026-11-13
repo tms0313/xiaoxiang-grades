@@ -188,16 +188,15 @@ async function loadAttendanceSessionStudents() {
   const recordsByStudent = new Map(existingRecords.map(item => [String(item.student_id), item]));
   const rows = attendanceLoadedStudents.map(student => {
     const record = recordsByStudent.get(String(student.id)) || {};
-    const status = record.attendance_status || "normal";
+    const status = record.attendance_status === "absent" ? "leave" : (record.attendance_status || "normal");
     const checkin = record.checkin_status || "";
     const inactiveCheckin = status !== "normal" ? "disabled" : "";
     return "<tr data-attendance-row data-student-id='" + attendanceEscape(student.id) + "'>" +
       "<td>" + attendanceEscape(student.student_code) + "</td>" +
       "<td><strong>" + attendanceEscape(student.full_name) + "</strong></td>" +
-      "<td><select class='attendance-status-select' aria-label='出缺席狀態'>" +
-        "<option value='normal' " + (status === "normal" ? "selected" : "") + ">正常</option>" +
+      "<td><select class='attendance-status-select' aria-label='出席狀態'>" +
+        "<option value='normal' " + (status === "normal" ? "selected" : "") + ">出席</option>" +
         "<option value='leave' " + (status === "leave" ? "selected" : "") + ">請假</option>" +
-        "<option value='absent' " + (status === "absent" ? "selected" : "") + ">缺席</option>" +
       "</select></td>" +
       "<td><input class='attendance-late-input' type='number' min='0' step='1' value='" +
         (status === "normal" ? attendanceEscape(record.late_minutes == null ? 0 : record.late_minutes) : "0") +
@@ -268,7 +267,7 @@ async function saveAttendanceSessionRecords() {
 
     if (status === "normal" && !["checked_in", "not_checked_in"].includes(checkin)) {
       message.className = "attendance-status-message error";
-      message.textContent = "請先完成所有正常出席學生的打卡狀態選擇。";
+      message.textContent = "請先完成所有出席學生的打卡狀態選擇。";
       return;
     }
     if (lateRaw === "" || !Number.isInteger(late) || late < 0) {
