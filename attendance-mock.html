@@ -130,7 +130,7 @@ function renderParent(){
     if(r){late+=Number(r.late||0);if(r.status==="normal"&&r.checkin==="not_checked_in")uncheck++}
    }
   });
-  const summary='<div class="week-summary"><h4>本週出缺席摘要（'+start+'～'+end+'）</h4>'+
+  const summary='<div class="week-summary"><h4>本週出缺席摘要</h4>'+
    '<div class="stat-line"><span>本週遲到</span><b class="'+(late>0?'alert':'')+'">'+(late>0?late+' 分鐘':'本週無遲到紀錄')+'</b></div>'+
    (uncheck>0?'<div class="stat-line"><span>本週未打卡</span><b class="alert">'+uncheck+' 次</b></div>':'')+
    '</div>';
