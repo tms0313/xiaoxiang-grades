@@ -1001,6 +1001,7 @@ function renderAdminDashboard() {
         "<button class='tab-btn' data-tab='reviews'>週考檢閱紀錄</button>" +
         "<button class='tab-btn' data-tab='scores'>週成績登錄</button><button class='tab-btn' data-tab='termScores'>段考成績登錄</button>" +
         "<button class='tab-btn' data-tab='students'>學生管理</button>" +
+        "<button class='tab-btn' data-tab='attendance'>出缺席管理</button>" +
         
         "<button class='tab-btn' data-tab='guardians'>家長綁定</button>" +
         "<button class='tab-btn' data-tab='passwords'>家長帳號管理</button>" +
@@ -1047,6 +1048,7 @@ function renderAdminTab() {
   if (activeTab === "scores") renderScoreEntry();
   if (activeTab === "termScores") renderTermExamEntry();
   if (activeTab === "students") renderStudents();
+  if (activeTab === "attendance") renderAttendanceManagement();
   if (activeTab === "guardians") renderGuardians();
   if (activeTab === "teachers") renderTeacherManagement();
   if (activeTab === "passwords") renderPasswords();
@@ -5240,7 +5242,7 @@ async function renderParentDashboard() {
     }).join("");
 
     return (
-      "<div class='student-card'>" +
+      "<div class='student-card' data-student-id='" + escapeHtml(student.id) + "'>" +
         "<h3 class='student-heading'>" +
           "<span class='student-name'>" + escapeHtml(student.full_name) + "</span>" +
           "<span class='student-class'>" + escapeHtml(student.class_name) + "</span>" +
@@ -5644,4 +5646,11 @@ async function initializeApp() {
   });
 }
 
-initializeApp();
+const attendanceFeatureScript = document.createElement("script");
+attendanceFeatureScript.src = "attendance.js?v=20261113-2100";
+attendanceFeatureScript.onload = initializeApp;
+attendanceFeatureScript.onerror = function () {
+  console.error("出缺席管理模組載入失敗");
+  initializeApp();
+};
+document.head.appendChild(attendanceFeatureScript);
