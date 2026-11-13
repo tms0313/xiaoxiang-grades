@@ -412,6 +412,10 @@ style.textContent = [
   ".overview-table .action-buttons { gap:3px; }",
   ".overview-table .action-buttons .btn { padding:2.5px 4.5px; font-size:6px; line-height:1.35; border-radius:5px; }",
   ".overview-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; line-height:30px !important; border-radius:6px !important; }",
+  ".term-exam-overview-table td { padding:5px 10px; line-height:1.25; }",
+  ".term-exam-overview-table .action-cell { min-width:100px; }",
+  ".term-exam-overview-table .action-buttons { gap:3px; }",
+  ".term-exam-overview-table .action-buttons .btn { flex:0 0 auto !important; width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; line-height:30px !important; border-radius:6px !important; }",
   ".teacher-account-table .action-buttons { display:inline-flex; align-items:center; flex-wrap:nowrap; gap:4px; white-space:nowrap; }",
   ".teacher-account-table .action-buttons .btn { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:27px !important; min-height:27px !important; padding:0 7px !important; font-size:11px !important; font-weight:700 !important; line-height:27px !important; border-radius:5px !important; white-space:nowrap; }",
   ".teacher-assignment-table td:last-child { white-space:nowrap; }",
@@ -4363,7 +4367,7 @@ async function renderTermExamEntry() {
           subjectOptions.map(x => "<option value='" + x.key + "'>" + x.name + "</option>").join("") + "</select></div>" +
       "</div>" +
       (filtered.length
-        ? "<div class='table-wrap'><table><thead><tr><th>考試</th><th>班級</th><th>學生</th><th>" + selectedSubject.name + "</th><th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>"
+        ? "<div class='table-wrap'><table class='term-exam-overview-table'><thead><tr><th>考試</th><th>班級</th><th>學生</th><th>" + selectedSubject.name + "</th><th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>"
         : "<div class='empty'>" + (records.length ? "目前篩選條件沒有符合的段考成績。" : "目前尚無段考成績。") + "</div>");
     root.querySelector("#termFilterYear").value = previous.year;
     root.querySelector("#termFilterSemester").value = previous.semester;
