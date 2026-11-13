@@ -4289,9 +4289,20 @@ async function renderTermExamEntry() {
     if (students.some(s => String(s.id) === previous)) $("termStudent").value = previous;
   }
   function resetForm() {
+    const retained = {
+      year: $("termAcademicYear").value,
+      semester: $("termSemester").value,
+      exam: $("termExamNumber").value,
+      className: $("termClass").value
+    };
     editingId = "";
     $("termExamForm").reset();
-    $("termStudent").innerHTML = "<option value=''>請先選擇班級</option>";
+    $("termAcademicYear").value = retained.year;
+    $("termSemester").value = retained.semester;
+    $("termExamNumber").value = retained.exam;
+    $("termClass").value = retained.className;
+    updateStudentOptions();
+    $("termStudent").value = "";
     $("termTotalScore").value = "0";
     $("termSaveButton").textContent = "儲存段考成績";
     $("termSaveButton").disabled = false;
