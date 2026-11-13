@@ -22,6 +22,20 @@ td select,td input{width:100%;min-width:105px;padding:7px;border:1px solid #cbd5
 .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.msg{margin-top:12px;color:#20683d;font-weight:700}
 .summary{padding:11px 13px;background:#f5f7fa;border-radius:9px;margin:8px 0}.alert{color:#bd3030;font-weight:800}
 .student{border:1px solid #e1e7ee;border-radius:10px;padding:14px;margin:10px 0}
+.parent-greeting{font-size:22px;font-weight:800;margin:4px 0 14px;color:#24466d}
+.child-card{border:1px solid #dce4ed;border-radius:13px;padding:15px;margin:14px 0;background:#fff}
+.week-summary{border:1px solid #dce4ed;border-radius:10px;padding:13px 15px;margin:10px 0 16px;background:#f8fafc}
+.week-summary h4{margin:0 0 10px;color:#34577c}
+.stat-line{display:flex;justify-content:space-between;gap:12px;padding:5px 0}
+.exam-heading{font-weight:800;color:#34577c;font-size:18px;margin:18px 0 10px}
+.exam-card{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;border:1px solid #dce4ed;border-radius:11px;padding:14px;margin:10px 0;align-items:center;min-height:112px}
+.exam-subject{font-size:19px;font-weight:800;color:#29496e}
+.exam-range{display:inline-block;margin-top:9px;padding:6px 10px;border:1px solid #c8e8d2;border-radius:9px;background:#eff8f1;color:#39764d;font-weight:700}
+.exam-score{border-left:2px solid #e5eaf0;padding-left:14px;text-align:center}
+.exam-score small{display:block;color:#8793a2;font-weight:700}
+.exam-score strong{display:block;font-size:25px;color:#29496e;margin:3px 0}
+.exam-score .low{color:#c83e35}
+.parent-note{font-size:13px;color:#64748b;margin-top:12px}
 .hidden{display:none!important}
 @media(max-width:600px){.wrap{padding:12px}header{padding:17px}header h1{font-size:20px}.panel{padding:13px}}
 </style>
@@ -43,9 +57,9 @@ td select,td input{width:100%;min-width:105px;padding:7px;border:1px solid #cbd5
 </div>
 </section>
 <section id="parentView" class="hidden">
-<div class="panel"><h2>家長端每週摘要（模擬）</h2>
-<p class="muted">以下僅示範已綁定孩子的本週統計，並依週一至週日計算。</p>
-<div id="parentSummaries"></div></div>
+<div class="panel"><div class="parent-greeting">親愛的家長，您好！</div>
+<p class="muted">家長端整合預覽：先顯示本週出缺席摘要，再呈現近期三次週考成績。</p>
+<div id="parentSummaries"></div><p class="parent-note">此頁為獨立模擬資料，不連接正式成績或 Supabase。</p></div>
 </section>
 </div>
 <script>
@@ -102,11 +116,33 @@ function renderRoster(){
 function weekRange(date){const d=new Date(date+"T00:00:00");const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);const start=dateISO(d);d.setDate(d.getDate()+6);return [start,dateISO(d)]}
 function renderParent(){
  const now=$("datePicker").value,[start,end]=weekRange(now);
- $("parentSummaries").innerHTML=students.map(s=>{
+ const exams=[
+  {date:"2026-11-02～2026-11-07",items:[["國文","心因(考)",50,72],["國文","背影(作)",0,67],["英文","U3單字全",70,100]]},
+  {date:"2026-10-26～2026-10-31",items:[["國文","閱讀測驗",82,95],["英文","U2單字",88,100],["數學","週考範圍",76,92]]},
+  {date:"2026-10-19～2026-10-24",items:[["國文","課文測驗",91,98],["英文","文法練習",84,96],["數學","單元評量",79,90]]}
+ ];
+ $("parentSummaries").innerHTML=students.map((s,index)=>{
   let late=0,uncheck=0;
-  Object.entries(saved).forEach(([k,records])=>{const p=k.split("|"),date=p[0];if(date>=start&&date<=end&&p[1]===s.cls){const r=records[s.id];if(r){late+=Number(r.late||0);if(r.status==="normal"&&r.checkin==="not_checked_in")uncheck++}}});
-  return '<div class="student"><b>'+s.name+"（"+s.cls+'）</b><div class="summary '+(late>0?"alert":"")+'">'+(late>0?"本週遲到共計 "+late+" 分鐘":"本週無遲到紀錄")+'</div>'+(uncheck>0?'<div class="summary alert">本週未打卡次數 '+uncheck+" 次</div>":"")+'</div>';
- }).join("");
+  Object.entries(saved).forEach(([k,records])=>{
+   const p=k.split("|"),date=p[0];
+   if(date>=start&&date<=end&&p[1]===s.cls){
+    const r=records[s.id];
+    if(r){late+=Number(r.late||0);if(r.status==="normal"&&r.checkin==="not_checked_in")uncheck++}
+   }
+  });
+  const summary='<div class="week-summary"><h4>本週出缺席摘要（'+start+'～'+end+'）</h4>'+
+   '<div class="stat-line"><span>本週遲到</span><b class="'+(late>0?'alert':'')+'">'+(late>0?late+' 分鐘':'本週無遲到紀錄')+'</b></div>'+
+   (uncheck>0?'<div class="stat-line"><span>本週未打卡</span><b class="alert">'+uncheck+' 次</b></div>':'')+
+   '</div>';
+  const gradeCards=exams.map(exam=>'<div class="exam-heading">'+exam.date+'</div>'+
+   exam.items.map(item=>{
+    const score=Math.max(0,Math.min(100,item[2]+index*3));
+    return '<div class="exam-card"><div><div class="exam-subject">'+item[0]+'</div><span class="exam-range">'+item[1]+'</span></div>'+
+     '<div class="exam-score"><small>成績</small><strong class="'+(score<60?'low':'')+'">'+score+' 分</strong><small>班級最高</small><strong style="font-size:18px">'+item[3]+' 分</strong></div></div>';
+   }).join('')
+  ).join('');
+  return '<div class="child-card"><h3>'+s.name+'（'+s.cls+'）</h3>'+summary+'<div class="exam-heading">近期考試成績</div>'+gradeCards+'</div>';
+ }).join('');
 }
 $("datePicker").value=dateISO(new Date());updateSessions();
 $("datePicker").onchange=()=>{updateSessions();renderParent()};
