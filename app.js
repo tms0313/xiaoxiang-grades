@@ -4371,6 +4371,8 @@ async function renderTermExamEntry() {
     }
     ).sort((a,b) =>
       String(b.academic_year || "").localeCompare(String(a.academic_year || ""), "zh-Hant", {numeric:true}) ||
+      (a.semester === "上學期" ? 1 : 2) - (b.semester === "上學期" ? 1 : 2) ||
+      Number(a.exam_number || 99) - Number(b.exam_number || 99) ||
       (classOrder[a.class_name] || 99) - (classOrder[b.class_name] || 99) ||
       (Number(b[selectedSubject.key] ?? -Infinity) - Number(a[selectedSubject.key] ?? -Infinity))
     );
