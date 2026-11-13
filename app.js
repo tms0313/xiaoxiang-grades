@@ -4250,7 +4250,8 @@ async function renderTermExamEntry() {
 
   content.innerHTML =
     "<h2 class='section-title'>段考成績登錄</h2>" +
-    "<div class='panel'><form id='termExamForm'>" +
+    "<style>.term-exam-form .form-grid{row-gap:8px!important;column-gap:12px!important}.term-exam-form .field{margin-bottom:0!important}.term-exam-form h3{margin:10px 0 6px!important}</style>" +
+    "<div class='panel'><form id='termExamForm' class='term-exam-form'>" +
       "<div class='form-grid'>" +
         "<div class='field'><label for='termAcademicYear'>學年度</label><input id='termAcademicYear' type='text' maxlength='20' placeholder='例如：115' required></div>" +
         "<div class='field'><label for='termSemester'>學期</label><select id='termSemester' required><option value=''>請選擇</option><option value='上學期'>上學期</option><option value='下學期'>下學期</option></select></div>" +
@@ -4268,7 +4269,7 @@ async function renderTermExamEntry() {
       "</div>" +
       "<div class='toolbar' style='margin-top:16px'><button class='btn btn-success' id='termSaveButton' type='submit'>儲存段考成績</button><button class='btn btn-secondary' id='termCancelButton' type='button' style='display:none'>取消修改</button></div>" +
     "</form></div>" +
-    "<div class='panel'><h3>段考成績資料</h3><div id='termExamRecords'><div class='muted'>資料載入中……</div></div></div>";
+    "<div class='panel'><h3>段考成績總覽</h3><div id='termExamRecords'><div class='muted'>資料載入中……</div></div></div>";
 
   function getSubjectValues() {
     return subjects.map((subject, index) => Number($("termSubject" + index).value || 0));
@@ -4313,24 +4314,53 @@ async function renderTermExamEntry() {
     $("termExamForm").scrollIntoView({behavior:"smooth", block:"start"});
   }
   function renderRecords() {
-    const rows = records.map(record => {
+    const root = $("termExamRecords");
+    const previous = {
+      year: root.querySelector("#termFilterYear")?.value || "",
+      semester: root.querySelector("#termFilterSemester")?.value || "",
+      exam: root.querySelector("#termFilterExam")?.value || "",
+      subject: root.querySelector("#termFilterSubject")?.value || "subject_chinese"
+    };
+    const years = [...new Set(records.map(r => String(r.academic_year || "")))].filter(Boolean)
+      .sort((a,b) => b.localeCompare(a, "zh-Hant", {numeric:true}));
+    const subjectOptions = subjects.map((name,index) => ({key:subjectKeys[index],name}))
+      .concat([{key:"total_score",name:"總分"},{key:"class_rank",name:"班排名"},{key:"school_rank",name:"校排名"}]);
+    const filtered = records.filter(r =>
+      (!previous.year || String(r.academic_year) === previous.year) &&
+      (!previous.semester || r.semester === previous.semester) &&
+      (!previous.exam || String(r.exam_number) === previous.exam)
+    );
+    const selectedSubject = subjectOptions.find(x => x.key === previous.subject) || subjectOptions[0];
+    const rows = filtered.map(record => {
       const student = studentsCache.find(s => String(s.id) === String(record.student_id));
-      const examName = (record.academic_year || "") + "學年度 " + (record.semester || "") +
-        " 第" + (["","一次","二次","三次"][Number(record.exam_number)] || "") + "段考";
+      const examName = (record.academic_year || "") + " (" + (record.semester === "上學期" ? "上" : "下") + ") " +
+        (["","第一次","第二次","第三次"][Number(record.exam_number)] || "");
+      const value = record[selectedSubject.key];
       return "<tr><td>" + escapeHtml(examName) + "</td><td>" + escapeHtml(record.class_name) + "</td><td>" +
-        escapeHtml(student ? student.full_name : "學生資料不存在") + "</td>" +
-        subjects.map((subject,index) => "<td>" + escapeHtml(record[subjectKeys[index]]) + "</td>").join("") +
-        "<td><strong>" + escapeHtml(record.total_score) + "</strong></td><td>" +
-        (record.class_rank == null ? "—" : escapeHtml(record.class_rank)) + "</td><td>" +
-        (record.school_rank == null ? "—" : escapeHtml(record.school_rank)) + "</td>" +
-        "<td><div class='action-buttons'><button class='btn btn-small' data-term-edit='" + escapeHtml(record.id) + "'>修改</button>" +
+        escapeHtml(student ? student.full_name : "學生資料不存在") + "</td><td>" +
+        (value == null ? "—" : escapeHtml(value)) + "</td><td>" +
+        "<div class='action-buttons'><button class='btn btn-small' data-term-edit='" + escapeHtml(record.id) + "'>修改</button>" +
         "<button class='btn btn-danger btn-small' data-term-delete='" + escapeHtml(record.id) + "'>刪除</button></div></td></tr>";
     }).join("");
-    $("termExamRecords").innerHTML = records.length
-      ? "<div class='table-wrap'><table><thead><tr><th>考試</th><th>班級</th><th>學生</th>" +
-        subjects.map(s => "<th>" + s + "</th>").join("") +
-        "<th>總分</th><th>班排名</th><th>校排名</th><th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>"
-      : "<div class='empty'>目前尚無段考成績。</div>";
+    root.innerHTML =
+      "<div class='form-grid' style='row-gap:8px;column-gap:12px;margin-bottom:14px'>" +
+        "<div class='field'><label for='termFilterYear'>學年度</label><select id='termFilterYear'><option value=''>全部學年度</option>" +
+          years.map(y => "<option value='" + escapeHtml(y) + "'>" + escapeHtml(y) + "</option>").join("") + "</select></div>" +
+        "<div class='field'><label for='termFilterSemester'>上下學期</label><select id='termFilterSemester'><option value=''>全部學期</option><option value='上學期'>上學期</option><option value='下學期'>下學期</option></select></div>" +
+        "<div class='field'><label for='termFilterExam'>段考</label><select id='termFilterExam'><option value=''>全部段考</option><option value='1'>第一次</option><option value='2'>第二次</option><option value='3'>第三次</option></select></div>" +
+        "<div class='field'><label for='termFilterSubject'>科目</label><select id='termFilterSubject'>" +
+          subjectOptions.map(x => "<option value='" + x.key + "'>" + x.name + "</option>").join("") + "</select></div>" +
+      "</div>" +
+      (filtered.length
+        ? "<div class='table-wrap'><table><thead><tr><th>考試</th><th>班級</th><th>學生</th><th>" + selectedSubject.name + "</th><th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>"
+        : "<div class='empty'>" + (records.length ? "目前篩選條件沒有符合的段考成績。" : "目前尚無段考成績。") + "</div>");
+    root.querySelector("#termFilterYear").value = previous.year;
+    root.querySelector("#termFilterSemester").value = previous.semester;
+    root.querySelector("#termFilterExam").value = previous.exam;
+    root.querySelector("#termFilterSubject").value = selectedSubject.key;
+    ["termFilterYear","termFilterSemester","termFilterExam","termFilterSubject"].forEach(id => {
+      root.querySelector("#" + id).addEventListener("change", renderRecords);
+    });
   }
   async function loadRecords() {
     const result = await db.from("term_exam_scores").select("*")
