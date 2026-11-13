@@ -378,6 +378,10 @@ style.textContent = [
   "th,td { border-bottom:1px solid #e7ebf0; padding:11px 10px; text-align:left; vertical-align:middle; }",
   "th { background:#f3f6f9; color:#40566d; white-space:nowrap; }",
   "tr:hover td { background:#fafbfd; }",
+  ".login-log-table { width:100%; min-width:0; table-layout:fixed; }",
+  ".login-log-table th:first-child,.login-log-table td:first-child { width:40%; }",
+  ".login-log-table th:last-child,.login-log-table td:last-child { width:60%; white-space:nowrap; }",
+  ".login-log-table th,.login-log-table td { padding:9px 8px; }",
   ".login-role-badge { display:inline-block; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:800; white-space:nowrap; }",
   ".login-role-admin { color:#2457a6; background:#eaf2ff !important; }",
   ".login-role-parent { color:#9a5700; background:#fff4e5 !important; }",
@@ -3847,7 +3851,7 @@ async function renderLoginLogs() {
         "<span class='login-log-legend-item'><i class='login-log-legend-swatch login-log-legend-parent'></i>家長</span>" +
         "<span class='login-log-legend-item'><i class='login-log-legend-swatch login-log-legend-teacher'></i>老師</span>" +
       "</div>" +
-      "<div class='table-wrap'><table><thead><tr><th>登入身分</th><th>登入時間</th></tr></thead>" +
+      "<div class='table-wrap'><table class='login-log-table'><thead><tr><th>登入身分</th><th>登入時間</th></tr></thead>" +
       "<tbody>" + (rows || "<tr><td colspan='2' class='empty'>目前沒有登入紀錄</td></tr>") +
       "</tbody></table></div>";
 
