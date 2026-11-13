@@ -3839,7 +3839,7 @@ async function renderLoginLogs() {
 
       return "<tr><td><span class=\"login-role-badge " + loginRoleBadgeClass + "\">" + escapeHtml(loginRoleLabel) + "</span>" +
         (loginIdentity ? " " + escapeHtml(loginIdentity) : "") + "</td><td>" +
-        escapeHtml(log.created_at ? new Date(log.created_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "—") +
+        escapeHtml(log.created_at ? new Date(log.created_at).toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" }) + "　　" + new Date(log.created_at).toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "—") +
         "</td></tr>";
     }).join("");
 
