@@ -314,6 +314,8 @@ style.textContent = [
   ".parent-password-btn:hover { background:#4b8bbd; }",
   ".parent-logout-btn { background:#a83e45; }",
   ".parent-logout-btn:hover { background:#c04d55; }",
+  ".logout-action { background:#a83e45 !important; color:#fff !important; font-size:16px !important; }",
+  ".logout-action:hover { background:#c04d55 !important; color:#fff !important; }",
   ".parent-action-icon { width:18px; height:18px; flex:0 0 18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }",
   ".parent-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
   ".teacher-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex !important; align-items:center; justify-content:center; width:100%; padding:7px 10px calc(7px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
@@ -805,7 +807,7 @@ function renderModeChooser() {
   document.body.classList.remove("parent-page", "teacher-page");
   appRoot.innerHTML =
     "<div class='topbar'><div><h1>小象文教機構</h1><small>請選擇登入模式</small></div>" +
-    "<button class='tab-btn' id='modeLogoutButton'>登出</button></div>" +
+    "<button class='tab-btn logout-action' id='modeLogoutButton'>登出</button></div>" +
     "<main class='dashboard' style='max-width:560px'>" +
       "<div class='panel'><h2>選擇使用身分</h2>" +
         "<p class='muted'>此帳號同時具有家長及教師身分，請選擇本次要使用的功能。</p>" +
@@ -985,7 +987,7 @@ function renderAdminDashboard() {
   appRoot.innerHTML =
     "<div class='topbar'>" +
       "<div><h1>小象文教機構｜成績管理系統</h1><small>管理員後台</small></div>" +
-      "<div><button class='tab-btn' id='logoutButton'>登出</button></div>" +
+      "<div><button class='tab-btn logout-action' id='logoutButton'>登出</button></div>" +
     "</div>" +
     "<main class='dashboard'>" +
       "<div id='systemMessage' class='system-message'></div>" +
@@ -4215,7 +4217,7 @@ function buildParentBottomNav() {
         "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M7 10V7a5 5 0 0 1 10 0v3'/><rect x='4' y='10' width='16' height='11' rx='2'/><path d='M12 14v3'/></svg>" +
         "<span>修改密碼</span>" +
       "</button>" +
-      "<button class='parent-action-btn parent-logout-btn parent-logout' type='button' title='登出系統' aria-label='登出系統'>" +
+      "<button class='parent-action-btn parent-logout-btn parent-logout logout-action' type='button' title='登出系統' aria-label='登出系統'>" +
         "<svg class='parent-action-icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M10 17l5-5-5-5'/><path d='M15 12H3'/><path d='M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6'/></svg>" +
         "<span>登出</span>" +
       "</button>" +
@@ -5225,7 +5227,7 @@ function renderTeacherResults() {
 function renderTeacherFirstLoginPasswordChange() {
   appRoot.innerHTML =
     "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1><small>首次登入安全設定</small></div>" +
-      "<button class='tab-btn' id='teacherFirstLoginLogout'>登出</button></div>" +
+      "<button class='tab-btn logout-action' id='teacherFirstLoginLogout'>登出</button></div>" +
     "<main class='dashboard' style='max-width:560px'>" +
       "<div class='panel'>" +
         "<h2>首次登入請更改密碼</h2>" +
