@@ -343,10 +343,54 @@ async function renderParentDashboard() {
   await renderParentAttendanceSummary();
 }
 
+function attendanceIsCurrentWeekReleased() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "short",
+    hourCycle: "h23"
+  }).formatToParts(new Date());
+
+  const now = {};
+  parts.forEach(part => { now[part.type] = part.value; });
+
+  // 使用台北時區判斷：週日全天開放；週六 20:00 起開放。
+  // 週一至週六 19:59 前，不查詢也不顯示本週出缺席資料。
+  const weekday = new Date(
+    now.year + "-" + now.month + "-" + now.day + "T00:00:00Z"
+  ).getUTCDay();
+
+  return weekday === 0 ||
+    (weekday === 6 && Number(now.hour) >= 20);
+}
+
 async function renderParentAttendanceSummary() {
   attendanceInjectStyles();
   const cards = Array.from(document.querySelectorAll(".student-card[data-student-id]"));
   if (!cards.length) return;
+
+  const released = attendanceIsCurrentWeekReleased();
+  if (!released) {
+    cards.forEach(card => {
+      const heading = card.querySelector(".student-heading");
+      if (!heading) return;
+
+      const box = document.createElement("div");
+      box.className = "attendance-parent-summary";
+      const title = document.createElement("div");
+      title.className = "attendance-parent-title";
+      title.textContent = "本週出缺席摘要";
+      const message = document.createElement("div");
+      message.textContent = "本週出缺席摘要將於週六 20:00 開放查詢。";
+      box.append(title, message);
+      heading.insertAdjacentElement("afterend", box);
+    });
+    return;
+  }
 
   const week = attendanceWeekRange(attendanceTaipeiDateISO());
   const result = await db
