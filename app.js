@@ -5647,7 +5647,7 @@ async function initializeApp() {
 }
 
 const attendanceFeatureScript = document.createElement("script");
-attendanceFeatureScript.src = "attendance.js?v=20261113-2100";
+attendanceFeatureScript.src = "attendance.js?v=20261114-parent-release";
 attendanceFeatureScript.onload = initializeApp;
 attendanceFeatureScript.onerror = function () {
   console.error("出缺席管理模組載入失敗");
