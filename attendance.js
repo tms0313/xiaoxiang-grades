@@ -70,9 +70,10 @@ function attendanceInjectStyles() {
     ".attendance-status-message{margin:12px 0;padding:11px 13px;border-radius:8px;background:#edf4fa;color:#315d86}",
     ".attendance-status-message.error{background:#fde8e8;color:#a32626}",
     ".attendance-status-message.success{background:#e3f5e9;color:#20683d}",
-    ".attendance-parent-summary{display:flex;flex-direction:column;gap:5px;margin:0 0 15px;padding:10px 12px;border-radius:9px;background:#f5f7fa;font-size:14px;line-height:1.55}",
+    ".attendance-parent-summary{display:flex;flex-direction:column;gap:7px;margin:0 0 18px;padding:13px 14px;border-radius:9px;background:#f5f7fa;font-size:20px;line-height:1.55}",
+    ".attendance-parent-title{margin:0 0 2px;color:#34577c;font-size:22px;font-weight:800;line-height:1.5}",
     ".attendance-parent-summary .attendance-alert{color:#bd3030;font-weight:800}",
-    "@media(max-width:600px){.attendance-session-grid{grid-template-columns:1fr}.attendance-session-btn{padding:12px}.attendance-parent-summary{font-size:13px}}"
+    "@media(max-width:600px){.attendance-session-grid{grid-template-columns:1fr}.attendance-session-btn{padding:12px}.attendance-parent-summary{font-size:20px}}"
   ].join("");
   document.head.appendChild(style);
 }
@@ -420,6 +421,11 @@ async function renderParentAttendanceSummary() {
     const item = summary.get(studentId) || { late: 0, uncheckin: 0 };
     const box = document.createElement("div");
     box.className = "attendance-parent-summary";
+
+    const title = document.createElement("div");
+    title.className = "attendance-parent-title";
+    title.textContent = "本週出缺席摘要";
+    box.appendChild(title);
 
     const lateLine = document.createElement("div");
     lateLine.textContent = item.late > 0
