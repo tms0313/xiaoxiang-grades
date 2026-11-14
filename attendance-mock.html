@@ -59,6 +59,7 @@ td select,td input{width:100%;min-width:105px;padding:7px;border:1px solid #cbd5
 <section id="parentView" class="hidden">
 <div class="panel"><div class="parent-greeting">親愛的家長，您好！</div>
 <p class="muted">家長端整合預覽：先顯示本週出缺席摘要，再呈現近期三次週考成績。</p>
+<div class="toolbar" style="margin:12px 0 16px"><label for="parentClock"><b>模擬家長查看時間：</b></label><input type="datetime-local" id="parentClock"><span class="muted">可調整至星期六 19:59 或 20:00 測試</span></div>
 <div id="parentSummaries"></div><p class="parent-note">此頁為獨立模擬資料，不連接正式成績或 Supabase。</p></div>
 </section>
 </div>
@@ -115,11 +116,21 @@ function renderRoster(){
 }
 function weekRange(date){const d=new Date(date+"T00:00:00");const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);const start=dateISO(d);d.setDate(d.getDate()+6);return [start,dateISO(d)]}
 function renderParent(){
- const now=$("datePicker").value,[start,end]=weekRange(now);
+ const clockValue=$("parentClock").value;
+ if(!clockValue){$("parentSummaries").innerHTML='<p class="muted">請先設定家長查看時間。</p>';return}
+ const viewedAt=new Date(clockValue);
+ const viewedDate=dateISO(viewedAt);
+ const [start,end]=weekRange(viewedDate);
+ const weekday=viewedAt.getDay(),hour=viewedAt.getHours(),minute=viewedAt.getMinutes();
+ const isReleased=(weekday===6&&hour>=20)||weekday===0;
+ if(!isReleased){
+  $("parentSummaries").innerHTML='<div class="summary"><b>本週成績與出缺席摘要尚未開放</b><p>本週資料將於星期六 20:00 開放查看。</p><p class="muted">目前模擬時間：'+viewedDate+' '+String(hour).padStart(2,"0")+':'+String(minute).padStart(2,"0")+'</p></div>';
+  return;
+ }
  const exams=[
-  {date:"2026-11-02～2026-11-07",items:[["國文","心因(考)",50,72],["國文","背影(作)",0,67],["英文","U3單字全",70,100]]},
-  {date:"2026-10-26～2026-10-31",items:[["國文","閱讀測驗",82,95],["英文","U2單字",88,100],["數學","週考範圍",76,92]]},
-  {date:"2026-10-19～2026-10-24",items:[["國文","課文測驗",91,98],["英文","文法練習",84,96],["數學","單元評量",79,90]]}
+  {date:"2026-11-09～2026-11-14",items:[["國文","心因(考)",50,72],["國文","背影(作)",0,67],["英文","U3單字全",70,100]]},
+  {date:"2026-11-02～2026-11-07",items:[["國文","閱讀測驗",82,95],["英文","U2單字",88,100],["數學","週考範圍",76,92]]},
+  {date:"2026-10-26～2026-10-31",items:[["國文","課文測驗",91,98],["英文","文法練習",84,96],["數學","單元評量",79,90]]}
  ];
  $("parentSummaries").innerHTML=students.map((s,index)=>{
   let late=0,uncheck=0;
@@ -145,6 +156,8 @@ function renderParent(){
  }).join('');
 }
 $("datePicker").value=dateISO(new Date());updateSessions();
+$("parentClock").value="2026-11-14T19:59";renderParent();
+$("parentClock").onchange=renderParent;
 $("datePicker").onchange=()=>{updateSessions();renderParent()};
 $("adminTab").onclick=()=>{$("adminView").classList.remove("hidden");$("parentView").classList.add("hidden");$("adminTab").classList.add("active");$("parentTab").classList.remove("active")};
 $("parentTab").onclick=()=>{renderParent();$("parentView").classList.remove("hidden");$("adminView").classList.add("hidden");$("parentTab").classList.add("active");$("adminTab").classList.remove("active")};
