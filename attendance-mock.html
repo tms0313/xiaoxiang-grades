@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>小象文教機構｜出缺席模擬測試</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:#243447;background:#f3f6fa}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:1050px;margin:0 auto;padding:22px}
+header{background:#17365d;color:#fff;padding:20px 24px;border-radius:14px}
+header h1{margin:0 0 6px;font-size:23px}header p{margin:0;opacity:.9}
+.warning{margin:16px 0;padding:12px 15px;border:1px solid #e3b75b;background:#fff8e7;color:#76520b;border-radius:10px;font-weight:700}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+button,select,input{font:inherit}button{cursor:pointer;border:1px solid #cbd5e1;border-radius:8px;padding:9px 13px;background:#fff;color:#243447}
+button.primary{background:#245783;color:#fff;border-color:#245783}button.active{background:#e5eff8;border-color:#245783;color:#17466f;font-weight:700}
+.panel{background:#fff;border:1px solid #dce4ed;border-radius:12px;padding:18px;margin:12px 0}
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.toolbar input{padding:8px;border:1px solid #cbd5e1;border-radius:8px}
+.sessions{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:14px}
+.session{text-align:left;display:flex;flex-direction:column;gap:5px}.session strong{color:#17466f}.muted{color:#64748b;font-size:14px}
+.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:700px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e5eaf0}th{background:#f5f8fb}
+td select,td input{width:100%;min-width:105px;padding:7px;border:1px solid #cbd5e1;border-radius:7px}td input[type=number]{min-width:75px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.msg{margin-top:12px;color:#20683d;font-weight:700}
+.summary{padding:11px 13px;background:#f5f7fa;border-radius:9px;margin:8px 0}.alert{color:#bd3030;font-weight:800}
+.student{border:1px solid #e1e7ee;border-radius:10px;padding:14px;margin:10px 0}
+.parent-greeting{font-size:22px;font-weight:800;margin:4px 0 14px;color:#24466d}
+.child-card{border:1px solid #dce4ed;border-radius:13px;padding:15px;margin:14px 0;background:#fff}
+.week-summary{border:1px solid #dce4ed;border-radius:10px;padding:13px 15px;margin:10px 0 16px;background:#f8fafc}
+.week-summary h4{margin:0 0 14px;color:#34577c;font-size:22px;line-height:1.5}
+.stat-line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;font-size:20px;line-height:1.55}
+.exam-heading{font-weight:800;color:#34577c;font-size:18px;margin:18px 0 10px}
+.exam-card{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:12px;border:1px solid #dce4ed;border-radius:11px;padding:14px;margin:10px 0;align-items:center;min-height:112px}
+.exam-subject{font-size:19px;font-weight:800;color:#29496e}
+.exam-range{display:inline-block;margin-top:9px;padding:6px 10px;border:1px solid #c8e8d2;border-radius:9px;background:#eff8f1;color:#39764d;font-weight:700}
+.exam-score{border-left:2px solid #e5eaf0;padding-left:14px;text-align:center}
+.exam-score small{display:block;color:#8793a2;font-weight:700}
+.exam-score strong{display:block;font-size:25px;color:#29496e;margin:3px 0}
+.exam-score .low{color:#c83e35}
+.parent-note{font-size:13px;color:#64748b;margin-top:12px}
+.hidden{display:none!important}
+@media(max-width:600px){.wrap{padding:12px}header{padding:17px}header h1{font-size:20px}.panel{padding:13px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>小象文教機構｜出缺席管理</h1><p>獨立模擬測試頁・不連接正式系統</p></header>
+<div class="warning">模擬模式：以下學生、課堂與紀錄均為測試資料；儲存只存在本機瀏覽器，不會寫入任何 Supabase。</div>
+<nav>
+<button id="adminTab" class="active">管理員點名測試</button>
+<button id="parentTab">家長每週摘要測試</button>
+</nav>
+<section id="adminView">
+<div class="panel">
+<h2>選擇上課日期</h2>
+<div class="toolbar"><input type="date" id="datePicker"><span id="weekday" class="muted"></span></div>
+<h3>當日課程</h3><div id="sessions" class="sessions"></div>
+<div id="roster"><p class="muted">請先選擇課程。</p></div>
+</div>
+</section>
+<section id="parentView" class="hidden">
+<div class="panel"><div class="parent-greeting">親愛的家長，您好！</div>
+<p class="muted">家長端整合預覽：先顯示本週出缺席摘要，再呈現近期三次週考成績。</p>
+<div class="toolbar" style="margin:12px 0 16px"><label for="parentClock"><b>模擬家長查看時間：</b></label><input type="datetime-local" id="parentClock"><span class="muted">可調整至星期六 19:59 或 20:00 測試</span></div>
+<div id="parentSummaries"></div><p class="parent-note">此頁為獨立模擬資料，不連接正式成績或 Supabase。</p></div>
+</section>
+</div>
+<script>
+"use strict";
+const schedule=[
+{day:1,time:"18:00",cls:"國二班",subject:"英文"},{day:1,time:"19:00",cls:"國一班",subject:"數學"},
+{day:2,time:"19:00",cls:"國一班",subject:"英文"},{day:3,time:"19:00",cls:"國一班",subject:"數學"},
+{day:4,time:"17:30",cls:"國二班",subject:"國文"},{day:4,time:"19:00",cls:"國一班",subject:"國文"},{day:4,time:"19:00",cls:"國三班",subject:"國文"},
+{day:5,time:"17:00",cls:"國二班",subject:"數學"},{day:5,time:"19:00",cls:"國三班",subject:"英文"},
+{day:6,time:"09:00",cls:"國一班",subject:"自然"},{day:6,time:"10:00",cls:"國三班",subject:"數學"},{day:6,time:"10:30",cls:"國二班",subject:"自然"},{day:6,time:"13:30",cls:"國三班",subject:"自然"}
+];
+const students=[
+{id:"mock-101",code:"M101",name:"測試學生甲",cls:"國一班"},{id:"mock-102",code:"M102",name:"測試學生乙",cls:"國一班"},
+{id:"mock-201",code:"M201",name:"測試學生丙",cls:"國二班"},{id:"mock-202",code:"M202",name:"測試學生丁",cls:"國二班"},
+{id:"mock-301",code:"M301",name:"測試學生戊",cls:"國三班"},{id:"mock-302",code:"M302",name:"測試學生己",cls:"國三班"}
+];
+const $=id=>document.getElementById(id);
+const dayNames=["星期日","星期一","星期二","星期三","星期四","星期五","星期六"];
+let selected=null;
+let saved=JSON.parse(localStorage.getItem("xiaoxiang_attendance_mock")||"{}");
+// 舊版「缺席」紀錄統一轉為「請假」，並清除遲到與打卡資料。
+let migrated=false;
+Object.values(saved).forEach(records=>Object.values(records||{}).forEach(r=>{if(r.status==="absent"){r.status="leave";r.late=0;r.checkin=null;migrated=true}}));
+if(migrated)localStorage.setItem("xiaoxiang_attendance_mock",JSON.stringify(saved));
+function dateISO(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day}
+function key(date,s){return [date,s.cls,s.subject,s.time].join("|")}
+function updateSessions(){
+ const date=$("datePicker").value;if(!date)return;
+ const d=new Date(date+"T00:00:00");$("weekday").textContent=dayNames[d.getDay()];
+ const today=schedule.filter(s=>s.day===d.getDay()).sort((a,b)=>a.time.localeCompare(b.time));
+ $("sessions").innerHTML=today.length?today.map((s,i)=>'<button class="session" data-i="'+i+'"><strong>'+s.time+"　"+s.cls+'</strong><span>'+s.subject+'</span><span class="muted">'+(saved[key(date,s)]?"已有模擬紀錄":"尚未儲存")+'</span></button>').join(""):'<p class="muted">當日沒有排定課程。</p>';
+ selected=null;$("roster").innerHTML='<p class="muted">請選擇上方課程。</p>';
+ [...$("sessions").querySelectorAll("button")].forEach((b,i)=>b.onclick=()=>{selected=today[i];renderRoster()});
+}
+function renderRoster(){
+ const date=$("datePicker").value,k=key(date,selected),records=saved[k]||{};
+ const list=students.filter(s=>s.cls===selected.cls);
+ $("roster").innerHTML='<h3>'+date+"　"+selected.time+"　"+selected.cls+"　"+selected.subject+'</h3><p class="muted">出席必須選擇打卡狀態；請假會自動清除打卡並將遲到分鐘歸零。</p><div class="table-wrap"><table><thead><tr><th>學生編號</th><th>姓名</th><th>出席狀態</th><th>遲到分鐘</th><th>打卡狀態</th></tr></thead><tbody>'+
+ list.map(s=>{const r=records[s.id]||{status:"normal",late:0,checkin:""};return '<tr data-id="'+s.id+'"><td>'+s.code+'</td><td><b>'+s.name+'</b></td><td><select class="status"><option value="normal" '+(r.status==="normal"?"selected":"")+'>出席</option><option value="leave" '+(r.status==="leave"?"selected":"")+'>請假</option></select></td><td><input class="late" type="number" min="0" step="1" value="'+(r.status==="normal"?r.late:0)+'" '+(r.status!=="normal"?"disabled":"")+'></td><td><select class="checkin" '+(r.status!=="normal"?"disabled":"")+'><option value="">請選擇</option><option value="checked_in" '+(r.checkin==="checked_in"?"selected":"")+'>已打卡</option><option value="not_checked_in" '+(r.checkin==="not_checked_in"?"selected":"")+'>未打卡</option></select></td></tr>'}).join("")+
+ '</tbody></table></div><div class="actions"><button class="primary" id="save">儲存全班模擬紀錄</button><button id="reload">重新載入</button></div><div id="message" class="msg"></div>';
+ $("roster").querySelectorAll("tr[data-id]").forEach(row=>row.querySelector(".status").onchange=e=>{const normal=e.target.value==="normal";row.querySelector(".late").disabled=!normal;row.querySelector(".checkin").disabled=!normal;if(!normal){row.querySelector(".late").value=0;row.querySelector(".checkin").value=""}});
+ $("save").onclick=()=>{
+  const out={};
+  for(const row of $("roster").querySelectorAll("tr[data-id]")){
+   const status=row.querySelector(".status").value,raw=row.querySelector(".late").value,late=Number(raw),checkin=row.querySelector(".checkin").value;
+   if(status==="normal"&&!["checked_in","not_checked_in"].includes(checkin)){ $("message").textContent="請完成所有出席學生的打卡選擇。";return}
+   if(raw===""||!Number.isInteger(late)||late<0){$("message").textContent="遲到分鐘必須是大於或等於 0 的整數。";return}
+   out[row.dataset.id]={status,late:status==="normal"?late:0,checkin:status==="normal"?checkin:null};
+  }
+  saved[k]=out;localStorage.setItem("xiaoxiang_attendance_mock",JSON.stringify(saved));$("message").textContent="已儲存 "+Object.keys(out).length+" 位學生的模擬紀錄。";updateSessions();
+ };
+ $("reload").onclick=renderRoster;
+}
+function weekRange(date){const d=new Date(date+"T00:00:00");const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);const start=dateISO(d);d.setDate(d.getDate()+6);return [start,dateISO(d)]}
+function renderParent(){
+ const clockValue=$("parentClock").value;
+ if(!clockValue){$("parentSummaries").innerHTML='<p class="muted">請先設定家長查看時間。</p>';return}
+ const viewedAt=new Date(clockValue);
+ const viewedDate=dateISO(viewedAt);
+ const [start,end]=weekRange(viewedDate);
+ const weekday=viewedAt.getDay(),hour=viewedAt.getHours(),minute=viewedAt.getMinutes();
+ const isReleased=(weekday===6&&hour>=20)||weekday===0;
+ if(!isReleased){
+  $("parentSummaries").innerHTML='<div class="summary"><b>本週成績與出缺席摘要尚未開放</b><p>本週資料將於星期六 20:00 開放查看。</p><p class="muted">目前模擬時間：'+viewedDate+' '+String(hour).padStart(2,"0")+':'+String(minute).padStart(2,"0")+'</p></div>';
+  return;
+ }
+ const exams=[
+  {date:"2026-11-09～2026-11-14",items:[["國文","心因(考)",50,72],["國文","背影(作)",0,67],["英文","U3單字全",70,100]]},
+  {date:"2026-11-02～2026-11-07",items:[["國文","閱讀測驗",82,95],["英文","U2單字",88,100],["數學","週考範圍",76,92]]},
+  {date:"2026-10-26～2026-10-31",items:[["國文","課文測驗",91,98],["英文","文法練習",84,96],["數學","單元評量",79,90]]}
+ ];
+ $("parentSummaries").innerHTML=students.map((s,index)=>{
+  let late=0,uncheck=0;
+  Object.entries(saved).forEach(([k,records])=>{
+   const p=k.split("|"),date=p[0];
+   if(date>=start&&date<=end&&p[1]===s.cls){
+    const r=records[s.id];
+    if(r){late+=Number(r.late||0);if(r.status==="normal"&&r.checkin==="not_checked_in")uncheck++}
+   }
+  });
+  const summary='<div class="week-summary"><h4>本週出缺席摘要</h4>'+
+   '<div class="stat-line"><span>本週遲到</span><b class="'+(late>0?'alert':'')+'">'+(late>0?late+' 分鐘':'本週無遲到紀錄')+'</b></div>'+
+   (uncheck>0?'<div class="stat-line"><span>本週未打卡</span><b class="alert">'+uncheck+' 次</b></div>':'')+
+   '</div>';
+  const gradeCards=exams.map(exam=>'<div class="exam-heading">'+exam.date+'</div>'+
+   exam.items.map(item=>{
+    const score=Math.max(0,Math.min(100,item[2]+index*3));
+    return '<div class="exam-card"><div><div class="exam-subject">'+item[0]+'</div><span class="exam-range">'+item[1]+'</span></div>'+
+     '<div class="exam-score"><small>成績</small><strong class="'+(score<60?'low':'')+'">'+score+' 分</strong><small>班級最高</small><strong style="font-size:18px">'+item[3]+' 分</strong></div></div>';
+   }).join('')
+  ).join('');
+  return '<div class="child-card"><h3>'+s.name+'（'+s.cls+'）</h3>'+summary+'<div class="exam-heading">近期考試成績</div>'+gradeCards+'</div>';
+ }).join('');
+}
+$("datePicker").value=dateISO(new Date());updateSessions();
+$("parentClock").value="2026-11-14T19:59";renderParent();
+$("parentClock").onchange=renderParent;
+$("datePicker").onchange=()=>{updateSessions();renderParent()};
+$("adminTab").onclick=()=>{$("adminView").classList.remove("hidden");$("parentView").classList.add("hidden");$("adminTab").classList.add("active");$("parentTab").classList.remove("active")};
+$("parentTab").onclick=()=>{renderParent();$("parentView").classList.remove("hidden");$("adminView").classList.add("hidden");$("parentTab").classList.add("active");$("adminTab").classList.remove("active")};
+</script>
+</body>
+</html>
