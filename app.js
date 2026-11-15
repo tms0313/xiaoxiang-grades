@@ -5188,10 +5188,9 @@ async function renderParentDashboard() {
               ? " " + gradeTag(classHighest.highest_grade_level)
               : "")
           : "—";
-        const highestMarkup = isMakeupScore
-          ? ""
-          : "<div class='parent-subject-result-label' style='margin-top:7px'>班級最高</div>" +
-            "<div class='parent-subject-result-value' style='font-size:0.92em;color:#315d86;font-weight:800'>" + highestText + "</div>";
+        const highestMarkup =
+          "<div class='parent-subject-result-label' style='margin-top:7px'>班級最高</div>" +
+          "<div class='parent-subject-result-value' style='font-size:0.92em;color:#315d86;font-weight:800'>" + highestText + "</div>";
         return (
           "<div class='parent-subject-card'>" +
             "<div class='parent-subject-info'>" +
