@@ -464,6 +464,10 @@ style.textContent = [
   ".parent-subject-result-value .parent-score-number { font-size:27px; font-weight:900; white-space:nowrap; }",
   ".parent-subject-result-value .grade-tag { display:inline-block; margin-top:3px; padding:4px 10px; font-size:15px !important; line-height:1.4; vertical-align:middle; }",
   ".parent-subject-result-value .grade-absent { font-size:16px; }",
+  ".parent-score-crowned { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.15; }",
+  ".parent-highest-crown { display:inline-block; width:20px; height:17px; margin:0 0 -2px; transform:rotate(17deg); filter:drop-shadow(0 1px 1px rgba(151,105,18,.28)); }",
+  ".parent-highest-crown svg { display:block; width:100%; height:100%; overflow:visible; }",
+  ".parent-highest-crown::after { content:'✦'; position:absolute; margin:-5px 0 0 1px; color:#e0ad39; font-size:9px; }",
 
   ".student-management-table { width:100%; min-width:650px; table-layout:fixed; }",
   ".student-management-table th:nth-child(1),.student-management-table td:nth-child(1) { width:20%; }",
@@ -5178,7 +5182,36 @@ async function renderParentDashboard() {
             " 分</span>";
         }
         const classHighest = findClassHighestScore(student, exam, score);
-        const highestText = classHighest && classHighest.highest_score != null
+        const isMakeupScore = String(score.scope || "").includes("補考");
+        const ownScoreValue = grade3 && !grade3Math
+          ? score.correct_count
+          : score.score;
+        const isClassHighest =
+          !isMakeupScore &&
+          score.grade_level !== "請假" &&
+          score.grade_level !== "缺考" &&
+          ownScoreValue !== null &&
+          ownScoreValue !== undefined &&
+          classHighest &&
+          classHighest.highest_score !== null &&
+          classHighest.highest_score !== undefined &&
+          Number(ownScoreValue) === Number(classHighest.highest_score);
+        if (isClassHighest) {
+          resultText =
+            "<span class='parent-score-crowned'>" +
+              "<span class='parent-highest-crown' role='img' aria-label='班級最高分'>" +
+                "<svg viewBox='0 0 24 20' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>" +
+                  "<path d='M2 16.5 1 5.5 7 10 12 2.5 17 10 23 5.5 22 16.5Z' fill='#D6A12A' stroke='#A97817' stroke-width='1' stroke-linejoin='round'/>" +
+                  "<path d='M2.5 17.5h19v1.5h-19z' rx='.5' fill='#E9BD55' stroke='#A97817' stroke-width='.6'/>" +
+                  "<circle cx='1.5' cy='4.5' r='1.4' fill='#F3D47A'/>" +
+                  "<circle cx='12' cy='2' r='1.5' fill='#F3D47A'/>" +
+                  "<circle cx='22.5' cy='4.5' r='1.4' fill='#F3D47A'/>" +
+                "</svg>" +
+              "</span>" +
+              resultText +
+            "</span>";
+        }
+        const highestText = !isMakeupScore && classHighest && classHighest.highest_score != null
           ? escapeHtml(classHighest.highest_score) +
             (classHighest.value_unit === "題" ? " 題" : " 分") +
             (grade3 && classHighest.highest_grade_level
@@ -5196,8 +5229,9 @@ async function renderParentDashboard() {
             "<div class='parent-subject-result'>" +
               "<div class='parent-subject-result-label'>成績</div>" +
               "<div class='parent-subject-result-value'>" + resultText + "</div>" +
-              "<div class='parent-subject-result-label' style='margin-top:7px'>班級最高</div>" +
-              "<div class='parent-subject-result-value' style='font-size:0.92em;color:#315d86;font-weight:800'>" + highestText + "</div>" +
+              (isMakeupScore ? "" :
+                "<div class='parent-subject-result-label' style='margin-top:7px'>班級最高</div>" +
+                "<div class='parent-subject-result-value' style='font-size:0.92em;color:#315d86;font-weight:800'>" + highestText + "</div>") +
             "</div>" +
           "</div>"
         );
