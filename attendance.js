@@ -52,7 +52,7 @@ function attendancePreviewInjectStyles() {
     .att-preview-session strong{color:#23466b;font-size:15px}
     .att-preview-session span{font-size:13px;color:#64748b}
     .att-preview-session.active{border:2px solid #315d86;background:#edf4fa}
-    .att-preview-table{width:100%;min-width:650px;border-collapse:collapse}
+    .att-preview-table{width:100%;min-width:650px;border-collapse:collapse;font-size:16px}
     .att-preview-table th,.att-preview-table td{padding:10px 8px;border-bottom:1px solid #e6ebf1;text-align:left;vertical-align:middle}
     .att-preview-table select,.att-preview-table input{width:100%;min-width:100px;height:40px;padding:6px 9px;border:1px solid #ccd4df;border-radius:7px;background:#fff}
     .att-preview-table .att-late{min-width:76px;text-align:center}
