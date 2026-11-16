@@ -117,7 +117,6 @@ function renderAttendanceManagement() {
         { name: "示意學生 C", status: "leave", late: 0, checkin: "" }
       ];
       renderAttendanceManagement();
-      renderAttendancePreviewDetail();
     });
   });
 
@@ -203,7 +202,7 @@ function updateAttendancePreviewStats() {
     "<div class='att-preview-stat'><strong>" + present + "</strong>出席</div>" +
     "<div class='att-preview-stat'><strong>" + leave + "</strong>請假</div>" +
     "<div class='att-preview-stat'><strong>" + late + " 分鐘</strong>遲到合計</div>" +
-    "<div class='att-preview-stat'><strong>" + uncheckin + " 次</strong>未打卡";
+    "<div class='att-preview-stat'><strong>" + uncheckin + " 次</strong>未打卡</div>";
   panel.querySelectorAll("select,input").forEach(input => {
     input.addEventListener("change", updateAttendancePreviewStats);
   });
