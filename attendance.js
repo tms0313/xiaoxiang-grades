@@ -46,7 +46,7 @@ function attendancePreviewInjectStyles() {
   style.textContent = `
     .att-preview-note{padding:12px 14px;border:1px solid #ead9b7;border-radius:9px;background:#fff9ed;color:#76551d;font-size:13px;line-height:1.65;margin:12px 0 18px}
     .att-preview-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0}
-    .att-preview-toolbar input{width:auto;min-width:160px;height:42px}
+    .att-preview-toolbar input{width:auto;min-width:160px;height:42px;font-size:17px}.att-preview-toolbar label{font-size:19px;font-weight:600;color:#23466b}
     .att-preview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:12px 0 20px}
     .att-preview-session{display:flex;flex-direction:row;align-items:center;gap:0;width:100%;min-height:76px;margin:0;padding:13px;border:1px solid #d7e0e9;border-radius:10px;background:#fff;color:#263445;text-align:left;white-space:nowrap}
     .att-preview-session strong{color:#23466b;font-size:19px;line-height:1.4}
@@ -82,7 +82,7 @@ function renderAttendanceManagement() {
     .sort((a, b) => a.time.localeCompare(b.time));
 
   content.innerHTML =
-    "<h2 class='section-title'>出席管理</h2>" +
+    "<h2 class='section-title'>出缺席管理</h2>" +
     "<div class='att-preview-note'><strong>管理員介面預覽</strong><br>目前為功能規劃階段，以下課程與學生均為介面示意。尚未連接出缺席資料庫，操作內容只暫存在目前頁面，不會儲存或影響正式資料。</div>" +
     "<div class='att-preview-toolbar'><label for='attendancePreviewDate'><strong>上課日期</strong></label>" +
       "<input type='date' id='attendancePreviewDate' value='" + attendancePreviewEscape(attendancePreviewDate) + "'>" +
