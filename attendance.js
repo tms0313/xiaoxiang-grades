@@ -49,8 +49,8 @@ function attendancePreviewInjectStyles() {
     .att-preview-toolbar input{width:auto;min-width:160px;height:42px}
     .att-preview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:12px 0 20px}
     .att-preview-session{display:flex;flex-direction:column;align-items:flex-start;gap:5px;width:100%;min-height:76px;margin:0;padding:13px;border:1px solid #d7e0e9;border-radius:10px;background:#fff;color:#263445;text-align:left}
-    .att-preview-session strong{color:#23466b;font-size:15px}
-    .att-preview-session span{font-size:13px;color:#64748b}
+    .att-preview-session strong{color:#23466b;font-size:17px}
+    .att-preview-session span{font-size:16px;color:#64748b}
     .att-preview-session.active{border:2px solid #315d86;background:#edf4fa}
     .att-preview-table{width:100%;min-width:650px;border-collapse:collapse;font-size:16px}
     .att-preview-table th,.att-preview-table td{padding:10px 8px;border-bottom:1px solid #e6ebf1;text-align:left;vertical-align:middle}
