@@ -467,7 +467,7 @@ style.textContent = [
   ".parent-score-crowned { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.15; }",
   ".parent-highest-crown { position:relative; display:inline-block; width:23px; height:20px; margin:0 0 -2px; transform:rotate(0deg); filter:drop-shadow(0 1px 1px rgba(151,105,18,.28)); }",
   ".parent-highest-crown svg { display:block; width:100%; height:100%; overflow:visible; }",
-  ".parent-highest-crown::after { content:'✦'; position:absolute; margin:-5px 0 0 1px; color:#e0ad39; font-size:9px; }",
+  ".parent-highest-crown::after { content:none; }",
 
   ".student-management-table { width:100%; min-width:650px; table-layout:fixed; }",
   ".student-management-table th:nth-child(1),.student-management-table td:nth-child(1) { width:20%; }",
