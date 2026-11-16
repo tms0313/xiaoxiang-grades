@@ -48,9 +48,9 @@ function attendancePreviewInjectStyles() {
     .att-preview-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0}
     .att-preview-toolbar input{width:auto;min-width:160px;height:42px}
     .att-preview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:12px 0 20px}
-    .att-preview-session{display:flex;flex-direction:column;align-items:flex-start;gap:5px;width:100%;min-height:76px;margin:0;padding:13px;border:1px solid #d7e0e9;border-radius:10px;background:#fff;color:#263445;text-align:left}
-    .att-preview-session strong{color:#23466b;font-size:17px}
-    .att-preview-session span{font-size:16px;color:#64748b}
+    .att-preview-session{display:flex;flex-direction:row;align-items:center;gap:0;width:100%;min-height:76px;margin:0;padding:13px;border:1px solid #d7e0e9;border-radius:10px;background:#fff;color:#263445;text-align:left;white-space:nowrap}
+    .att-preview-session strong{color:#23466b;font-size:19px;line-height:1.4}
+    .att-preview-session span{display:none}
     .att-preview-session.active{border:2px solid #315d86;background:#edf4fa}
     .att-preview-table{width:100%;min-width:650px;border-collapse:collapse;font-size:16px}
     .att-preview-table th,.att-preview-table td{padding:10px 8px;border-bottom:1px solid #e6ebf1;text-align:left;vertical-align:middle}
@@ -91,8 +91,7 @@ function renderAttendanceManagement() {
       (sessions.length
         ? "<div class='att-preview-grid'>" + sessions.map(item =>
             "<button type='button' class='att-preview-session " + (attendancePreviewSessionIndex === item.index ? "active" : "") + "' data-att-preview-session='" + item.index + "'>" +
-              "<strong>" + attendancePreviewEscape(item.time) + "　" + attendancePreviewEscape(item.className) + "</strong>" +
-              "<span>" + attendancePreviewEscape(item.subject) + "</span></button>"
+              "<strong>" + attendancePreviewEscape(item.time) + "　" + attendancePreviewEscape(item.className.replace(/班$/, "") + item.subject + "班") + "</strong></button>"
           ).join("") + "</div>"
         : "<div class='empty'>這一天目前沒有排定課程。可切換日期查看其他課程。</div>") +
       "<div id='attendancePreviewDetail'><div class='empty'>請選擇上方課程，預覽管理員登錄畫面。</div></div>" +
