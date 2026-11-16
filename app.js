@@ -465,7 +465,7 @@ style.textContent = [
   ".parent-subject-result-value .grade-tag { display:inline-block; margin-top:3px; padding:4px 10px; font-size:15px !important; line-height:1.4; vertical-align:middle; }",
   ".parent-subject-result-value .grade-absent { font-size:16px; }",
   ".parent-score-crowned { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.15; }",
-  ".parent-highest-crown { position:relative; display:inline-block; width:20px; height:17px; margin:0 0 -2px; transform:rotate(0deg); filter:drop-shadow(0 1px 1px rgba(151,105,18,.28)); }",
+  ".parent-highest-crown { position:relative; display:inline-block; width:23px; height:20px; margin:0 0 -2px; transform:rotate(0deg); filter:drop-shadow(0 1px 1px rgba(151,105,18,.28)); }",
   ".parent-highest-crown svg { display:block; width:100%; height:100%; overflow:visible; }",
   ".parent-highest-crown::after { content:'✦'; position:absolute; margin:-5px 0 0 1px; color:#e0ad39; font-size:9px; }",
 
@@ -5200,12 +5200,19 @@ async function renderParentDashboard() {
           resultText =
             "<span class='parent-score-crowned'>" +
               "<span class='parent-highest-crown' role='img' aria-label='班級最高分'>" +
-                "<svg viewBox='0 0 24 20' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>" +
-                  "<path d='M2 16.5 1 5.5 7 10 12 2.5 17 10 23 5.5 22 16.5Z' fill='#D6A12A' stroke='#A97817' stroke-width='1' stroke-linejoin='round'/>" +
-                  "<path d='M2.5 17.5h19v1.5h-19z' rx='.5' fill='#E9BD55' stroke='#A97817' stroke-width='.6'/>" +
-                  "<circle cx='1.5' cy='4.5' r='1.4' fill='#F3D47A'/>" +
-                  "<circle cx='12' cy='2' r='1.5' fill='#F3D47A'/>" +
-                  "<circle cx='22.5' cy='4.5' r='1.4' fill='#F3D47A'/>" +
+                "<svg viewBox='0 0 32 27' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>" +
+                  "<defs>" +
+                    "<linearGradient id='crownGold' x1='0' y1='0' x2='0.9' y2='1'><stop offset='0' stop-color='#FFF2A6'/><stop offset='.42' stop-color='#F6C844'/><stop offset='1' stop-color='#C98216'/></linearGradient>" +
+                    "<linearGradient id='crownBand' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#FFE68A'/><stop offset='1' stop-color='#D9951D'/></linearGradient>" +
+                  "</defs>" +
+                  "<path d='M3 21 1.8 7.2 9 12.2 15.8 2.8 23 12.2 30.2 7.2 29 21Z' fill='url(#crownGold)' stroke='#A96812' stroke-width='1.15' stroke-linejoin='round'/>" +
+                  "<path d='m3.5 19.2 5.2-5.1 3.3 5.1H3.5Zm12.3 0 3.3-5.1 5.2 5.1h-8.5Z' fill='#FFE78A' opacity='.72'/>" +
+                  "<path d='M2.8 21h26.4v3.1H2.8z' rx='1' fill='url(#crownBand)' stroke='#A96812' stroke-width='.9'/>" +
+                  "<path d='m16 7.1 2.5 3.1-2.5 3.1-2.5-3.1Z' fill='#D93636' stroke='#9D2028' stroke-width='.7'/>" +
+                  "<path d='m8.2 11.1 1.9 2.2-1.9 2.2-1.9-2.2Z' fill='#38A96A' stroke='#187344' stroke-width='.65'/>" +
+                  "<path d='m23.8 11.1 1.9 2.2-1.9 2.2-1.9-2.2Z' fill='#38A96A' stroke='#187344' stroke-width='.65'/>" +
+                  "<path d='M16 1v-1.4M1.2 5.2 0 4.1M30.8 5.2 32 4.1' stroke='#F4C94F' stroke-width='1.2' stroke-linecap='round'/>" +
+                  "<path d='m16 1.1.7 1.4 1.5.2-1.1 1 .3 1.5-1.4-.7-1.4.7.3-1.5-1.1-1 1.5-.2Z' fill='#FFF3B0'/>" +
                 "</svg>" +
               "</span>" +
               resultText +
