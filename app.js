@@ -1005,6 +1005,7 @@ function renderAdminDashboard() {
         "<button class='tab-btn' data-tab='reviews'>週考檢閱紀錄</button>" +
         "<button class='tab-btn' data-tab='scores'>週成績登錄</button><button class='tab-btn' data-tab='termScores'>段考成績登錄</button>" +
         "<button class='tab-btn' data-tab='students'>學生管理</button>" +
+        "<button class='tab-btn' data-tab='attendance'>出席管理</button>" +
         
         "<button class='tab-btn' data-tab='guardians'>家長綁定</button>" +
         "<button class='tab-btn' data-tab='passwords'>家長帳號管理</button>" +
@@ -1051,6 +1052,7 @@ function renderAdminTab() {
   if (activeTab === "scores") renderScoreEntry();
   if (activeTab === "termScores") renderTermExamEntry();
   if (activeTab === "students") renderStudents();
+  if (activeTab === "attendance") renderAttendanceManagement();
   if (activeTab === "guardians") renderGuardians();
   if (activeTab === "teachers") renderTeacherManagement();
   if (activeTab === "passwords") renderPasswords();
