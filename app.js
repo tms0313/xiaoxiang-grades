@@ -465,7 +465,7 @@ style.textContent = [
   ".parent-subject-result-value .grade-tag { display:inline-block; margin-top:3px; padding:4px 10px; font-size:15px !important; line-height:1.4; vertical-align:middle; }",
   ".parent-subject-result-value .grade-absent { font-size:16px; }",
   ".parent-score-crowned { display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.15; }",
-  ".parent-highest-crown { position:relative; display:inline-block; width:20px; height:17px; margin:0 0 -2px; transform:rotate(17deg); filter:drop-shadow(0 1px 1px rgba(151,105,18,.28)); }",
+  ".parent-highest-crown { position:relative; display:inline-block; width:20px; height:17px; margin:0 0 -2px; transform:rotate(0deg); filter:drop-shadow(0 1px 1px rgba(151,105,18,.28)); }",
   ".parent-highest-crown svg { display:block; width:100%; height:100%; overflow:visible; }",
   ".parent-highest-crown::after { content:'✦'; position:absolute; margin:-5px 0 0 1px; color:#e0ad39; font-size:9px; }",
 
