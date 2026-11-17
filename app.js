@@ -1312,7 +1312,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     return examById.get(String(id));
   }
 
-  function buildOverviewRow(score) {
+  function buildOverviewRow(score, showExamRange) {
     const student = getStudent(score.student_id);
     const exam = getExam(score.exam_id);
     if (!student || !exam) return "";
@@ -1345,7 +1345,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
     return (
       "<tr>" +
-        "<td>" + escapeHtml(formatDateRange(exam)) + "</td>" +
+        "<td>" + (showExamRange ? escapeHtml(formatDateRange(exam)) : "") + "</td>" +
         "<td>" + escapeHtml(student.class_name) + "</td>" +
         "<td>" + escapeHtml(student.student_code) + "</td>" +
         "<td>" + escapeHtml(student.full_name) + "</td>" +
@@ -1362,10 +1362,10 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     );
   }
 
-  function buildMissingOverviewRow(student, exam, subject, scope) {
+  function buildMissingOverviewRow(student, exam, subject, scope, showExamRange) {
     return (
       "<tr class='overview-missing-row'>" +
-        "<td>" + escapeHtml(formatDateRange(exam)) + "</td>" +
+        "<td>" + (showExamRange ? escapeHtml(formatDateRange(exam)) : "") + "</td>" +
         "<td>" + escapeHtml(student.class_name) + "</td>" +
         "<td>" + escapeHtml(student.student_code) + "</td>" +
         "<td>" + escapeHtml(student.full_name) + "</td>" +
@@ -1560,6 +1560,8 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       const dateA = String((a.exam && (a.exam.end_date || a.exam.start_date)) || "");
       const dateB = String((b.exam && (b.exam.end_date || b.exam.start_date)) || "");
       if (dateA !== dateB) return dateB.localeCompare(dateA);
+      const examCompare = String(a.exam && a.exam.id || "").localeCompare(String(b.exam && b.exam.id || ""));
+      if (examCompare !== 0) return examCompare;
       const classCompare = String(a.student.class_name || "").localeCompare(String(b.student.class_name || ""), "zh-Hant");
       if (classCompare !== 0) return classCompare;
       if (!!a.missing !== !!b.missing) return a.missing ? 1 : -1;
@@ -1582,11 +1584,15 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "只比對同一考試、班級及科目已有學生登錄的考試範圍；已標記請假的學生不列入。";
     }
 
+    const renderedExamIds = new Set();
     $("overviewRows").innerHTML =
       rows.map(function (item) {
+        const currentExamId = String(item.exam && item.exam.id || "");
+        const showExamRange = !renderedExamIds.has(currentExamId);
+        renderedExamIds.add(currentExamId);
         return item.missing
-          ? buildMissingOverviewRow(item.student, item.exam, item.subject, item.scope)
-          : buildOverviewRow(item.score);
+          ? buildMissingOverviewRow(item.student, item.exam, item.subject, item.scope, showExamRange)
+          : buildOverviewRow(item.score, showExamRange);
       }).join("") ||
       (status === "missing"
         ? "<tr><td colspan='8' class='empty'>目前篩選條件下沒有待登錄提醒</td></tr>"
