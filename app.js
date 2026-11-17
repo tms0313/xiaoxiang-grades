@@ -548,7 +548,8 @@ style.textContent = [
   ".export-summary { padding:9px 2px; }",
   ".login-card .field label { font-size:20px !important; font-weight:800 !important; }",
   ".guardian-management-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; }",
-  ".password-management-table .action-buttons .btn,.teacher-account-table .action-buttons .btn,[data-save-bulk-row] { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }",
+  ".password-management-table .action-buttons .btn,.teacher-account-table .action-buttons .btn,[data-save-bulk-row] { flex:0 0 42px !important; width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }",
+  ".term-roster-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin:8px 0 12px; color:#526477; font-size:13px; } .term-draft-status { color:#237344; font-weight:700; } .term-roster-wrap { max-height:68vh; overflow:auto; border:1px solid #e2e8ef; border-radius:9px; } .term-bulk-table { min-width:1120px; table-layout:fixed; } .term-bulk-table th,.term-bulk-table td { padding:7px 6px; text-align:center; white-space:nowrap; } .term-bulk-table th:first-child,.term-bulk-table td:first-child { width:150px; text-align:left; position:sticky; left:0; z-index:2; background:#f8fafc; } .term-bulk-table th:first-child { z-index:3; } .term-bulk-table th { position:sticky; top:0; z-index:1; background:#f1f5f9; } .term-bulk-table input { width:76px; height:34px; padding:4px 6px; text-align:center; border:1px solid #ccd4df; border-radius:6px; } .term-bulk-table .term-student-name { font-weight:800; color:#23466b; } .term-student-name small { display:block; color:#8491a0; font-size:11px; font-weight:500; } .term-existing-mark { display:inline-block; margin-top:3px; padding:1px 5px; border-radius:4px; background:#e3f5e9; color:#237344; font-size:10px; } .term-total-cell { font-weight:900; color:#23466b; background:#f0f5fa; } .term-bulk-actions { justify-content:flex-end; } .term-bulk-actions .btn { width:auto; min-width:150px; margin:0; }",
   "@media(max-width:600px) { .export-panel-title,.export-select-all span,.export-period-date { font-size:16px !important; font-weight:700 !important; } .export-period-item { padding:6px 10px !important; } }",
 
   ".muted { color:#778494; font-size:13px; }",
@@ -4503,281 +4504,114 @@ function bindParentActionButtons() {
 // ==================================================
 
 async function renderTermExamEntry() {
-  const content = $("adminContent");
-  const subjects = ["國文", "英文", "數學", "歷史", "地理", "公民", "自然"];
-  const subjectKeys = ["subject_chinese", "subject_english", "subject_math", "subject_history", "subject_geography", "subject_civics", "subject_natural"];
-  const classNames = ["國一班", "國二班", "國三班"];
-  function getAvailableClasses(year) {
-    return String(year).trim() === "114" ? ["國一班", "國二班"] : classNames;
+  const content=$("adminContent"), subjects=["國文","英文","數學","歷史","地理","公民","自然"];
+  const keys=["subject_chinese","subject_english","subject_math","subject_history","subject_geography","subject_civics","subject_natural"];
+  const classes=["國一班","國二班","國三班"], draftKey="xiaoxiang-term-exam-entry-draft-v2", prefKey="xiaoxiang-term-exam-entry-selection-v2";
+  let records=[];
+  const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||"null")||d;}catch(_){return d;}};
+  const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(_){}};
+  const available=y=>String(y).trim()==="114"?["國一班","國二班"]:classes;
+  const rosterClass=(y,c)=>String(y).trim()==="114"?({"國一班":"國二班","國二班":"國三班"})[c]||"":c;
+  const criteria=()=>({year:$("termAcademicYear").value.trim(),semester:$("termSemester").value,exam:$("termExamNumber").value,className:$("termClass").value});
+  const ready=c=>!!(c.year&&c.semester&&c.exam&&c.className), cid=c=>[c.year,c.semester,c.exam,c.className].join("|");
+  const drafts=()=>read(draftKey,{});
+  function saveDraft(row){
+    const c=criteria();if(!ready(c))return;
+    const all=drafts(),id=cid(c);all[id]=all[id]||{};const d={};
+    keys.forEach((k,i)=>d[k]=row.querySelector('[data-term-score="'+i+'"]').value);
+    d.class_rank=row.querySelector("[data-term-class-rank]").value;d.school_rank=row.querySelector("[data-term-school-rank]").value;
+    all[id][row.dataset.termStudent]=d;write(draftKey,all);
+    const active=document.activeElement;
+    write(prefKey,{...c,studentId:row.dataset.termStudent,field:active?.dataset?.termScore??(active?.hasAttribute("data-term-class-rank")?"class_rank":active?.hasAttribute("data-term-school-rank")?"school_rank":"")});
+    const status=$("termDraftStatus");if(status)status.textContent="輸入進度已自動暫存於此裝置";
   }
-  function getRosterClass(year, className) {
-    if (String(year).trim() !== "114") return className;
-    return ({ "國一班": "國二班", "國二班": "國三班" })[className] || "";
+  function total(row){
+    const v=keys.map((_,i)=>row.querySelector('[data-term-score="'+i+'"]').value.trim());
+    const n=v.every(x=>x!=="")?v.reduce((a,x)=>a+Number(x),0):null;
+    row.querySelector("[data-term-total]").textContent=n===null?"—":n.toFixed(2).replace(/\.00$/,"").replace(/(\.\d)0$/,"$1");
   }
-  let records = [];
-  let editingId = "";
-
-  content.innerHTML =
-    "<h2 class='section-title'>段考成績登錄</h2>" +
-    "<style>.term-exam-form .form-grid{row-gap:3px!important;column-gap:12px!important;margin-top:0!important;margin-bottom:0!important}.term-exam-form .field{margin:0!important;padding:0!important}.term-exam-form .field label{margin:3px 0 3px!important;line-height:1.25!important}.term-exam-form input,.term-exam-form select{margin-top:0!important}.term-exam-form h3{margin:7px 0 4px!important}</style>" +
-    "<div class='panel'><form id='termExamForm' class='term-exam-form'>" +
-      "<div class='form-grid'>" +
-        "<div class='field'><label for='termAcademicYear'>學年度</label><input id='termAcademicYear' type='text' maxlength='20' placeholder='例如：115' required></div>" +
-        "<div class='field'><label for='termSemester'>學期</label><select id='termSemester' required><option value=''>請選擇</option><option value='上學期'>上學期</option><option value='下學期'>下學期</option></select></div>" +
-        "<div class='field'><label for='termExamNumber'>段考</label><select id='termExamNumber' required><option value=''>請選擇</option><option value='1'>第一次</option><option value='2'>第二次</option><option value='3'>第三次</option></select></div>" +
-        "<div class='field'><label for='termClass'>班級</label><select id='termClass' required><option value=''>請選擇班級</option>" + classNames.map(c => "<option value='" + c + "'>" + c + "</option>").join("") + "</select></div>" +
-        "<div class='field'><label for='termStudent'>學生</label><select id='termStudent' required><option value=''>請先選擇班級</option></select></div>" +
-      "</div>" +
-      "<h3 style='margin:7px 0 4px;color:#23466b'>各科成績（0～100 分）</h3>" +
-      "<div class='form-grid'>" + subjects.map(function(subject, index) {
-        return "<div class='field'><label for='termSubject" + index + "'>" + subject + "</label><input id='termSubject" + index + "' type='number' min='0' max='100' step='0.01' inputmode='decimal' required></div>";
-      }).join("") +
-      "<div class='field'><label for='termClassRank'>班排名（可空白）</label><input id='termClassRank' type='number' min='1' step='1' placeholder='選填'></div>" +
-      "<div class='field'><label for='termSchoolRank'>校排名（可空白）</label><input id='termSchoolRank' type='number' min='1' step='1' placeholder='選填'></div>" +
-      "<div class='field'><label>總分（自動加總）</label><input id='termTotalScore' type='text' readonly value='0' style='font-weight:800;background:#f1f5f9'></div>" +
-      "</div>" +
-      "<div class='toolbar' style='margin-top:16px'><button class='btn btn-success' id='termSaveButton' type='submit'>儲存段考成績</button><button class='btn btn-secondary' id='termCancelButton' type='button' style='display:none'>取消修改</button></div>" +
-    "</form></div>" +
-    "<div class='panel'><h3>段考成績總覽</h3><div id='termExamRecords'><div class='muted'>資料載入中……</div></div></div>";
-
-  function getSubjectValues() {
-    return subjects.map((subject, index) => Number($("termSubject" + index).value || 0));
-  }
-  function updateTotal() {
-    const vals = getSubjectValues();
-    $("termTotalScore").value = vals.reduce((sum, value) => sum + value, 0).toFixed(2).replace(/\\.00$/, "").replace(/(\\.\\d)0$/, "$1");
-  }
-  function updateClassOptions() {
-    const select = $("termClass");
-    const previous = select.value;
-    const available = getAvailableClasses($("termAcademicYear").value);
-    select.innerHTML = "<option value=''>請選擇班級</option>" +
-      available.map(c => "<option value='" + c + "'>" + c + "</option>").join("");
-    select.value = available.includes(previous) ? previous : "";
-  }
-  function updateStudentOptions() {
-    const className = $("termClass").value;
-    const rosterClass = getRosterClass($("termAcademicYear").value, className);
-    const previous = $("termStudent").value;
-    const students = studentsCache.filter(s => rosterClass && s.class_name === rosterClass && s.is_active !== false)
-      .sort((a,b) => String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant", {numeric:true}));
-    $("termStudent").innerHTML = "<option value=''>請選擇學生</option>" + students.map(s =>
-      "<option value='" + escapeHtml(s.id) + "'>" + escapeHtml(s.full_name) + "</option>"
-    ).join("");
-    if (students.some(s => String(s.id) === previous)) $("termStudent").value = previous;
-  }
-  function resetForm() {
-    const retained = {
-      year: $("termAcademicYear").value,
-      semester: $("termSemester").value,
-      exam: $("termExamNumber").value,
-      className: $("termClass").value
-    };
-    editingId = "";
-    $("termExamForm").reset();
-    $("termAcademicYear").value = retained.year;
-    $("termSemester").value = retained.semester;
-    $("termExamNumber").value = retained.exam;
-    $("termClass").value = retained.className;
-    updateStudentOptions();
-    $("termStudent").value = "";
-    $("termTotalScore").value = "0";
-    $("termSaveButton").textContent = "儲存段考成績";
-    $("termSaveButton").disabled = false;
-    $("termCancelButton").style.display = "none";
-  }
-  function startEdit(record) {
-    editingId = String(record.id);
-    $("termAcademicYear").value = record.academic_year || "";
-    updateClassOptions();
-    $("termSemester").value = record.semester || "";
-    $("termExamNumber").value = String(record.exam_number || "");
-    $("termClass").value = record.class_name || "";
-    updateStudentOptions();
-    $("termStudent").value = record.student_id;
-    subjects.forEach((subject, index) => $("termSubject" + index).value = record[subjectKeys[index]] == null ? "" : record[subjectKeys[index]]);
-    $("termClassRank").value = record.class_rank == null ? "" : record.class_rank;
-    $("termSchoolRank").value = record.school_rank == null ? "" : record.school_rank;
-    updateTotal();
-    $("termSaveButton").textContent = "儲存修改";
-    $("termCancelButton").style.display = "inline-block";
-    $("termExamForm").scrollIntoView({behavior:"smooth", block:"start"});
-  }
-  function renderRecords() {
-    const root = $("termExamRecords");
-    const previous = {
-      year: root.querySelector("#termFilterYear")?.value || "",
-      semester: root.querySelector("#termFilterSemester")?.value || "",
-      exam: root.querySelector("#termFilterExam")?.value || "",
-      className: root.querySelector("#termFilterClass")?.value || "",
-      subject: root.querySelector("#termFilterSubject")?.value || "total_score",
-      studentName: root.querySelector("#termFilterStudentName")?.value || ""
-    };
-    const years = [...new Set(records.map(r => String(r.academic_year || "")))].filter(Boolean)
-      .sort((a,b) => b.localeCompare(a, "zh-Hant", {numeric:true}));
-    const subjectOptions = subjects.map((name,index) => ({key:subjectKeys[index],name}))
-      .concat([{key:"total_score",name:"總分"},{key:"class_rank",name:"班排名"},{key:"school_rank",name:"校排名"}]);
-    const classOrder = {"國一班":1,"國二班":2,"國三班":3};
-    const selectedSubject = subjectOptions.find(x => x.key === previous.subject) || subjectOptions[0];
-    const nameQuery = previous.studentName.trim().toLocaleLowerCase();
-    const filtered = records.filter(r => {
-      const student = studentsCache.find(s => String(s.id) === String(r.student_id));
-      const studentName = String(student?.full_name || "").toLocaleLowerCase();
-      return (!previous.year || String(r.academic_year) === previous.year) &&
-      (!previous.semester || r.semester === previous.semester) &&
-      (!previous.exam || String(r.exam_number) === previous.exam) &&
-      (!previous.className || r.class_name === previous.className) &&
-      (!nameQuery || studentName.includes(nameQuery));
-    }
-    ).sort((a,b) =>
-      String(b.academic_year || "").localeCompare(String(a.academic_year || ""), "zh-Hant", {numeric:true}) ||
-      (a.semester === "上學期" ? 1 : 2) - (b.semester === "上學期" ? 1 : 2) ||
-      Number(a.exam_number || 99) - Number(b.exam_number || 99) ||
-      (classOrder[a.class_name] || 99) - (classOrder[b.class_name] || 99) ||
-      (Number(b[selectedSubject.key] ?? -Infinity) - Number(a[selectedSubject.key] ?? -Infinity))
-    );
-    const rows = filtered.map(record => {
-      const student = studentsCache.find(s => String(s.id) === String(record.student_id));
-      const examName = (record.academic_year || "") + " (" + (record.semester === "上學期" ? "上" : "下") + ") " +
-        (["","第一次","第二次","第三次"][Number(record.exam_number)] || "");
-      const value = record[selectedSubject.key];
-      const isScoreField = selectedSubject.key !== "class_rank" && selectedSubject.key !== "school_rank";
-      const valueHtml = value == null ? "—" :
-        (isScoreField && Number.isFinite(Number(value)) && Number(value) < 60
-          ? "<span class='low-score'>" + escapeHtml(value) + "</span>"
-          : escapeHtml(value));
-      return "<tr><td>" + escapeHtml(examName) + "</td><td>" + escapeHtml(record.class_name) + "</td><td>" +
-        escapeHtml(student ? student.full_name : "學生資料不存在") + "</td><td>" +
-        valueHtml + "</td>" +
-        "<td class='action-cell'><div class='action-buttons'><button class='btn btn-small' data-term-edit='" + escapeHtml(record.id) + "'>修改</button>" +
-        "<button class='btn btn-danger btn-small' data-term-delete='" + escapeHtml(record.id) + "'>刪除</button></div></td></tr>";
+  function renderRoster(){
+    const c=criteria(),root=$("termExamRoster");
+    if(!ready(c)){root.innerHTML="<div class='empty'>請先選擇學年度、學期、段考及班級，系統就會帶入整班學生。</div>";return;}
+    const students=studentsCache.filter(x=>x.class_name===rosterClass(c.year,c.className)&&x.is_active!==false)
+      .sort((a,b)=>String(a.student_code||"").localeCompare(String(b.student_code||""),"zh-Hant",{numeric:true}));
+    if(!students.length){root.innerHTML="<div class='empty'>目前班級沒有在學學生。</div>";return;}
+    const classDraft=(drafts()[cid(c)]||{});
+    const rows=students.map(st=>{
+      const old=records.find(x=>String(x.academic_year)===c.year&&x.semester===c.semester&&String(x.exam_number)===c.exam&&String(x.student_id)===String(st.id));
+      const d=classDraft[String(st.id)]||{},v=k=>d[k]!==undefined?d[k]:(old&&old[k]!=null?old[k]:"");
+      const cells=keys.map((k,i)=>"<td><input data-term-score='"+i+"' type='number' min='0' max='100' step='0.01' inputmode='decimal' aria-label='"+subjects[i]+"成績' value='"+escapeHtml(v(k))+"'></td>").join("");
+      const sum=keys.every(k=>v(k)!=="")?keys.reduce((n,k)=>n+Number(v(k)),0).toFixed(2).replace(/\.00$/,"").replace(/(\.\d)0$/,"$1"):"—";
+      return "<tr data-term-student='"+escapeHtml(st.id)+"'><td class='term-student-name'>"+escapeHtml(st.full_name)+"<small>"+escapeHtml(st.student_code||"")+"</small>"+(old?"<span class='term-existing-mark'>已儲存</span>":"")+"</td>"+cells+
+        "<td class='term-total-cell' data-term-total>"+sum+"</td><td><input data-term-class-rank type='number' min='1' step='1' value='"+escapeHtml(v("class_rank"))+"' aria-label='班排'></td>"+
+        "<td><input data-term-school-rank type='number' min='1' step='1' value='"+escapeHtml(v("school_rank"))+"' aria-label='校排'></td></tr>";
     }).join("");
-    root.innerHTML =
-      "<div class='form-grid' style='row-gap:8px;column-gap:12px;margin-bottom:14px'>" +
-        "<div class='field'><label for='termFilterYear'>學年度</label><select id='termFilterYear'><option value=''>全部學年度</option>" +
-          years.map(y => "<option value='" + escapeHtml(y) + "'>" + escapeHtml(y) + "</option>").join("") + "</select></div>" +
-        "<div class='field'><label for='termFilterSemester'>上下學期</label><select id='termFilterSemester'><option value=''>全部學期</option><option value='上學期'>上學期</option><option value='下學期'>下學期</option></select></div>" +
-        "<div class='field'><label for='termFilterExam'>段考</label><select id='termFilterExam'><option value=''>全部段考</option><option value='1'>第一次</option><option value='2'>第二次</option><option value='3'>第三次</option></select></div>" +
-        "<div class='field'><label for='termFilterClass'>班級</label><select id='termFilterClass'><option value=''>全部班級</option>" +
-          ["國一班","國二班","國三班"].map(name => "<option value='" + name + "'>" + name + "</option>").join("") + "</select></div>" +
-        "<div class='field'><label for='termFilterSubject'>科目</label><select id='termFilterSubject'>" +
-          subjectOptions.map(x => "<option value='" + x.key + "'>" + x.name + "</option>").join("") + "</select></div>" +
-        "<div class='field'><label for='termFilterStudentName'>學生姓名</label><input id='termFilterStudentName' type='text' placeholder='手動輸入學生姓名搜尋' autocomplete='off'></div>" +
-      "</div>" +
-      (filtered.length
-        ? "<div class='table-wrap'><table class='term-exam-overview-table'><thead><tr><th>考試</th><th>班級</th><th>學生</th><th>" + selectedSubject.name + "</th><th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>"
-        : "<div class='empty'>" + (records.length ? "目前篩選條件沒有符合的段考成績。" : "目前尚無段考成績。") + "</div>");
-    root.querySelector("#termFilterYear").value = previous.year;
-    root.querySelector("#termFilterSemester").value = previous.semester;
-    root.querySelector("#termFilterExam").value = previous.exam;
-    root.querySelector("#termFilterClass").value = previous.className;
-    root.querySelector("#termFilterSubject").value = selectedSubject.key;
-    root.querySelector("#termFilterStudentName").value = previous.studentName;
-    ["termFilterYear","termFilterSemester","termFilterExam","termFilterClass","termFilterSubject","termFilterStudentName"].forEach(id => {
-      root.querySelector("#" + id).addEventListener("change", renderRecords);
-    });
-    root.querySelector("#termFilterStudentName").addEventListener("keydown", function(event) {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        renderRecords();
-      }
-    });
+    root.innerHTML="<div class='term-roster-toolbar'><span>共 "+students.length+" 位學生；填寫完成後可一次儲存整班。</span><span id='termDraftStatus' class='term-draft-status'>"+(Object.keys(classDraft).length?"已還原上次未完成的輸入":"輸入時會自動暫存")+"</span></div>"+
+      "<div class='table-wrap term-roster-wrap'><table class='term-bulk-table'><thead><tr><th>學生</th>"+subjects.map(x=>"<th>"+x+"</th>").join("")+"<th>總分</th><th>班排</th><th>校排</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
+      "<div class='toolbar term-bulk-actions'><button class='btn btn-success' id='termSaveClassButton' type='button'>儲存整班成績</button><button class='btn btn-secondary' id='termClearDraftButton' type='button'>清除未儲存暫存</button></div>";
+    root.querySelectorAll("tbody tr").forEach(row=>row.querySelectorAll("input").forEach(input=>input.addEventListener("input",()=>{total(row);saveDraft(row);})));
+    $("termSaveClassButton").addEventListener("click",saveClass);
+    $("termClearDraftButton").addEventListener("click",()=>{if(!confirm("確定清除目前班級尚未儲存的暫存資料？已存入資料庫的成績不會受到影響。"))return;const all=drafts();delete all[cid(c)];write(draftKey,all);renderRoster();});
+    const p=read(prefKey,{});if(p&&cid(p)===cid(c)&&p.studentId){
+      const row=Array.from(root.querySelectorAll("tr[data-term-student]")).find(x=>x.dataset.termStudent===String(p.studentId));
+      if(row){const sel=p.field==="class_rank"?"[data-term-class-rank]":p.field==="school_rank"?"[data-term-school-rank]":p.field!==""?'[data-term-score="'+p.field+'"]':null;const target=sel?row.querySelector(sel):null;if(target)target.focus({preventScroll:true});}
+    }
   }
-  async function loadRecords() {
-    const result = await db.from("term_exam_scores").select("*")
-      .order("academic_year", {ascending:false}).order("semester").order("exam_number")
-      .order("class_name").order("student_id");
-    if (result.error) throw result.error;
-    records = result.data || [];
-    renderRecords();
+  async function saveClass(){
+    const c=criteria();if(!ready(c)){alert("請先完整選擇學年度、學期、段考及班級。");return;}
+    const button=$("termSaveClassButton"),rows=Array.from($("termExamRoster").querySelectorAll("tbody tr[data-term-student]")),payloads=[];
+    for(const row of rows){
+      const vals=keys.map((_,i)=>row.querySelector('[data-term-score="'+i+'"]').value.trim()),cr=row.querySelector("[data-term-class-rank]").value.trim(),sr=row.querySelector("[data-term-school-rank]").value.trim();
+      const has=vals.some(x=>x!==""),ranked=cr!==""||sr!=="";
+      if(!has&&!ranked)continue;
+      if(has&&vals.some(x=>x==="")){alert(row.querySelector(".term-student-name").childNodes[0].textContent.trim()+"：七科成績請全部填寫，或整列留白。");row.querySelector('[data-term-score="'+vals.indexOf("")+'"]').focus();return;}
+      for(let i=0;i<vals.length;i++)if(vals[i]!==""&&(!Number.isFinite(Number(vals[i]))||Number(vals[i])<0||Number(vals[i])>100)){alert(subjects[i]+"成績必須介於 0～100 分。");row.querySelector('[data-term-score="'+i+'"]').focus();return;}
+      for(const [x,label] of [[cr,"班排"],[sr,"校排"]])if(x!==""&&(!Number.isInteger(Number(x))||Number(x)<1)){alert(label+"請輸入大於 0 的整數，或保持空白。");return;}
+      const studentId=row.dataset.termStudent,old=records.find(x=>String(x.academic_year)===c.year&&x.semester===c.semester&&Number(x.exam_number)===Number(c.exam)&&String(x.student_id)===studentId);
+      payloads.push({academic_year:c.year,semester:c.semester,exam_number:Number(c.exam),class_name:c.className,student_id:studentId,
+        subject_chinese:vals[0]===""?null:Number(vals[0]),subject_english:vals[1]===""?null:Number(vals[1]),subject_math:vals[2]===""?null:Number(vals[2]),
+        subject_history:vals[3]===""?null:Number(vals[3]),subject_geography:vals[4]===""?null:Number(vals[4]),subject_civics:vals[5]===""?null:Number(vals[5]),
+        subject_natural:vals[6]===""?null:Number(vals[6]),total_score:has?vals.reduce((a,x)=>a+Number(x),0):(old?old.total_score:null),
+        class_rank:cr===""?null:Number(cr),school_rank:sr===""?null:Number(sr),updated_at:new Date().toISOString()});
+    }
+    if(!payloads.length){alert("目前沒有可儲存的成績或排名。");return;}
+    const oldCount=payloads.filter(p=>records.some(x=>String(x.academic_year)===c.year&&x.semester===c.semester&&Number(x.exam_number)===Number(c.exam)&&String(x.student_id)===p.student_id)).length;
+    if(oldCount&&!confirm("本次將儲存 "+payloads.length+" 位學生，其中 "+oldCount+" 位已有段考資料，是否確認更新？"))return;
+    button.disabled=true;button.textContent="整班儲存中……";
+    try{
+      const result=await db.from("term_exam_scores").upsert(payloads,{onConflict:"academic_year,semester,exam_number,student_id"});if(result.error)throw result.error;
+      const all=drafts();delete all[cid(c)];write(draftKey,all);await loadRecords();renderRoster();
+      showMessage("整班段考成績已儲存，共 "+payloads.length+" 位學生。","success",true);
+    }catch(error){alert("整班儲存失敗："+error.message+"。輸入暫存仍保留，可修正後再試。");}
+    finally{const b=$("termSaveClassButton");if(b){b.disabled=false;b.textContent="儲存整班成績";}}
   }
-
-  $("termAcademicYear").addEventListener("input", function() {
-    const previousClass = $("termClass").value;
-    updateClassOptions();
-    if ($("termClass").value !== previousClass) $("termStudent").value = "";
-    updateStudentOptions();
-  });
-  $("termClass").addEventListener("change", updateStudentOptions);
-  subjects.forEach((subject,index) => $("termSubject" + index).addEventListener("input", updateTotal));
-  $("termCancelButton").addEventListener("click", resetForm);
-  $("termExamForm").addEventListener("submit", async function(event) {
-    event.preventDefault();
-    const year = $("termAcademicYear").value.trim();
-    const semester = $("termSemester").value;
-    const examNumber = Number($("termExamNumber").value);
-    const className = $("termClass").value;
-    const studentId = $("termStudent").value;
-    const vals = getSubjectValues();
-    if (!year || !semester || !examNumber || !className || !studentId) {
-      alert("請完整選擇學年度、學期、段考、班級及學生。"); return;
-    }
-    for (let index=0; index<vals.length; index++) {
-      const raw = $("termSubject" + index).value;
-      if (raw === "" || !Number.isFinite(vals[index]) || vals[index] < 0 || vals[index] > 100) {
-        alert(subjects[index] + "成績必須輸入 0～100 分。");
-        $("termSubject" + index).focus(); return;
-      }
-    }
-    const rankValues = {};
-    for (const [id,key,label] of [["termClassRank","class_rank","班排名"],["termSchoolRank","school_rank","校排名"]]) {
-      const raw = $(id).value.trim();
-      if (raw !== "" && (!Number.isInteger(Number(raw)) || Number(raw) < 1)) {
-        alert(label + "請輸入大於 0 的整數，或保持空白。"); $(id).focus(); return;
-      }
-      rankValues[key] = raw === "" ? null : Number(raw);
-    }
-    const total = vals.reduce((sum,value) => sum + value, 0);
-    const payload = {
-      academic_year:year, semester, exam_number:examNumber, class_name:className,
-      student_id:studentId, subject_chinese:vals[0], subject_english:vals[1],
-      subject_math:vals[2], subject_history:vals[3], subject_geography:vals[4],
-      subject_civics:vals[5], subject_natural:vals[6], total_score:total,
-      class_rank:rankValues.class_rank, school_rank:rankValues.school_rank,
-      updated_at:new Date().toISOString()
-    };
-    const duplicate = records.find(r => String(r.academic_year)===year && r.semester===semester &&
-      Number(r.exam_number)===examNumber && String(r.student_id)===studentId &&
-      String(r.id)!==String(editingId));
-    if (duplicate && !confirm("這位學生在此段考已有成績，是否覆蓋原資料？")) return;
-    const button = $("termSaveButton");
-    button.disabled = true; button.textContent = "儲存中……";
-    try {
-      const result = editingId
-        ? await db.from("term_exam_scores").update(payload).eq("id",editingId)
-        : await db.from("term_exam_scores").upsert(payload,{onConflict:"academic_year,semester,exam_number,student_id"});
-      if (result.error) throw result.error;
-      const wasEditing = !!editingId;
-      resetForm(); await loadRecords();
-      showMessage(wasEditing ? "段考成績已更新。" : "段考成績已儲存。","success",true);
-    } catch(error) {
-      button.disabled = false; button.textContent = editingId ? "儲存修改" : "儲存段考成績";
-      alert("儲存段考成績失敗：" + error.message);
-    }
-  });
-  $("termExamRecords").addEventListener("click", async function(event) {
-    const edit = event.target.closest("[data-term-edit]");
-    if (edit) {
-      const record = records.find(r => String(r.id)===String(edit.dataset.termEdit));
-      if (record) startEdit(record);
-      return;
-    }
-    const del = event.target.closest("[data-term-delete]");
-    if (del) {
-      const record = records.find(r => String(r.id)===String(del.dataset.termDelete));
-      if (!record || !confirm("確定刪除這筆段考成績嗎？")) return;
-      const result = await db.from("term_exam_scores").delete().eq("id",record.id);
-      if (result.error) { alert("刪除失敗：" + result.error.message); return; }
-      await loadRecords(); showMessage("段考成績已刪除。","success",true);
-    }
-  });
-  try { await loadRecords(); }
-  catch(error) {
-    $("termExamRecords").innerHTML = "<div class='system-message error' style='display:block'>讀取段考成績失敗：" +
-      escapeHtml(error.message) + "<br>請先依照提供的 SQL 建立段考資料表。</div>";
+  function updateClasses(){const sel=$("termClass"),old=sel.value,list=available($("termAcademicYear").value);sel.innerHTML="<option value=''>請選擇班級</option>"+list.map(x=>"<option value='"+x+"'>"+x+"</option>").join("");sel.value=list.includes(old)?old:"";}
+  function renderRecords(){
+    const root=$("termExamRecords"),p={year:root.querySelector("#termFilterYear")?.value||"",semester:root.querySelector("#termFilterSemester")?.value||"",exam:root.querySelector("#termFilterExam")?.value||"",className:root.querySelector("#termFilterClass")?.value||"",subject:root.querySelector("#termFilterSubject")?.value||"total_score",name:root.querySelector("#termFilterStudentName")?.value||""};
+    const years=[...new Set(records.map(x=>String(x.academic_year||"")))].filter(Boolean).sort((a,b)=>b.localeCompare(a,"zh-Hant",{numeric:true}));
+    const options=subjects.map((name,i)=>({key:keys[i],name})).concat([{key:"total_score",name:"總分"},{key:"class_rank",name:"班排名"},{key:"school_rank",name:"校排名"}]);
+    const chosen=options.find(x=>x.key===p.subject)||options[0],q=p.name.trim().toLocaleLowerCase();
+    const filtered=records.filter(r=>{const st=studentsCache.find(x=>String(x.id)===String(r.student_id));return(!p.year||String(r.academic_year)===p.year)&&(!p.semester||r.semester===p.semester)&&(!p.exam||String(r.exam_number)===p.exam)&&(!p.className||r.class_name===p.className)&&(!q||String(st?.full_name||"").toLocaleLowerCase().includes(q));});
+    const rows=filtered.map(r=>{const st=studentsCache.find(x=>String(x.id)===String(r.student_id)),v=r[chosen.key],score=chosen.key!=="class_rank"&&chosen.key!=="school_rank";return "<tr><td>"+escapeHtml(r.academic_year+" ("+(r.semester==="上學期"?"上":"下")+") "+(["","第一次","第二次","第三次"][Number(r.exam_number)]||""))+"</td><td>"+escapeHtml(r.class_name)+"</td><td>"+escapeHtml(st?.full_name||"學生資料不存在")+"</td><td>"+(v==null?"—":score&&Number(v)<60?"<span class='low-score'>"+escapeHtml(v)+"</span>":escapeHtml(v))+"</td><td class='action-cell'><div class='action-buttons'><button class='btn btn-small' data-term-delete='"+escapeHtml(r.id)+"'>刪除</button></div></td></tr>";}).join("");
+    root.innerHTML="<div class='form-grid' style='row-gap:8px;column-gap:12px;margin-bottom:14px'><div class='field'><label>學年度</label><select id='termFilterYear'><option value=''>全部學年度</option>"+years.map(y=>"<option>"+escapeHtml(y)+"</option>").join("")+"</select></div><div class='field'><label>上下學期</label><select id='termFilterSemester'><option value=''>全部學期</option><option>上學期</option><option>下學期</option></select></div><div class='field'><label>段考</label><select id='termFilterExam'><option value=''>全部段考</option><option value='1'>第一次</option><option value='2'>第二次</option><option value='3'>第三次</option></select></div><div class='field'><label>班級</label><select id='termFilterClass'><option value=''>全部班級</option>"+classes.map(x=>"<option>"+x+"</option>").join("")+"</select></div><div class='field'><label>科目</label><select id='termFilterSubject'>"+options.map(x=>"<option value='"+x.key+"'>"+x.name+"</option>").join("")+"</select></div><div class='field'><label>學生姓名</label><input id='termFilterStudentName' placeholder='輸入學生姓名搜尋'></div></div>"+
+      (filtered.length?"<div class='table-wrap'><table class='term-exam-overview-table'><thead><tr><th>考試</th><th>班級</th><th>學生</th><th>"+chosen.name+"</th><th>操作</th></tr></thead><tbody>"+rows+"</tbody></table></div>":"<div class='empty'>"+(records.length?"目前篩選條件沒有符合的段考成績。":"目前尚無段考成績。")+"</div>");
+    for(const id of ["termFilterYear","termFilterSemester","termFilterExam","termFilterClass","termFilterSubject","termFilterStudentName"]){const el=root.querySelector("#"+id);el.value=id==="termFilterSubject"?chosen.key:p[id==="termFilterStudentName"?"name":id.replace("termFilter","").replace(/^./,x=>x.toLowerCase())]||"";el.addEventListener("change",renderRecords);}
   }
+  async function loadRecords(){const res=await db.from("term_exam_scores").select("*").order("academic_year",{ascending:false}).order("semester").order("exam_number").order("class_name").order("student_id");if(res.error)throw res.error;records=res.data||[];renderRecords();}
+  const saved=read(prefKey,{});
+  content.innerHTML="<h2 class='section-title'>段考成績登錄</h2><div class='panel term-exam-form'><div class='form-grid'>"+
+    "<div class='field'><label for='termAcademicYear'>學年度（手動輸入）</label><input id='termAcademicYear' maxlength='20' placeholder='例如：115' value='"+escapeHtml(saved.year||"")+"'></div>"+
+    "<div class='field'><label for='termSemester'>學期</label><select id='termSemester'><option value=''>請選擇學期</option><option value='上學期'>上學期</option><option value='下學期'>下學期</option></select></div>"+
+    "<div class='field'><label for='termExamNumber'>段考</label><select id='termExamNumber'><option value=''>請選擇段考</option><option value='1'>第一次段考</option><option value='2'>第二次段考</option><option value='3'>第三次段考</option></select></div>"+
+    "<div class='field'><label for='termClass'>班級</label><select id='termClass'><option value=''>請選擇班級</option>"+available(saved.year||"").map(x=>"<option value='"+x+"'>"+x+"</option>").join("")+"</select></div></div></div>"+
+    "<div id='termExamRoster'><div class='empty'>請先選擇學年度、學期、段考及班級。</div></div><div class='panel'><h3>段考成績總覽</h3><div id='termExamRecords'>資料載入中……</div></div>";
+  $("termSemester").value=saved.semester||"";$("termExamNumber").value=saved.exam||"";$("termClass").value=available(saved.year||"").includes(saved.className)?saved.className:"";
+  for(const id of ["termAcademicYear","termSemester","termExamNumber","termClass"]){$(id).addEventListener(id==="termAcademicYear"?"input":"change",()=>{if(id==="termAcademicYear")updateClasses();write(prefKey,criteria());renderRoster();});}
+  try{
+    await loadRecords();renderRoster();
+    $("termExamRecords").addEventListener("click",async e=>{const del=e.target.closest("[data-term-delete]");if(!del)return;const rec=records.find(x=>String(x.id)===del.dataset.termDelete);if(!rec||!confirm("確定刪除這筆段考成績嗎？"))return;const res=await db.from("term_exam_scores").delete().eq("id",rec.id);if(res.error){alert("刪除失敗："+res.error.message);return;}await loadRecords();renderRoster();showMessage("段考成績已刪除。","success",true);});
+  }catch(error){$("termExamRecords").innerHTML="<div class='system-message error' style='display:block'>讀取段考成績失敗："+escapeHtml(error.message)+"</div>";}
 }
-
 // ==================================================
 // 段考成績登錄結束
 // ==================================================
