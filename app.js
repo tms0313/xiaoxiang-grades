@@ -2446,9 +2446,8 @@ function renderScoreEntry() {
     "<div id='bulkScoreEntryMessage' class='system-message' role='status'></div></div>";
   setDefaultExamDates();
   ["scoreExam", "scoreClass", "scoreSubject", "scoreScope"].forEach(function (id) {
-    $(id).addEventListener(id === "scoreScope" ? "input" : "change", function () {
+    $(id).addEventListener("change", function () {
       renderBulkScoreEntryRows();
-      saveScoreEntryProgress();
     });
   });
   $("saveBulkScoresButton").addEventListener("click", saveBulkScores);
