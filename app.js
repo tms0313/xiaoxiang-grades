@@ -5431,27 +5431,41 @@ async function renderParentDashboard() {
     return exam.id;
   });
 
-  // 家長頁只呈現最近三場週考，因此只讀取這三場的已綁定學生個人成績。
-  let parentScores = [];
-  if (reviewExamIds.length > 0) {
-    const scoresResult = await db
-      .from("scores")
-      .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
-      .in("student_id", studentIds)
-      .in("exam_id", reviewExamIds);
+  // 三項資料彼此獨立，並行讀取，避免家長首頁逐項等待網路往返。
+  const parentDataRequests = await Promise.all([
+    reviewExamIds.length > 0
+      ? db.from("scores")
+          .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
+          .in("student_id", studentIds)
+          .in("exam_id", reviewExamIds)
+      : Promise.resolve({ data: [], error: null }),
+    db.rpc("get_parent_class_scope_highest_scores"),
+    reviewExamIds.length > 0 && studentIds.length > 0
+      ? db.from("score_review_records")
+          .select("exam_id, student_id, guardian_id, reviewed_at")
+          .in("exam_id", reviewExamIds)
+          .in("student_id", studentIds)
+      : Promise.resolve({ data: [], error: null })
+  ]);
 
-    if (scoresResult.error) {
-      throw new Error("讀取成績資料失敗：" + scoresResult.error.message);
-    }
-    parentScores = scoresResult.data || [];
+  const scoresResult = parentDataRequests[0];
+  const highestScoresResult = parentDataRequests[1];
+  const reviewResult = parentDataRequests[2];
+
+  if (scoresResult.error) {
+    throw new Error("讀取成績資料失敗：" + scoresResult.error.message);
   }
-
-  // 僅取得已綁定孩子所在班級的最高分統計，不讀取其他學生的個別成績。
-  const highestScoresResult = await db.rpc("get_parent_class_scope_highest_scores");
   if (highestScoresResult.error) {
     throw new Error("讀取班級最高分失敗：" + highestScoresResult.error.message);
   }
+  if (reviewResult.error) {
+    throw new Error("讀取成績檢閱紀錄失敗：" + reviewResult.error.message);
+  }
+
+  const parentScores = scoresResult.data || [];
+  // RPC 僅回傳已綁定孩子所在班級的最高分統計，不讀取其他學生的個別成績。
   const parentClassHighestScores = highestScoresResult.data || [];
+  const parentReviewRecords = reviewResult.data || [];
 
   function findClassHighestScore(student, exam, score) {
     return parentClassHighestScores.find(function (item) {
@@ -5460,21 +5474,6 @@ async function renderParentDashboard() {
         String(item.subject) === String(score.subject) &&
         String(item.scope || "") === String(score.scope || "");
     });
-  }
-
-  let parentReviewRecords = [];
-  if (reviewExamIds.length > 0 && studentIds.length > 0) {
-    const reviewResult = await db
-      .from("score_review_records")
-      .select("exam_id, student_id, guardian_id, reviewed_at")
-      .in("exam_id", reviewExamIds)
-      .in("student_id", studentIds);
-
-    if (reviewResult.error) {
-      throw new Error("讀取成績檢閱紀錄失敗：" + reviewResult.error.message);
-    }
-
-    parentReviewRecords = reviewResult.data || [];
   }
 
   function findReviewRecord(student, exam) {
