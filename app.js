@@ -1537,7 +1537,12 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     if (!student || student.is_active === false) return;
     const groupKey = keyOf(student.class_name, item.subject);
     if (!enrolledStudentsByClassSubject.has(groupKey)) {
-      enrolledStudentsByClassSubject.set(groupKey, { ids: new Set(), students: [] });
+      enrolledStudentsByClassSubject.set(groupKey, {
+        ids: new Set(),
+        students: [],
+        className: student.class_name,
+        subject: item.subject
+      });
     }
     const group = enrolledStudentsByClassSubject.get(groupKey);
     const studentId = String(student.id);
@@ -1628,9 +1633,8 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       : overviewExamsByDateDesc;
     const matchingEnrolledStudentsByClassSubject = new Map();
     enrolledStudentsByClassSubject.forEach(function (group, groupKey) {
-      const parts = groupKey.split("\\u001f");
-      const targetClass = parts[0] || "";
-      const targetSubject = parts[1] || "";
+      const targetClass = group.className;
+      const targetSubject = group.subject;
       if (className && targetClass !== className) return;
       if (subject && targetSubject !== subject) return;
       const matchedStudents = group.students.filter(matchesStudent);
