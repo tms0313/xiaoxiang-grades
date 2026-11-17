@@ -4281,7 +4281,7 @@ function renderTeacherManagement() {
             "<div class='field'><label>教師帳號</label><select id='teacherAccountSelect' required><option value=''>請選擇教師</option>" + teacherOptions + "</select></div>" +
             "<div class='field'><label>授課班級</label><select id='teacherClassSelect' required><option value=''>請選擇班級</option><option>國一班</option><option>國二班</option><option>國三班</option></select></div>" +
             "<div class='field'><label>授課科目</label><select id='teacherSubjectSelect' required><option value=''>請選擇科目</option>" + SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") + "</select></div>" +
-          "</div><button class='btn btn-success' type='submit'>新增授課權限</button></form>"
+          "</div><button class='btn btn-success' type='submit' id='saveTeacherAssignmentButton'>新增授課權限</button></form>"
         : "<div class='empty'>目前尚無教師帳號，請先建立教師帳號。</div>") +
     "</div>" +
     "<div class='panel'><h3>教師授課權限清單</h3>" +
@@ -4500,6 +4500,9 @@ async function manageTeacherAccount(action, teacherId, email) {
 
 async function saveTeacherAssignment(event) {
   event.preventDefault();
+  const button = $("saveTeacherAssignmentButton");
+  if (!button || button.disabled) return;
+
   const assignmentPanel = $("teacherAssignmentPanel");
   const assignmentPanelTop = assignmentPanel
     ? assignmentPanel.getBoundingClientRect().top
@@ -4512,6 +4515,18 @@ async function saveTeacherAssignment(event) {
     return;
   }
 
+  const duplicate = teacherAssignmentsCache.some(item =>
+    String(item.teacher_id) === String(teacherId) &&
+    item.class_name === className &&
+    item.subject === subject
+  );
+  if (duplicate) {
+    showMessage("這位教師已經有相同班級及科目的授課權限，不需要重複新增。", "error");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "新增中……";
   try {
     const result = await db.from("teacher_assignments").insert({
       teacher_id: teacherId,
@@ -4539,6 +4554,11 @@ async function saveTeacherAssignment(event) {
     });
   } catch (error) {
     showMessage("新增授課權限失敗：" + error.message, "error");
+  } finally {
+    if (button.isConnected) {
+      button.disabled = false;
+      button.textContent = "新增授課權限";
+    }
   }
 }
 
