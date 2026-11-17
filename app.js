@@ -5046,7 +5046,8 @@ async function renderParentDashboard() {
       .order("student_code"),
     db.from("exams")
       .select("*")
-      .order("start_date", { ascending: false })
+      .order("start_date", { ascending: false, nullsFirst: false })
+      .limit(3)
   ]);
 
   if (studentsResult.error) {
@@ -5057,9 +5058,8 @@ async function renderParentDashboard() {
   }
 
   const parentStudents = studentsResult.data || [];
-  const parentExams = examsResult.data || [];
-  const sortedExams = sortByDateDesc(parentExams, "start_date");
-  const latestThreeExams = sortedExams.slice(0, 3);
+  // 考試清單已由資料庫依日期排序並限制最近三場，避免載入完整歷史考試資料。
+  const latestThreeExams = examsResult.data || [];
   const reviewExamIds = latestThreeExams.map(function (exam) {
     return exam.id;
   });
