@@ -1626,9 +1626,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     content.querySelectorAll("[data-select-missing]").forEach(box => { box.checked = false; });
     updateMissingSelectionCount();
   });
-  content.addEventListener("change", function (event) {
+  content.onchange = function (event) {
     if (event.target.matches("[data-select-missing]")) updateMissingSelectionCount();
-  });
+  };
   $("batchExcludeMissingButton").addEventListener("click", async function () {
     const items = Array.from(content.querySelectorAll("[data-select-missing]:checked")).map(box => ({
       examId: box.dataset.examId,
