@@ -77,6 +77,7 @@ let adminHighestPreviewClassName = "";
 let adminHighestPreviewSubject = "";
 let overviewAutoRefreshTimer = null;
 let overviewAutoRefreshBusy = false;
+let adminDataLoadMetrics = null;
 
 // ==================================================
 // 1. 基本工具
@@ -917,6 +918,8 @@ async function cleanupPreviousWeekExclusions() {
 }
 
 async function loadAdminData() {
+  const adminLoadStartedAt = performance.now();
+  const adminQueriesStartedAt = performance.now();
   // profiles 原本分別查詢家長、教師及全部帳號；合併為一次讀取，降低後台啟動時的重複請求。
   const results = await Promise.all([
     db.from("students").select("*").order("student_code"),
@@ -929,6 +932,7 @@ async function loadAdminData() {
     db.from("profile_roles").select("user_id, role").eq("role", "teacher"),
     db.from("score_missing_exclusions").select("*")
   ]);
+  const adminQueriesMs = performance.now() - adminQueriesStartedAt;
 
   const names = ["學生資料", "考試資料", "全部帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師授課權限", "額外身分資料", "未登錄排除資料"];
 
@@ -971,6 +975,13 @@ async function loadAdminData() {
     });
   });
   teacherProfilesCache = Array.from(teacherMap.values());
+  adminDataLoadMetrics = {
+    queryMs: adminQueriesMs,
+    totalMs: performance.now() - adminLoadStartedAt,
+    students: studentsCache.length,
+    exams: examsCache.length,
+    scores: scoresCache.length
+  };
 }
 
 
@@ -1570,6 +1581,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const f = overviewPerf.latestFilter || {};
     return [
       "小象成績總覽效能紀錄",
+      "管理員資料載入：" + (adminDataLoadMetrics ? adminDataLoadMetrics.totalMs.toFixed(2) + " ms（Supabase 查詢 " + adminDataLoadMetrics.queryMs.toFixed(2) + " ms）" : "尚無資料"),
       "索引建立：" + overviewPerf.indexBuildMs.toFixed(2) + " ms",
       "資料量：學生 " + overviewPerf.students + "、考試 " + overviewPerf.exams + "、成績 " + overviewPerf.scores,
       "修課群組：" + overviewPerf.enrolledGroups,
