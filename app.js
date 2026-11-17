@@ -3689,35 +3689,53 @@ function renderGuardians() {
       ? $("guardianKeyword").value.trim().toLocaleLowerCase()
       : "";
     const matches = value => !keyword || String(value || "").toLocaleLowerCase().includes(keyword);
-    const rows = [];
+    const grouped = new Map();
 
     guardianLinksCache.forEach(function (link) {
-      const parent = parentsById.get(String(link.guardian_id));
-      const student = studentsById.get(String(link.student_id));
-      if (!student) return;
+      const guardianId = String(link.guardian_id);
+      const studentId = String(link.student_id);
+      const parent = parentsById.get(guardianId);
+      const student = studentsById.get(studentId);
+      if (!student || !parent) return;
       if (selectedClass && student.class_name !== selectedClass) return;
+      if (!grouped.has(guardianId)) {
+        grouped.set(guardianId, { parent: parent, students: [] });
+      }
+      grouped.get(guardianId).students.push({ link: link, student: student });
+    });
 
-      const loginIdentity = parent ? (parent.email || parent.phone || "") : "";
-      const parentName = student.full_name + "家長";
-      if (!matches(student.full_name) && !matches(student.student_code) &&
-          !matches(student.class_name) && !matches(loginIdentity) && !matches(parentName)) return;
+    const rows = [];
+    grouped.forEach(function (group) {
+      const parent = group.parent;
+      const loginIdentity = parent.email || parent.phone || "未設定登入帳號";
+      const parentName = parent.display_name || "未設定姓名";
+      const studentNames = Array.from(new Set(group.students.map(item => item.student.full_name)));
+      const searchable = [
+        parentName, loginIdentity,
+        ...group.students.flatMap(item => [
+          item.student.full_name, item.student.student_code, item.student.class_name
+        ])
+      ];
+      if (keyword && !searchable.some(matches)) return;
+
+      const classNames = Array.from(new Set(group.students.map(item => item.student.class_name)));
+      const studentList = group.students.map(function (item) {
+        return "<div class='guardian-linked-student'>" +
+          "<span>" + escapeHtml(item.student.class_name + "｜" + item.student.full_name) + "</span>" +
+          "<button class='btn btn-danger btn-small' data-unbind='" +
+          escapeHtml(item.link.guardian_id) + "|" + escapeHtml(item.link.student_id) +
+          "'>解除</button></div>";
+      }).join("");
 
       rows.push(
         "<tr>" +
-          "<td>" + escapeHtml(student.class_name) + "</td>" +
-          "<td>" + escapeHtml(student.full_name) + "</td>" +
-          "<td>" + (parent
-            ? "<strong>" + escapeHtml(parentName) + "</strong><br><span class='muted'>" + escapeHtml(loginIdentity || "—") + "</span>"
-            : "—") + "</td>" +
-          "<td><span class='guardian-status-bound'>已綁定</span></td>" +
-          "<td class='action-cell'>" +
-            "<div class='action-buttons'>" +
-              (parent ? "<button class='btn btn-small' data-edit-parent='" + escapeHtml(parent.id) + "'>修改</button>" : "") +
-              "<button class='btn btn-danger btn-small' data-unbind='" +
-                escapeHtml(link.guardian_id) + "|" +
-                escapeHtml(link.student_id) + "'>解除</button>" +
-            "</div>" +
-          "</td>" +
+          "<td>" + escapeHtml(classNames.join("、")) + "</td>" +
+          "<td><div class='guardian-linked-students'>" + studentList + "</div></td>" +
+          "<td><strong>" + escapeHtml(parentName) + "</strong><br><span class='muted'>" +
+            escapeHtml(loginIdentity) + "</span></td>" +
+          "<td><span class='guardian-status-bound'>已綁定 " + studentNames.length + " 位學生</span></td>" +
+          "<td class='action-cell'><button class='btn btn-small' data-edit-parent='" +
+            escapeHtml(parent.id) + "'>修改家長資料</button></td>" +
         "</tr>"
       );
     });
@@ -3740,7 +3758,6 @@ function renderGuardians() {
 
     return rows.join("");
   }
-
   content.innerHTML =
     "<h2 class='section-title'>家長綁定</h2>" +
 
@@ -3772,11 +3789,11 @@ function renderGuardians() {
           "<option value='國三班'>國三班</option>" +
         "</select>" +
         "<label for='guardianKeyword'><strong>搜尋：</strong></label>" +
-        "<input id='guardianKeyword' type='search' placeholder='姓名、學生編號或家長帳號' aria-label='搜尋家長或學生' style='min-width:220px;flex:1'>" +
+        "<input id='guardianKeyword' type='search' placeholder='家長姓名、學生姓名、編號或帳號' aria-label='搜尋家長或學生' style='min-width:220px;flex:1'>" +
         "<span id='guardianResultCount' class='muted' style='font-size:13px'></span>" +
       "</div>" +
       "<div class='table-wrap'><table class='guardian-management-table'>" +
-        "<thead><tr><th>班級</th><th>學生姓名</th><th>家長名稱／帳號</th><th>綁定狀態</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>班級</th><th>已綁定學生</th><th>家長姓名／登入帳號</th><th>綁定狀態</th><th>操作</th></tr></thead>" +
         "<tbody id='guardianRows'>" +
           (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>") +
         "</tbody>" +
@@ -3794,7 +3811,7 @@ function renderGuardians() {
       ? 0
       : $("guardianRows").querySelectorAll("tr").length;
     const counter = $("guardianResultCount");
-    if (counter) counter.textContent = "符合條件 " + count + " 筆";
+    if (counter) counter.textContent = "符合條件 " + count + " 位家長／學生";
   }
 
   $("guardianClass").addEventListener("change", refreshGuardianRows);
