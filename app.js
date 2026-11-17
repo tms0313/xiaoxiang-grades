@@ -5038,45 +5038,46 @@ async function renderParentDashboard() {
     return;
   }
 
-  const studentsResult = await db
-    .from("students")
-    .select("*")
-    .in("id", studentIds)
-    .order("student_code");
+  // 學生資料與考試清單互不依賴，並行讀取以縮短家長首頁等待時間。
+  const [studentsResult, examsResult] = await Promise.all([
+    db.from("students")
+      .select("*")
+      .in("id", studentIds)
+      .order("student_code"),
+    db.from("exams")
+      .select("*")
+      .order("start_date", { ascending: false })
+  ]);
 
   if (studentsResult.error) {
     throw new Error("讀取學生資料失敗：" + studentsResult.error.message);
   }
-
-  const parentStudents = studentsResult.data || [];
-
-  const scoresResult = await db
-    .from("scores")
-    .select("*")
-    .in("student_id", studentIds);
-
-  if (scoresResult.error) {
-    throw new Error("讀取成績資料失敗：" + scoresResult.error.message);
-  }
-
-  const parentScores = scoresResult.data || [];
-
-  const examsResult = await db
-    .from("exams")
-    .select("*")
-    .order("start_date", { ascending: false });
-
   if (examsResult.error) {
     throw new Error("讀取考試資料失敗：" + examsResult.error.message);
   }
 
+  const parentStudents = studentsResult.data || [];
   const parentExams = examsResult.data || [];
-
   const sortedExams = sortByDateDesc(parentExams, "start_date");
   const latestThreeExams = sortedExams.slice(0, 3);
   const reviewExamIds = latestThreeExams.map(function (exam) {
     return exam.id;
   });
+
+  // 家長頁只呈現最近三場週考，因此只讀取這三場的已綁定學生個人成績。
+  let parentScores = [];
+  if (reviewExamIds.length > 0) {
+    const scoresResult = await db
+      .from("scores")
+      .select("*")
+      .in("student_id", studentIds)
+      .in("exam_id", reviewExamIds);
+
+    if (scoresResult.error) {
+      throw new Error("讀取成績資料失敗：" + scoresResult.error.message);
+    }
+    parentScores = scoresResult.data || [];
+  }
 
   // 僅取得已綁定孩子所在班級的最高分統計，不讀取其他學生的個別成績。
   const highestScoresResult = await db.rpc("get_parent_class_scope_highest_scores");
