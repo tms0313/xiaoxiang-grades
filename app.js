@@ -1483,17 +1483,12 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   const scoresByClass = new Map();
   const scoresBySubject = new Map();
   const studentSearchIndex = new Map();
-  const activeStudentsByClass = new Map();
 
   studentsCache.forEach(function (student) {
     studentSearchIndex.set(String(student.id), (
       String(student.full_name || "") + "\u001f" +
       String(student.student_code || "")
     ).toLowerCase());
-    if (student.is_active === false) return;
-    const className = String(student.class_name || "");
-    if (!activeStudentsByClass.has(className)) activeStudentsByClass.set(className, []);
-    activeStudentsByClass.get(className).push(student);
   });
 
   function addToIndex(index, key, value) {
