@@ -1374,10 +1374,10 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "<td class='action-cell'><div class='action-buttons'>" +
           "<label class='overview-missing-select' style='display:inline-flex;align-items:center;gap:4px;margin-right:6px;font-size:12px;white-space:nowrap'><input type='checkbox' data-select-missing='1' data-exam-id='" + escapeHtml(exam.id) +
           "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
-          "' data-scope='" + escapeHtml(scope || "") + "'>選取</label>" +
+          "' data-scope='" + escapeHtml(scope || "") + "'>選取此筆</label>" +
           "<button class='btn btn-danger btn-small' data-exclude-missing='1' data-exam-id='" + escapeHtml(exam.id) +
           "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
-          "' data-scope='" + escapeHtml(scope || "") + "'>刪除</button>" +
+          "' data-scope='" + escapeHtml(scope || "") + "'>排除提醒</button>" +
         "</div></td>" +
       "</tr>"
     );
@@ -1429,10 +1429,10 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     "</div>" +
     "<p id='overviewFilterHint' class='muted' style='margin:0 0 10px'>選擇考試週期及科目後，系統會依已登錄的科目範圍比對同班修課學生。</p>" +
     "<div class='toolbar' id='overviewMissingBatchBar' style='margin:0 0 12px;gap:8px'>" +
-      "<button class='btn btn-secondary btn-small' type='button' id='selectAllMissingButton'>全選目前未登錄</button>" +
-      "<button class='btn btn-secondary btn-small' type='button' id='clearMissingSelectionButton'>清除勾選</button>" +
-      "<button class='btn btn-danger btn-small' type='button' id='batchExcludeMissingButton' disabled>批次排除（0）</button>" +
-      "<span class='muted' style='font-size:12px'>只會排除勾選的未登錄提醒，不會刪除成績。</span>" +
+      "<button class='btn btn-secondary btn-small' type='button' id='selectAllMissingButton'>選取目前顯示的未登錄項目</button>" +
+      "<button class='btn btn-secondary btn-small' type='button' id='clearMissingSelectionButton'>取消所有勾選</button>" +
+      "<button class='btn btn-danger btn-small' type='button' id='batchExcludeMissingButton' disabled>排除已選取提醒（0）</button>" +
+      "<span class='muted' style='font-size:12px'>排除後只會從未登錄清單隱藏；不會刪除成績，且可隨時恢復提醒。</span>" +
     "</div>" +
     "<div id='excludedRemindersPanel' class='panel' style='display:none;margin-top:18px'>" +
       "<h3>已排除的未登錄提醒</h3>" +
@@ -1604,7 +1604,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const selected = content.querySelectorAll("[data-select-missing]:checked");
     const button = $("batchExcludeMissingButton");
     if (button) {
-      button.textContent = "批次排除（" + selected.length + "）";
+      button.textContent = "排除已選取提醒（" + selected.length + "）";
       button.disabled = selected.length === 0;
     }
   }
@@ -1809,7 +1809,7 @@ async function excludeMissingReminder(item) {
   }
 
   const confirmed = confirm(
-    "確定要刪除此筆未登錄提醒嗎？\n\n" +
+    "確定要排除此筆未登錄提醒嗎？\n\n" +
     "學生：" + student.full_name + "\n" +
     "班級：" + student.class_name + "\n" +
     "考試：" + formatDateRange(exam) + "\n" +
