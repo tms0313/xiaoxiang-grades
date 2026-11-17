@@ -1499,13 +1499,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       "<button class='btn btn-secondary btn-small' type='button' id='overviewPrevPage'>上一頁</button>" +
       "<span id='overviewPageInfo' class='muted' style='font-size:13px'>第 1 頁</span>" +
       "<button class='btn btn-secondary btn-small' type='button' id='overviewNextPage'>下一頁</button>" +
-    "</div>" +
-    "<details class='panel' id='overviewPerfPanel' style='margin-top:14px;padding:12px'>" +
-      "<summary style='cursor:pointer;font-weight:700;color:#315d86'>效能檢測紀錄（暫時）</summary>" +
-      "<pre id='overviewPerfSummary' style='white-space:pre-wrap;font:12px/1.7 monospace;color:#475569;margin:10px 0'></pre>" +
-      "<button class='btn btn-secondary btn-small' type='button' id='copyOverviewPerfReport'>複製效能紀錄</button>" +
-      "<span id='overviewPerfCopyStatus' class='muted' style='font-size:12px;margin-left:8px'></span>" +
-    "</details>";
+    "</div>";
 
   // 每次畫面重繪時建立一次索引；搜尋、篩選操作直接重用。
   const overviewIndexBuildStartedAt = performance.now();
@@ -1850,16 +1844,6 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       button.disabled = selectedMissingItems.size === 0;
     }
   }
-
-  $("copyOverviewPerfReport").addEventListener("click", async function () {
-    const status = $("overviewPerfCopyStatus");
-    try {
-      await navigator.clipboard.writeText(buildOverviewPerfReport());
-      if (status) status.textContent = "已複製，請貼回對話。";
-    } catch (error) {
-      if (status) status.textContent = "瀏覽器未允許複製，請選取上方紀錄複製。";
-    }
-  });
 
   $("overviewPrevPage").addEventListener("click", function () {
     if (overviewCurrentPage <= 0) return;
