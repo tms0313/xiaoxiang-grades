@@ -3759,7 +3759,7 @@ function renderGuardians() {
       "<form id='guardianForm'><div class='form-grid'>" +
         "<div class='field'><label>家長帳號</label><select id='guardianParent' required><option value=''>請選擇家長</option>" + parentOptions + "</select></div>" +
         "<div class='field'><label>學生</label><select id='guardianStudent' required><option value=''>請選擇學生</option>" + studentOptions + "</select></div>" +
-      "</div><button class='btn btn-success' type='submit'>建立綁定</button></form></div>" +
+      "</div><button class='btn btn-success' type='submit' id='saveGuardianBindingButton'>建立綁定</button></form></div>" +
 
     "<div class='panel'>" +
       "<h3>既有家長帳號與學生綁定清單</h3>" +
@@ -4157,25 +4157,40 @@ async function createParentAccount(event) {
 async function saveGuardianBinding(event) {
   event.preventDefault();
 
+  const button = $("saveGuardianBindingButton");
+  if (!button || button.disabled) return;
+
   const guardianId = $("guardianParent").value;
   const studentId = $("guardianStudent").value;
-
-  const exists = guardianLinksCache.some(function (item) {
-    return item.guardian_id === guardianId && item.student_id === studentId;
-  });
-
-  if (exists) {
-    showMessage("這筆家長與學生綁定已存在。", "error");
+  if (!guardianId || !studentId) {
+    showMessage("請先選擇家長帳號及學生。", "error");
     return;
   }
 
+  const exists = guardianLinksCache.some(function (item) {
+    return String(item.guardian_id) === String(guardianId) &&
+      String(item.student_id) === String(studentId);
+  });
+
+  if (exists) {
+    showMessage("這筆家長與學生綁定已存在，請勿重複建立。", "error");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "建立中……";
   try {
     const result = await db.from("guardian_students").insert({
       guardian_id: guardianId,
       student_id: studentId
     });
 
-    if (result.error) throw result.error;
+    if (result.error) {
+      if (result.error.code === "23505") {
+        throw new Error("這筆家長與學生綁定已存在，請重新整理清單確認。");
+      }
+      throw result.error;
+    }
 
     await loadAdminData();
     renderGuardians();
@@ -4183,6 +4198,11 @@ async function saveGuardianBinding(event) {
 
   } catch (error) {
     showMessage("建立綁定失敗：" + error.message, "error");
+  } finally {
+    if (button.isConnected) {
+      button.disabled = false;
+      button.textContent = "建立綁定";
+    }
   }
 }
 
