@@ -411,6 +411,8 @@ style.textContent = [
   ".overview-table .action-cell { min-width:100px; }",
   ".overview-table .action-buttons { gap:3px; }",
   ".overview-table .overview-status-button { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:auto; min-width:58px; height:30px; min-height:30px; margin:0; padding:0 9px; border-radius:6px; font-size:14px; font-weight:800; line-height:30px; white-space:nowrap; vertical-align:middle; }",
+  ".overview-table .overview-status-leave { background:#e8f1fb !important; color:#1d4e89 !important; border:1px solid #b8d1ed; }",
+  ".overview-table .overview-status-missing { background:#fde8e8 !important; color:#b42318 !important; border:1px solid #f4b8b8; }",
   ".overview-table .overview-missing-select { display:inline-flex; flex:0 0 auto; align-items:center; gap:4px; height:30px; margin-right:6px; font-size:12px; line-height:30px; white-space:nowrap; box-sizing:border-box; }",
   ".overview-table .overview-missing-select input { appearance:auto; -webkit-appearance:checkbox; flex:0 0 14px; width:14px !important; min-width:14px !important; max-width:14px; height:14px !important; min-height:14px !important; max-height:14px; box-sizing:border-box; margin:0; padding:0; vertical-align:middle; accent-color:#315d86; }",
   ".overview-table .overview-missing-row .action-buttons { min-height:30px; height:30px; align-items:center; flex-wrap:nowrap; white-space:nowrap; }",
@@ -1325,7 +1327,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const grade3Math = isGrade3Math(student.class_name, score.subject);
 
     const resultText = score.grade_level === "請假"
-      ? "<span class='grade-tag grade-leave overview-status-button'>請假</span>"
+      ? "<span class='grade-tag grade-leave overview-status-button overview-status-leave'>請假</span>"
       : grade3Math
       ? (
           score.grade_level === "缺考"
@@ -1375,7 +1377,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "<td>" + escapeHtml(student.full_name) + "</td>" +
         "<td>" + escapeHtml(subject) + "</td>" +
         "<td>" + escapeHtml(scope || "—") + "</td>" +
-        "<td><span class='grade-tag grade-leave overview-status-button'>未登錄</span></td>" +
+        "<td><span class='grade-tag overview-status-button overview-status-missing'>未登錄</span></td>" +
         "<td class='action-cell'><div class='action-buttons'>" +
           "<label class='overview-missing-select'><input type='checkbox' data-select-missing='1' data-exam-id='" + escapeHtml(exam.id) +
           "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
