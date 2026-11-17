@@ -3220,15 +3220,17 @@ function renderStudents() {
   const subjectFilter = $("studentSubjectFilter") ? $("studentSubjectFilter").value : "all";
   const keywordFilter = $("studentKeywordFilter") ? $("studentKeywordFilter").value : "";
 
-  // 依學生預先整理修課科目，篩選與列表渲染不再對每位學生重掃全部修課資料。
-  const subjectsByStudent = new Map();
+  // 只索引有效修課科目；後續班級／科目篩選與列表渲染直接取用，
+  // 避免每位學生重複建立 filter 陣列。
+  const activeSubjectsByStudent = new Map();
   studentSubjectsCache.forEach(function (item) {
+    if (item.is_active !== true) return;
     const studentId = String(item.student_id);
-    if (!subjectsByStudent.has(studentId)) subjectsByStudent.set(studentId, []);
-    subjectsByStudent.get(studentId).push(item);
+    if (!activeSubjectsByStudent.has(studentId)) activeSubjectsByStudent.set(studentId, []);
+    activeSubjectsByStudent.get(studentId).push(item);
   });
   const getActiveSubjects = studentId =>
-    (subjectsByStudent.get(String(studentId)) || []).filter(item => item.is_active === true);
+    activeSubjectsByStudent.get(String(studentId)) || [];
 
   const matchingStudents = studentsCache.filter(function (student) {
     const active = student.is_active !== false;
