@@ -2700,7 +2700,7 @@ function renderStudents() {
       "<td>" + escapeHtml(student.student_code) + "</td>" +
       "<td>" + escapeHtml(student.full_name) + "</td>" +
       "<td>" + escapeHtml(student.class_name) + "</td>" +
-      "<td class='student-subject-cell'>" + (studentSubjectsCache.filter(item => String(item.student_id) === String(student.id) && item.is_active === true).map(item => escapeHtml(item.subject)).join("、") || "<span class='muted'>未設定</span>") + "</td>" +
+      "<td class='student-subject-cell'>" + (studentSubjectsCache.filter(item => String(item.student_id) === String(student.id) && item.is_active === true).map(item => escapeHtml(({ "國文":"國", "英文":"英", "數學":"數", "自然":"自" })[item.subject] || item.subject)).join("、") || "<span class='muted'>未設定</span>") + "</td>" +
       "<td>" + (active
         ? "<span class='student-status-active'>在學</span>"
         : "<span class='student-status-inactive'>離班</span>") + "</td>" +
