@@ -111,7 +111,16 @@ function renderAttendanceManagement() {
     button.addEventListener("click", function () {
       attendancePreviewSessionIndex = Number(this.dataset.attPreviewSession);
       attendancePreviewRecords = (Array.isArray(studentsCache) ? studentsCache : [])
-        .filter(student => student.class_name === "國一班" && student.is_active !== false)
+        .filter(student =>
+          student.class_name === "國一班" &&
+          student.is_active !== false &&
+          Array.isArray(studentSubjectsCache) &&
+          studentSubjectsCache.some(item =>
+            String(item.student_id) === String(student.id) &&
+            item.subject === ATTENDANCE_PREVIEW_SCHEDULE[attendancePreviewSessionIndex].subject &&
+            item.is_active === true
+          )
+        )
         .sort((a, b) => String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant"))
         .map(student => ({
           student_id: student.id,
@@ -137,8 +146,8 @@ function renderAttendancePreviewDetail() {
     "<h3>" + attendancePreviewEscape(attendancePreviewDate) + "　" +
       attendancePreviewEscape(session.time) + "　" + attendancePreviewEscape(session.className) +
       "　" + attendancePreviewEscape(session.subject) + "</h3>" +
-    "<p class='att-preview-muted'>學生名單取自管理員後台已載入的國一班在學學生；以下異動僅供本次頁面測試。</p>" +
-    (attendancePreviewRecords.length ? "" : "<div class='empty'>目前沒有取得國一班在學學生名單，請先確認學生管理資料。</div>") +
+    "<p class='att-preview-muted'>學生名單依照國一班、在學狀態及本堂課科目的有效修課資料篩選；以下異動僅供本次頁面測試。</p>" +
+    (attendancePreviewRecords.length ? "" : "<div class='empty'>目前沒有符合本堂科目的國一班在學學生，請確認學生管理中的修課科目設定。</div>") +
     "<div class='att-preview-summary' id='attendancePreviewStats'></div>" +
     "<div class='table-wrap'><table class='att-preview-table'><thead><tr><th>學生</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th></tr></thead><tbody>" +
     attendancePreviewRecords.map((record, index) =>
@@ -180,7 +189,16 @@ function renderAttendancePreviewDetail() {
 
   document.getElementById("attendancePreviewReset").addEventListener("click", function () {
     attendancePreviewRecords = (Array.isArray(studentsCache) ? studentsCache : [])
-      .filter(student => student.class_name === "國一班" && student.is_active !== false)
+      .filter(student =>
+          student.class_name === "國一班" &&
+          student.is_active !== false &&
+          Array.isArray(studentSubjectsCache) &&
+          studentSubjectsCache.some(item =>
+            String(item.student_id) === String(student.id) &&
+            item.subject === ATTENDANCE_PREVIEW_SCHEDULE[attendancePreviewSessionIndex].subject &&
+            item.is_active === true
+          )
+        )
       .sort((a, b) => String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant"))
       .map(student => ({
         student_id: student.id,
