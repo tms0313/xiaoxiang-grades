@@ -2161,6 +2161,46 @@ function setDefaultExamDates() {
   if ($("examEnd")) $("examEnd").value = dates.end;
 }
 
+const BULK_SCORE_DRAFT_KEY = "xiaoxiang_bulk_score_entry_draft_v1";
+
+function getBulkScoreCondition() {
+  return {
+    examId: $("scoreExam") ? $("scoreExam").value : "",
+    className: $("scoreClass") ? $("scoreClass").value : "",
+    subject: $("scoreSubject") ? $("scoreSubject").value : "",
+    scope: $("scoreScope") ? $("scoreScope").value.trim() : ""
+  };
+}
+
+function readBulkScoreDraft() {
+  try {
+    const draft = JSON.parse(localStorage.getItem(BULK_SCORE_DRAFT_KEY) || "null");
+    const condition = getBulkScoreCondition();
+    if (!draft || !draft.condition || !draft.rows) return {};
+    return Object.keys(condition).every(key => String(draft.condition[key] || "") === String(condition[key] || ""))
+      ? draft.rows : {};
+  } catch (error) { return {}; }
+}
+
+function saveBulkScoreDraft() {
+  const root = $("bulkScoreEntryContent");
+  if (!root) return;
+  const condition = getBulkScoreCondition();
+  if (!condition.examId || !condition.className || !condition.subject || !condition.scope) return;
+  const rows = {};
+  root.querySelectorAll("tr[data-bulk-student]").forEach(function (row) {
+    const input = row.querySelector("[data-bulk-score]");
+    const grade = row.querySelector("[data-bulk-grade]");
+    const status = row.querySelector("[data-bulk-status]");
+    rows[row.dataset.bulkStudent] = {
+      score: input ? input.value : "",
+      grade: grade ? grade.value : "",
+      status: status ? status.value : "normal"
+    };
+  });
+  try { localStorage.setItem(BULK_SCORE_DRAFT_KEY, JSON.stringify({ condition, rows, savedAt: new Date().toISOString() })); } catch (error) {}
+}
+
 function renderBulkScoreEntryRows() {
   const root = $("bulkScoreEntryContent");
   if (!root) return;
@@ -2189,6 +2229,7 @@ function renderBulkScoreEntryRows() {
   const gradeOptions = GRADE_OPTIONS.map(function (grade) {
     return "<option value='" + escapeHtml(grade) + "'>" + escapeHtml(grade) + "</option>";
   }).join("");
+  const draftRows = readBulkScoreDraft();
   const rows = students.map(function (student) {
     const existing = scoresCache.find(function (score) {
       return String(score.student_id) === String(student.id) &&
@@ -2196,15 +2237,23 @@ function renderBulkScoreEntryRows() {
         score.subject === subject &&
         String(score.scope || "").trim() === String($("scoreScope").value || "").trim();
     });
+    const draft = draftRows[String(student.id)] || {};
+    const rawValue = Object.prototype.hasOwnProperty.call(draft, "score")
+      ? draft.score
+      : existing ? (grade3Math ? existing.score : grade3 ? existing.correct_count : existing.score) ?? "" : "";
+    const gradeValue = Object.prototype.hasOwnProperty.call(draft, "grade")
+      ? draft.grade : (grade3 ? existing && existing.grade_level || "" : "");
+    const statusValue = Object.prototype.hasOwnProperty.call(draft, "status")
+      ? draft.status : (existing && existing.grade_level === "請假" ? "請假" : "normal");
     let fields = "";
     if (grade3Math) {
-      fields = "<td><input class='bulk-score-input' data-bulk-score type='number' min='0' max='100' step='0.1' placeholder='分數'></td>" +
+      fields = "<td><input class='bulk-score-input' data-bulk-score type='number' min='0' max='100' step='0.1' placeholder='分數' value='" + escapeHtml(rawValue) + "'></td>" +
         "<td><select data-bulk-grade><option value=''>選擇等級</option>" + gradeOptions + "</select></td>";
     } else if (grade3) {
-      fields = "<td><input class='bulk-score-input' data-bulk-score type='number' min='0' step='1' placeholder='答對題數'></td>" +
+      fields = "<td><input class='bulk-score-input' data-bulk-score type='number' min='0' step='1' placeholder='答對題數' value='" + escapeHtml(rawValue) + "'></td>" +
         "<td><select data-bulk-grade><option value=''>選擇等級</option>" + gradeOptions + "</select></td>";
     } else {
-      fields = "<td><input class='bulk-score-input' data-bulk-score type='number' min='0' max='100' step='0.1' placeholder='分數'></td>" +
+      fields = "<td><input class='bulk-score-input' data-bulk-score type='number' min='0' max='100' step='0.1' placeholder='分數' value='" + escapeHtml(rawValue) + "'></td>" +
         "<td><select data-bulk-status><option value='normal'>正常</option><option value='請假'>請假</option></select></td>";
     }
     return "<tr data-bulk-student='" + escapeHtml(student.id) + "'>" +
@@ -2216,13 +2265,42 @@ function renderBulkScoreEntryRows() {
     "<div class='table-wrap'><table style='min-width:620px'><thead><tr><th>編號</th><th>學生</th>" +
     (grade3Math ? "<th>數學分數</th><th>模擬考等級</th>" : grade3 ? "<th>答對題數</th><th>模擬考等級</th>" : "<th>成績</th><th>出席狀態</th>") +
     "<th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
-  root.querySelectorAll("[data-bulk-status]").forEach(function (select) {
-    select.addEventListener("change", function () {
-      const input = select.closest("tr").querySelector("[data-bulk-score]");
-      input.disabled = select.value === "請假";
-      if (input.disabled) input.value = "";
-    });
+  root.querySelectorAll("[data-bulk-grade]").forEach(function (select) {
+    select.value = select.closest("tr").dataset.bulkStudent
+      ? (draftRows[select.closest("tr").dataset.bulkStudent] || {}).grade || "" : "";
   });
+  root.querySelectorAll("[data-bulk-status]").forEach(function (select) {
+    const row = select.closest("tr");
+    const savedStatus = (draftRows[row.dataset.bulkStudent] || {}).status;
+    const existing = scoresCache.find(score =>
+      String(score.student_id) === String(row.dataset.bulkStudent) &&
+      String(score.exam_id) === String(examId) && score.subject === subject &&
+      String(score.scope || "").trim() === String($("scoreScope").value || "").trim()
+    );
+    select.value = savedStatus || (existing && existing.grade_level === "請假" ? "請假" : "normal");
+    const input = row.querySelector("[data-bulk-score]");
+    input.disabled = select.value === "請假";
+    if (input.disabled) input.value = "";
+  });
+  root.querySelectorAll("[data-bulk-grade]").forEach(function (select) {
+    const row = select.closest("tr");
+    const existing = scoresCache.find(score =>
+      String(score.student_id) === String(row.dataset.bulkStudent) &&
+      String(score.exam_id) === String(examId) && score.subject === subject &&
+      String(score.scope || "").trim() === String($("scoreScope").value || "").trim()
+    );
+    if (!draftRows[row.dataset.bulkStudent] && existing) select.value = existing.grade_level || "";
+  });
+  root.oninput = saveBulkScoreDraft;
+  root.onchange = function (event) {
+    if (event.target.matches("[data-bulk-status]")) {
+      const input = event.target.closest("tr").querySelector("[data-bulk-score]");
+      input.disabled = event.target.value === "請假";
+      if (input.disabled) input.value = "";
+    }
+    saveBulkScoreDraft();
+  };
+  saveBulkScoreDraft();
 }
 
 async function saveSingleBulkScoreRow(row) {
