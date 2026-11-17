@@ -1299,12 +1299,16 @@ function renderAdminClassHighestPreview() {
 function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   const content = $("adminContent");
 
+  // 本次畫面渲染共用索引，避免每一筆成績列都重新掃描學生與考試快取。
+  const studentById = new Map(studentsCache.map(student => [String(student.id), student]));
+  const examById = new Map(examsCache.map(exam => [String(exam.id), exam]));
+
   function getStudent(id) {
-    return studentsCache.find(item => String(item.id) === String(id));
+    return studentById.get(String(id));
   }
 
   function getExam(id) {
-    return examsCache.find(item => String(item.id) === String(id));
+    return examById.get(String(id));
   }
 
   function buildOverviewRow(score) {
@@ -1450,7 +1454,6 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const keyOf = (...parts) => parts.map(value => String(value == null ? "" : value).trim()).join("\u001f");
 
     // 每次篩選先建立索引，避免在考試／班級／科目／範圍迴圈中反覆掃描整張資料表。
-    const studentById = new Map(studentsCache.map(student => [String(student.id), student]));
     const enrolledByClassSubject = new Map();
     studentSubjectsCache.forEach(function (item) {
       if (item.is_active !== true) return;
