@@ -4638,16 +4638,18 @@ function renderPasswords() {
 
   const rows = profilesCache.map(function (profile) {
     const loginAccount = profile.email || profile.phone || "—";
-    const linkedStudent = guardianLinksCache
+    const linkedStudents = guardianLinksCache
       .filter(link => String(link.guardian_id) === String(profile.id))
       .map(link => studentsCache.find(student => String(student.id) === String(link.student_id)))
-      .find(student => !!student);
-    const parentLabel = linkedStudent
-      ? linkedStudent.full_name + "家長"
-      : (profile.display_name || "—");
+      .filter(Boolean);
+    const linkedStudentNames = Array.from(new Set(linkedStudents.map(student => student.full_name)));
+
     return "<tr>" +
-      "<td>" + escapeHtml(parentLabel) + "</td>" +
+      "<td>" + escapeHtml(profile.display_name || "未設定姓名") + "</td>" +
       "<td>" + escapeHtml(loginAccount) + "</td>" +
+      "<td>" + (linkedStudentNames.length
+        ? linkedStudentNames.map(escapeHtml).join("、")
+        : "<span class='muted'>尚未綁定學生</span>") + "</td>" +
       "<td><div class='action-buttons'>" +
         "<button class='btn btn-small' data-reset-parent='" + escapeHtml(profile.id) + "'>重設密碼</button>" +
         "<button class='btn btn-danger btn-small' data-delete-parent='" + escapeHtml(profile.id) + "'>刪除帳號</button>" +
@@ -4657,10 +4659,10 @@ function renderPasswords() {
 
   content.innerHTML =
     "<h2 class='section-title'>家長帳號管理</h2>" +
-    "<p class='muted'>可重設家長登入密碼，或刪除不再使用的家長帳號。刪除帳號後，該家長將無法再登入，且會解除其學生綁定；學生資料及成績不會刪除。</p>" +
+    "<p class='muted'>可重設家長登入密碼，或刪除不再使用的家長帳號。刪除前請確認家長姓名及綁定學生；刪除帳號後會解除該家長的所有學生綁定，但學生資料及成績會保留。</p>" +
     "<div class='table-wrap password-table-wrap'><table class='password-management-table'>" +
-      "<thead><tr><th>家長姓名</th><th>登入帳號（Email／手機）</th><th>操作</th></tr></thead>" +
-      "<tbody>" + (rows || "<tr><td colspan='3' class='empty'>目前沒有家長帳號</td></tr>") + "</tbody>" +
+      "<thead><tr><th>家長姓名</th><th>登入帳號（Email／手機）</th><th>已綁定學生</th><th>操作</th></tr></thead>" +
+      "<tbody>" + (rows || "<tr><td colspan='4' class='empty'>目前沒有家長帳號</td></tr>") + "</tbody>" +
     "</table></div>";
 
   content.onclick = async function (event) {
@@ -4688,10 +4690,16 @@ async function deleteParentAccount(parentUserId) {
   }
 
   const loginAccount = parent.email || parent.phone || "未設定";
+  const linkedStudentNames = Array.from(new Set(guardianLinksCache
+    .filter(link => String(link.guardian_id) === String(parentUserId))
+    .map(link => studentsCache.find(student => String(student.id) === String(link.student_id)))
+    .filter(Boolean)
+    .map(student => student.full_name)));
   const confirmed = confirm(
     "確定要永久刪除以下家長帳號？\n\n" +
     "家長姓名：" + (parent.display_name || "未命名") + "\n" +
-    "登入帳號：" + loginAccount + "\n\n" +
+    "登入帳號：" + loginAccount + "\n" +
+    "綁定學生：" + (linkedStudentNames.length ? linkedStudentNames.join("、") : "尚未綁定") + "\n\n" +
     "刪除後：\n" +
     "1. 該家長將無法再登入。\n" +
     "2. 該家長與學生的綁定將解除。\n" +
