@@ -3548,18 +3548,44 @@ async function saveExam(event) {
 
   if (endDate < startDate) {
     showMessage("結束日期不可早於開始日期。", "error");
+    $("examEnd").focus();
     return;
   }
 
-  const autoTitle = startDate === endDate
-    ? startDate
-    : startDate + "～" + endDate;
+  const duplicate = examsCache.find(function (exam) {
+    return String(exam.id) !== String(id) &&
+      String(exam.start_date || "") === startDate &&
+      String(exam.end_date || "") === endDate;
+  });
+  if (duplicate) {
+    showMessage("這個考試日期區間已存在（" + formatDateRange(duplicate) + "），請確認是否選錯週期。", "error");
+    $("examStart").focus();
+    return;
+  }
+
+  if (id) {
+    const linkedScoreCount = scoresCache.filter(score =>
+      String(score.exam_id) === String(id)
+    ).length;
+    if (linkedScoreCount > 0 && !confirm(
+      "這個考試場次目前已有 " + linkedScoreCount + " 筆成績。\n\n" +
+      "修改日期只會改變考試週期的顯示，不會刪除或搬移成績。\n" +
+      "確定要更新日期嗎？"
+    )) return;
+  }
 
   const payload = {
-    title: autoTitle,
+    title: startDate === endDate ? startDate : startDate + "～" + endDate,
     start_date: startDate,
     end_date: endDate
   };
+
+  const submitButton = $("examForm").querySelector("button[type='submit']");
+  const originalButtonText = submitButton ? submitButton.textContent : "";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "儲存中…";
+  }
 
   try {
     const result = id
@@ -3574,6 +3600,11 @@ async function saveExam(event) {
 
   } catch (error) {
     showMessage("考試資料儲存失敗：" + error.message, "error");
+  } finally {
+    if (submitButton && submitButton.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalButtonText || "儲存考試";
+    }
   }
 }
 
