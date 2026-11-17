@@ -286,3 +286,17 @@ footer {
 .student-management-table th:nth-child(6),.student-management-table td:nth-child(6) { width:23%; }
 .student-subject-cell { color:#315d86; font-weight:700; overflow-wrap:anywhere; }
 @media (max-width:700px) { .student-filter-toolbar { align-items:stretch; } .student-filter-toolbar .student-search-input { width:100%; flex:1 1 100%; } .student-filter-toolbar .btn { flex:0 0 auto; } }
+
+/* 管理員功能分頁使用真正連結，保留原按鈕外觀並支援瀏覽器開新分頁 */
+.tabs a.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+.tabs a.tab-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
