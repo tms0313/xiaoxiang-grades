@@ -1533,6 +1533,8 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     group.ids.add(studentId);
     group.students.push(student);
   });
+  // 考試日期排序不隨搜尋條件改變，在本次畫面生命週期只計算一次。
+  const overviewExamsByDateDesc = sortByDateDesc(examsCache, "start_date");
 
   function renderOverviewPage() {
     const totalRows = overviewFilteredRows.length;
@@ -1611,13 +1613,24 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     // 只依已登錄範圍產生未登錄提醒；請假及排除規則維持不變。
     const examsToCheck = examId
       ? [getExam(examId)].filter(Boolean)
-      : sortByDateDesc(examsCache, "start_date");
+      : overviewExamsByDateDesc;
+    // 每次搜尋只比對一次學生；同一學生不會因為有多個考試範圍而重複執行搜尋判斷。
+    const matchingClassNames = new Set();
+    activeStudentsByClass.forEach(function (students, targetClass) {
+      if (className && targetClass !== className) return;
+      if (students.some(matchesStudent)) matchingClassNames.add(targetClass);
+    });
     const classNames = className
-      ? [className]
-      : Array.from(activeStudentsByClass.keys()).filter(function (targetClass) {
-          return activeStudentsByClass.get(targetClass).some(matchesStudent);
-        });
+      ? (matchingClassNames.has(className) ? [className] : [])
+      : Array.from(matchingClassNames);
     const targetSubjects = subject ? [subject] : SUBJECTS;
+    const matchingEnrolledStudentsByClassSubject = new Map();
+    enrolledStudentsByClassSubject.forEach(function (group, groupKey) {
+      const matchedStudents = group.students.filter(function (student) {
+        return (!className || student.class_name === className) && matchesStudent(student);
+      });
+      if (matchedStudents.length) matchingEnrolledStudentsByClassSubject.set(groupKey, matchedStudents);
+    });
 
     examsToCheck.forEach(function (selectedExam) {
       const currentExamId = String(selectedExam.id);
@@ -1627,13 +1640,11 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
           const scopes = registeredScopes.get(groupKey);
           if (!scopes || !scopes.size) return;
 
-          const enrollmentGroup = enrolledStudentsByClassSubject.get(keyOf(targetClass, targetSubject));
-          if (!enrollmentGroup) return;
-          const enrolledStudents = enrollmentGroup.students;
+          const enrolledStudents = matchingEnrolledStudentsByClassSubject.get(keyOf(targetClass, targetSubject));
+          if (!enrolledStudents || !enrolledStudents.length) return;
 
           scopes.forEach(function (scope) {
             enrolledStudents.forEach(function (student) {
-              if (!matchesStudent(student)) return;
               const recordKey = keyOf(currentExamId, student.id, targetSubject, scope);
               if (!scoreKeys.has(recordKey) && !exclusionKeys.has(recordKey)) {
                 rows.push({
