@@ -2159,6 +2159,180 @@ function setDefaultExamDates() {
   if ($("examEnd")) $("examEnd").value = dates.end;
 }
 
+function renderBulkScoreEntryRows() {
+  const root = $("bulkScoreEntryContent");
+  if (!root) return;
+  const examId = $("scoreExam").value;
+  const className = $("scoreClass").value;
+  const subject = $("scoreSubject").value;
+  if (!examId || !className || !subject) {
+    root.innerHTML = "<div class='empty'>請先在上方選擇考試週期、班級及科目，再載入整班名單。</div>";
+    return;
+  }
+  const students = getScoreEntryStudents().filter(function (student) {
+    return student.class_name === className;
+  });
+  if (!students.length) {
+    root.innerHTML = "<div class='empty'>此班目前沒有在學學生。</div>";
+    return;
+  }
+  const grade3 = isGrade3Class(className);
+  const grade3Math = isGrade3Math(className, subject);
+  const gradeOptions = GRADE_OPTIONS.map(function (grade) {
+    return "<option value='" + escapeHtml(grade) + "'>" + escapeHtml(grade) + "</option>";
+  }).join("");
+  const rows = students.map(function (student) {
+    const existing = scoresCache.find(function (score) {
+      return String(score.student_id) === String(student.id) &&
+        String(score.exam_id) === String(examId) &&
+        score.subject === subject &&
+        String(score.scope || "").trim() === String($("scoreScope").value || "").trim();
+    });
+    let fields = "";
+    if (grade3Math) {
+      fields = "<td><input class='bulk-score-input' data-bulk-score type='number' min='0' max='100' step='0.1' placeholder='分數'></td>" +
+        "<td><select data-bulk-grade><option value=''>選擇等級</option>" + gradeOptions + "</select></td>";
+    } else if (grade3) {
+      fields = "<td><input class='bulk-score-input' data-bulk-score type='number' min='0' step='1' placeholder='答對題數'></td>" +
+        "<td><select data-bulk-grade><option value=''>選擇等級</option>" + gradeOptions + "</select></td>";
+    } else {
+      fields = "<td><input class='bulk-score-input' data-bulk-score type='number' min='0' max='100' step='0.1' placeholder='分數'></td>" +
+        "<td><select data-bulk-status><option value='normal'>正常</option><option value='請假'>請假</option></select></td>";
+    }
+    return "<tr data-bulk-student='" + escapeHtml(student.id) + "'>" +
+      "<td>" + escapeHtml(student.student_code || "") + "</td>" +
+      "<td>" + escapeHtml(student.full_name) + (existing ? " <span class='muted'>（已有成績）</span>" : "") + "</td>" +
+      fields + "</tr>";
+  }).join("");
+  root.innerHTML = "<div class='muted' style='margin-bottom:10px'>共 " + students.length + " 位學生；只會儲存有填寫資料的學生。</div>" +
+    "<div class='table-wrap'><table style='min-width:620px'><thead><tr><th>編號</th><th>學生</th>" +
+    (grade3Math ? "<th>數學分數</th><th>模擬考等級</th>" : grade3 ? "<th>答對題數</th><th>模擬考等級</th>" : "<th>成績</th><th>出席狀態</th>") +
+    "</tr></thead><tbody>" + rows + "</tbody></table></div>";
+  root.querySelectorAll("[data-bulk-status]").forEach(function (select) {
+    select.addEventListener("change", function () {
+      const input = select.closest("tr").querySelector("[data-bulk-score]");
+      input.disabled = select.value === "請假";
+      if (input.disabled) input.value = "";
+    });
+  });
+}
+
+async function saveBulkScores() {
+  const button = $("saveBulkScoresButton");
+  const message = $("bulkScoreEntryMessage");
+  if (button.disabled) return;
+  const examId = $("scoreExam").value;
+  const className = $("scoreClass").value;
+  const subject = $("scoreSubject").value;
+  const scope = $("scoreScope").value.trim();
+  if (!examId || !className || !subject || !scope) {
+    message.textContent = "請先完整選擇考試週期、班級、科目及考試範圍。";
+    message.className = "system-message error";
+    message.style.display = "block";
+    return;
+  }
+  const grade3 = isGrade3Class(className);
+  const grade3Math = isGrade3Math(className, subject);
+  const rows = Array.from($("bulkScoreEntryContent").querySelectorAll("tr[data-bulk-student]"));
+  const entries = [];
+  const errors = [];
+  rows.forEach(function (row) {
+    const studentId = row.dataset.bulkStudent;
+    const input = row.querySelector("[data-bulk-score]");
+    const gradeSelect = row.querySelector("[data-bulk-grade]");
+    const statusSelect = row.querySelector("[data-bulk-status]");
+    const raw = input ? input.value.trim() : "";
+    const grade = gradeSelect ? gradeSelect.value : "";
+    const status = statusSelect ? statusSelect.value : "normal";
+    if (!raw && !grade && status !== "請假") return;
+    if (grade3Math || grade3) {
+      if (!grade || !GRADE_OPTIONS.includes(grade)) {
+        errors.push(row.children[1].textContent.trim() + "：請選擇等級");
+        return;
+      }
+      if (grade !== "缺考" && grade !== "請假") {
+        const value = Number(raw);
+        if (!raw || !Number.isFinite(value) || value < 0 || (grade3Math ? value > 100 : !Number.isInteger(value))) {
+          errors.push(row.children[1].textContent.trim() + "：分數或答對題數格式錯誤");
+          return;
+        }
+      }
+    } else if (status !== "請假") {
+      const value = Number(raw);
+      if (!raw || !Number.isFinite(value) || value < 0 || value > 100) {
+        errors.push(row.children[1].textContent.trim() + "：請輸入 0～100 分");
+        return;
+      }
+    }
+    const gradeLevel = grade3 ? grade : status === "請假" ? "請假" : null;
+    const score = grade3Math
+      ? (grade === "缺考" || grade === "請假" ? null : Number(raw))
+      : grade3 ? null : status === "請假" ? null : Number(raw);
+    const correctCount = grade3 && !grade3Math && grade !== "缺考" && grade !== "請假" ? Number(raw) : null;
+    entries.push({ studentId, payload: {
+      student_id: studentId, exam_id: examId, subject: subject, scope: scope,
+      score: score, correct_count: correctCount, grade_level: gradeLevel
+    }});
+  });
+  if (errors.length) {
+    message.textContent = "以下資料尚未完成，請修正後再儲存：\n" + errors.join("；");
+    message.className = "system-message error";
+    message.style.display = "block";
+    return;
+  }
+  if (!entries.length) {
+    message.textContent = "目前沒有填寫任何成績，尚未儲存。";
+    message.className = "system-message";
+    message.style.display = "block";
+    return;
+  }
+  const duplicates = entries.filter(function (entry) {
+    return scoresCache.some(function (score) {
+      return String(score.student_id) === String(entry.studentId) &&
+        String(score.exam_id) === String(examId) && score.subject === subject &&
+        String(score.scope || "").trim() === scope;
+    });
+  });
+  if (duplicates.length && !confirm("本次有 " + duplicates.length + " 位學生已有相同考試、科目及範圍的成績。確認後會逐筆覆蓋原成績；其他新資料則新增。是否繼續？")) return;
+
+  button.disabled = true;
+  button.textContent = "儲存中……";
+  message.textContent = "正在儲存 " + entries.length + " 筆成績……";
+  message.className = "system-message";
+  message.style.display = "block";
+  let saved = 0;
+  const failures = [];
+  try {
+    for (const entry of entries) {
+      const duplicate = scoresCache.find(function (score) {
+        return String(score.student_id) === String(entry.studentId) &&
+          String(score.exam_id) === String(examId) && score.subject === subject &&
+          String(score.scope || "").trim() === scope;
+      });
+      const result = duplicate
+        ? await db.from("scores").update(entry.payload).eq("id", duplicate.id)
+        : await db.from("scores").insert(entry.payload);
+      if (result.error) {
+        const student = studentsCache.find(item => String(item.id) === String(entry.studentId));
+        failures.push((student ? student.full_name : entry.studentId) + "：" + result.error.message);
+      } else {
+        saved += 1;
+      }
+    }
+    if (saved) await loadAdminData();
+    message.textContent = "完成 " + saved + " 筆" + (failures.length ? "；失敗 " + failures.length + " 筆：" + failures.join("；") : "；全部成功。") +
+      (failures.length ? " 失敗項目可修正後重新儲存。" : "");
+    message.className = failures.length ? "system-message error" : "system-message success";
+    if (!failures.length) renderBulkScoreEntryRows();
+  } catch (error) {
+    message.textContent = "批次儲存中斷：已完成 " + saved + " 筆；" + error.message;
+    message.className = "system-message error";
+  } finally {
+    button.disabled = false;
+    button.textContent = "儲存本班成績";
+  }
+}
+
 function renderScoreEntry() {
   const content = $("adminContent");
   const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
@@ -2217,6 +2391,8 @@ function renderScoreEntry() {
     "<div class='field'><label>模擬考等級</label><select id='gradeLevel'><option value=''>請選擇等級</option>" + gradeOptionsHtml + "</select></div></div>" +
     "<p id='absenceHint' class='muted hidden' style='color:#8a5a00;font-weight:800'>已選擇特殊狀態，不需要輸入分數或答對題數。</p>" +
     "<button class='btn btn-success' type='submit' id='saveScoreButton'>儲存成績</button></form></div>" +
+    "<div class='toolbar' style='margin-top:14px'><button class='btn btn-secondary' type='button' id='toggleBulkScoreEntry'>開啟整班快速登錄</button></div>" +
+    "<div id='bulkScoreEntryPanel' class='panel hidden'><h3>整班快速登錄</h3><p class='muted'>沿用上方考試週期、班級、科目及考試範圍。空白列不會儲存；已存在的成績會先彙整確認，再逐筆更新。</p><div id='bulkScoreEntryContent'></div><div class='toolbar'><button class='btn btn-success' type='button' id='saveBulkScoresButton'>儲存本班成績</button><button class='btn btn-secondary' type='button' id='cancelBulkScoreEntry'>關閉</button></div><div id='bulkScoreEntryMessage' class='system-message' role='status'></div></div>" +
     "<p class='muted'>請先選擇考試週期，再依班級篩選學生。儲存後會保留考試、班級、學生、科目及範圍，方便連續登錄；可使用上一位／下一位學生快速切換。遇到重複資料時，系統會顯示原有與新成績供確認。</p>";
 
   const scoreMessage = $("systemMessage");
@@ -2252,6 +2428,18 @@ function renderScoreEntry() {
   $("scorePrevStudent").addEventListener("click", function () { moveScoreStudent(-1); saveScoreEntryProgress(); });
   $("scoreNextStudent").addEventListener("click", function () { moveScoreStudent(1); saveScoreEntryProgress(); });
   $("scoreForm").addEventListener("submit", saveScore);
+  $("toggleBulkScoreEntry").addEventListener("click", function () {
+    const panel = $("bulkScoreEntryPanel");
+    panel.classList.toggle("hidden");
+    if (!panel.classList.contains("hidden")) renderBulkScoreEntryRows();
+  });
+  $("cancelBulkScoreEntry").addEventListener("click", function () { $("bulkScoreEntryPanel").classList.add("hidden"); });
+  $("saveBulkScoresButton").addEventListener("click", saveBulkScores);
+  ["scoreExam", "scoreClass", "scoreSubject", "scoreScope"].forEach(function (id) {
+    $(id).addEventListener("change", function () {
+      if (!$("bulkScoreEntryPanel").classList.contains("hidden")) renderBulkScoreEntryRows();
+    });
+  });
   $("examForm").addEventListener("submit", saveExam);
   $("examCancel").addEventListener("click", clearExamForm);
   content.onclick = async function (event) {
