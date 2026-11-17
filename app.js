@@ -5451,8 +5451,13 @@ async function renderTermExamEntry() {
       .sort((a,b)=>String(a.student_code||"").localeCompare(String(b.student_code||""),"zh-Hant",{numeric:true}));
     if(!students.length){root.innerHTML="<div class='empty'>目前班級沒有在學學生。</div>";return;}
     const classDraft=(drafts()[cid(c)]||{});
+    const recordsByStudentKey = new Map();
+    records.forEach(record => {
+      if (String(record.academic_year) !== c.year || record.semester !== c.semester || String(record.exam_number) !== c.exam) return;
+      recordsByStudentKey.set(String(record.student_id), record);
+    });
     const rows=students.map(st=>{
-      const old=records.find(x=>String(x.academic_year)===c.year&&x.semester===c.semester&&String(x.exam_number)===c.exam&&String(x.student_id)===String(st.id));
+      const old=recordsByStudentKey.get(String(st.id));
       const d=classDraft[String(st.id)]||{},v=k=>d[k]!==undefined?d[k]:(old&&old[k]!=null?old[k]:"");
       const cells=keys.map((k,i)=>"<td><input data-term-score='"+i+"' type='number' min='0' max='100' step='0.01' inputmode='decimal' aria-label='"+subjects[i]+"成績' value='"+escapeHtml(v(k))+"'></td>").join("");
       const sum=keys.every(k=>v(k)!=="")?keys.reduce((n,k)=>n+Number(v(k)),0).toFixed(2).replace(/\.00$/,"").replace(/(\.\d)0$/,"$1"):"—";
@@ -5474,6 +5479,12 @@ async function renderTermExamEntry() {
   async function saveClass(){
     const c=criteria();if(!ready(c)){alert("請先完整選擇學年度、學期、段考及班級。");return;}
     const button=$("termSaveClassButton"),rows=Array.from($("termExamRoster").querySelectorAll("tbody tr[data-term-student]")),payloads=[];
+    const recordsByStudentKey = new Map();
+    records.forEach(record => {
+      if (String(record.academic_year) !== c.year || record.semester !== c.semester || Number(record.exam_number) !== Number(c.exam)) return;
+      recordsByStudentKey.set(String(record.student_id), record);
+    });
+    let oldCount = 0;
     for(const row of rows){
       const vals=keys.map((_,i)=>row.querySelector('[data-term-score="'+i+'"]').value.trim()),cr=row.querySelector("[data-term-class-rank]").value.trim(),sr=row.querySelector("[data-term-school-rank]").value.trim();
       const has=vals.some(x=>x!==""),ranked=cr!==""||sr!=="";
@@ -5481,7 +5492,8 @@ async function renderTermExamEntry() {
       if(has&&vals.some(x=>x==="")){alert(row.querySelector(".term-student-name").childNodes[0].textContent.trim()+"：七科成績請全部填寫，或整列留白。");row.querySelector('[data-term-score="'+vals.indexOf("")+'"]').focus();return;}
       for(let i=0;i<vals.length;i++)if(vals[i]!==""&&(!Number.isFinite(Number(vals[i]))||Number(vals[i])<0||Number(vals[i])>100)){alert(subjects[i]+"成績必須介於 0～100 分。");row.querySelector('[data-term-score="'+i+'"]').focus();return;}
       for(const [x,label] of [[cr,"班排"],[sr,"校排"]])if(x!==""&&(!Number.isInteger(Number(x))||Number(x)<1)){alert(label+"請輸入大於 0 的整數，或保持空白。");return;}
-      const studentId=row.dataset.termStudent,old=records.find(x=>String(x.academic_year)===c.year&&x.semester===c.semester&&Number(x.exam_number)===Number(c.exam)&&String(x.student_id)===studentId);
+      const studentId=row.dataset.termStudent,old=recordsByStudentKey.get(studentId);
+      if(old)oldCount++;
       payloads.push({academic_year:c.year,semester:c.semester,exam_number:Number(c.exam),class_name:c.className,student_id:studentId,
         subject_chinese:vals[0]===""?null:Number(vals[0]),subject_english:vals[1]===""?null:Number(vals[1]),subject_math:vals[2]===""?null:Number(vals[2]),
         subject_history:vals[3]===""?null:Number(vals[3]),subject_geography:vals[4]===""?null:Number(vals[4]),subject_civics:vals[5]===""?null:Number(vals[5]),
@@ -5489,7 +5501,6 @@ async function renderTermExamEntry() {
         class_rank:cr===""?null:Number(cr),school_rank:sr===""?null:Number(sr),updated_at:new Date().toISOString()});
     }
     if(!payloads.length){alert("目前沒有可儲存的成績或排名。");return;}
-    const oldCount=payloads.filter(p=>records.some(x=>String(x.academic_year)===c.year&&x.semester===c.semester&&Number(x.exam_number)===Number(c.exam)&&String(x.student_id)===p.student_id)).length;
     if(oldCount&&!confirm("本次將儲存 "+payloads.length+" 位學生，其中 "+oldCount+" 位已有段考資料，是否確認更新？"))return;
     button.disabled=true;button.textContent="整班儲存中……";
     try{
