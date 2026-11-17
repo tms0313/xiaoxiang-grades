@@ -5408,11 +5408,11 @@ async function renderParentDashboard() {
   // 學生資料與考試清單互不依賴，並行讀取以縮短家長首頁等待時間。
   const [studentsResult, examsResult] = await Promise.all([
     db.from("students")
-      .select("*")
+      .select("id, student_code, full_name, class_name")
       .in("id", studentIds)
       .order("student_code"),
     db.from("exams")
-      .select("*")
+      .select("id, title, start_date, end_date")
       .order("start_date", { ascending: false, nullsFirst: false })
       .limit(3)
   ]);
@@ -5436,7 +5436,7 @@ async function renderParentDashboard() {
   if (reviewExamIds.length > 0) {
     const scoresResult = await db
       .from("scores")
-      .select("*")
+      .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
       .in("student_id", studentIds)
       .in("exam_id", reviewExamIds);
 
