@@ -2286,7 +2286,10 @@ async function saveSingleBulkScoreRow(row) {
       : await db.from("scores").insert(payload);
     if (result.error) throw result.error;
     await loadAdminData();
-    renderBulkScoreEntryRows();
+    const nameCell = row.children[1];
+    if (nameCell && !nameCell.textContent.includes("已有成績")) {
+      nameCell.innerHTML = escapeHtml(student.full_name) + " <span class='muted'>（已有成績）</span>";
+    }
     message.textContent = student.full_name + " 的成績已" + (duplicate ? "覆蓋" : "儲存") + "成功。";
     message.className = "system-message success"; message.style.display = "block";
   } catch (error) {
