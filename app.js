@@ -1937,6 +1937,19 @@ async function editScore(scoreId) {
       return;
     }
 
+    // 修改科目或範圍前先檢查是否會與同一學生的既有紀錄重複，避免送出後才收到資料庫唯一性錯誤。
+    const duplicateScore = scoresCache.find(function (item) {
+      return String(item.id) !== String(scoreId) &&
+        String(item.student_id) === String(score.student_id) &&
+        String(item.exam_id) === String(score.exam_id) &&
+        item.subject === subject &&
+        String(item.scope || "").trim() === scope;
+    });
+    if (duplicateScore) {
+      showScoreEditError("這位學生已有相同考試、科目及範圍的成績紀錄。請調整科目或考試範圍，避免重複資料。");
+      return;
+    }
+
     const grade3Math = isGrade3Math(student.class_name, subject);
     let scoreValue = null;
     let correctCount = null;
