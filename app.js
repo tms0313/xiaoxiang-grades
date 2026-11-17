@@ -5467,20 +5467,39 @@ async function renderParentDashboard() {
   const parentClassHighestScores = highestScoresResult.data || [];
   const parentReviewRecords = reviewResult.data || [];
 
+  // 將家長端成績、班級最高分及檢閱紀錄建立索引，避免每張成績卡反覆掃描陣列。
+  const parentStudentExamKey = (studentId, examId) =>
+    JSON.stringify([String(studentId), String(examId)]);
+  const parentHighestScoreKey = (studentId, examId, subject, scope) =>
+    JSON.stringify([String(studentId), String(examId), String(subject), String(scope || "")]);
+
+  const parentScoresByStudentExam = new Map();
+  parentScores.forEach(function (score) {
+    const key = parentStudentExamKey(score.student_id, score.exam_id);
+    if (!parentScoresByStudentExam.has(key)) parentScoresByStudentExam.set(key, []);
+    parentScoresByStudentExam.get(key).push(score);
+  });
+
+  const parentHighestScoreByKey = new Map();
+  parentClassHighestScores.forEach(function (item) {
+    const key = parentHighestScoreKey(item.student_id, item.exam_id, item.subject, item.scope);
+    if (!parentHighestScoreByKey.has(key)) parentHighestScoreByKey.set(key, item);
+  });
+
+  const parentReviewByStudentExam = new Map();
+  parentReviewRecords.forEach(function (record) {
+    const key = parentStudentExamKey(record.student_id, record.exam_id);
+    if (!parentReviewByStudentExam.has(key)) parentReviewByStudentExam.set(key, record);
+  });
+
   function findClassHighestScore(student, exam, score) {
-    return parentClassHighestScores.find(function (item) {
-      return String(item.student_id) === String(student.id) &&
-        String(item.exam_id) === String(exam.id) &&
-        String(item.subject) === String(score.subject) &&
-        String(item.scope || "") === String(score.scope || "");
-    });
+    return parentHighestScoreByKey.get(
+      parentHighestScoreKey(student.id, exam.id, score.subject, score.scope)
+    );
   }
 
   function findReviewRecord(student, exam) {
-    return parentReviewRecords.find(function (record) {
-      return String(record.student_id) === String(student.id) &&
-        String(record.exam_id) === String(exam.id);
-    });
+    return parentReviewByStudentExam.get(parentStudentExamKey(student.id, exam.id));
   }
 
   function getTaiwanDateTime() {
@@ -5536,10 +5555,7 @@ async function renderParentDashboard() {
   }
 
   function getStudentScores(student, exam) {
-    return parentScores.filter(function (score) {
-      return String(score.student_id) === String(student.id) &&
-        String(score.exam_id) === String(exam.id);
-    });
+    return parentScoresByStudentExam.get(parentStudentExamKey(student.id, exam.id)) || [];
   }
 
   // ==================================================
