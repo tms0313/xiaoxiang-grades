@@ -2664,6 +2664,22 @@ function renderScoreEntry() {
     const button = event.target.closest("[data-save-bulk-row]");
     if (button) await saveSingleBulkScoreRow(button.closest("tr"));
   });
+  $("bulkScoreEntryContent").addEventListener("keydown", function (event) {
+    const field = event.target.closest("[data-bulk-score], [data-bulk-grade], [data-bulk-status]");
+    if (!field || event.key !== "Enter") return;
+    event.preventDefault();
+    const row = field.closest("tr[data-bulk-student]");
+    const rows = Array.from($("bulkScoreEntryContent").querySelectorAll("tr[data-bulk-student]"));
+    const currentIndex = rows.indexOf(row);
+    const nextRow = rows[currentIndex + (event.shiftKey ? -1 : 1)];
+    if (!nextRow) return;
+    const selector = ["[data-bulk-score]", "[data-bulk-grade]", "[data-bulk-status]"].find(item => field.matches(item));
+    const nextField = selector ? nextRow.querySelector(selector) : null;
+    if (nextField && !nextField.disabled) {
+      nextField.focus();
+      if (nextField.tagName === "INPUT") nextField.select();
+    }
+  });
   $("examForm").addEventListener("submit", saveExam);
   $("examCancel").addEventListener("click", clearExamForm);
   content.onclick = async function (event) {
