@@ -4682,16 +4682,35 @@ async function deleteTeacherAssignment(id, button) {
 
 function renderPasswords() {
   const content = $("adminContent");
+  const studentsById = new Map(
+    studentsCache.map(student => [String(student.id), student])
+  );
+  const linksByGuardian = new Map();
+
+  guardianLinksCache.forEach(function (link) {
+    const guardianId = String(link.guardian_id);
+    const student = studentsById.get(String(link.student_id));
+    if (!student) return;
+    if (!linksByGuardian.has(guardianId)) linksByGuardian.set(guardianId, []);
+    linksByGuardian.get(guardianId).push(student);
+  });
 
   const rows = profilesCache.map(function (profile) {
     const loginAccount = profile.email || profile.phone || "—";
-    const linkedStudents = guardianLinksCache
-      .filter(link => String(link.guardian_id) === String(profile.id))
-      .map(link => studentsCache.find(student => String(student.id) === String(link.student_id)))
-      .filter(Boolean);
+    const linkedStudents = linksByGuardian.get(String(profile.id)) || [];
     const linkedStudentNames = Array.from(new Set(linkedStudents.map(student => student.full_name)));
+    const searchableText = [
+      profile.display_name || "",
+      profile.email || "",
+      profile.phone || "",
+      ...linkedStudents.flatMap(student => [
+        student.full_name || "",
+        student.student_code || "",
+        student.class_name || ""
+      ])
+    ].join(" ").toLocaleLowerCase();
 
-    return "<tr>" +
+    return "<tr data-parent-search='" + escapeHtml(searchableText) + "'>" +
       "<td>" + escapeHtml(profile.display_name || "未設定姓名") + "</td>" +
       "<td>" + escapeHtml(loginAccount) + "</td>" +
       "<td>" + (linkedStudentNames.length
@@ -4707,10 +4726,33 @@ function renderPasswords() {
   content.innerHTML =
     "<h2 class='section-title'>家長帳號管理</h2>" +
     "<p class='muted'>可重設家長登入密碼，或刪除不再使用的家長帳號。刪除前請確認家長姓名及綁定學生；刪除帳號後會解除該家長的所有學生綁定，但學生資料及成績會保留。</p>" +
+    "<div class='toolbar parent-account-filter-toolbar'>" +
+      "<label for='parentAccountKeyword'><strong>搜尋：</strong></label>" +
+      "<input id='parentAccountKeyword' type='search' placeholder='家長姓名、Email、手機或學生姓名／編號' aria-label='搜尋家長帳號或已綁定學生' style='min-width:240px;flex:1'>" +
+      "<span id='parentAccountResultCount' class='muted' style='font-size:13px'></span>" +
+    "</div>" +
     "<div class='table-wrap password-table-wrap'><table class='password-management-table'>" +
       "<thead><tr><th>家長姓名</th><th>登入帳號（Email／手機）</th><th>已綁定學生</th><th>操作</th></tr></thead>" +
-      "<tbody>" + (rows || "<tr><td colspan='4' class='empty'>目前沒有家長帳號</td></tr>") + "</tbody>" +
+      "<tbody id='parentAccountRows'>" + (rows || "<tr><td colspan='4' class='empty'>目前沒有家長帳號</td></tr>") + "</tbody>" +
     "</table></div>";
+
+  const searchInput = $("parentAccountKeyword");
+  const resultCount = $("parentAccountResultCount");
+  const accountRows = Array.from(content.querySelectorAll("tr[data-parent-search]"));
+
+  function applyParentAccountSearch() {
+    const keyword = searchInput.value.trim().toLocaleLowerCase();
+    let visibleCount = 0;
+    accountRows.forEach(function (row) {
+      const matched = !keyword || row.dataset.parentSearch.includes(keyword);
+      row.hidden = !matched;
+      if (matched) visibleCount += 1;
+    });
+    resultCount.textContent = "符合條件 " + visibleCount + "／" + accountRows.length + " 位家長";
+  }
+
+  searchInput.addEventListener("input", applyParentAccountSearch);
+  applyParentAccountSearch();
 
   content.onclick = async function (event) {
     const resetButton = event.target.closest("[data-reset-parent]");
