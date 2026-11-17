@@ -2630,18 +2630,31 @@ async function saveBulkScores() {
   let saved = 0;
   const failures = [];
   try {
-    for (const entry of entries) {
-      const duplicate = existingScoreByStudent.get(String(entry.studentId));
-      const result = duplicate
-        ? await db.from("scores").update(entry.payload).eq("id", duplicate.id)
-        : await db.from("scores").insert(entry.payload);
-      if (result.error) {
-        const student = studentById.get(String(entry.studentId));
-        failures.push((student ? student.full_name : entry.studentId) + "：" + result.error.message);
-      } else {
-        saved += 1;
-      }
+    // 每批最多同時送出 8 筆，降低逐筆等待時間，也避免一次大量請求造成負載尖峰。
+    const batchSize = 8;
+    for (let start = 0; start < entries.length; start += batchSize) {
+      const batch = entries.slice(start, start + batchSize);
+      const results = await Promise.all(batch.map(async function (entry) {
+        const duplicate = existingScoreByStudent.get(String(entry.studentId));
+        const result = duplicate
+          ? await db.from("scores").update(entry.payload).eq("id", duplicate.id)
+          : await db.from("scores").insert(entry.payload);
+        return { entry: entry, error: result.error || null };
+      }));
+
+      results.forEach(function (item) {
+        if (item.error) {
+          const student = studentById.get(String(item.entry.studentId));
+          failures.push((student ? student.full_name : item.entry.studentId) + "：" + item.error.message);
+        } else {
+          saved += 1;
+        }
+      });
+
+      message.textContent = "已處理 " + Math.min(start + batch.length, entries.length) +
+        " / " + entries.length + " 筆成績……";
     }
+
     let cacheWarning = "";
     if (saved) {
       try {
