@@ -2675,6 +2675,7 @@ function renderStudents() {
   const filter = $("studentStatusFilter") ? $("studentStatusFilter").value : "active";
   const classFilter = $("studentClassFilter") ? $("studentClassFilter").value : "all";
   const subjectFilter = $("studentSubjectFilter") ? $("studentSubjectFilter").value : "all";
+  const keywordFilter = $("studentKeywordFilter") ? $("studentKeywordFilter").value : "";
 
   const matchingStudents = studentsCache.filter(function (student) {
     const active = student.is_active !== false;
@@ -2748,10 +2749,8 @@ function renderStudents() {
   $("studentStatusFilter").value = filter;
   $("studentClassFilter").value = classFilter;
   $("studentSubjectFilter").value = subjectFilter;
-  $("studentStatusFilter").addEventListener("change", renderStudents);
-  $("studentClassFilter").addEventListener("change", renderStudents);
-  $("studentSubjectFilter").addEventListener("change", renderStudents);
-  $("studentKeywordFilter").addEventListener("input", function () {
+  $("studentKeywordFilter").value = keywordFilter;
+  function applyStudentKeyword() {
     const keyword = $("studentKeywordFilter").value.trim().toLocaleLowerCase();
     const studentRows = Array.from(content.querySelectorAll(".student-management-table tbody tr[data-student-search]"));
     let visibleCount = 0;
@@ -2761,11 +2760,17 @@ function renderStudents() {
       if (matched) visibleCount++;
     });
     $("studentSubjectCount").textContent = "符合條件 " + visibleCount + " 人";
-  });
+  }
+  applyStudentKeyword();
+  $("studentStatusFilter").addEventListener("change", renderStudents);
+  $("studentClassFilter").addEventListener("change", renderStudents);
+  $("studentSubjectFilter").addEventListener("change", renderStudents);
+  $("studentKeywordFilter").addEventListener("input", applyStudentKeyword);
   $("studentClearFilters").addEventListener("click", function () {
     $("studentStatusFilter").value = "active";
     $("studentClassFilter").value = "all";
     $("studentSubjectFilter").value = "all";
+    $("studentKeywordFilter").value = "";
     renderStudents();
   });
   $("studentForm").addEventListener("submit", saveStudent);
@@ -2865,6 +2870,7 @@ async function saveStudent(event) {
     if (subjectResult.error) throw subjectResult.error;
 
     await loadAdminData();
+    clearStudentForm();
     renderStudents();
     showMessage(id ? "學生資料及修課科目已更新。" : "學生及修課科目已新增。", "success");
 
