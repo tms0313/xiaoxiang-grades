@@ -1079,7 +1079,7 @@ function renderAdminDashboard() {
         "<a class='tab-btn' href='#admin/students' data-tab='students'>學生管理</a>" +
         "<a class='tab-btn' href='#admin/attendance' data-tab='attendance'>出缺席管理</a>" +
         
-        "<a class='tab-btn' href='#admin/guardians' data-tab='guardians'>家長綁定</a>" +
+        "<a class='tab-btn' href='#admin/guardians' data-tab='guardians'>家長帳號管理</a>" +
         "<a class='tab-btn' href='#admin/teachers' data-tab='teachers'>教師管理</a>" +
         "<a class='tab-btn' href='#admin/alumni' data-tab='alumni'>模考成績</a>" +
         "<a class='tab-btn' href='#admin/export' data-tab='export'>成績匯出</a>" +
@@ -3643,11 +3643,13 @@ function renderGuardians() {
   const parentsById = new Map(profilesCache.map(parent => [String(parent.id), parent]));
   const firstLinkedStudentByGuardian = new Map();
   const linkedStudentIds = new Set();
+  const boundGuardianIds = new Set();
 
   guardianLinksCache.forEach(function (link) {
     const guardianId = String(link.guardian_id);
     const studentId = String(link.student_id);
     linkedStudentIds.add(studentId);
+    boundGuardianIds.add(guardianId);
     if (!firstLinkedStudentByGuardian.has(guardianId)) {
       firstLinkedStudentByGuardian.set(guardianId, studentsById.get(studentId) || null);
     }
@@ -3715,7 +3717,7 @@ function renderGuardians() {
     profilesCache.forEach(function (parent) {
       if (parent.role !== "parent") return;
       const parentId = String(parent.id);
-      if (guardianLinksCache.some(link => String(link.guardian_id) === parentId)) return;
+      if (boundGuardianIds.has(parentId)) return;
       const loginIdentity = parent.email || parent.phone || "";
       const parentName = parent.display_name || loginIdentity || "未設定家長";
       if (!matches(parentName) && !matches(loginIdentity) && !matches("尚未綁定學生")) return;
@@ -3754,7 +3756,7 @@ function renderGuardians() {
   }
 
   content.innerHTML =
-    "<h2 class='section-title'>家長綁定</h2>" +
+    "<h2 class='section-title'>家長帳號管理</h2>" +
 
     "<div class='panel'><h3>新增家長帳號</h3>" +
       "<p class='muted'>可選擇使用 Email 或手機號碼建立家長帳號。手機帳號不需要簡訊驗證。</p>" +
