@@ -361,6 +361,7 @@ footer {
 .guardian-management-table td:nth-child(4) { width: 120px; }
 .guardian-management-table th:nth-child(5),
 .guardian-management-table td:nth-child(5) { width: 220px; }
+.guardian-management-table th:nth-child(5) { text-align: center; }
 .guardian-management-table td { overflow-wrap: normal; word-break: normal; }
 .guardian-management-table .action-buttons [data-reset-parent],
 .guardian-management-table .action-buttons [data-delete-parent] {
