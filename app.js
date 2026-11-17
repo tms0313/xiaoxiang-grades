@@ -1453,13 +1453,39 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
     "</table></div>";
 
-  // 每次畫面重繪時建立一次索引；搜尋、篩選操作直接重用，避免每次按鍵都重掃全部資料。
+  // 每次畫面重繪時建立一次索引；搜尋、篩選操作直接重用。
   const keyOf = (...parts) => parts.map(value => String(value == null ? "" : value).trim()).join("\u001f");
   const scoreKeys = new Set();
   const registeredScopes = new Map();
+  const scoresByExam = new Map();
+  const scoresByClass = new Map();
+  const scoresBySubject = new Map();
+  const studentSearchIndex = new Map();
+  const activeStudentsByClass = new Map();
+
+  studentsCache.forEach(function (student) {
+    studentSearchIndex.set(String(student.id), (
+      String(student.full_name || "") + "\u001f" +
+      String(student.student_code || "")
+    ).toLowerCase());
+    if (student.is_active === false) return;
+    const className = String(student.class_name || "");
+    if (!activeStudentsByClass.has(className)) activeStudentsByClass.set(className, []);
+    activeStudentsByClass.get(className).push(student);
+  });
+
+  function addToIndex(index, key, value) {
+    const normalizedKey = String(key == null ? "" : key);
+    if (!index.has(normalizedKey)) index.set(normalizedKey, []);
+    index.get(normalizedKey).push(value);
+  }
+
   scoresCache.forEach(function (score) {
     const student = studentById.get(String(score.student_id));
     if (!student) return;
+    addToIndex(scoresByExam, score.exam_id, score);
+    addToIndex(scoresByClass, student.class_name, score);
+    addToIndex(scoresBySubject, score.subject, score);
     const normalizedScope = String(score.scope || "").trim();
     scoreKeys.add(keyOf(score.exam_id, score.student_id, score.subject, normalizedScope));
     if (score.grade_level === "請假" || !normalizedScope) return;
@@ -1495,30 +1521,41 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const status = $("overviewStatus").value;
 
     const matchesStudent = function (student) {
-      return student &&
-        (!className || student.class_name === className) &&
-        (!search ||
-          String(student.full_name || "").toLowerCase().includes(search) ||
-          String(student.student_code || "").toLowerCase().includes(search));
+      if (!student || (className && student.class_name !== className)) return false;
+      return !search || (studentSearchIndex.get(String(student.id)) || "").includes(search);
     };
 
-    const rows = scoresCache.filter(function (score) {
+    // 依目前篩選條件選擇資料量最小的索引作為候選集，避免每次輸入都掃描全部成績。
+    let scoreCandidates = scoresCache;
+    if (examId && scoresByExam.has(String(examId))) scoreCandidates = scoresByExam.get(String(examId));
+    if (className && scoresByClass.has(className) &&
+        scoresByClass.get(className).length < scoreCandidates.length) {
+      scoreCandidates = scoresByClass.get(className);
+    }
+    if (subject && scoresBySubject.has(subject) &&
+        scoresBySubject.get(subject).length < scoreCandidates.length) {
+      scoreCandidates = scoresBySubject.get(subject);
+    }
+
+    const rows = [];
+    scoreCandidates.forEach(function (score) {
+      if (examId && String(score.exam_id) !== String(examId)) return;
+      if (subject && score.subject !== subject) return;
       const student = studentById.get(String(score.student_id));
-      return matchesStudent(student) &&
-        (!examId || String(score.exam_id) === String(examId)) &&
-        (!subject || score.subject === subject);
-    }).map(function (score) {
-      return { score: score, student: studentById.get(String(score.student_id)), exam: getExam(score.exam_id) };
-    }).filter(item => item.exam);
+      if (!matchesStudent(student)) return;
+      const exam = getExam(score.exam_id);
+      if (exam) rows.push({ score: score, student: student, exam: exam });
+    });
 
     // 只依已登錄範圍產生未登錄提醒；請假及排除規則維持不變。
     const examsToCheck = examId
       ? [getExam(examId)].filter(Boolean)
       : sortByDateDesc(examsCache, "start_date");
-    const activeMatchingStudents = studentsCache.filter(student =>
-      student.is_active !== false && matchesStudent(student)
-    );
-    const classNames = Array.from(new Set(activeMatchingStudents.map(student => student.class_name)));
+    const classNames = className
+      ? [className]
+      : Array.from(activeStudentsByClass.keys()).filter(function (targetClass) {
+          return activeStudentsByClass.get(targetClass).some(matchesStudent);
+        });
     const targetSubjects = subject ? [subject] : SUBJECTS;
 
     examsToCheck.forEach(function (selectedExam) {
@@ -1531,10 +1568,11 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
           const enrollmentGroup = enrolledStudentsByClassSubject.get(keyOf(targetClass, targetSubject));
           if (!enrollmentGroup) return;
-          const enrolledStudents = enrollmentGroup.students.filter(matchesStudent);
+          const enrolledStudents = enrollmentGroup.students;
 
           scopes.forEach(function (scope) {
             enrolledStudents.forEach(function (student) {
+              if (!matchesStudent(student)) return;
               const recordKey = keyOf(currentExamId, student.id, targetSubject, scope);
               if (!scoreKeys.has(recordKey) && !exclusionKeys.has(recordKey)) {
                 rows.push({
