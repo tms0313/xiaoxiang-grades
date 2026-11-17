@@ -3797,7 +3797,7 @@ function renderGuardians() {
       "<div class='table-wrap'><table class='guardian-management-table'>" +
         "<thead><tr><th>班級</th><th>已綁定學生</th><th>家長姓名／登入帳號</th><th>綁定狀態</th></tr></thead>" +
         "<tbody id='guardianRows'>" +
-          (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>") +
+          (buildGuardianRows() || "<tr><td colspan='4' class='empty'>目前沒有家長帳號資料</td></tr>") +
         "</tbody>" +
       "</table></div>" +
     "</div>";
@@ -3808,7 +3808,7 @@ function renderGuardians() {
   function refreshGuardianRows() {
     const rows = buildGuardianRows();
     $("guardianRows").innerHTML =
-      rows || "<tr><td colspan='5' class='empty'>沒有符合條件的家長或學生</td></tr>";
+      rows || "<tr><td colspan='4' class='empty'>沒有符合條件的家長或學生</td></tr>";
     const count = $("guardianRows").querySelector(".empty")
       ? 0
       : $("guardianRows").querySelectorAll("tr").length;
