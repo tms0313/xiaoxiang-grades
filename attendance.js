@@ -51,6 +51,8 @@ function attendancePreviewInjectStyles() {
     .att-preview-session{display:flex;flex-direction:row;align-items:center;gap:0;width:100%;min-height:76px;margin:0;padding:13px;border:1px solid #d7e0e9;border-radius:10px;background:#fff;color:#263445;text-align:left;white-space:nowrap}
     .att-preview-session strong{color:#23466b;font-size:19px;line-height:1.4}
     .att-preview-session span{display:none}
+    .att-preview-session:not(.active):hover,.att-preview-session:not(.active):focus,.att-preview-session:not(.active):active{border-color:#17365d;background:#234f78 !important;color:#fff !important}
+    .att-preview-session:not(.active):hover strong,.att-preview-session:not(.active):focus strong,.att-preview-session:not(.active):active strong{color:#fff !important;font-weight:800}
     .att-preview-session.active,.att-preview-session.active:hover,.att-preview-session.active:focus,.att-preview-session.active:active{border:2px solid #17365d;background:#234f78 !important;color:#fff !important;box-shadow:0 0 0 2px rgba(35,79,120,.18)}
     .att-preview-session.active strong,.att-preview-session.active:hover strong,.att-preview-session.active:focus strong,.att-preview-session.active:active strong{color:#fff !important;font-weight:800}
     .att-preview-session:focus-visible{outline:3px solid #6b9bc8;outline-offset:2px}
