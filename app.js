@@ -4896,8 +4896,8 @@ async function renderStudentReviewRecords(selectedExamId) {
       const rows = visibleStudents.map(function(student) {
         const record = reviewMap.get(String(student.id));
         const status = record
-          ? "<span style='display:inline-block;padding:5px 10px;border-radius:20px;background:#e3f5e9;color:#20683d;font-weight:800'>已檢閱</span>"
-          : "<span style='display:inline-block;padding:5px 10px;border-radius:20px;background:#fde8e8;color:#a32626;font-weight:800'>未檢閱</span>";
+          ? "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#e3f5e9;color:#20683d;font-size:14px;line-height:30px;font-weight:800;white-space:nowrap'>已檢閱</span>"
+          : "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#fde8e8;color:#a32626;font-size:14px;line-height:30px;font-weight:800;white-space:nowrap'>未檢閱</span>";
         const reviewedAt = record && record.reviewed_at
           ? new Date(record.reviewed_at).toLocaleString("zh-TW", {
               timeZone: "Asia/Taipei",
