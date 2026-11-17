@@ -963,6 +963,35 @@ async function loadAdminData() {
   teacherProfilesCache = Array.from(teacherMap.values());
 }
 
+
+/**
+ * 成績總覽背景更新：只同步總覽會即時變動的資料，
+ * 避免每 60 秒重新讀取整套管理員資料。
+ */
+async function refreshOverviewData() {
+  const results = await Promise.all([
+    db.from("scores").select("*"),
+    db.from("score_missing_exclusions").select("*")
+  ]);
+
+  if (results[0].error) {
+    throw new Error("成績資料讀取失敗：" + results[0].error.message);
+  }
+  if (results[1].error) {
+    throw new Error("未登錄排除資料讀取失敗：" + results[1].error.message);
+  }
+
+  scoresCache = results[0].data || [];
+  missingExclusionsCache = results[1].data || [];
+
+  // 保留原有每週提醒名單清理規則。
+  try {
+    await cleanupPreviousWeekExclusions();
+  } catch (error) {
+    console.error("清除上一週已排除提醒失敗：", error);
+  }
+}
+
 async function renderDashboard() {
   showLoading("正在載入系統資料……");
 
@@ -1625,7 +1654,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const keepPanelOpen = !!(excludedPanel && excludedPanel.style.display !== "none");
 
     try {
-      await loadAdminData();
+      await refreshOverviewData();
       if (activeTab === "overview" && $("overviewRows")) {
         renderOverview(currentFilters, keepPanelOpen);
         window.scrollTo({ top: currentScrollY, behavior: "auto" });
