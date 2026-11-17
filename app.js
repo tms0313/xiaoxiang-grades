@@ -2359,13 +2359,18 @@ function renderBulkScoreEntryRows() {
     return "<option value='" + escapeHtml(grade) + "'>" + escapeHtml(grade) + "</option>";
   }).join("");
   const draftRows = readBulkScoreDraft();
-  const rows = students.map(function (student) {
-    const existing = scoresCache.find(function (score) {
-      return String(score.student_id) === String(student.id) &&
-        String(score.exam_id) === String(examId) &&
+  const scope = String($("scoreScope").value || "").trim();
+  // 本次名單的考試、科目與範圍固定，先建立學生成績索引，避免逐列掃描整份成績快取。
+  const existingScoreByStudent = new Map();
+  scoresCache.forEach(function (score) {
+    if (String(score.exam_id) === String(examId) &&
         score.subject === subject &&
-        String(score.scope || "").trim() === String($("scoreScope").value || "").trim();
-    });
+        String(score.scope || "").trim() === scope) {
+      existingScoreByStudent.set(String(score.student_id), score);
+    }
+  });
+  const rows = students.map(function (student) {
+    const existing = existingScoreByStudent.get(String(student.id));
     const draft = draftRows[String(student.id)] || {};
     const rawValue = Object.prototype.hasOwnProperty.call(draft, "score")
       ? draft.score
@@ -2401,11 +2406,7 @@ function renderBulkScoreEntryRows() {
   root.querySelectorAll("[data-bulk-status]").forEach(function (select) {
     const row = select.closest("tr");
     const savedStatus = (draftRows[row.dataset.bulkStudent] || {}).status;
-    const existing = scoresCache.find(score =>
-      String(score.student_id) === String(row.dataset.bulkStudent) &&
-      String(score.exam_id) === String(examId) && score.subject === subject &&
-      String(score.scope || "").trim() === String($("scoreScope").value || "").trim()
-    );
+    const existing = existingScoreByStudent.get(String(row.dataset.bulkStudent));
     select.value = savedStatus || (existing && existing.grade_level === "請假" ? "請假" : "normal");
     const input = row.querySelector("[data-bulk-score]");
     input.disabled = select.value === "請假";
@@ -2413,11 +2414,7 @@ function renderBulkScoreEntryRows() {
   });
   root.querySelectorAll("[data-bulk-grade]").forEach(function (select) {
     const row = select.closest("tr");
-    const existing = scoresCache.find(score =>
-      String(score.student_id) === String(row.dataset.bulkStudent) &&
-      String(score.exam_id) === String(examId) && score.subject === subject &&
-      String(score.scope || "").trim() === String($("scoreScope").value || "").trim()
-    );
+    const existing = existingScoreByStudent.get(String(row.dataset.bulkStudent));
     if (!draftRows[row.dataset.bulkStudent] && existing) select.value = existing.grade_level || "";
   });
   root.oninput = saveBulkScoreDraft;
