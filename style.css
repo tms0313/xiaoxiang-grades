@@ -352,9 +352,9 @@ footer {
   border-collapse: collapse;
 }
 .guardian-management-table th:nth-child(1),
-.guardian-management-table td:nth-child(1) { width: 120px; }
+.guardian-management-table td:nth-child(1) { width: 120px; white-space: nowrap; }
 .guardian-management-table th:nth-child(2),
-.guardian-management-table td:nth-child(2) { width: 112px; }
+.guardian-management-table td:nth-child(2) { width: 160px; }
 .guardian-management-table th:nth-child(3),
 .guardian-management-table td:nth-child(3) { width: 190px; }
 .guardian-management-table th:nth-child(4),
