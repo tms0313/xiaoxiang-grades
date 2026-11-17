@@ -924,8 +924,8 @@ async function loadAdminData() {
     db.from("profiles").select("*"),
     db.from("scores").select("*"),
     db.from("guardian_students").select("*"),
-    db.from("student_subjects").select("*"),
-    db.from("teacher_assignments").select("*"),
+    db.from("student_subjects").select("student_id, subject, is_active"),
+    db.from("teacher_assignments").select("id, teacher_id, class_name, subject"),
     db.from("profile_roles").select("user_id, role").eq("role", "teacher"),
     db.from("score_missing_exclusions").select("*")
   ]);
