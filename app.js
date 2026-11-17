@@ -3713,6 +3713,7 @@ function renderGuardians() {
     });
 
     profilesCache.forEach(function (parent) {
+      if (parent.role !== "parent") return;
       const parentId = String(parent.id);
       if (guardianLinksCache.some(link => String(link.guardian_id) === parentId)) return;
       const loginIdentity = parent.email || parent.phone || "";
