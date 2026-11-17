@@ -290,15 +290,24 @@ footer {
 /* 管理員功能分頁使用真正連結，保留原按鈕外觀並支援瀏覽器開新分頁 */
 .tabs a.tab-btn,
 .tabs a.tab-btn:link,
-.tabs a.tab-btn:visited,
-.tabs a.tab-btn:hover,
-.tabs a.tab-btn:active {
+.tabs a.tab-btn:visited {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
+  background: #244b76 !important;
   color: #ffffff !important;
   cursor: pointer;
+}
+.tabs a.tab-btn:hover,
+.tabs a.tab-btn:focus-visible {
+  background: #315d86 !important;
+  color: #ffffff !important;
+}
+.tabs a.tab-btn.active,
+.tabs a.tab-btn[aria-current="page"] {
+  background: #315d86 !important;
+  color: #ffffff !important;
 }
 .tabs a.tab-btn:focus-visible {
   outline: 2px solid #2563eb;
