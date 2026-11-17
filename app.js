@@ -2580,23 +2580,42 @@ function readBulkScoreDraft() {
   } catch (error) { return {}; }
 }
 
-function saveBulkScoreDraft() {
-  const root = $("bulkScoreEntryContent");
-  if (!root) return;
-  const condition = getBulkScoreCondition();
-  if (!condition.examId || !condition.className || !condition.subject || !condition.scope) return;
-  const rows = {};
-  root.querySelectorAll("tr[data-bulk-student]").forEach(function (row) {
-    const input = row.querySelector("[data-bulk-score]");
-    const grade = row.querySelector("[data-bulk-grade]");
-    const status = row.querySelector("[data-bulk-status]");
-    rows[row.dataset.bulkStudent] = {
-      score: input ? input.value : "",
-      grade: grade ? grade.value : "",
-      status: status ? status.value : "normal"
-    };
-  });
-  try { localStorage.setItem(BULK_SCORE_DRAFT_KEY, JSON.stringify({ condition, rows, savedAt: new Date().toISOString() })); } catch (error) {}
+let bulkScoreDraftSaveTimer = null;
+
+function saveBulkScoreDraft(immediate) {
+  if (bulkScoreDraftSaveTimer) {
+    clearTimeout(bulkScoreDraftSaveTimer);
+    bulkScoreDraftSaveTimer = null;
+  }
+  const persist = function () {
+    bulkScoreDraftSaveTimer = null;
+    const root = $("bulkScoreEntryContent");
+    if (!root) return;
+    const condition = getBulkScoreCondition();
+    if (!condition.examId || !condition.className || !condition.subject || !condition.scope) return;
+    const rows = {};
+    root.querySelectorAll("tr[data-bulk-student]").forEach(function (row) {
+      const input = row.querySelector("[data-bulk-score]");
+      const grade = row.querySelector("[data-bulk-grade]");
+      const status = row.querySelector("[data-bulk-status]");
+      rows[row.dataset.bulkStudent] = {
+        score: input ? input.value : "",
+        grade: grade ? grade.value : "",
+        status: status ? status.value : "normal"
+      };
+    });
+    try {
+      localStorage.setItem(BULK_SCORE_DRAFT_KEY, JSON.stringify({
+        condition: condition, rows: rows, savedAt: new Date().toISOString()
+      }));
+    } catch (error) {}
+  };
+  if (immediate === true) {
+    persist();
+  } else {
+    // 輸入時先合併短時間內的連續事件，避免每打一個字就掃描整張表並同步寫入 localStorage。
+    bulkScoreDraftSaveTimer = setTimeout(persist, 250);
+  }
 }
 
 function renderBulkScoreEntryRows() {
@@ -2693,9 +2712,10 @@ function renderBulkScoreEntryRows() {
       input.disabled = event.target.value === "請假";
       if (input.disabled) input.value = "";
     }
-    saveBulkScoreDraft();
+    saveBulkScoreDraft(true);
   };
-  saveBulkScoreDraft();
+  root.onfocusout = function () { saveBulkScoreDraft(true); };
+  saveBulkScoreDraft(true);
 }
 
 async function refreshScoreCacheForScope(examId, subject, scope) {
