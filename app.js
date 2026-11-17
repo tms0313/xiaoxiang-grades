@@ -2723,7 +2723,7 @@ async function refreshScoreCacheForScope(examId, subject, scope) {
 }
 
 async function saveSingleBulkScoreRow(row) {
-  if (!row) return;
+  if (!row || $("saveBulkScoresButton")?.disabled) return;
   const button = row.querySelector("[data-save-bulk-row]");
   const message = $("bulkScoreEntryMessage");
   const studentId = row.dataset.bulkStudent;
@@ -2893,6 +2893,11 @@ async function saveBulkScores() {
 
   button.disabled = true;
   button.textContent = "儲存中……";
+  const contextControls = ["scoreExam", "scoreClass", "scoreSubject", "scoreScope"]
+    .map(id => $(id)).filter(Boolean);
+  const rowSaveButtons = Array.from($("bulkScoreEntryContent").querySelectorAll("[data-save-bulk-row]"));
+  contextControls.forEach(control => { control.disabled = true; });
+  rowSaveButtons.forEach(control => { control.disabled = true; });
   message.textContent = "正在儲存 " + entries.length + " 筆成績……";
   message.className = "system-message";
   message.style.display = "block";
@@ -2941,6 +2946,8 @@ async function saveBulkScores() {
     message.textContent = "批次儲存中斷：已完成 " + saved + " 筆；" + error.message;
     message.className = "system-message error";
   } finally {
+    contextControls.forEach(control => { control.disabled = false; });
+    rowSaveButtons.forEach(control => { control.disabled = false; });
     button.disabled = false;
     button.textContent = "儲存本班成績";
   }
