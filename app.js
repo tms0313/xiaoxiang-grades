@@ -1447,92 +1447,80 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const className = $("overviewClass").value;
     const subject = $("overviewSubject").value;
     const status = $("overviewStatus").value;
+    const keyOf = (...parts) => parts.map(value => String(value == null ? "" : value).trim()).join("\u001f");
+
+    // 每次篩選先建立索引，避免在考試／班級／科目／範圍迴圈中反覆掃描整張資料表。
+    const studentById = new Map(studentsCache.map(student => [String(student.id), student]));
+    const enrolledByClassSubject = new Map();
+    studentSubjectsCache.forEach(function (item) {
+      if (item.is_active !== true) return;
+      const key = keyOf(item.subject);
+      if (!enrolledByClassSubject.has(key)) enrolledByClassSubject.set(key, new Set());
+      enrolledByClassSubject.get(key).add(String(item.student_id));
+    });
+
+    const scoreKeys = new Set();
+    const registeredScopes = new Map();
+    scoresCache.forEach(function (score) {
+      const student = studentById.get(String(score.student_id));
+      if (!student) return;
+      const normalizedScope = String(score.scope || "").trim();
+      scoreKeys.add(keyOf(score.exam_id, score.student_id, score.subject, normalizedScope));
+      if (score.grade_level === "請假" || !normalizedScope) return;
+      const groupKey = keyOf(score.exam_id, student.class_name, score.subject);
+      if (!registeredScopes.has(groupKey)) registeredScopes.set(groupKey, new Set());
+      registeredScopes.get(groupKey).add(normalizedScope);
+    });
+
+    const exclusionKeys = new Set(missingExclusionsCache.map(item =>
+      keyOf(item.exam_id, item.student_id, item.subject, item.scope || "")
+    ));
 
     const matchesStudent = function (student) {
       return student &&
         (!className || student.class_name === className) &&
-        (
-          !search ||
+        (!search ||
           String(student.full_name || "").toLowerCase().includes(search) ||
-          String(student.student_code || "").toLowerCase().includes(search)
-        );
+          String(student.student_code || "").toLowerCase().includes(search));
     };
 
     const rows = scoresCache.filter(function (score) {
-      const student = getStudent(score.student_id);
+      const student = studentById.get(String(score.student_id));
       return matchesStudent(student) &&
         (!examId || String(score.exam_id) === String(examId)) &&
         (!subject || score.subject === subject);
     }).map(function (score) {
-      return { score: score, student: getStudent(score.student_id), exam: getExam(score.exam_id) };
+      return { score: score, student: studentById.get(String(score.student_id)), exam: getExam(score.exam_id) };
     }).filter(item => item.exam);
 
-    // 未選考試週期時，逐一檢查所有考試；選定週期時只檢查該次考試。
-    // 每個考試、班級、科目及範圍獨立比對，至少一位學生有非請假紀錄才啟動提示。
+    // 只依已登錄範圍產生未登錄提醒；請假及排除規則維持不變。
     const examsToCheck = examId
       ? [getExam(examId)].filter(Boolean)
       : sortByDateDesc(examsCache, "start_date");
+    const activeMatchingStudents = studentsCache.filter(student =>
+      student.is_active !== false && matchesStudent(student)
+    );
+    const classNames = Array.from(new Set(activeMatchingStudents.map(student => student.class_name)));
+    const targetSubjects = subject ? [subject] : SUBJECTS;
 
     examsToCheck.forEach(function (selectedExam) {
       const currentExamId = String(selectedExam.id);
-      const classNames = Array.from(new Set(
-        studentsCache.filter(student => student.is_active !== false && matchesStudent(student))
-          .map(student => student.class_name)
-      ));
-      const targetSubjects = subject ? [subject] : SUBJECTS;
-
       classNames.forEach(function (targetClass) {
         targetSubjects.forEach(function (targetSubject) {
-          const enrolledStudents = studentsCache.filter(function (student) {
-            return student.is_active !== false &&
-              student.class_name === targetClass &&
-              matchesStudent(student) &&
-              studentSubjectsCache.some(function (item) {
-                return String(item.student_id) === String(student.id) &&
-                  item.subject === targetSubject &&
-                  item.is_active === true;
-              });
-          });
+          const groupKey = keyOf(currentExamId, targetClass, targetSubject);
+          const scopes = registeredScopes.get(groupKey);
+          if (!scopes || !scopes.size) return;
 
-          const classScopeScores = scoresCache.filter(function (score) {
-            const student = getStudent(score.student_id);
-            return String(score.exam_id) === currentExamId &&
-              score.subject === targetSubject &&
-              score.grade_level !== "請假" &&
-              student &&
-              student.class_name === targetClass &&
-              String(score.scope || "").trim() !== "";
-          });
+          const enrolledIds = enrolledByClassSubject.get(keyOf(targetSubject));
+          if (!enrolledIds) return;
+          const enrolledStudents = activeMatchingStudents.filter(student =>
+            student.class_name === targetClass && enrolledIds.has(String(student.id))
+          );
 
-          const registeredScopes = Array.from(new Set(
-            classScopeScores.map(score => String(score.scope).trim())
-          ));
-
-          registeredScopes.forEach(function (scope) {
-            const studentsWithThisScope = new Set(
-              classScopeScores
-                .filter(score => String(score.scope).trim() === scope)
-                .map(score => String(score.student_id))
-            );
-
-            if (studentsWithThisScope.size === 0) return;
-
+          scopes.forEach(function (scope) {
             enrolledStudents.forEach(function (student) {
-              const matchingRecord = scoresCache.find(function (score) {
-                return String(score.exam_id) === currentExamId &&
-                  String(score.student_id) === String(student.id) &&
-                  score.subject === targetSubject &&
-                  String(score.scope || "").trim() === scope;
-              });
-
-              const exclusionExists = missingExclusionsCache.some(function (item) {
-                return String(item.exam_id) === currentExamId &&
-                  String(item.student_id) === String(student.id) &&
-                  item.subject === targetSubject &&
-                  String(item.scope || "").trim() === scope;
-              });
-
-              if (!matchingRecord && !exclusionExists) {
+              const recordKey = keyOf(currentExamId, student.id, targetSubject, scope);
+              if (!scoreKeys.has(recordKey) && !exclusionKeys.has(recordKey)) {
                 rows.push({
                   missing: true,
                   student: student,
