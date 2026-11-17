@@ -1041,6 +1041,24 @@ async function renderDashboard() {
 // 6. 管理員主畫面
 // ==================================================
 
+const ADMIN_TAB_KEYS = new Set([
+  "overview", "highestPreview", "reviews", "scores", "termScores",
+  "students", "attendance", "guardians", "passwords", "teachers",
+  "alumni", "export", "logs"
+]);
+
+function getAdminTabFromHash() {
+  const match = String(window.location.hash || "").match(/^#admin\/([^/]+)$/);
+  return match && ADMIN_TAB_KEYS.has(match[1]) ? match[1] : "";
+}
+
+function handleAdminTabHashChange() {
+  const nextTab = getAdminTabFromHash();
+  if (!nextTab || nextTab === activeTab || !document.getElementById("adminTabs")) return;
+  activeTab = nextTab;
+  renderAdminTab();
+}
+
 function renderAdminDashboard() {
   appRoot.innerHTML =
     "<div class='topbar'>" +
@@ -1050,19 +1068,19 @@ function renderAdminDashboard() {
     "<main class='dashboard'>" +
       "<div id='systemMessage' class='system-message'></div>" +
       "<div class='tabs' id='adminTabs'>" +
-        "<button class='tab-btn' data-tab='overview'>週成績總覽</button>" +
-        "<button class='tab-btn' data-tab='highestPreview'>班級最高分預覽</button>" +
-        "<button class='tab-btn' data-tab='reviews'>週考檢閱紀錄</button>" +
-        "<button class='tab-btn' data-tab='scores'>週成績登錄</button><button class='tab-btn' data-tab='termScores'>段考成績登錄</button>" +
-        "<button class='tab-btn' data-tab='students'>學生管理</button>" +
-        "<button class='tab-btn' data-tab='attendance'>出缺席管理</button>" +
+        "<a class='tab-btn' href='#admin/overview' data-tab='overview'>週成績總覽</a>" +
+        "<a class='tab-btn' href='#admin/highestPreview' data-tab='highestPreview'>班級最高分預覽</a>" +
+        "<a class='tab-btn' href='#admin/reviews' data-tab='reviews'>週考檢閱紀錄</a>" +
+        "<a class='tab-btn' href='#admin/scores' data-tab='scores'>週成績登錄</a><a class='tab-btn' href='#admin/termScores' data-tab='termScores'>段考成績登錄</a>" +
+        "<a class='tab-btn' href='#admin/students' data-tab='students'>學生管理</a>" +
+        "<a class='tab-btn' href='#admin/attendance' data-tab='attendance'>出缺席管理</a>" +
         
-        "<button class='tab-btn' data-tab='guardians'>家長綁定</button>" +
-        "<button class='tab-btn' data-tab='passwords'>家長帳號管理</button>" +
-        "<button class='tab-btn' data-tab='teachers'>教師管理</button>" +
-        "<button class='tab-btn' data-tab='alumni'>模考成績</button>" +
-        "<button class='tab-btn' data-tab='export'>成績匯出</button>" +
-        "<button class='tab-btn' data-tab='logs'>登入紀錄</button>" +
+        "<a class='tab-btn' href='#admin/guardians' data-tab='guardians'>家長綁定</a>" +
+        "<a class='tab-btn' href='#admin/passwords' data-tab='passwords'>家長帳號管理</a>" +
+        "<a class='tab-btn' href='#admin/teachers' data-tab='teachers'>教師管理</a>" +
+        "<a class='tab-btn' href='#admin/alumni' data-tab='alumni'>模考成績</a>" +
+        "<a class='tab-btn' href='#admin/export' data-tab='export'>成績匯出</a>" +
+        "<a class='tab-btn' href='#admin/logs' data-tab='logs'>登入紀錄</a>" +
       "</div>" +
       "<section id='adminContent'></section>" +
     "</main>" +
@@ -1070,12 +1088,9 @@ function renderAdminDashboard() {
 
   $("logoutButton").addEventListener("click", handleLogout);
 
-  $("adminTabs").addEventListener("click", function (event) {
-    const button = event.target.closest("[data-tab]");
-    if (!button) return;
-    activeTab = button.dataset.tab;
-    renderAdminTab();
-  });
+  activeTab = getAdminTabFromHash() || "overview";
+  window.removeEventListener("hashchange", handleAdminTabHashChange);
+  window.addEventListener("hashchange", handleAdminTabHashChange);
 
   renderAdminTab();
 }
