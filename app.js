@@ -1478,6 +1478,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   const keyOf = (...parts) => parts.map(value => String(value == null ? "" : value).trim()).join("\u001f");
   const scoreKeys = new Set();
   const registeredScopes = new Map();
+  const registeredGroupsByExam = new Map();
   const scoresByExam = new Map();
   const scoresByClass = new Map();
   const scoresBySubject = new Map();
@@ -1512,7 +1513,18 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     if (score.grade_level === "請假" || !normalizedScope) return;
     const groupKey = keyOf(score.exam_id, student.class_name, score.subject);
     if (!registeredScopes.has(groupKey)) registeredScopes.set(groupKey, new Set());
-    registeredScopes.get(groupKey).add(normalizedScope);
+    const scopeSet = registeredScopes.get(groupKey);
+    scopeSet.add(normalizedScope);
+    const examKey = String(score.exam_id);
+    if (!registeredGroupsByExam.has(examKey)) registeredGroupsByExam.set(examKey, new Map());
+    const examGroups = registeredGroupsByExam.get(examKey);
+    if (!examGroups.has(groupKey)) {
+      examGroups.set(groupKey, {
+        className: student.class_name,
+        subject: score.subject,
+        scopes: scopeSet
+      });
+    }
   });
 
   const exclusionKeys = new Set(missingExclusionsCache.map(item =>
@@ -1610,58 +1622,53 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       if (exam) rows.push({ score: score, student: student, exam: exam });
     });
 
-    // 只依已登錄範圍產生未登錄提醒；請假及排除規則維持不變。
+    // 只走該考試實際有登錄過的班級／科目組合，不再掃描所有班級與科目的笛卡兒組合。
     const examsToCheck = examId
       ? [getExam(examId)].filter(Boolean)
       : overviewExamsByDateDesc;
-    // 每次搜尋只比對一次學生；同一學生不會因為有多個考試範圍而重複執行搜尋判斷。
-    const matchingClassNames = new Set();
-    activeStudentsByClass.forEach(function (students, targetClass) {
-      if (className && targetClass !== className) return;
-      if (students.some(matchesStudent)) matchingClassNames.add(targetClass);
-    });
-    const classNames = className
-      ? (matchingClassNames.has(className) ? [className] : [])
-      : Array.from(matchingClassNames);
-    const targetSubjects = subject ? [subject] : SUBJECTS;
     const matchingEnrolledStudentsByClassSubject = new Map();
     enrolledStudentsByClassSubject.forEach(function (group, groupKey) {
-      const matchedStudents = group.students.filter(function (student) {
-        return (!className || student.class_name === className) && matchesStudent(student);
-      });
+      const parts = groupKey.split("\\u001f");
+      const targetClass = parts[0] || "";
+      const targetSubject = parts[1] || "";
+      if (className && targetClass !== className) return;
+      if (subject && targetSubject !== subject) return;
+      const matchedStudents = group.students.filter(matchesStudent);
       if (matchedStudents.length) matchingEnrolledStudentsByClassSubject.set(groupKey, matchedStudents);
     });
 
     examsToCheck.forEach(function (selectedExam) {
       const currentExamId = String(selectedExam.id);
-      classNames.forEach(function (targetClass) {
-        targetSubjects.forEach(function (targetSubject) {
-          const groupKey = keyOf(currentExamId, targetClass, targetSubject);
-          const scopes = registeredScopes.get(groupKey);
-          if (!scopes || !scopes.size) return;
+      const examGroups = registeredGroupsByExam.get(currentExamId);
+      if (!examGroups) return;
 
-          const enrolledStudents = matchingEnrolledStudentsByClassSubject.get(keyOf(targetClass, targetSubject));
-          if (!enrolledStudents || !enrolledStudents.length) return;
+      examGroups.forEach(function (registeredGroup) {
+        const targetClass = registeredGroup.className;
+        const targetSubject = registeredGroup.subject;
+        if (className && targetClass !== className) return;
+        if (subject && targetSubject !== subject) return;
 
-          scopes.forEach(function (scope) {
-            enrolledStudents.forEach(function (student) {
-              const recordKey = keyOf(currentExamId, student.id, targetSubject, scope);
-              if (!scoreKeys.has(recordKey) && !exclusionKeys.has(recordKey)) {
-                rows.push({
-                  missing: true,
-                  student: student,
-                  exam: selectedExam,
-                  subject: targetSubject,
-                  scope: scope
-                });
-              }
-            });
+        const enrolledStudents = matchingEnrolledStudentsByClassSubject.get(keyOf(targetClass, targetSubject));
+        if (!enrolledStudents || !enrolledStudents.length) return;
+
+        registeredGroup.scopes.forEach(function (scope) {
+          enrolledStudents.forEach(function (student) {
+            const recordKey = keyOf(currentExamId, student.id, targetSubject, scope);
+            if (!scoreKeys.has(recordKey) && !exclusionKeys.has(recordKey)) {
+              rows.push({
+                missing: true,
+                student: student,
+                exam: selectedExam,
+                subject: targetSubject,
+                scope: scope
+              });
+            }
           });
         });
       });
     });
 
-    // 在套用成績狀態篩選前統計待處理提醒，避免切換「低分／請假」時讓管理員誤以為未登錄提醒消失。
+        // 在套用成績狀態篩選前統計待處理提醒，避免切換「低分／請假」時讓管理員誤以為未登錄提醒消失。
     const missingCount = rows.reduce((count, item) => count + (item.missing ? 1 : 0), 0);
 
     const filteredRows = rows.filter(function (item) {
