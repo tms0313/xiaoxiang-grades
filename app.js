@@ -4357,6 +4357,7 @@ async function renderTermExamEntry() {
       year: root.querySelector("#termFilterYear")?.value || "",
       semester: root.querySelector("#termFilterSemester")?.value || "",
       exam: root.querySelector("#termFilterExam")?.value || "",
+      className: root.querySelector("#termFilterClass")?.value || "",
       subject: root.querySelector("#termFilterSubject")?.value || "total_score",
       studentName: root.querySelector("#termFilterStudentName")?.value || ""
     };
@@ -4373,6 +4374,7 @@ async function renderTermExamEntry() {
       return (!previous.year || String(r.academic_year) === previous.year) &&
       (!previous.semester || r.semester === previous.semester) &&
       (!previous.exam || String(r.exam_number) === previous.exam) &&
+      (!previous.className || r.class_name === previous.className) &&
       (!nameQuery || studentName.includes(nameQuery));
     }
     ).sort((a,b) =>
@@ -4404,6 +4406,8 @@ async function renderTermExamEntry() {
           years.map(y => "<option value='" + escapeHtml(y) + "'>" + escapeHtml(y) + "</option>").join("") + "</select></div>" +
         "<div class='field'><label for='termFilterSemester'>上下學期</label><select id='termFilterSemester'><option value=''>全部學期</option><option value='上學期'>上學期</option><option value='下學期'>下學期</option></select></div>" +
         "<div class='field'><label for='termFilterExam'>段考</label><select id='termFilterExam'><option value=''>全部段考</option><option value='1'>第一次</option><option value='2'>第二次</option><option value='3'>第三次</option></select></div>" +
+        "<div class='field'><label for='termFilterClass'>班級</label><select id='termFilterClass'><option value=''>全部班級</option>" +
+          ["國一班","國二班","國三班"].map(name => "<option value='" + name + "'>" + name + "</option>").join("") + "</select></div>" +
         "<div class='field'><label for='termFilterSubject'>科目</label><select id='termFilterSubject'>" +
           subjectOptions.map(x => "<option value='" + x.key + "'>" + x.name + "</option>").join("") + "</select></div>" +
         "<div class='field'><label for='termFilterStudentName'>學生姓名</label><input id='termFilterStudentName' type='text' placeholder='手動輸入學生姓名搜尋' autocomplete='off'></div>" +
@@ -4414,9 +4418,10 @@ async function renderTermExamEntry() {
     root.querySelector("#termFilterYear").value = previous.year;
     root.querySelector("#termFilterSemester").value = previous.semester;
     root.querySelector("#termFilterExam").value = previous.exam;
+    root.querySelector("#termFilterClass").value = previous.className;
     root.querySelector("#termFilterSubject").value = selectedSubject.key;
     root.querySelector("#termFilterStudentName").value = previous.studentName;
-    ["termFilterYear","termFilterSemester","termFilterExam","termFilterSubject","termFilterStudentName"].forEach(id => {
+    ["termFilterYear","termFilterSemester","termFilterExam","termFilterClass","termFilterSubject","termFilterStudentName"].forEach(id => {
       root.querySelector("#" + id).addEventListener("change", renderRecords);
     });
     root.querySelector("#termFilterStudentName").addEventListener("keydown", function(event) {
