@@ -1369,7 +1369,18 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     );
   }
 
+  const selectedMissingItems = new Map();
+  const overviewPageSize = 100;
+  let overviewCurrentPage = 0;
+  let overviewFilteredRows = [];
+
+  function missingSelectionKey(examId, studentId, subject, scope) {
+    return JSON.stringify([String(examId), String(studentId), String(subject), String(scope || "")]);
+  }
+
   function buildMissingOverviewRow(student, exam, subject, scope, showExamRange) {
+    const selectionKey = missingSelectionKey(exam.id, student.id, subject, scope);
+    const selectedAttribute = selectedMissingItems.has(selectionKey) ? " checked" : "";
     return (
       "<tr class='overview-missing-row'>" +
         "<td>" + (showExamRange ? escapeHtml(formatDateRange(exam)) : "") + "</td>" +
@@ -1382,7 +1393,8 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "<td class='action-cell'><div class='action-buttons'>" +
           "<label class='overview-missing-select'><input type='checkbox' data-select-missing='1' data-exam-id='" + escapeHtml(exam.id) +
           "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
-          "' data-scope='" + escapeHtml(scope || "") + "'>選取此筆</label>" +
+          "' data-scope='" + escapeHtml(scope || "") + "' data-selection-key='" + escapeHtml(selectionKey) + "'" +
+          selectedAttribute + ">選取此筆</label>" +
           "<button class='btn btn-danger btn-small overview-exclude-reminder-btn' data-exclude-missing='1' data-exam-id='" + escapeHtml(exam.id) +
           "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
           "' data-scope='" + escapeHtml(scope || "") + "'>排除提醒</button>" +
@@ -1451,7 +1463,12 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     "<div class='table-wrap'><table class='overview-table'>" +
       "<thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>成績／狀態</th><th>操作</th></tr></thead>" +
       "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
-    "</table></div>";
+    "</table></div>" +
+    "<div id='overviewPagination' class='toolbar' style='justify-content:center;align-items:center;gap:12px;margin-top:12px'>" +
+      "<button class='btn btn-secondary btn-small' type='button' id='overviewPrevPage'>上一頁</button>" +
+      "<span id='overviewPageInfo' class='muted' style='font-size:13px'>第 1 頁</span>" +
+      "<button class='btn btn-secondary btn-small' type='button' id='overviewNextPage'>下一頁</button>" +
+    "</div>";
 
   // 每次畫面重繪時建立一次索引；搜尋、篩選操作直接重用。
   const keyOf = (...parts) => parts.map(value => String(value == null ? "" : value).trim()).join("\u001f");
@@ -1513,7 +1530,42 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     group.students.push(student);
   });
 
+  function renderOverviewPage() {
+    const totalRows = overviewFilteredRows.length;
+    const totalPages = Math.max(1, Math.ceil(totalRows / overviewPageSize));
+    overviewCurrentPage = Math.min(Math.max(overviewCurrentPage, 0), totalPages - 1);
+    const startIndex = overviewCurrentPage * overviewPageSize;
+    const pageRows = overviewFilteredRows.slice(startIndex, startIndex + overviewPageSize);
+    const renderedExamIds = new Set();
+
+    $("overviewRows").innerHTML =
+      pageRows.map(function (item) {
+        const currentExamId = String(item.exam && item.exam.id || "");
+        const showExamRange = !renderedExamIds.has(currentExamId);
+        renderedExamIds.add(currentExamId);
+        return item.missing
+          ? buildMissingOverviewRow(item.student, item.exam, item.subject, item.scope, showExamRange)
+          : buildOverviewRow(item.score, showExamRange);
+      }).join("") ||
+      ($("overviewStatus").value === "missing"
+        ? "<tr><td colspan='8' class='empty'>目前篩選條件下沒有待登錄提醒</td></tr>"
+        : "<tr><td colspan='8' class='empty'>沒有符合的成績資料</td></tr>");
+
+    const pageInfo = $("overviewPageInfo");
+    const prevButton = $("overviewPrevPage");
+    const nextButton = $("overviewNextPage");
+    if (pageInfo) {
+      pageInfo.textContent = totalRows
+        ? "第 " + (overviewCurrentPage + 1) + " / " + totalPages + " 頁，共 " + totalRows + " 筆（每頁 " + overviewPageSize + " 筆）"
+        : "共 0 筆資料";
+    }
+    if (prevButton) prevButton.disabled = overviewCurrentPage === 0 || totalRows === 0;
+    if (nextButton) nextButton.disabled = overviewCurrentPage >= totalPages - 1 || totalRows === 0;
+    updateMissingSelectionCount();
+  }
+
   function filterRows() {
+    overviewCurrentPage = 0;
     const search = $("overviewSearch").value.trim().toLowerCase();
     const examId = $("overviewExam").value;
     const className = $("overviewClass").value;
@@ -1634,19 +1686,8 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "只比對同一考試、班級及科目已有學生登錄的考試範圍；已標記請假的學生不列入。";
     }
 
-    const renderedExamIds = new Set();
-    $("overviewRows").innerHTML =
-      rows.map(function (item) {
-        const currentExamId = String(item.exam && item.exam.id || "");
-        const showExamRange = !renderedExamIds.has(currentExamId);
-        renderedExamIds.add(currentExamId);
-        return item.missing
-          ? buildMissingOverviewRow(item.student, item.exam, item.subject, item.scope, showExamRange)
-          : buildOverviewRow(item.score, showExamRange);
-      }).join("") ||
-      (status === "missing"
-        ? "<tr><td colspan='8' class='empty'>目前篩選條件下沒有待登錄提醒</td></tr>"
-        : "<tr><td colspan='8' class='empty'>沒有符合的成績資料</td></tr>");
+    overviewFilteredRows = rows;
+    renderOverviewPage();
   }
 
   if (preservedFilters) {
@@ -1664,32 +1705,60 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   $("overviewStatus").addEventListener("change", filterRows);
 
   function updateMissingSelectionCount() {
-    const selected = content.querySelectorAll("[data-select-missing]:checked");
     const button = $("batchExcludeMissingButton");
     if (button) {
-      button.textContent = "排除已選取提醒（" + selected.length + "）";
-      button.disabled = selected.length === 0;
+      button.textContent = "排除已選取提醒（" + selectedMissingItems.size + "）";
+      button.disabled = selectedMissingItems.size === 0;
     }
   }
 
+  $("overviewPrevPage").addEventListener("click", function () {
+    if (overviewCurrentPage <= 0) return;
+    overviewCurrentPage--;
+    renderOverviewPage();
+  });
+  $("overviewNextPage").addEventListener("click", function () {
+    const totalPages = Math.ceil(overviewFilteredRows.length / overviewPageSize);
+    if (overviewCurrentPage >= totalPages - 1) return;
+    overviewCurrentPage++;
+    renderOverviewPage();
+  });
   $("selectAllMissingButton").addEventListener("click", function () {
-    content.querySelectorAll("[data-select-missing]").forEach(box => { box.checked = true; });
-    updateMissingSelectionCount();
+    const startIndex = overviewCurrentPage * overviewPageSize;
+    overviewFilteredRows.slice(startIndex, startIndex + overviewPageSize).forEach(function (item) {
+      if (!item.missing) return;
+      const selectionKey = missingSelectionKey(item.exam.id, item.student.id, item.subject, item.scope);
+      selectedMissingItems.set(selectionKey, {
+        examId: item.exam.id,
+        studentId: item.student.id,
+        subject: item.subject,
+        scope: item.scope || ""
+      });
+    });
+    renderOverviewPage();
   });
   $("clearMissingSelectionButton").addEventListener("click", function () {
-    content.querySelectorAll("[data-select-missing]").forEach(box => { box.checked = false; });
-    updateMissingSelectionCount();
+    selectedMissingItems.clear();
+    renderOverviewPage();
   });
   content.onchange = function (event) {
-    if (event.target.matches("[data-select-missing]")) updateMissingSelectionCount();
+    if (!event.target.matches("[data-select-missing]")) return;
+    const box = event.target;
+    const selectionKey = box.dataset.selectionKey;
+    if (box.checked) {
+      selectedMissingItems.set(selectionKey, {
+        examId: box.dataset.examId,
+        studentId: box.dataset.studentId,
+        subject: box.dataset.subject,
+        scope: box.dataset.scope || ""
+      });
+    } else {
+      selectedMissingItems.delete(selectionKey);
+    }
+    updateMissingSelectionCount();
   };
   $("batchExcludeMissingButton").addEventListener("click", async function () {
-    const items = Array.from(content.querySelectorAll("[data-select-missing]:checked")).map(box => ({
-      examId: box.dataset.examId,
-      studentId: box.dataset.studentId,
-      subject: box.dataset.subject,
-      scope: box.dataset.scope || ""
-    }));
+    const items = Array.from(selectedMissingItems.values());
     if (!items.length) return;
     await excludeMissingRemindersBatch(items);
   });
