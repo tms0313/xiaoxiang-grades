@@ -3394,6 +3394,30 @@ async function saveStudent(event) {
     class_name: $("studentClass").value
   };
 
+  if (!payload.student_code || !payload.full_name || !payload.class_name) {
+    showMessage("請完整填寫學生編號、姓名及班級。", "error");
+    return;
+  }
+
+  const normalizedCode = payload.student_code.toLocaleUpperCase();
+  const duplicate = studentsCache.find(function (student) {
+    return String(student.id) !== String(id) &&
+      String(student.student_code || "").trim().toLocaleUpperCase() === normalizedCode;
+  });
+  if (duplicate) {
+    showMessage("學生編號「" + payload.student_code + "」已被 " +
+      (duplicate.full_name || "其他學生") + " 使用，請確認編號後再儲存。", "error");
+    $("studentCode").focus();
+    return;
+  }
+
+  const submitButton = $("studentForm").querySelector("button[type='submit']");
+  const originalButtonText = submitButton ? submitButton.textContent : "";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "儲存中…";
+  }
+
   try {
     let studentId = id;
     if (id) {
@@ -3427,6 +3451,11 @@ async function saveStudent(event) {
 
   } catch (error) {
     showMessage("學生資料儲存失敗：" + error.message, "error");
+  } finally {
+    if (submitButton && submitButton.isConnected) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalButtonText || "儲存學生資料";
+    }
   }
 }
 
