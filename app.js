@@ -1566,6 +1566,8 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
   function filterRows() {
     overviewCurrentPage = 0;
+    // 篩選條件變更時清除舊條件下的勾選；單純翻頁則保留跨頁選取。
+    selectedMissingItems.clear();
     const search = $("overviewSearch").value.trim().toLowerCase();
     const examId = $("overviewExam").value;
     const className = $("overviewClass").value;
