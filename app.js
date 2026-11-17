@@ -5802,7 +5802,30 @@ function renderTeacherResults() {
     exam => String(exam.id) === String(teacherSelectedExamId)
   );
 
-  const permittedClasses = Array.from(new Set(teacherAssignmentsCache.map(item => item.class_name)));
+  // 每次渲染先建立授課、修課與成績索引，避免學生逐筆掃描整份快取。
+  const permittedSubjectsByClass = new Map();
+  teacherAssignmentsCache.forEach(function (item) {
+    if (!permittedSubjectsByClass.has(item.class_name)) {
+      permittedSubjectsByClass.set(item.class_name, new Set());
+    }
+    permittedSubjectsByClass.get(item.class_name).add(item.subject);
+  });
+  const activeStudentSubjectKeys = new Set(
+    teacherStudentSubjectsCache.map(item => JSON.stringify([String(item.student_id), item.subject]))
+  );
+  const scoreKey = (studentId, examId, subject) =>
+    JSON.stringify([String(studentId), String(examId), subject]);
+  const scoresByStudentExamSubject = new Map();
+  if (selectedExam) {
+    teacherScoresCache.forEach(function (item) {
+      if (String(item.exam_id) !== String(selectedExam.id)) return;
+      const key = scoreKey(item.student_id, item.exam_id, item.subject);
+      if (!scoresByStudentExamSubject.has(key)) scoresByStudentExamSubject.set(key, []);
+      scoresByStudentExamSubject.get(key).push(item);
+    });
+  }
+
+  const permittedClasses = Array.from(permittedSubjectsByClass.keys());
   const classOrder = ["國一班", "國二班", "國三班"];
   const visibleClasses = classOrder.filter(function (className) {
     return permittedClasses.includes(className) &&
@@ -5810,31 +5833,20 @@ function renderTeacherResults() {
   });
 
   const classSections = visibleClasses.map(function (className) {
-    const permittedSubjects = Array.from(new Set(
-      teacherAssignmentsCache
-        .filter(item => item.class_name === className)
-        .map(item => item.subject)
-    ));
+    const permittedSubjects = permittedSubjectsByClass.get(className) || new Set();
     const subjects = SUBJECTS.filter(subject => permittedSubjects.includes(subject));
 
     const subjectSections = subjects.map(function (subject) {
       const students = teacherStudentsCache.filter(function (student) {
         return student.class_name === className &&
-          teacherStudentSubjectsCache.some(item =>
-            String(item.student_id) === String(student.id) &&
-            item.subject === subject &&
-            item.is_active === true
-          );
+          activeStudentSubjectKeys.has(JSON.stringify([String(student.id), subject]));
       });
 
       const groups = new Map();
       students.forEach(function (student) {
-        const studentScores = teacherScoresCache.filter(function (item) {
-          return selectedExam &&
-            String(item.student_id) === String(student.id) &&
-            String(item.exam_id) === String(selectedExam.id) &&
-            item.subject === subject;
-        });
+        const studentScores = selectedExam
+          ? (scoresByStudentExamSubject.get(scoreKey(student.id, selectedExam.id, subject)) || [])
+          : [];
 
         const records = studentScores.length ? studentScores : [null];
         records.forEach(function (score) {
