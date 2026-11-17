@@ -2603,13 +2603,23 @@ async function saveBulkScores() {
     message.style.display = "block";
     return;
   }
-  const duplicates = entries.filter(function (entry) {
-    return scoresCache.some(function (score) {
-      return String(score.student_id) === String(entry.studentId) &&
-        String(score.exam_id) === String(examId) && score.subject === subject &&
-        String(score.scope || "").trim() === scope;
-    });
+  // 先將目前考試／科目／範圍的既有成績建立索引，避免逐位學生反覆掃描整份 scoresCache。
+  const existingScoreByStudent = new Map();
+  scoresCache.forEach(function (score) {
+    if (
+      String(score.exam_id) !== String(examId) ||
+      score.subject !== subject ||
+      String(score.scope || "").trim() !== scope
+    ) return;
+    const key = String(score.student_id);
+    if (!existingScoreByStudent.has(key)) existingScoreByStudent.set(key, score);
   });
+  const studentById = new Map(
+    studentsCache.map(student => [String(student.id), student])
+  );
+  const duplicates = entries.filter(entry =>
+    existingScoreByStudent.has(String(entry.studentId))
+  );
   if (duplicates.length && !confirm("本次有 " + duplicates.length + " 位學生已有相同考試、科目及範圍的成績。確認後會逐筆覆蓋原成績；其他新資料則新增。是否繼續？")) return;
 
   button.disabled = true;
@@ -2621,16 +2631,12 @@ async function saveBulkScores() {
   const failures = [];
   try {
     for (const entry of entries) {
-      const duplicate = scoresCache.find(function (score) {
-        return String(score.student_id) === String(entry.studentId) &&
-          String(score.exam_id) === String(examId) && score.subject === subject &&
-          String(score.scope || "").trim() === scope;
-      });
+      const duplicate = existingScoreByStudent.get(String(entry.studentId));
       const result = duplicate
         ? await db.from("scores").update(entry.payload).eq("id", duplicate.id)
         : await db.from("scores").insert(entry.payload);
       if (result.error) {
-        const student = studentsCache.find(item => String(item.id) === String(entry.studentId));
+        const student = studentById.get(String(entry.studentId));
         failures.push((student ? student.full_name : entry.studentId) + "：" + result.error.message);
       } else {
         saved += 1;
