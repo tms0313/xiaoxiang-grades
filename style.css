@@ -354,13 +354,13 @@ footer {
 .guardian-management-table th:nth-child(1),
 .guardian-management-table td:nth-child(1) { width: 10%; }
 .guardian-management-table th:nth-child(2),
-.guardian-management-table td:nth-child(2) { width: 20%; }
+.guardian-management-table td:nth-child(2) { width: 14%; }
 .guardian-management-table th:nth-child(3),
-.guardian-management-table td:nth-child(3) { width: 25%; }
+.guardian-management-table td:nth-child(3) { width: 26%; }
 .guardian-management-table th:nth-child(4),
-.guardian-management-table td:nth-child(4) { width: 20%; }
+.guardian-management-table td:nth-child(4) { width: 18%; }
 .guardian-management-table th:nth-child(5),
-.guardian-management-table td:nth-child(5) { width: 25%; }
+.guardian-management-table td:nth-child(5) { width: 32%; }
 .guardian-management-table td { overflow-wrap: normal; word-break: normal; }
 .guardian-linked-students { min-width: 0; width: 100%; }
 .guardian-linked-student {
