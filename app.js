@@ -1538,6 +1538,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       });
     });
 
+    // 在套用成績狀態篩選前統計待處理提醒，避免切換「低分／請假」時讓管理員誤以為未登錄提醒消失。
+    const missingCount = rows.reduce((count, item) => count + (item.missing ? 1 : 0), 0);
+
     const filteredRows = rows.filter(function (item) {
       if (status === "all") return true;
       if (status === "missing") return !!item.missing;
@@ -1568,13 +1571,14 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       );
     });
 
-    const missingCount = rows.filter(item => item.missing).length;
     const hint = $("overviewFilterHint");
     if (hint) {
-      hint.textContent = examId
-        ? "目前篩選：" + formatDateRange(getExam(examId)) + "／" + (className || "全部班級") + "／" + (subject || "全部科目") +
-          "；依各班、各科目已登錄的範圍比對修課學生，尚有 " + missingCount + " 筆未登錄提醒；已標記請假的學生不會列入。"
-        : "目前顯示全部考試週期；系統會依各次考試、班級及科目已登錄的範圍，自動比對修課學生並提示未登錄。";
+      const filterDescription = (examId ? formatDateRange(getExam(examId)) : "全部考試週期") +
+        "／" + (className || "全部班級") + "／" + (subject || "全部科目");
+      hint.textContent =
+        "目前條件：" + filterDescription +
+        "；符合條件的未登錄提醒共 " + missingCount + " 筆。" +
+        "只比對同一考試、班級及科目已有學生登錄的考試範圍；已標記請假的學生不列入。";
     }
 
     $("overviewRows").innerHTML =
@@ -1583,7 +1587,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
           ? buildMissingOverviewRow(item.student, item.exam, item.subject, item.scope)
           : buildOverviewRow(item.score);
       }).join("") ||
-      "<tr><td colspan='8' class='empty'>沒有符合的成績資料</td></tr>";
+      (status === "missing"
+        ? "<tr><td colspan='8' class='empty'>目前篩選條件下沒有待登錄提醒</td></tr>"
+        : "<tr><td colspan='8' class='empty'>沒有符合的成績資料</td></tr>");
   }
 
   if (preservedFilters) {
