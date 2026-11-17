@@ -5752,12 +5752,13 @@ async function renderTeacherDashboard() {
   document.body.classList.add("teacher-page");
   showLoading("正在載入教師授課資料……");
 
+  // 教師查詢頁只取畫面實際使用的欄位，減少不必要的資料傳輸。
   const results = await Promise.all([
-    db.from("teacher_assignments").select("*"),
-    db.from("students").select("*").eq("is_active", true).order("student_code"),
-    db.from("exams").select("*"),
-    db.from("student_subjects").select("*").eq("is_active", true),
-    db.from("scores").select("*")
+    db.from("teacher_assignments").select("id, teacher_id, class_name, subject"),
+    db.from("students").select("id, class_name, student_code, full_name").eq("is_active", true).order("student_code"),
+    db.from("exams").select("id, start_date, end_date"),
+    db.from("student_subjects").select("student_id, subject").eq("is_active", true),
+    db.from("scores").select("student_id, exam_id, subject, scope, grade_level, score, correct_count")
   ]);
 
   const labels = ["授課權限", "學生資料", "考試資料", "學生修課資料", "成績資料"];
