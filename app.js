@@ -2429,6 +2429,30 @@ function renderBulkScoreEntryRows() {
   saveBulkScoreDraft();
 }
 
+async function refreshScoreCacheForScope(examId, subject, scope) {
+  const result = await db
+    .from("scores")
+    .select("*")
+    .eq("exam_id", examId)
+    .eq("subject", subject)
+    .eq("scope", scope);
+
+  if (result.error) {
+    throw new Error("成績已儲存，但同步本機成績快取失敗：" + result.error.message);
+  }
+
+  const refreshedRows = result.data || [];
+  scoresCache = scoresCache.filter(function (item) {
+    return !(
+      String(item.exam_id) === String(examId) &&
+      item.subject === subject &&
+      String(item.scope || "").trim() === String(scope || "").trim()
+    );
+  }).concat(refreshedRows);
+
+  return refreshedRows;
+}
+
 async function saveSingleBulkScoreRow(row) {
   if (!row) return;
   const button = row.querySelector("[data-save-bulk-row]");
@@ -2491,7 +2515,11 @@ async function saveSingleBulkScoreRow(row) {
       ? await db.from("scores").update(payload).eq("id", duplicate.id)
       : await db.from("scores").insert(payload);
     if (result.error) throw result.error;
-    await loadAdminData();
+    try {
+      await refreshScoreCacheForScope(examId, subject, scope);
+    } catch (refreshError) {
+      console.warn(refreshError);
+    }
     const nameCell = row.children[1];
     if (nameCell && !nameCell.textContent.includes("已有成績")) {
       nameCell.innerHTML = escapeHtml(student.full_name) + " <span class='muted'>（已有成績）</span>";
@@ -2608,9 +2636,17 @@ async function saveBulkScores() {
         saved += 1;
       }
     }
-    if (saved) await loadAdminData();
+    let cacheWarning = "";
+    if (saved) {
+      try {
+        await refreshScoreCacheForScope(examId, subject, scope);
+      } catch (refreshError) {
+        console.warn(refreshError);
+        cacheWarning = "；提醒：成績已寫入資料庫，但本機快取同步失敗，請重新整理管理頁";
+      }
+    }
     message.textContent = "完成 " + saved + " 筆" + (failures.length ? "；失敗 " + failures.length + " 筆：" + failures.join("；") : "；全部成功。") +
-      (failures.length ? " 失敗項目可修正後重新儲存。" : "");
+      (failures.length ? " 失敗項目可修正後重新儲存。" : "") + cacheWarning;
     message.className = failures.length ? "system-message error" : "system-message success";
     if (!failures.length) renderBulkScoreEntryRows();
   } catch (error) {
