@@ -1371,8 +1371,12 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
   const selectedMissingItems = new Map();
   const overviewPageSize = 100;
+  const overviewClassCollator = new Intl.Collator("zh-Hant");
+  const overviewCodeCollator = new Intl.Collator(undefined, { numeric: true });
   let overviewCurrentPage = 0;
   let overviewFilteredRows = [];
+  let overviewSearchTimer = null;
+  let lastOverviewFilterSignature = null;
 
   function missingSelectionKey(examId, studentId, subject, scope) {
     return JSON.stringify([String(examId), String(studentId), String(subject), String(scope || "")]);
@@ -1573,6 +1577,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const className = $("overviewClass").value;
     const subject = $("overviewSubject").value;
     const status = $("overviewStatus").value;
+    const filterSignature = JSON.stringify([search, examId, className, subject, status]);
+    if (filterSignature === lastOverviewFilterSignature) return;
+    lastOverviewFilterSignature = filterSignature;
 
     const matchesStudent = function (student) {
       if (!student || (className && student.class_name !== className)) return false;
@@ -1660,23 +1667,31 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     rows.length = 0;
     rows.push.apply(rows, filteredRows);
 
-    rows.sort(function (a, b) {
-      const dateA = String((a.exam && (a.exam.end_date || a.exam.start_date)) || "");
-      const dateB = String((b.exam && (b.exam.end_date || b.exam.start_date)) || "");
-      if (dateA !== dateB) return dateB.localeCompare(dateA);
-      const examCompare = String(a.exam && a.exam.id || "").localeCompare(String(b.exam && b.exam.id || ""));
-      if (examCompare !== 0) return examCompare;
-      const classCompare = String(a.student.class_name || "").localeCompare(String(b.student.class_name || ""), "zh-Hant");
-      if (classCompare !== 0) return classCompare;
-      if (!!a.missing !== !!b.missing) return a.missing ? 1 : -1;
-      const codeCompare = String(a.student.student_code || "").localeCompare(
-        String(b.student.student_code || ""), undefined, { numeric: true }
-      );
-      if (codeCompare !== 0) return codeCompare;
-      return String(a.scope || (a.score && a.score.scope) || "").localeCompare(
-        String(b.scope || (b.score && b.score.scope) || ""), "zh-Hant"
-      );
+    // 先計算排序欄位，再排序；比較器不再反覆讀取物件、轉字串或建立 locale 選項。
+    const sortableRows = rows.map(function (item) {
+      return {
+        item: item,
+        date: String((item.exam && (item.exam.end_date || item.exam.start_date)) || ""),
+        examId: String(item.exam && item.exam.id || ""),
+        className: String(item.student.class_name || ""),
+        missing: !!item.missing,
+        studentCode: String(item.student.student_code || ""),
+        scope: String(item.scope || (item.score && item.score.scope) || "")
+      };
     });
+
+    sortableRows.sort(function (a, b) {
+      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      const examCompare = a.examId.localeCompare(b.examId);
+      if (examCompare !== 0) return examCompare;
+      const classCompare = overviewClassCollator.compare(a.className, b.className);
+      if (classCompare !== 0) return classCompare;
+      if (a.missing !== b.missing) return a.missing ? 1 : -1;
+      const codeCompare = overviewCodeCollator.compare(a.studentCode, b.studentCode);
+      if (codeCompare !== 0) return codeCompare;
+      return overviewClassCollator.compare(a.scope, b.scope);
+    });
+    const sortedRows = sortableRows.map(entry => entry.item);
 
     const hint = $("overviewFilterHint");
     if (hint) {
@@ -1688,7 +1703,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "只比對同一考試、班級及科目已有學生登錄的考試範圍；已標記請假的學生不列入。";
     }
 
-    overviewFilteredRows = rows;
+    overviewFilteredRows = sortedRows;
     renderOverviewPage();
   }
 
@@ -1700,7 +1715,13 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     $("overviewStatus").value = preservedFilters.status || "all";
   }
 
-  $("overviewSearch").addEventListener("input", filterRows);
+  $("overviewSearch").addEventListener("input", function () {
+    if (overviewSearchTimer) clearTimeout(overviewSearchTimer);
+    overviewSearchTimer = setTimeout(function () {
+      overviewSearchTimer = null;
+      filterRows();
+    }, 180);
+  });
   $("overviewExam").addEventListener("change", filterRows);
   $("overviewClass").addEventListener("change", filterRows);
   $("overviewSubject").addEventListener("change", filterRows);
