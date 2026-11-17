@@ -1472,9 +1472,16 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       "<button class='btn btn-secondary btn-small' type='button' id='overviewPrevPage'>上一頁</button>" +
       "<span id='overviewPageInfo' class='muted' style='font-size:13px'>第 1 頁</span>" +
       "<button class='btn btn-secondary btn-small' type='button' id='overviewNextPage'>下一頁</button>" +
-    "</div>";
+    "</div>" +
+    "<details class='panel' id='overviewPerfPanel' style='margin-top:14px;padding:12px'>" +
+      "<summary style='cursor:pointer;font-weight:700;color:#315d86'>效能檢測紀錄（暫時）</summary>" +
+      "<pre id='overviewPerfSummary' style='white-space:pre-wrap;font:12px/1.7 monospace;color:#475569;margin:10px 0'></pre>" +
+      "<button class='btn btn-secondary btn-small' type='button' id='copyOverviewPerfReport'>複製效能紀錄</button>" +
+      "<span id='overviewPerfCopyStatus' class='muted' style='font-size:12px;margin-left:8px'></span>" +
+    "</details>";
 
   // 每次畫面重繪時建立一次索引；搜尋、篩選操作直接重用。
+  const overviewIndexBuildStartedAt = performance.now();
   const keyOf = (...parts) => parts.map(value => String(value == null ? "" : value).trim()).join("\u001f");
   const scoreKeys = new Set();
   const registeredScopes = new Map();
@@ -1547,8 +1554,40 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   });
   // 考試日期排序不隨搜尋條件改變，在本次畫面生命週期只計算一次。
   const overviewExamsByDateDesc = sortByDateDesc(examsCache, "start_date");
+  const overviewIndexBuildMs = performance.now() - overviewIndexBuildStartedAt;
+  const overviewPerf = {
+    indexBuildMs: overviewIndexBuildMs,
+    latestFilter: null,
+    latestRenderMs: 0,
+    pageSize: overviewPageSize,
+    students: studentsCache.length,
+    exams: examsCache.length,
+    scores: scoresCache.length,
+    enrolledGroups: enrolledStudentsByClassSubject.size
+  };
+
+  function buildOverviewPerfReport() {
+    const f = overviewPerf.latestFilter || {};
+    return [
+      "小象成績總覽效能紀錄",
+      "索引建立：" + overviewPerf.indexBuildMs.toFixed(2) + " ms",
+      "資料量：學生 " + overviewPerf.students + "、考試 " + overviewPerf.exams + "、成績 " + overviewPerf.scores,
+      "修課群組：" + overviewPerf.enrolledGroups,
+      "最近一次篩選：候選成績 " + (f.scoreCandidates || 0) + " 筆；成績比對 " + (f.scoreScanMs || 0).toFixed(2) + " ms",
+      "未登錄比對：" + (f.missingCompareMs || 0).toFixed(2) + " ms；檢查考試 " + (f.examsChecked || 0) + " 場；實際登錄群組 " + (f.registeredGroupsChecked || 0) + " 組；符合修課群組 " + (f.matchedEnrolledGroups || 0) + " 組",
+      "狀態篩選：" + (f.statusFilterMs || 0).toFixed(2) + " ms；排序：" + (f.sortMs || 0).toFixed(2) + " ms",
+      "篩選總耗時：" + (f.totalMs || 0).toFixed(2) + " ms；未登錄 " + (f.missingCount || 0) + " 筆；篩選結果 " + (f.finalRows || 0) + " 筆",
+      "最近一次頁面渲染：" + overviewPerf.latestRenderMs.toFixed(2) + " ms；實際渲染 " + (f.renderedRows || 0) + " 筆；每頁 " + overviewPerf.pageSize + " 筆"
+    ].join("\n");
+  }
+
+  function updateOverviewPerfPanel() {
+    const summary = $("overviewPerfSummary");
+    if (summary) summary.textContent = buildOverviewPerfReport();
+  }
 
   function renderOverviewPage() {
+    const renderStartedAt = performance.now();
     const totalRows = overviewFilteredRows.length;
     const totalPages = Math.max(1, Math.ceil(totalRows / overviewPageSize));
     overviewCurrentPage = Math.min(Math.max(overviewCurrentPage, 0), totalPages - 1);
@@ -1580,9 +1619,13 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     if (prevButton) prevButton.disabled = overviewCurrentPage === 0 || totalRows === 0;
     if (nextButton) nextButton.disabled = overviewCurrentPage >= totalPages - 1 || totalRows === 0;
     updateMissingSelectionCount();
+    overviewPerf.latestRenderMs = performance.now() - renderStartedAt;
+    if (overviewPerf.latestFilter) overviewPerf.latestFilter.renderedRows = pageRows.length;
+    updateOverviewPerfPanel();
   }
 
   function filterRows() {
+    const filterStartedAt = performance.now();
     const search = $("overviewSearch").value.trim().toLowerCase();
     const examId = $("overviewExam").value;
     const className = $("overviewClass").value;
@@ -1612,6 +1655,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       scoreCandidates = scoresBySubject.get(subject);
     }
 
+    const scoreScanStartedAt = performance.now();
     const rows = [];
     scoreCandidates.forEach(function (score) {
       if (examId && String(score.exam_id) !== String(examId)) return;
@@ -1622,7 +1666,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       if (exam) rows.push({ score: score, student: student, exam: exam });
     });
 
+    const scoreScanMs = performance.now() - scoreScanStartedAt;
     // 只走該考試實際有登錄過的班級／科目組合，不再掃描所有班級與科目的笛卡兒組合。
+    const missingCompareStartedAt = performance.now();
     const examsToCheck = examId
       ? [getExam(examId)].filter(Boolean)
       : overviewExamsByDateDesc;
@@ -1667,8 +1713,10 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       });
     });
 
-        // 在套用成績狀態篩選前統計待處理提醒，避免切換「低分／請假」時讓管理員誤以為未登錄提醒消失。
+        const missingCompareMs = performance.now() - missingCompareStartedAt;
     const missingCount = rows.reduce((count, item) => count + (item.missing ? 1 : 0), 0);
+    const rowsBeforeStatus = rows.length;
+    const statusFilterStartedAt = performance.now();
 
     const filteredRows = rows.filter(function (item) {
       if (status === "all") return true;
@@ -1681,10 +1729,12 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       return true;
     });
 
+    const statusFilterMs = performance.now() - statusFilterStartedAt;
     rows.length = 0;
     rows.push.apply(rows, filteredRows);
 
     // 先計算排序欄位，再排序；比較器不再反覆讀取物件、轉字串或建立 locale 選項。
+    const sortStartedAt = performance.now();
     const sortableRows = rows.map(function (item) {
       return {
         item: item,
@@ -1709,6 +1759,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       return overviewClassCollator.compare(a.scope, b.scope);
     });
     const sortedRows = sortableRows.map(entry => entry.item);
+    const sortMs = performance.now() - sortStartedAt;
 
     const hint = $("overviewFilterHint");
     if (hint) {
@@ -1721,7 +1772,27 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     }
 
     overviewFilteredRows = sortedRows;
+    overviewPerf.latestFilter = {
+      scoreCandidates: scoreCandidates.length,
+      scoreScanMs: scoreScanMs,
+      missingCompareMs: missingCompareMs,
+      examsChecked: examsToCheck.length,
+      registeredGroupsChecked: examsToCheck.reduce(function (count, exam) {
+        const groups = registeredGroupsByExam.get(String(exam.id));
+        return count + (groups ? groups.size : 0);
+      }, 0),
+      matchedEnrolledGroups: matchingEnrolledStudentsByClassSubject.size,
+      statusFilterMs: statusFilterMs,
+      sortMs: sortMs,
+      totalMs: performance.now() - filterStartedAt,
+      missingCount: missingCount,
+      rowsBeforeStatus: rowsBeforeStatus,
+      finalRows: sortedRows.length,
+      renderedRows: 0
+    };
     renderOverviewPage();
+    overviewPerf.latestFilter.totalMs = performance.now() - filterStartedAt;
+    updateOverviewPerfPanel();
   }
 
   if (preservedFilters) {
@@ -1751,6 +1822,16 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       button.disabled = selectedMissingItems.size === 0;
     }
   }
+
+  $("copyOverviewPerfReport").addEventListener("click", async function () {
+    const status = $("overviewPerfCopyStatus");
+    try {
+      await navigator.clipboard.writeText(buildOverviewPerfReport());
+      if (status) status.textContent = "已複製，請貼回對話。";
+    } catch (error) {
+      if (status) status.textContent = "瀏覽器未允許複製，請選取上方紀錄複製。";
+    }
+  });
 
   $("overviewPrevPage").addEventListener("click", function () {
     if (overviewCurrentPage <= 0) return;
