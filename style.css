@@ -352,7 +352,7 @@ footer {
   border-collapse: collapse;
 }
 .guardian-management-table th:nth-child(1),
-.guardian-management-table td:nth-child(1) { width: 88px; }
+.guardian-management-table td:nth-child(1) { width: 120px; }
 .guardian-management-table th:nth-child(2),
 .guardian-management-table td:nth-child(2) { width: 112px; }
 .guardian-management-table th:nth-child(3),
