@@ -917,21 +917,20 @@ async function cleanupPreviousWeekExclusions() {
 }
 
 async function loadAdminData() {
+  // profiles 原本分別查詢家長、教師及全部帳號；合併為一次讀取，降低後台啟動時的重複請求。
   const results = await Promise.all([
     db.from("students").select("*").order("student_code"),
     db.from("exams").select("*").order("start_date", { ascending: false }),
-    db.from("profiles").select("*").eq("role", "parent"),
+    db.from("profiles").select("*"),
     db.from("scores").select("*"),
     db.from("guardian_students").select("*"),
     db.from("student_subjects").select("*"),
-    db.from("profiles").select("*").eq("role", "teacher"),
     db.from("teacher_assignments").select("*"),
-    db.from("profiles").select("*"),
     db.from("profile_roles").select("user_id, role").eq("role", "teacher"),
     db.from("score_missing_exclusions").select("*")
   ]);
 
-  const names = ["學生資料", "考試資料", "家長帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師帳號", "教師授課權限", "全部帳號", "額外身分資料", "未登錄排除資料"];
+  const names = ["學生資料", "考試資料", "全部帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師授課權限", "額外身分資料", "未登錄排除資料"];
 
   for (let i = 0; i < results.length; i++) {
     if (results[i].error) {
@@ -939,15 +938,16 @@ async function loadAdminData() {
     }
   }
 
+  const allProfiles = results[2].data || [];
   studentsCache = results[0].data || [];
   examsCache = results[1].data || [];
-  profilesCache = results[2].data || [];
+  profilesCache = allProfiles.filter(profile => profile.role === "parent");
   scoresCache = results[3].data || [];
   guardianLinksCache = results[4].data || [];
   studentSubjectsCache = results[5].data || [];
-  teacherAssignmentsCache = results[7].data || [];
-  profileRolesCache = results[9].data || [];
-  missingExclusionsCache = results[10].data || [];
+  teacherAssignmentsCache = results[6].data || [];
+  profileRolesCache = results[7].data || [];
+  missingExclusionsCache = results[8].data || [];
 
   // 新一週成績於週六 20:00 開放時，自動清除上一週的已排除提醒名單。
   try {
@@ -957,12 +957,13 @@ async function loadAdminData() {
   }
 
   const additionalTeacherIds = new Set(profileRolesCache.map(item => String(item.user_id)));
-  const allProfiles = results[8].data || [];
   const teacherMap = new Map();
-  (results[6].data || []).forEach(profile => teacherMap.set(String(profile.id), {
-    ...profile,
-    isAdditionalTeacherRole: false
-  }));
+  allProfiles.filter(profile => profile.role === "teacher").forEach(profile => {
+    teacherMap.set(String(profile.id), {
+      ...profile,
+      isAdditionalTeacherRole: false
+    });
+  });
   allProfiles.filter(profile => additionalTeacherIds.has(String(profile.id))).forEach(profile => {
     teacherMap.set(String(profile.id), {
       ...profile,
