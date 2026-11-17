@@ -2165,8 +2165,8 @@ function renderBulkScoreEntryRows() {
   const examId = $("scoreExam").value;
   const className = $("scoreClass").value;
   const subject = $("scoreSubject").value;
-  if (!examId || !className || !subject) {
-    root.innerHTML = "<div class='empty'>請先在上方選擇考試週期、班級及科目，再載入整班名單。</div>";
+  if (!examId || !className || !subject || !String($("scoreScope").value || "").trim()) {
+    root.innerHTML = "<div class='empty'>請先選擇考試週期、班級、科目，並填寫考試範圍。</div>";
     return;
   }
   // 依學生管理中的修課設定篩選，只列出該科目已啟用的在學學生。
