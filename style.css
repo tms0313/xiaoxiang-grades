@@ -347,7 +347,7 @@ footer {
 /* 修正家長綁定清單欄寬與解除按鈕擠壓 */
 .guardian-management-table {
   width: max-content;
-  min-width: 946px;
+  min-width: 976px;
   table-layout: fixed;
   border-collapse: collapse;
 }
@@ -360,8 +360,15 @@ footer {
 .guardian-management-table th:nth-child(4),
 .guardian-management-table td:nth-child(4) { width: 120px; }
 .guardian-management-table th:nth-child(5),
-.guardian-management-table td:nth-child(5) { width: 190px; }
+.guardian-management-table td:nth-child(5) { width: 220px; }
 .guardian-management-table td { overflow-wrap: normal; word-break: normal; }
+.guardian-management-table .action-buttons [data-reset-parent],
+.guardian-management-table .action-buttons [data-delete-parent] {
+  width: 58px !important;
+  min-width: 58px !important;
+  font-size: 12px !important;
+}
+
 .guardian-linked-students { min-width: 0; width: 100%; }
 .guardian-linked-student {
   display: flex;
