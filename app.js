@@ -410,6 +410,7 @@ style.textContent = [
   ".overview-table th:nth-child(8),.overview-table td:nth-child(8) { width:21%; }",
   ".overview-table .action-cell { min-width:100px; }",
   ".overview-table .action-buttons { gap:3px; }",
+  ".overview-table .overview-status-button { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:42px; min-width:42px; height:30px; min-height:30px; margin:0; padding:0; border-radius:6px; font-size:14px; font-weight:800; line-height:30px; white-space:nowrap; vertical-align:middle; }",
   ".overview-table .overview-missing-select { display:inline-flex; flex:0 0 auto; align-items:center; gap:4px; height:30px; margin-right:6px; font-size:12px; line-height:30px; white-space:nowrap; box-sizing:border-box; }",
   ".overview-table .overview-missing-select input { flex:0 0 auto; margin:0; vertical-align:middle; }",
   ".overview-table .overview-missing-row .action-buttons { min-height:30px; height:30px; align-items:center; flex-wrap:nowrap; white-space:nowrap; }",
@@ -1324,7 +1325,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const grade3Math = isGrade3Math(student.class_name, score.subject);
 
     const resultText = score.grade_level === "請假"
-      ? gradeTag("請假")
+      ? "<span class='grade-tag grade-leave overview-status-button'>請假</span>"
       : grade3Math
       ? (
           score.grade_level === "缺考"
@@ -1374,9 +1375,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "<td>" + escapeHtml(student.full_name) + "</td>" +
         "<td>" + escapeHtml(subject) + "</td>" +
         "<td>" + escapeHtml(scope || "—") + "</td>" +
-        "<td><span class='grade-tag grade-leave'>未登錄</span></td>" +
+        "<td><span class='grade-tag grade-leave overview-status-button'>未登錄</span></td>" +
         "<td class='action-cell'><div class='action-buttons'>" +
-          "<label class='overview-missing-select' class='overview-missing-select'><input type='checkbox' data-select-missing='1' data-exam-id='" + escapeHtml(exam.id) +
+          "<label class='overview-missing-select'><input type='checkbox' data-select-missing='1' data-exam-id='" + escapeHtml(exam.id) +
           "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
           "' data-scope='" + escapeHtml(scope || "") + "'>選取此筆</label>" +
           "<button class='btn btn-danger btn-small overview-exclude-reminder-btn' data-exclude-missing='1' data-exam-id='" + escapeHtml(exam.id) +
