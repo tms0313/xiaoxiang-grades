@@ -347,16 +347,16 @@ footer {
 /* 修正家長綁定清單欄寬與解除按鈕擠壓 */
 .guardian-management-table {
   width: max-content;
-  min-width: 1370px;
+  min-width: 946px;
   table-layout: fixed;
   border-collapse: collapse;
 }
 .guardian-management-table th:nth-child(1),
-.guardian-management-table td:nth-child(1) { width: 240px; white-space: nowrap; }
+.guardian-management-table td:nth-child(1) { width: 144px; white-space: nowrap; }
 .guardian-management-table th:nth-child(2),
-.guardian-management-table td:nth-child(2) { width: 320px; }
+.guardian-management-table td:nth-child(2) { width: 192px; }
 .guardian-management-table th:nth-child(3),
-.guardian-management-table td:nth-child(3) { width: 500px; }
+.guardian-management-table td:nth-child(3) { width: 300px; }
 .guardian-management-table th:nth-child(4),
 .guardian-management-table td:nth-child(4) { width: 120px; }
 .guardian-management-table th:nth-child(5),
