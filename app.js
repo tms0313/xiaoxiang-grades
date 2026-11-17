@@ -4064,6 +4064,27 @@ async function createParentAccount(event) {
   }
 
   const displayName = loginLabel;
+
+  // 先比對目前已載入的家長帳號，避免重複呼叫 Edge Function。
+  const duplicateParent = profilesCache.find(function (profile) {
+    if (accountType === "phone") {
+      const existingPhone = profile.phone
+        ? normalizeTaiwanMobile(profile.phone)
+        : "";
+      return existingPhone && existingPhone === phone;
+    }
+    return String(profile.email || "").trim().toLowerCase() === email;
+  });
+
+  if (duplicateParent) {
+    showMessage(
+      "此 " + (accountType === "phone" ? "手機號碼" : "Email") +
+      " 已經建立過家長帳號，請勿重複建立。若要新增學生，請至「家長綁定」將既有家長帳號與學生綁定。",
+      "error"
+    );
+    return;
+  }
+
   if (!studentId) {
     showMessage("請選擇要綁定的學生。", "error");
     return;
@@ -4140,7 +4161,32 @@ async function createParentAccount(event) {
 
   } catch (error) {
     console.error("建立家長帳號失敗：", error);
-    showMessage("建立家長帳號失敗：" + error.message, "error");
+
+    let detail = error.message || "未知錯誤";
+    // Edge Function 可能以非 2xx 回應包裝重複帳號錯誤，嘗試讀取伺服器回傳的明確訊息。
+    try {
+      const response = error.context;
+      if (response && typeof response.clone === "function") {
+        const payload = await response.clone().json();
+        detail = payload.error || payload.message || detail;
+      }
+    } catch (parseError) {
+      // 保留原始錯誤訊息，不影響主要錯誤處理。
+    }
+
+    const normalizedDetail = String(detail).toLowerCase();
+    const duplicateError =
+      /already exists|already registered|duplicate|user already|email.*(exist|registered)|phone.*(exist|registered)|已存在|重複/.test(normalizedDetail);
+
+    if (duplicateError) {
+      showMessage(
+        "此 " + (accountType === "phone" ? "手機號碼" : "Email") +
+        " 已經建立過家長帳號，請勿重複建立。若要新增學生，請至「家長綁定」使用既有家長帳號。",
+        "error"
+      );
+    } else {
+      showMessage("建立家長帳號失敗：" + detail, "error");
+    }
   } finally {
     const currentButton = $("createParentButton");
     if (currentButton) {
