@@ -1452,39 +1452,46 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       "<tbody id='overviewRows'><tr><td colspan='8' class='empty'>資料載入中……</td></tr></tbody>" +
     "</table></div>";
 
+  // 每次畫面重繪時建立一次索引；搜尋、篩選操作直接重用，避免每次按鍵都重掃全部資料。
+  const keyOf = (...parts) => parts.map(value => String(value == null ? "" : value).trim()).join("\u001f");
+  const scoreKeys = new Set();
+  const registeredScopes = new Map();
+  scoresCache.forEach(function (score) {
+    const student = studentById.get(String(score.student_id));
+    if (!student) return;
+    const normalizedScope = String(score.scope || "").trim();
+    scoreKeys.add(keyOf(score.exam_id, score.student_id, score.subject, normalizedScope));
+    if (score.grade_level === "請假" || !normalizedScope) return;
+    const groupKey = keyOf(score.exam_id, student.class_name, score.subject);
+    if (!registeredScopes.has(groupKey)) registeredScopes.set(groupKey, new Set());
+    registeredScopes.get(groupKey).add(normalizedScope);
+  });
+
+  const exclusionKeys = new Set(missingExclusionsCache.map(item =>
+    keyOf(item.exam_id, item.student_id, item.subject, item.scope || "")
+  ));
+  const enrolledStudentsByClassSubject = new Map();
+  studentSubjectsCache.forEach(function (item) {
+    if (item.is_active !== true) return;
+    const student = studentById.get(String(item.student_id));
+    if (!student || student.is_active === false) return;
+    const groupKey = keyOf(student.class_name, item.subject);
+    if (!enrolledStudentsByClassSubject.has(groupKey)) {
+      enrolledStudentsByClassSubject.set(groupKey, { ids: new Set(), students: [] });
+    }
+    const group = enrolledStudentsByClassSubject.get(groupKey);
+    const studentId = String(student.id);
+    if (group.ids.has(studentId)) return;
+    group.ids.add(studentId);
+    group.students.push(student);
+  });
+
   function filterRows() {
     const search = $("overviewSearch").value.trim().toLowerCase();
     const examId = $("overviewExam").value;
     const className = $("overviewClass").value;
     const subject = $("overviewSubject").value;
     const status = $("overviewStatus").value;
-    const keyOf = (...parts) => parts.map(value => String(value == null ? "" : value).trim()).join("\u001f");
-
-    // 每次篩選先建立索引，避免在考試／班級／科目／範圍迴圈中反覆掃描整張資料表。
-    const enrolledByClassSubject = new Map();
-    studentSubjectsCache.forEach(function (item) {
-      if (item.is_active !== true) return;
-      const key = keyOf(item.subject);
-      if (!enrolledByClassSubject.has(key)) enrolledByClassSubject.set(key, new Set());
-      enrolledByClassSubject.get(key).add(String(item.student_id));
-    });
-
-    const scoreKeys = new Set();
-    const registeredScopes = new Map();
-    scoresCache.forEach(function (score) {
-      const student = studentById.get(String(score.student_id));
-      if (!student) return;
-      const normalizedScope = String(score.scope || "").trim();
-      scoreKeys.add(keyOf(score.exam_id, score.student_id, score.subject, normalizedScope));
-      if (score.grade_level === "請假" || !normalizedScope) return;
-      const groupKey = keyOf(score.exam_id, student.class_name, score.subject);
-      if (!registeredScopes.has(groupKey)) registeredScopes.set(groupKey, new Set());
-      registeredScopes.get(groupKey).add(normalizedScope);
-    });
-
-    const exclusionKeys = new Set(missingExclusionsCache.map(item =>
-      keyOf(item.exam_id, item.student_id, item.subject, item.scope || "")
-    ));
 
     const matchesStudent = function (student) {
       return student &&
@@ -1521,11 +1528,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
           const scopes = registeredScopes.get(groupKey);
           if (!scopes || !scopes.size) return;
 
-          const enrolledIds = enrolledByClassSubject.get(keyOf(targetSubject));
-          if (!enrolledIds) return;
-          const enrolledStudents = activeMatchingStudents.filter(student =>
-            student.class_name === targetClass && enrolledIds.has(String(student.id))
-          );
+          const enrollmentGroup = enrolledStudentsByClassSubject.get(keyOf(targetClass, targetSubject));
+          if (!enrollmentGroup) return;
+          const enrolledStudents = enrollmentGroup.students.filter(matchesStudent);
 
           scopes.forEach(function (scope) {
             enrolledStudents.forEach(function (student) {
