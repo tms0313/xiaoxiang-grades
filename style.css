@@ -356,7 +356,7 @@ footer {
 .guardian-management-table th:nth-child(2),
 .guardian-management-table td:nth-child(2) { width: 160px; }
 .guardian-management-table th:nth-child(3),
-.guardian-management-table td:nth-child(3) { width: 190px; }
+.guardian-management-table td:nth-child(3) { width: 250px; }
 .guardian-management-table th:nth-child(4),
 .guardian-management-table td:nth-child(4) { width: 120px; }
 .guardian-management-table th:nth-child(5),
