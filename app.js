@@ -2169,11 +2169,17 @@ function renderBulkScoreEntryRows() {
     root.innerHTML = "<div class='empty'>請先在上方選擇考試週期、班級及科目，再載入整班名單。</div>";
     return;
   }
+  // 依學生管理中的修課設定篩選，只列出該科目已啟用的在學學生。
+  const subjectStudentIds = new Set(studentSubjectsCache
+    .filter(function (item) {
+      return item.subject === subject && item.is_active === true;
+    })
+    .map(function (item) { return String(item.student_id); }));
   const students = getScoreEntryStudents().filter(function (student) {
-    return student.class_name === className;
+    return student.class_name === className && subjectStudentIds.has(String(student.id));
   });
   if (!students.length) {
-    root.innerHTML = "<div class='empty'>此班目前沒有在學學生。</div>";
+    root.innerHTML = "<div class='empty'>此班目前沒有設定修讀「" + escapeHtml(subject) + "」的在學學生，請先至學生管理確認修課設定。</div>";
     return;
   }
   const grade3 = isGrade3Class(className);
