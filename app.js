@@ -4303,6 +4303,10 @@ async function removeGuardianBinding(guardianId, studentId) {
 
 function renderTeacherManagement() {
   const content = $("adminContent");
+  const teacherById = new Map(teacherProfilesCache.map(profile => [String(profile.id), profile]));
+  const teacherRoleIds = new Set(
+    profileRolesCache.filter(item => item.role === "teacher").map(item => String(item.user_id))
+  );
   const teacherOptions = teacherProfilesCache.map(function (profile) {
     return "<option value='" + escapeHtml(profile.id) + "'>" +
       escapeHtml(profile.email || profile.display_name || profile.id) +
@@ -4316,9 +4320,7 @@ function renderTeacherManagement() {
   const assignmentRows = teacherAssignmentsCache
     .filter(item => !selectedTeacherId || String(item.teacher_id) === String(selectedTeacherId))
     .map(function (item) {
-      const teacher = teacherProfilesCache.find(
-        profile => String(profile.id) === String(item.teacher_id)
-      );
+      const teacher = teacherById.get(String(item.teacher_id));
       return "<tr data-teacher-assignment-row='" + escapeHtml(item.id) + "'>" +
         "<td>" + escapeHtml(teacher ? teacher.email : "教師帳號") + "</td>" +
         "<td>" + escapeHtml(item.class_name) + "</td>" +
@@ -4328,7 +4330,7 @@ function renderTeacherManagement() {
     }).join("");
 
   const eligibleParents = profilesCache.filter(profile =>
-    !profileRolesCache.some(item => String(item.user_id) === String(profile.id) && item.role === "teacher")
+    !teacherRoleIds.has(String(profile.id))
   );
   const eligibleParentOptions = eligibleParents.map(profile =>
     "<option value='" + escapeHtml(profile.id) + "'>" +
@@ -4396,7 +4398,7 @@ function renderTeacherManagement() {
     const rows = teacherAssignmentsCache
       .filter(item => !selected || String(item.teacher_id) === String(selected))
       .map(function (item) {
-        const teacher = teacherProfilesCache.find(profile => String(profile.id) === String(item.teacher_id));
+        const teacher = teacherById.get(String(item.teacher_id));
         return "<tr data-teacher-assignment-row='" + escapeHtml(item.id) + "'><td>" + escapeHtml(teacher ? teacher.email : "教師帳號") + "</td>" +
           "<td>" + escapeHtml(item.class_name) + "</td><td>" + escapeHtml(item.subject) + "</td>" +
           "<td><button class='btn btn-danger btn-small' data-delete-teacher-assignment='" + escapeHtml(item.id) + "'>移除綁定</button></td></tr>";
