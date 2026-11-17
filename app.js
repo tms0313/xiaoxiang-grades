@@ -1368,6 +1368,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "<td>" + escapeHtml(scope || "—") + "</td>" +
         "<td><span class='grade-missing'>未登錄</span></td>" +
         "<td class='action-cell'><div class='action-buttons'>" +
+          "<label class='overview-missing-select' style='display:inline-flex;align-items:center;gap:4px;margin-right:6px;font-size:12px;white-space:nowrap'><input type='checkbox' data-select-missing='1' data-exam-id='" + escapeHtml(exam.id) +
+          "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
+          "' data-scope='" + escapeHtml(scope || "") + "'>選取</label>" +
           "<button class='btn btn-danger btn-small' data-exclude-missing='1' data-exam-id='" + escapeHtml(exam.id) +
           "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
           "' data-scope='" + escapeHtml(scope || "") + "'>刪除</button>" +
@@ -1421,6 +1424,12 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       "<span class='muted' style='font-size:13px;white-space:nowrap'>每 60 秒自動更新</span>" +
     "</div>" +
     "<p id='overviewFilterHint' class='muted' style='margin:0 0 10px'>選擇考試週期及科目後，系統會依已登錄的科目範圍比對同班修課學生。</p>" +
+    "<div class='toolbar' id='overviewMissingBatchBar' style='margin:0 0 12px;gap:8px'>" +
+      "<button class='btn btn-secondary btn-small' type='button' id='selectAllMissingButton'>全選目前未登錄</button>" +
+      "<button class='btn btn-secondary btn-small' type='button' id='clearMissingSelectionButton'>清除勾選</button>" +
+      "<button class='btn btn-danger btn-small' type='button' id='batchExcludeMissingButton' disabled>批次排除（0）</button>" +
+      "<span class='muted' style='font-size:12px'>只會排除勾選的未登錄提醒，不會刪除成績。</span>" +
+    "</div>" +
     "<div id='excludedRemindersPanel' class='panel' style='display:none;margin-top:18px'>" +
       "<h3>已排除的未登錄提醒</h3>" +
       "<p class='muted'>這裡只管理已排除的提醒；按下「恢復提醒」後，該筆資料會重新列入未登錄清單。</p>" +
@@ -1600,6 +1609,37 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   $("overviewSubject").addEventListener("change", filterRows);
   $("overviewStatus").addEventListener("change", filterRows);
 
+  function updateMissingSelectionCount() {
+    const selected = content.querySelectorAll("[data-select-missing]:checked");
+    const button = $("batchExcludeMissingButton");
+    if (button) {
+      button.textContent = "批次排除（" + selected.length + "）";
+      button.disabled = selected.length === 0;
+    }
+  }
+
+  $("selectAllMissingButton").addEventListener("click", function () {
+    content.querySelectorAll("[data-select-missing]").forEach(box => { box.checked = true; });
+    updateMissingSelectionCount();
+  });
+  $("clearMissingSelectionButton").addEventListener("click", function () {
+    content.querySelectorAll("[data-select-missing]").forEach(box => { box.checked = false; });
+    updateMissingSelectionCount();
+  });
+  content.addEventListener("change", function (event) {
+    if (event.target.matches("[data-select-missing]")) updateMissingSelectionCount();
+  });
+  $("batchExcludeMissingButton").addEventListener("click", async function () {
+    const items = Array.from(content.querySelectorAll("[data-select-missing]:checked")).map(box => ({
+      examId: box.dataset.examId,
+      studentId: box.dataset.studentId,
+      subject: box.dataset.subject,
+      scope: box.dataset.scope || ""
+    }));
+    if (!items.length) return;
+    await excludeMissingRemindersBatch(items);
+  });
+
   $("toggleExcludedReminders").addEventListener("change", function () {
     const panel = $("excludedRemindersPanel");
     if (!panel) return;
@@ -1670,7 +1710,95 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 }
 
 // ==================================================
-// 7-0. 排除單筆未登錄提醒
+// 7-0. 批次排除未登錄提醒
+// ==================================================
+
+async function excludeMissingRemindersBatch(items) {
+  const uniqueItems = Array.from(new Map(items.map(item => [
+    [item.examId, item.studentId, item.subject, item.scope || ""].join("|"), item
+  ])).values());
+  const details = uniqueItems.map(item => {
+    const student = studentsCache.find(row => String(row.id) === String(item.studentId));
+    const exam = examsCache.find(row => String(row.id) === String(item.examId));
+    return student && exam
+      ? student.full_name + "（" + student.class_name + "／" + formatDateRange(exam) + "／" + item.subject + "）"
+      : null;
+  }).filter(Boolean);
+  if (details.length !== uniqueItems.length) {
+    showMessage("部分選取資料已不存在，請重新整理後再操作。", "error", true);
+    return;
+  }
+  if (!confirm(
+    "確定要批次排除這 " + uniqueItems.length + " 筆未登錄提醒嗎？\n\n" +
+    details.slice(0, 8).join("\n") +
+    (details.length > 8 ? "\n另有 " + (details.length - 8) + " 筆……" : "") +
+    "\n\n只會排除提醒，不會刪除任何成績或學生資料。"
+  )) return;
+
+  const overviewScrollY = window.scrollY;
+  const overviewFilters = {
+    search: $("overviewSearch") ? $("overviewSearch").value : "",
+    examId: $("overviewExam") ? $("overviewExam").value : "",
+    className: $("overviewClass") ? $("overviewClass").value : "",
+    subject: $("overviewSubject") ? $("overviewSubject").value : "",
+    status: $("overviewStatus") ? $("overviewStatus").value : "all"
+  };
+  const excludedPanel = $("excludedRemindersPanel");
+  const keepPanelOpen = !!(excludedPanel && excludedPanel.style.display !== "none");
+  let successCount = 0;
+  const failures = [];
+
+  for (const item of uniqueItems) {
+    try {
+      const result = await db.from("score_missing_exclusions")
+        .insert({
+          exam_id: item.examId,
+          student_id: item.studentId,
+          subject: item.subject,
+          scope: item.scope || ""
+        })
+        .select("*")
+        .single();
+
+      let exclusionRow = result.data;
+      if (result.error) {
+        if (result.error.code === "23505") {
+          const existing = await db.from("score_missing_exclusions")
+            .select("*")
+            .eq("exam_id", item.examId)
+            .eq("student_id", item.studentId)
+            .eq("subject", item.subject)
+            .eq("scope", item.scope || "")
+            .maybeSingle();
+          if (existing.error) throw existing.error;
+          exclusionRow = existing.data;
+        } else {
+          throw result.error;
+        }
+      }
+      if (!exclusionRow) throw new Error("無法確認排除紀錄");
+      if (!missingExclusionsCache.some(row => String(row.id) === String(exclusionRow.id))) {
+        missingExclusionsCache.push(exclusionRow);
+      }
+      successCount++;
+    } catch (error) {
+      const student = studentsCache.find(row => String(row.id) === String(item.studentId));
+      failures.push((student ? student.full_name : item.studentId) + "：" + error.message);
+    }
+  }
+
+  renderOverview(overviewFilters, keepPanelOpen);
+  window.scrollTo({ top: overviewScrollY, behavior: "auto" });
+  if (failures.length) {
+    showMessage("批次排除完成：成功 " + successCount + " 筆，失敗 " + failures.length + " 筆。\n" +
+      failures.slice(0, 5).join("\n"), "error", true);
+  } else {
+    showMessage("已成功排除 " + successCount + " 筆未登錄提醒。", "success", true);
+  }
+}
+
+// ==================================================
+// 7-0-1. 排除單筆未登錄提醒
 // ==================================================
 
 async function excludeMissingReminder(item) {
