@@ -2693,10 +2693,11 @@ function renderStudents() {
 
   const rows = visibleStudents.map(function (student) {
     const active = student.is_active !== false;
-    return "<tr>" +
+    return "<tr data-student-search='" + escapeHtml((String(student.student_code || "") + " " + String(student.full_name || "")).toLocaleLowerCase()) + "'>" +
       "<td>" + escapeHtml(student.student_code) + "</td>" +
       "<td>" + escapeHtml(student.full_name) + "</td>" +
       "<td>" + escapeHtml(student.class_name) + "</td>" +
+      "<td class='student-subject-cell'>" + (studentSubjectsCache.filter(item => String(item.student_id) === String(student.id) && item.is_active === true).map(item => escapeHtml(item.subject)).join("、") || "<span class='muted'>未設定</span>") + "</td>" +
       "<td>" + (active
         ? "<span class='student-status-active'>在學</span>"
         : "<span class='student-status-inactive'>離班</span>") + "</td>" +
@@ -2723,7 +2724,7 @@ function renderStudents() {
           "<button class='btn btn-secondary' type='button' id='studentCancel' style='flex:1'>清除</button>" +
         "</div>" +
       "</form></div>" +
-      "<div class='toolbar'>" +
+      "<div class='toolbar student-filter-toolbar'>" +
         "<label for='studentStatusFilter'><strong>學生狀態：</strong></label>" +
         "<select id='studentStatusFilter'><option value='active'>在學學生</option><option value='inactive'>離班學生</option></select>" +
         "<label for='studentClassFilter'><strong>班級：</strong></label>" +
@@ -2732,11 +2733,14 @@ function renderStudents() {
         "<select id='studentSubjectFilter'><option value='all'>全部科目</option>" +
           SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") +
         "</select>" +
-        "<span id='studentSubjectCount' style='display:inline-flex; align-items:center; gap:4px; white-space:nowrap; padding:4px 10px; border-radius:6px; background:#e4f7e8; color:#176b35; font-weight:700; font-size:inherit; line-height:1.4;'>目前修課人數 <strong style='color:#d62828; font-size:1.35em; line-height:1;'> " + enrolledStudents.length + "</strong> 人</span>" +
+        "<label for='studentKeywordFilter'><strong>搜尋：</strong></label>" +
+        "<input id='studentKeywordFilter' class='student-search-input' type='search' placeholder='輸入姓名或學生編號' aria-label='搜尋學生姓名或學生編號'>" +
+        "<button class='btn btn-small btn-secondary' type='button' id='studentClearFilters'>清除篩選</button>" +
+        "<span id='studentSubjectCount' class='student-filter-count'>符合條件 " + enrolledStudents.length + " 人</span>" +
       "</div>" +
       "<div class='table-wrap'><table class='student-management-table'>" +
-        "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>狀態</th><th>操作</th></tr></thead>" +
-        "<tbody>" + (rows || "<tr><td colspan='5' class='empty'>目前沒有符合條件的學生</td></tr>") + "</tbody>" +
+        "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>修課科目</th><th>狀態</th><th>操作</th></tr></thead>" +
+        "<tbody>" + (rows || "<tr><td colspan='6' class='empty'>目前沒有符合條件的學生</td></tr>") + "</tbody>" +
       "</table></div>";
 
   $("studentStatusFilter").value = filter;
@@ -2745,6 +2749,23 @@ function renderStudents() {
   $("studentStatusFilter").addEventListener("change", renderStudents);
   $("studentClassFilter").addEventListener("change", renderStudents);
   $("studentSubjectFilter").addEventListener("change", renderStudents);
+  $("studentKeywordFilter").addEventListener("input", function () {
+    const keyword = $("studentKeywordFilter").value.trim().toLocaleLowerCase();
+    const studentRows = Array.from(content.querySelectorAll(".student-management-table tbody tr[data-student-search]"));
+    let visibleCount = 0;
+    studentRows.forEach(function (row) {
+      const matched = !keyword || row.dataset.studentSearch.includes(keyword);
+      row.hidden = !matched;
+      if (matched) visibleCount++;
+    });
+    $("studentSubjectCount").textContent = "符合條件 " + visibleCount + " 人";
+  });
+  $("studentClearFilters").addEventListener("click", function () {
+    $("studentStatusFilter").value = "active";
+    $("studentClassFilter").value = "all";
+    $("studentSubjectFilter").value = "all";
+    renderStudents();
+  });
   $("studentForm").addEventListener("submit", saveStudent);
   $("studentClass").addEventListener("change", function () {
     if (!$("studentEditId").value) {
