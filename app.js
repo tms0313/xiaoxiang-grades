@@ -3715,7 +3715,9 @@ function renderGuardians() {
     const rows = buildGuardianRows();
     $("guardianRows").innerHTML =
       rows || "<tr><td colspan='5' class='empty'>沒有符合條件的家長或學生</td></tr>";
-    const count = $("guardianRows").querySelectorAll("tr:not(.empty)").length;
+    const count = $("guardianRows").querySelector(".empty")
+      ? 0
+      : $("guardianRows").querySelectorAll("tr").length;
     const counter = $("guardianResultCount");
     if (counter) counter.textContent = "符合條件 " + count + " 筆";
   }
