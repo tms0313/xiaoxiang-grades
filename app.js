@@ -410,6 +410,9 @@ style.textContent = [
   ".overview-table th:nth-child(8),.overview-table td:nth-child(8) { width:21%; }",
   ".overview-table .action-cell { min-width:100px; }",
   ".overview-table .action-buttons { gap:3px; }",
+  ".overview-table .overview-missing-select { display:inline-flex; flex:0 0 auto; align-items:center; gap:4px; height:30px; margin-right:6px; font-size:12px; line-height:30px; white-space:nowrap; box-sizing:border-box; }",
+  ".overview-table .overview-missing-select input { flex:0 0 auto; margin:0; vertical-align:middle; }",
+  ".overview-table .overview-missing-row .action-buttons { min-height:30px; height:30px; align-items:center; flex-wrap:nowrap; white-space:nowrap; }",
   ".overview-table .action-buttons .btn { padding:2.5px 4.5px; font-size:6px; line-height:1.35; border-radius:5px; }",
   ".overview-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; line-height:30px !important; border-radius:6px !important; }",
   ".overview-table .action-buttons .overview-exclude-reminder-btn { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:30px !important; min-height:30px !important; padding:0 9px !important; font-size:12px !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }",
@@ -1373,7 +1376,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         "<td>" + escapeHtml(scope || "—") + "</td>" +
         "<td><span class='grade-tag grade-leave'>未登錄</span></td>" +
         "<td class='action-cell'><div class='action-buttons'>" +
-          "<label class='overview-missing-select' style='display:inline-flex;align-items:center;gap:4px;margin-right:6px;font-size:12px;white-space:nowrap'><input type='checkbox' data-select-missing='1' data-exam-id='" + escapeHtml(exam.id) +
+          "<label class='overview-missing-select' class='overview-missing-select'><input type='checkbox' data-select-missing='1' data-exam-id='" + escapeHtml(exam.id) +
           "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
           "' data-scope='" + escapeHtml(scope || "") + "'>選取此筆</label>" +
           "<button class='btn btn-danger btn-small overview-exclude-reminder-btn' data-exclude-missing='1' data-exam-id='" + escapeHtml(exam.id) +
