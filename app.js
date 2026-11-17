@@ -2208,7 +2208,7 @@ function renderBulkScoreEntryRows() {
     return "<tr data-bulk-student='" + escapeHtml(student.id) + "'>" +
       "<td>" + escapeHtml(student.student_code || "") + "</td>" +
       "<td>" + escapeHtml(student.full_name) + (existing ? " <span class='muted'>（已有成績）</span>" : "") + "</td>" +
-      fields + "<td><button class='btn btn-small btn-success' type='button' data-save-bulk-row>單筆儲存</button></td></tr>";
+      fields + "<td><button class='btn btn-small' type='button' data-save-bulk-row>單筆儲存</button></td></tr>";
   }).join("");
   root.innerHTML = "<div class='muted' style='margin-bottom:10px'>共 " + students.length + " 位學生；只會儲存有填寫資料的學生。</div>" +
     "<div class='table-wrap'><table style='min-width:620px'><thead><tr><th>編號</th><th>學生</th>" +
