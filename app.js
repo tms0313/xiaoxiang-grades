@@ -4852,9 +4852,20 @@ async function renderLoginLogs() {
 
     const logs = results[0].data || [];
     const allProfiles = results[1].data || [];
+    const profilesById = new Map(allProfiles.map(profile => [String(profile.id), profile]));
+    const studentsById = new Map(studentsCache.map(student => [String(student.id), student]));
+    const studentsByGuardian = new Map();
+
+    guardianLinksCache.forEach(link => {
+      const guardianId = String(link.guardian_id);
+      const student = studentsById.get(String(link.student_id));
+      if (!student) return;
+      if (!studentsByGuardian.has(guardianId)) studentsByGuardian.set(guardianId, []);
+      studentsByGuardian.get(guardianId).push(student);
+    });
 
     const rows = logs.map(function (log) {
-      const profile = allProfiles.find(item => String(item.id) === String(log.user_id));
+      const profile = profilesById.get(String(log.user_id));
 
       let loginIdentity = "未知帳號";
       let loginRoleLabel = "未知";
@@ -4879,20 +4890,31 @@ async function renderLoginLogs() {
           loginRoleLabel = "家長";
           loginRoleBadgeClass = "login-role-parent";
         }
-        const linkedStudents = guardianLinksCache
-          .filter(link => String(link.guardian_id) === String(log.user_id))
-          .map(function (link) {
-            const student = studentsCache.find(item => String(item.id) === String(link.student_id));
-            return student ? student.full_name : null;
-          })
-          .filter(Boolean);
-        loginIdentity = Array.from(new Set(linkedStudents)).join("、") || "尚未綁定學生";
+        const linkedStudents = studentsByGuardian.get(String(log.user_id)) || [];
+        loginIdentity = Array.from(new Set(linkedStudents.map(student => student.full_name))).join("、") || "尚未綁定學生";
       }
 
-      return "<tr><td><span class=\"login-role-badge " + loginRoleBadgeClass + "\">" + escapeHtml(loginRoleLabel) + "</span>" +
+      const logDate = log.created_at ? new Date(log.created_at) : null;
+      const dateParts = logDate
+        ? new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit"
+          }).formatToParts(logDate)
+        : [];
+      const dateValues = Object.fromEntries(dateParts.map(part => [part.type, part.value]));
+      const dateKey = logDate
+        ? dateValues.year + "-" + dateValues.month + "-" + dateValues.day
+        : "";
+      const displayTime = logDate
+        ? logDate.toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" }) + "　　" +
+          logDate.toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })
+        : "—";
+      const searchText = [
+        loginRoleLabel, loginIdentity, profile && profile.email, log.user_id
+      ].filter(Boolean).join(" ").toLocaleLowerCase();
+
+      return "<tr data-log-search='" + escapeHtml(searchText) + "' data-log-date='" + escapeHtml(dateKey) + "'><td><span class=\"login-role-badge " + loginRoleBadgeClass + "\">" + escapeHtml(loginRoleLabel) + "</span>" +
         (loginIdentity ? " " + escapeHtml(loginIdentity) : "") + "</td><td>" +
-        escapeHtml(log.created_at ? new Date(log.created_at).toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" }) + "　　" + new Date(log.created_at).toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour12: false }) : "—") +
-        "</td></tr>";
+        escapeHtml(displayTime) + "</td></tr>";
     }).join("");
 
     content.innerHTML =
@@ -4906,12 +4928,42 @@ async function renderLoginLogs() {
         "<span class='login-log-legend-item'><i class='login-log-legend-swatch login-log-legend-parent'></i>家長</span>" +
         "<span class='login-log-legend-item'><i class='login-log-legend-swatch login-log-legend-teacher'></i>老師</span>" +
       "</div>" +
+      "<div class='toolbar' style='display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0'>" +
+        "<input id='loginLogKeyword' type='search' class='form-control' placeholder='搜尋家長／學生／教師／Email／帳號' style='flex:1;min-width:220px' autocomplete='off'>" +
+        "<label for='loginLogDate' class='muted' style='white-space:nowrap'>登入日期</label>" +
+        "<input id='loginLogDate' type='date' class='form-control' style='width:auto;min-width:150px'>" +
+        "<span id='loginLogResultCount' class='muted' style='white-space:nowrap'></span>" +
+      "</div>" +
       "<div class='table-wrap'><table class='login-log-table'><thead><tr><th>登入身分</th><th>登入時間</th></tr></thead>" +
-      "<tbody>" + (rows || "<tr><td colspan='2' class='empty'>目前沒有登入紀錄</td></tr>") +
+      "<tbody id='loginLogRows'>" + (rows || "<tr><td colspan='2' class='empty'>目前沒有登入紀錄</td></tr>") +
       "</tbody></table></div>";
 
     const clearButton = $("clearLoginLogsButton");
     if (clearButton) clearButton.addEventListener("click", clearAllLoginLogs);
+
+    const keywordInput = $("loginLogKeyword");
+    const dateInput = $("loginLogDate");
+    const resultCount = $("loginLogResultCount");
+    const logRows = Array.from(content.querySelectorAll("#loginLogRows tr[data-log-search]"));
+    const applyLogFilters = function () {
+      const keyword = String(keywordInput && keywordInput.value || "").trim().toLocaleLowerCase();
+      const selectedDate = String(dateInput && dateInput.value || "");
+      let visibleCount = 0;
+
+      logRows.forEach(row => {
+        const matchesKeyword = !keyword || String(row.dataset.logSearch || "").includes(keyword);
+        const matchesDate = !selectedDate || row.dataset.logDate === selectedDate;
+        const visible = matchesKeyword && matchesDate;
+        row.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+
+      if (resultCount) resultCount.textContent = "符合 " + visibleCount + "／" + logs.length + " 筆";
+    };
+
+    if (keywordInput) keywordInput.addEventListener("input", applyLogFilters);
+    if (dateInput) dateInput.addEventListener("change", applyLogFilters);
+    applyLogFilters();
 
   } catch (error) {
     content.innerHTML =
