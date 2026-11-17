@@ -502,7 +502,7 @@ style.textContent = [
   ".exam-management-table .action-buttons .btn { padding:2px 3px; font-size:8px; line-height:1.3; border-radius:5px; }",
   ".exam-management-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; line-height:30px !important; border-radius:6px !important; }",
 
-  ".guardian-management-table { width:max-content; min-width:946px; table-layout:fixed; }",
+  ".guardian-management-table { width:max-content; min-width:976px; table-layout:fixed; }",
   ".guardian-management-table th:nth-child(1),.guardian-management-table td:nth-child(1) { width:144px; white-space:nowrap; }",
   ".guardian-management-table th:nth-child(2),.guardian-management-table td:nth-child(2) { width:192px; }",
   ".guardian-management-table th:nth-child(3),.guardian-management-table td:nth-child(3) { width:300px; }",
@@ -557,6 +557,8 @@ style.textContent = [
   ".export-summary { padding:9px 2px; }",
   ".login-card .field label { font-size:20px !important; font-weight:800 !important; }",
   ".guardian-management-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; }",
+  ".guardian-management-table th:nth-child(5),.guardian-management-table td:nth-child(5) { width:220px; }",
+  ".guardian-management-table .action-buttons [data-reset-parent],.guardian-management-table .action-buttons [data-delete-parent] { width:58px !important; min-width:58px !important; font-size:12px !important; }",
   ".password-management-table .action-buttons .btn,.teacher-account-table .action-buttons .btn,[data-save-bulk-row] { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:30px !important; min-height:30px !important; padding:0 7px !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }",
   ".term-roster-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin:8px 0 12px; color:#526477; font-size:13px; } .term-draft-status { color:#237344; font-weight:700; } .term-roster-wrap { max-height:68vh; overflow:auto; border:1px solid #e2e8ef; border-radius:9px; } .term-bulk-table { min-width:1120px; table-layout:fixed; } .term-bulk-table th,.term-bulk-table td { padding:7px 6px; text-align:center; white-space:nowrap; } .term-bulk-table th:first-child,.term-bulk-table td:first-child { width:150px; text-align:left; position:sticky; left:0; z-index:2; background:#f8fafc; } .term-bulk-table th:first-child { z-index:3; } .term-bulk-table th { position:sticky; top:0; z-index:1; background:#f1f5f9; } .term-bulk-table input { width:76px; height:34px; padding:4px 6px; text-align:center; border:1px solid #ccd4df; border-radius:6px; } .term-bulk-table .term-student-name { display:flex; align-items:center; gap:6px; font-weight:800; color:#23466b; white-space:nowrap; } .term-student-name-text { flex:0 0 auto; } .term-student-name small { display:inline; color:#8491a0; font-size:11px; font-weight:500; } .term-existing-mark { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; margin:0; padding:0; color:#168447; font-size:14px; font-weight:900; line-height:1; } .term-total-cell,.term-bulk-table tbody tr:hover .term-total-cell,.term-bulk-table tbody tr:focus-within .term-total-cell { font-weight:900; color:#23466b; background:#fff !important; background-color:#fff !important; box-shadow:none !important; filter:none !important; transition:none !important; } .term-bulk-actions { justify-content:flex-end; } .term-bulk-actions .btn { width:auto; min-width:150px; margin:0; }",
   "@media(max-width:600px) { .export-panel-title,.export-select-all span,.export-period-date { font-size:16px !important; font-weight:700 !important; } .export-period-item { padding:6px 10px !important; } }",
@@ -1044,12 +1046,13 @@ async function renderDashboard() {
 
 const ADMIN_TAB_KEYS = new Set([
   "overview", "highestPreview", "reviews", "scores", "termScores",
-  "students", "attendance", "guardians", "passwords", "teachers",
+  "students", "attendance", "guardians", "teachers",
   "alumni", "export", "logs"
 ]);
 
 function getAdminTabFromHash() {
   const match = String(window.location.hash || "").match(/^#admin\/([^/]+)$/);
+  if (match && match[1] === "passwords") return "guardians";
   return match && ADMIN_TAB_KEYS.has(match[1]) ? match[1] : "";
 }
 
@@ -1077,7 +1080,6 @@ function renderAdminDashboard() {
         "<a class='tab-btn' href='#admin/attendance' data-tab='attendance'>出缺席管理</a>" +
         
         "<a class='tab-btn' href='#admin/guardians' data-tab='guardians'>家長綁定</a>" +
-        "<a class='tab-btn' href='#admin/passwords' data-tab='passwords'>家長帳號管理</a>" +
         "<a class='tab-btn' href='#admin/teachers' data-tab='teachers'>教師管理</a>" +
         "<a class='tab-btn' href='#admin/alumni' data-tab='alumni'>模考成績</a>" +
         "<a class='tab-btn' href='#admin/export' data-tab='export'>成績匯出</a>" +
@@ -1121,7 +1123,6 @@ function renderAdminTab() {
   if (activeTab === "attendance") renderAttendanceManagement();
   if (activeTab === "guardians") renderGuardians();
   if (activeTab === "teachers") renderTeacherManagement();
-  if (activeTab === "passwords") renderPasswords();
   if (activeTab === "logs") renderLoginLogs();
   if (activeTab === "reviews") renderStudentReviewRecords();
   if (activeTab === "export") renderExport();
@@ -3703,8 +3704,31 @@ function renderGuardians() {
               "<button class='btn btn-danger btn-small' data-unbind='" +
                 escapeHtml(link.guardian_id) + "|" +
                 escapeHtml(link.student_id) + "'>解除</button>" +
+              (parent ? "<button class='btn btn-small' data-reset-parent='" + escapeHtml(parent.id) + "'>重設密碼</button>" : "") +
+              (parent ? "<button class='btn btn-danger btn-small' data-delete-parent='" + escapeHtml(parent.id) + "'>刪除帳號</button>" : "") +
             "</div>" +
           "</td>" +
+        "</tr>"
+      );
+    });
+
+    profilesCache.forEach(function (parent) {
+      const parentId = String(parent.id);
+      if (guardianLinksCache.some(link => String(link.guardian_id) === parentId)) return;
+      const loginIdentity = parent.email || parent.phone || "";
+      const parentName = parent.display_name || loginIdentity || "未設定家長";
+      if (!matches(parentName) && !matches(loginIdentity) && !matches("尚未綁定學生")) return;
+      rows.push(
+        "<tr class='guardian-unbound-row'>" +
+          "<td>—</td>" +
+          "<td>—</td>" +
+          "<td><strong>" + escapeHtml(parentName) + "</strong><br><span class='muted'>" + escapeHtml(loginIdentity || "—") + "</span></td>" +
+          "<td><span class='guardian-status-unbound'>尚未綁定學生</span></td>" +
+          "<td class='action-cell'><div class='action-buttons'>" +
+            "<button class='btn btn-small' data-edit-parent='" + escapeHtml(parent.id) + "'>修改</button>" +
+            "<button class='btn btn-small' data-reset-parent='" + escapeHtml(parent.id) + "'>重設密碼</button>" +
+            "<button class='btn btn-danger btn-small' data-delete-parent='" + escapeHtml(parent.id) + "'>刪除帳號</button>" +
+          "</div></td>" +
         "</tr>"
       );
     });
@@ -3791,19 +3815,27 @@ function renderGuardians() {
   content.onclick = async function (event) {
     const editButton = event.target.closest("[data-edit-parent]");
     const unbindButton = event.target.closest("[data-unbind]");
+    const resetButton = event.target.closest("[data-reset-parent]");
     const deleteButton = event.target.closest("[data-delete-parent]");
 
     if (editButton) {
       await editParentAccount(editButton.dataset.editParent);
-    }
-
-    if (deleteButton) {
-      await deleteUnboundParentAccount(deleteButton.dataset.deleteParent);
+      return;
     }
 
     if (unbindButton) {
       const parts = unbindButton.dataset.unbind.split("|");
       await removeGuardianBinding(parts[0], parts[1]);
+      return;
+    }
+
+    if (resetButton) {
+      await resetParentPassword(resetButton.dataset.resetParent);
+      return;
+    }
+
+    if (deleteButton) {
+      await deleteParentAccount(deleteButton.dataset.deleteParent);
     }
   };
 }
@@ -4754,6 +4786,61 @@ function renderPasswords() {
   };
 }
 
+async function resetParentPassword(parentUserId) {
+  const parent = profilesCache.find(profile => String(profile.id) === String(parentUserId));
+  if (!parent) {
+    showMessage("找不到這筆家長帳號資料，請重新整理後再試。", "error");
+    return;
+  }
+
+  const linkedStudentNames = Array.from(new Set(
+    guardianLinksCache
+      .filter(link => String(link.guardian_id) === String(parentUserId))
+      .map(link => studentsCache.find(student => String(student.id) === String(link.student_id)))
+      .filter(Boolean)
+      .map(student => student.full_name)
+  ));
+  const loginAccount = parent.email || parent.phone || "未設定";
+  if (!confirm(
+    "確定重設這位家長的登入密碼嗎？\n\n" +
+    "家長姓名：" + (parent.display_name || "未命名") + "\n" +
+    "登入帳號：" + loginAccount + "\n" +
+    "綁定學生：" + (linkedStudentNames.length ? linkedStudentNames.join("、") : "尚未綁定") + "\n\n" +
+    "重設後，請將系統回傳的臨時密碼提供給家長。"
+  )) return;
+
+  const button = Array.from(document.querySelectorAll("[data-reset-parent]"))
+    .find(item => String(item.dataset.resetParent) === String(parentUserId));
+  if (button) {
+    button.disabled = true;
+    button.textContent = "重設中…";
+  }
+
+  try {
+    const result = await db.functions.invoke("admin-reset-parent-password", {
+      body: { parentId: parentUserId }
+    });
+    if (result.error) {
+      const detail = result.data && result.data.error ? result.data.error : result.error.message;
+      throw new Error(detail || "重設家長密碼失敗。");
+    }
+
+    const data = result.data || {};
+    if (data.success === false) throw new Error(data.error || "重設家長密碼失敗。");
+    const temporaryPassword = data.temporaryPassword || data.tempPassword || data.initialPassword || "123456";
+
+    await loadAdminData();
+    renderGuardians();
+    showMessage("家長密碼已重設。臨時密碼：" + temporaryPassword + "。請將臨時密碼提供給家長。", "success");
+  } catch (error) {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "重設密碼";
+    }
+    showMessage("重設家長密碼失敗：" + error.message, "error");
+  }
+}
+
 async function deleteParentAccount(parentUserId) {
   const parent = profilesCache.find(function (profile) {
     return String(profile.id) === String(parentUserId);
@@ -4805,7 +4892,7 @@ async function deleteParentAccount(parentUserId) {
     }
 
     await loadAdminData();
-    renderPasswords();
+    renderGuardians();
     showMessage("家長帳號已刪除，學生資料及成績均已保留。", "success");
   } catch (error) {
     if (button) {
