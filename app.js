@@ -3376,11 +3376,13 @@ function editStudent(id) {
   $("studentCode").value = student.student_code || "";
   $("studentName").value = student.full_name || "";
   $("studentClass").value = student.class_name || "";
+  const activeSubjectSet = new Set(
+    studentSubjectsCache
+      .filter(item => String(item.student_id) === String(student.id) && item.is_active === true)
+      .map(item => item.subject)
+  );
   document.querySelectorAll("input[name='studentSubject']").forEach(function (checkbox) {
-    checkbox.checked = studentSubjectsCache.some(function (item) {
-      return String(item.student_id) === String(student.id) &&
-        item.subject === checkbox.value && item.is_active === true;
-    });
+    checkbox.checked = activeSubjectSet.has(checkbox.value);
   });
   $("studentFormTitle").textContent = "修改學生資料";
 
@@ -5341,18 +5343,16 @@ function exportCsv() {
     headers.map(csvCell).join(",")
   ];
 
+  const selectedIdSet = new Set(selectedIds);
+  const studentsById = new Map(studentsCache.map(student => [String(student.id), student]));
+  const examsById = new Map(examsCache.map(exam => [String(exam.id), exam]));
   const selectedScores = scoresCache.filter(function (score) {
-    return selectedIds.includes(String(score.exam_id));
+    return selectedIdSet.has(String(score.exam_id));
   });
 
   selectedScores.forEach(function (score) {
-    const student = studentsCache.find(function (item) {
-      return String(item.id) === String(score.student_id);
-    });
-
-    const exam = examsCache.find(function (item) {
-      return String(item.id) === String(score.exam_id);
-    });
+    const student = studentsById.get(String(score.student_id));
+    const exam = examsById.get(String(score.exam_id));
 
     if (!student || !exam) return;
 
