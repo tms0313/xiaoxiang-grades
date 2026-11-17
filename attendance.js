@@ -78,15 +78,15 @@ function renderAttendanceManagement() {
   const dayLabels = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
   const sessions = ATTENDANCE_PREVIEW_SCHEDULE
     .map((item, index) => ({ ...item, index }))
-    .filter(item => item.day === day)
+    .filter(item => item.day === day && item.className === "國一班")
     .sort((a, b) => a.time.localeCompare(b.time));
 
   content.innerHTML =
     "<h2 class='section-title'>出缺席管理</h2>" +
-    "<div class='att-preview-note'><strong>管理員介面預覽</strong><br>目前為功能規劃階段，以下課程與學生均為介面示意。尚未連接出缺席資料庫，操作內容只暫存在目前頁面，不會儲存或影響正式資料。</div>" +
+    "<div class='att-preview-note'><strong>管理員專用測試｜國一班</strong><br>僅顯示國一班課程及目前管理員後台已載入的在學學生名單。出缺席修改只暫存在目前頁面，不會寫入資料庫；家長端不會顯示此功能或測試資料。</div>" +
     "<div class='att-preview-toolbar'><label for='attendancePreviewDate'><strong>上課日期</strong></label>" +
       "<input type='date' id='attendancePreviewDate' value='" + attendancePreviewEscape(attendancePreviewDate) + "'>" +
-      "<span class='att-preview-muted'>" + dayLabels[day] + "｜依每週固定課表顯示</span></div>" +
+      "<span class='att-preview-muted'>" + dayLabels[day] + "｜僅顯示國一班課程</span></div>" +
     "<div class='panel'><h3>當日課程</h3>" +
       (sessions.length
         ? "<div class='att-preview-grid'>" + sessions.map(item =>
@@ -110,11 +110,16 @@ function renderAttendanceManagement() {
   content.querySelectorAll("[data-att-preview-session]").forEach(button => {
     button.addEventListener("click", function () {
       attendancePreviewSessionIndex = Number(this.dataset.attPreviewSession);
-      attendancePreviewRecords = [
-        { name: "示意學生 A", status: "normal", late: 0, checkin: "checked_in" },
-        { name: "示意學生 B", status: "normal", late: 10, checkin: "not_checked_in" },
-        { name: "示意學生 C", status: "leave", late: 0, checkin: "" }
-      ];
+      attendancePreviewRecords = (Array.isArray(studentsCache) ? studentsCache : [])
+        .filter(student => student.class_name === "國一班" && student.is_active !== false)
+        .sort((a, b) => String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant"))
+        .map(student => ({
+          student_id: student.id,
+          name: student.full_name || "未命名學生",
+          status: "normal",
+          late: 0,
+          checkin: "checked_in"
+        }));
       renderAttendanceManagement();
     });
   });
@@ -132,7 +137,8 @@ function renderAttendancePreviewDetail() {
     "<h3>" + attendancePreviewEscape(attendancePreviewDate) + "　" +
       attendancePreviewEscape(session.time) + "　" + attendancePreviewEscape(session.className) +
       "　" + attendancePreviewEscape(session.subject) + "</h3>" +
-    "<p class='att-preview-muted'>以下為示意名單，用來確認登錄欄位與操作流程。</p>" +
+    "<p class='att-preview-muted'>學生名單取自管理員後台已載入的國一班在學學生；以下異動僅供本次頁面測試。</p>" +
+    (attendancePreviewRecords.length ? "" : "<div class='empty'>目前沒有取得國一班在學學生名單，請先確認學生管理資料。</div>") +
     "<div class='att-preview-summary' id='attendancePreviewStats'></div>" +
     "<div class='table-wrap'><table class='att-preview-table'><thead><tr><th>學生</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th></tr></thead><tbody>" +
     attendancePreviewRecords.map((record, index) =>
@@ -173,11 +179,16 @@ function renderAttendancePreviewDetail() {
   });
 
   document.getElementById("attendancePreviewReset").addEventListener("click", function () {
-    attendancePreviewRecords = [
-      { name: "示意學生 A", status: "normal", late: 0, checkin: "checked_in" },
-      { name: "示意學生 B", status: "normal", late: 10, checkin: "not_checked_in" },
-      { name: "示意學生 C", status: "leave", late: 0, checkin: "" }
-    ];
+    attendancePreviewRecords = (Array.isArray(studentsCache) ? studentsCache : [])
+      .filter(student => student.class_name === "國一班" && student.is_active !== false)
+      .sort((a, b) => String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant"))
+      .map(student => ({
+        student_id: student.id,
+        name: student.full_name || "未命名學生",
+        status: "normal",
+        late: 0,
+        checkin: "checked_in"
+      }));
     renderAttendancePreviewDetail();
   });
 
