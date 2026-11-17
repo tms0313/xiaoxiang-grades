@@ -412,7 +412,7 @@ style.textContent = [
   ".overview-table .action-buttons { gap:3px; }",
   ".overview-table .overview-status-button { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:42px; min-width:42px; height:30px; min-height:30px; margin:0; padding:0; border-radius:6px; font-size:14px; font-weight:800; line-height:30px; white-space:nowrap; vertical-align:middle; }",
   ".overview-table .overview-missing-select { display:inline-flex; flex:0 0 auto; align-items:center; gap:4px; height:30px; margin-right:6px; font-size:12px; line-height:30px; white-space:nowrap; box-sizing:border-box; }",
-  ".overview-table .overview-missing-select input { flex:0 0 auto; margin:0; vertical-align:middle; }",
+  ".overview-table .overview-missing-select input { appearance:auto; -webkit-appearance:checkbox; flex:0 0 14px; width:14px !important; min-width:14px !important; max-width:14px; height:14px !important; min-height:14px !important; max-height:14px; box-sizing:border-box; margin:0; padding:0; vertical-align:middle; accent-color:#315d86; }",
   ".overview-table .overview-missing-row .action-buttons { min-height:30px; height:30px; align-items:center; flex-wrap:nowrap; white-space:nowrap; }",
   ".overview-table .action-buttons .btn { padding:2.5px 4.5px; font-size:6px; line-height:1.35; border-radius:5px; }",
   ".overview-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; line-height:30px !important; border-radius:6px !important; }",
