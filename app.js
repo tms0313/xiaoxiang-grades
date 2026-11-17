@@ -548,6 +548,7 @@ style.textContent = [
   ".export-summary { padding:9px 2px; }",
   ".login-card .field label { font-size:20px !important; font-weight:800 !important; }",
   ".guardian-management-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; }",
+  ".password-management-table .action-buttons .btn,.teacher-account-table .action-buttons .btn,[data-save-bulk-row] { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }",
   "@media(max-width:600px) { .export-panel-title,.export-select-all span,.export-period-date { font-size:16px !important; font-weight:700 !important; } .export-period-item { padding:6px 10px !important; } }",
 
   ".muted { color:#778494; font-size:13px; }",
