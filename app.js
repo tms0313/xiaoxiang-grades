@@ -503,15 +503,16 @@ style.textContent = [
   ".exam-management-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:14px !important; line-height:30px !important; border-radius:6px !important; }",
 
   ".guardian-management-table { min-width:760px; table-layout:fixed; }",
-  ".guardian-management-table th:nth-child(1),.guardian-management-table td:nth-child(1) { width:15%; }",
-  ".guardian-management-table th:nth-child(2),.guardian-management-table td:nth-child(2) { width:20%; }",
+  ".guardian-management-table th:nth-child(1),.guardian-management-table td:nth-child(1) { width:14%; }",
+  ".guardian-management-table th:nth-child(2),.guardian-management-table td:nth-child(2) { width:43%; }",
   ".guardian-management-table th:nth-child(3),.guardian-management-table td:nth-child(3) { width:25%; }",
-  ".guardian-management-table th:nth-child(4),.guardian-management-table td:nth-child(4) { width:17%; }",
-  ".guardian-management-table th:nth-child(5),.guardian-management-table td:nth-child(5) { width:23%; }",
-  ".guardian-management-table .action-cell { min-width:0; }",
-  ".guardian-management-table .action-buttons { gap:3px; }",
-  ".guardian-management-table .action-buttons .btn { padding:2.5px 4px; font-size:8px; line-height:1.3; border-radius:5px; }",
-  ".guardian-management-table .action-buttons .btn { height:22px !important; min-height:22px !important; padding:0 5px !important; font-size:8px !important; line-height:22px !important; border-radius:4px !important; }",
+  ".guardian-management-table th:nth-child(4),.guardian-management-table td:nth-child(4) { width:18%; }",
+  ".guardian-linked-student { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; min-width:0; padding:6px 8px; box-sizing:border-box; border-radius:6px; background:rgba(36,75,118,.06); }",
+  ".guardian-linked-student-name { min-width:0; overflow-wrap:anywhere; }",
+  ".guardian-linked-actions { display:inline-flex; align-items:center; justify-content:flex-end; flex:0 0 auto; gap:5px; }",
+  ".guardian-linked-actions .btn { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:auto !important; min-width:0 !important; height:30px !important; min-height:30px !important; padding:0 8px !important; font-size:12px !important; font-weight:700; line-height:30px !important; border-radius:6px !important; white-space:nowrap; margin:0 !important; }",
+  ".guardian-linked-actions [data-unbind] { min-width:42px !important; padding:0 7px !important; }",
+  ".guardian-management-table td { vertical-align:middle; }",
   ".guardian-unbound-row td { background:#fffaf0; }",
   ".password-table-wrap { max-width:820px; }",
   ".password-management-table { width:100%; min-width:0; max-width:820px; table-layout:fixed; }",
@@ -3721,10 +3722,14 @@ function renderGuardians() {
       const classNames = Array.from(new Set(group.students.map(item => item.student.class_name)));
       const studentList = group.students.map(function (item) {
         return "<div class='guardian-linked-student'>" +
-          "<span>" + escapeHtml(item.student.class_name + "｜" + item.student.full_name) + "</span>" +
-          "<button class='btn btn-danger btn-small' data-unbind='" +
-          escapeHtml(item.link.guardian_id) + "|" + escapeHtml(item.link.student_id) +
-          "'>解除</button></div>";
+          "<span class='guardian-linked-student-name'>" + escapeHtml(item.student.class_name + "｜" + item.student.full_name) + "</span>" +
+          "<div class='guardian-linked-actions'>" +
+            "<button class='btn btn-danger btn-small' data-unbind='" +
+            escapeHtml(item.link.guardian_id) + "|" + escapeHtml(item.link.student_id) +
+            "'>解除</button>" +
+            "<button class='btn btn-small' data-edit-parent='" + escapeHtml(parent.id) +
+            "'>修改家長資料</button>" +
+          "</div></div>";
       }).join("");
 
       rows.push(
@@ -3734,8 +3739,6 @@ function renderGuardians() {
           "<td><strong>" + escapeHtml(parentName) + "</strong><br><span class='muted'>" +
             escapeHtml(loginIdentity) + "</span></td>" +
           "<td><span class='guardian-status-bound'>已綁定 " + studentNames.length + " 位學生</span></td>" +
-          "<td class='action-cell'><button class='btn btn-small' data-edit-parent='" +
-            escapeHtml(parent.id) + "'>修改家長資料</button></td>" +
         "</tr>"
       );
     });
@@ -3751,7 +3754,6 @@ function renderGuardians() {
           "<td>" + escapeHtml(student.full_name) + "</td>" +
           "<td>—</td>" +
           "<td><span class='guardian-status-unbound'>尚未綁定家長</span></td>" +
-          "<td class='action-cell'>請建立家長帳號並完成綁定</td>" +
         "</tr>"
       );
     });
@@ -3793,7 +3795,7 @@ function renderGuardians() {
         "<span id='guardianResultCount' class='muted' style='font-size:13px'></span>" +
       "</div>" +
       "<div class='table-wrap'><table class='guardian-management-table'>" +
-        "<thead><tr><th>班級</th><th>已綁定學生</th><th>家長姓名／登入帳號</th><th>綁定狀態</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>班級</th><th>已綁定學生</th><th>家長姓名／登入帳號</th><th>綁定狀態</th></tr></thead>" +
         "<tbody id='guardianRows'>" +
           (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>") +
         "</tbody>" +
