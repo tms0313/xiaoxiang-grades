@@ -2980,6 +2980,16 @@ function renderStudents() {
   const subjectFilter = $("studentSubjectFilter") ? $("studentSubjectFilter").value : "all";
   const keywordFilter = $("studentKeywordFilter") ? $("studentKeywordFilter").value : "";
 
+  // 依學生預先整理修課科目，篩選與列表渲染不再對每位學生重掃全部修課資料。
+  const subjectsByStudent = new Map();
+  studentSubjectsCache.forEach(function (item) {
+    const studentId = String(item.student_id);
+    if (!subjectsByStudent.has(studentId)) subjectsByStudent.set(studentId, []);
+    subjectsByStudent.get(studentId).push(item);
+  });
+  const getActiveSubjects = studentId =>
+    (subjectsByStudent.get(String(studentId)) || []).filter(item => item.is_active === true);
+
   const matchingStudents = studentsCache.filter(function (student) {
     const active = student.is_active !== false;
     const statusMatch = filter === "active" ? active : !active;
@@ -2988,10 +2998,8 @@ function renderStudents() {
   });
 
   const enrolledStudents = matchingStudents.filter(function (student) {
-    return subjectFilter === "all" || studentSubjectsCache.some(function (item) {
-      return String(item.student_id) === String(student.id) &&
-        item.subject === subjectFilter &&
-        item.is_active === true;
+    return subjectFilter === "all" || getActiveSubjects(student.id).some(function (item) {
+      return item.subject === subjectFilter;
     });
   });
 
@@ -3003,7 +3011,7 @@ function renderStudents() {
       "<td>" + escapeHtml(student.student_code) + "</td>" +
       "<td>" + escapeHtml(student.full_name) + "</td>" +
       "<td>" + escapeHtml(student.class_name) + "</td>" +
-      "<td class='student-subject-cell'>" + (studentSubjectsCache.filter(item => String(item.student_id) === String(student.id) && item.is_active === true).map(item => escapeHtml(({ "國文":"國", "英文":"英", "數學":"數", "自然":"自" })[item.subject] || item.subject)).join("、") || "<span class='muted'>未設定</span>") + "</td>" +
+      "<td class='student-subject-cell'>" + (getActiveSubjects(student.id).map(item => escapeHtml(({ "國文":"國", "英文":"英", "數學":"數", "自然":"自" })[item.subject] || item.subject)).join("、") || "<span class='muted'>未設定</span>") + "</td>" +
       "<td>" + (active
         ? "<span class='student-status-active'>在學</span>"
         : "<span class='student-status-inactive'>離班</span>") + "</td>" +
