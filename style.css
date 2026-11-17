@@ -313,3 +313,32 @@ footer {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
+
+
+/* 家長綁定清單：以家長為單位彙整多位學生 */
+.guardian-linked-students {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+.guardian-linked-student {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(36, 75, 118, 0.06);
+}
+.guardian-linked-student .btn {
+  flex: 0 0 auto;
+}
+.guardian-management-table td {
+  vertical-align: middle;
+}
+@media (max-width: 700px) {
+  .guardian-linked-student {
+    align-items: flex-start;
+  }
+}
