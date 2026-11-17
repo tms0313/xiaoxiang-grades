@@ -1569,9 +1569,6 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   }
 
   function filterRows() {
-    overviewCurrentPage = 0;
-    // 篩選條件變更時清除舊條件下的勾選；單純翻頁則保留跨頁選取。
-    selectedMissingItems.clear();
     const search = $("overviewSearch").value.trim().toLowerCase();
     const examId = $("overviewExam").value;
     const className = $("overviewClass").value;
@@ -1580,6 +1577,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const filterSignature = JSON.stringify([search, examId, className, subject, status]);
     if (filterSignature === lastOverviewFilterSignature) return;
     lastOverviewFilterSignature = filterSignature;
+    overviewCurrentPage = 0;
+    // 只有篩選條件真的改變才清除舊條件的勾選。
+    selectedMissingItems.clear();
 
     const matchesStudent = function (student) {
       if (!student || (className && student.class_name !== className)) return false;
