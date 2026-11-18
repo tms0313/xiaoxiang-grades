@@ -4940,9 +4940,7 @@ async function deleteTeacherAssignment(id, button) {
 
 function renderPasswords() {
   const content = $("adminContent");
-  const studentsById = new Map(
-    studentsCache.map(student => [String(student.id), student])
-  );
+  const studentsById = studentsByIdCache;
   const linksByGuardian = new Map();
 
   guardianLinksCache.forEach(function (link) {
@@ -5027,9 +5025,7 @@ function renderPasswords() {
 }
 
 function getLinkedStudentNames(parentUserId) {
-  const studentsById = new Map(
-    studentsCache.map(student => [String(student.id), student])
-  );
+  const studentsById = studentsByIdCache;
   const names = new Set();
   guardianLinksCache.forEach(function (link) {
     if (String(link.guardian_id) !== String(parentUserId)) return;
