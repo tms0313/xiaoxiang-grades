@@ -5073,7 +5073,7 @@ async function renderLoginLogs() {
 
   try {
     const results = await Promise.all([
-      db.from("login_events").select("*").order("created_at", { ascending: false }).limit(200),
+      db.from("login_events").select("user_id, created_at").order("created_at", { ascending: false }).limit(200),
       db.from("profiles").select("id, role, email")
     ]);
 
