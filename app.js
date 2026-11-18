@@ -74,14 +74,40 @@ function rebuildAdminEntityIndexes() {
 }
 let scoresCache = [];
 let scoresByIdCache = new Map();
+let scoresByStudentExamSubjectScopeCache = new Map();
+
+function getScoreCompositeKey(studentId, examId, subject, scope) {
+  return JSON.stringify([
+    String(studentId),
+    String(examId),
+    String(subject || ""),
+    String(scope || "").trim()
+  ]);
+}
 
 function rebuildScoresByIdCache() {
-  const nextIndex = new Map();
+  const nextIdIndex = new Map();
+  const nextCompositeIndex = new Map();
   for (let index = 0; index < scoresCache.length; index += 1) {
     const score = scoresCache[index];
-    nextIndex.set(String(score.id), score);
+    nextIdIndex.set(String(score.id), score);
+    nextCompositeIndex.set(
+      getScoreCompositeKey(score.student_id, score.exam_id, score.subject, score.scope),
+      score
+    );
   }
-  scoresByIdCache = nextIndex;
+  scoresByIdCache = nextIdIndex;
+  scoresByStudentExamSubjectScopeCache = nextCompositeIndex;
+}
+
+function updateScoreCompositeIndex(score, previousKey) {
+  if (previousKey && scoresByStudentExamSubjectScopeCache.get(previousKey) === score) {
+    scoresByStudentExamSubjectScopeCache.delete(previousKey);
+  }
+  scoresByStudentExamSubjectScopeCache.set(
+    getScoreCompositeKey(score.student_id, score.exam_id, score.subject, score.scope),
+    score
+  );
 }
 let adminHighestPreviewCache = new Map();
 
@@ -2413,15 +2439,12 @@ async function editScore(scoreId) {
       return;
     }
 
-    // 修改科目或範圍前先檢查是否會與同一學生的既有紀錄重複，避免送出後才收到資料庫唯一性錯誤。
-    const duplicateScore = scoresCache.find(function (item) {
-      return String(item.id) !== String(scoreId) &&
-        String(item.student_id) === String(score.student_id) &&
-        String(item.exam_id) === String(score.exam_id) &&
-        item.subject === subject &&
-        String(item.scope || "").trim() === scope;
-    });
-    if (duplicateScore) {
+    // 使用學生＋考試＋科目＋範圍複合索引檢查重複，避免每次修改都掃描整份成績快取。
+    const duplicateScore = scoresByStudentExamSubjectScopeCache.get(
+      getScoreCompositeKey(score.student_id, score.exam_id, subject, scope)
+    );
+    const hasOtherDuplicate = duplicateScore && String(duplicateScore.id) !== String(scoreId);
+    if (hasOtherDuplicate) {
       showScoreEditError("這位學生已有相同考試、科目及範圍的成績紀錄。請調整科目或考試範圍，避免重複資料。");
       return;
     }
@@ -2493,9 +2516,13 @@ async function editScore(scoreId) {
       if (result.error) throw result.error;
       if (!result.data) throw new Error("資料已送出，但未取得更新後的成績內容，請重新整理確認。");
 
-      // 原地更新既有成績物件，保留 scoresCache 陣列與 ID 索引的參照，避免複製／遍歷整份成績快取。
+      // 更新複合索引時先移除舊鍵，再寫入新鍵，維持科目／範圍修改後的查找正確性。
+      const previousCompositeKey = getScoreCompositeKey(
+        score.student_id, score.exam_id, score.subject, score.scope
+      );
       Object.assign(score, result.data);
       scoresByIdCache.set(String(scoreId), score);
+      updateScoreCompositeIndex(score, previousCompositeKey);
       invalidateAdminHighestPreviewCache();
 
       closeScoreEditModal();
@@ -3332,11 +3359,8 @@ async function saveScore(event) {
     }
   }
 
-  const duplicate = scoresCache.find(item =>
-    String(item.student_id) === String(studentId) &&
-    String(item.exam_id) === String(examId) &&
-    item.subject === subject &&
-    String(item.scope || "").trim() === scope
+  const duplicate = scoresByStudentExamSubjectScopeCache.get(
+    getScoreCompositeKey(studentId, examId, subject, scope)
   );
 
   if (duplicate) {
