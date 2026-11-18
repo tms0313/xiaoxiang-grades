@@ -1679,7 +1679,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     }
 
     const scoreScanStartedAt = performance.now();
-    const rows = [];
+    let rows = [];
     scoreCandidates.forEach(function (score) {
       if (examId && String(score.exam_id) !== String(examId)) return;
       if (subject && score.subject !== subject) return;
@@ -1737,24 +1737,30 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     });
 
         const missingCompareMs = performance.now() - missingCompareStartedAt;
-    const missingCount = rows.reduce((count, item) => count + (item.missing ? 1 : 0), 0);
     const rowsBeforeStatus = rows.length;
     const statusFilterStartedAt = performance.now();
+    let missingCount = 0;
+    const filteredRows = [];
 
-    const filteredRows = rows.filter(function (item) {
-      if (status === "all") return true;
-      if (status === "missing") return !!item.missing;
-      if (item.missing || !item.score) return false;
-      if (status === "leave") return item.score.grade_level === "請假";
-      if (status === "absent") return item.score.grade_level === "缺考";
-      if (status === "low") return item.score.grade_level !== "請假" && item.score.grade_level !== "缺考" &&
-        scoreClass(item.score.score, item.student.class_name, item.score.subject) === "low-score";
-      return true;
+    // 同一輪遍歷同時計算未登錄數量與狀態篩選，避免 reduce/filter 連續掃描及重建原陣列。
+    rows.forEach(function (item) {
+      if (item.missing) missingCount += 1;
+      let include = true;
+      if (status === "missing") include = !!item.missing;
+      else if (status !== "all") {
+        if (item.missing || !item.score) include = false;
+        else if (status === "leave") include = item.score.grade_level === "請假";
+        else if (status === "absent") include = item.score.grade_level === "缺考";
+        else if (status === "low") {
+          include = item.score.grade_level !== "請假" && item.score.grade_level !== "缺考" &&
+            scoreClass(item.score.score, item.student.class_name, item.score.subject) === "low-score";
+        }
+      }
+      if (include) filteredRows.push(item);
     });
 
     const statusFilterMs = performance.now() - statusFilterStartedAt;
-    rows.length = 0;
-    rows.push.apply(rows, filteredRows);
+    rows = filteredRows;
 
     // 先計算排序欄位，再排序；比較器不再反覆讀取物件、轉字串或建立 locale 選項。
     const sortStartedAt = performance.now();
