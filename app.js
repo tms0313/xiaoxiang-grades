@@ -5246,7 +5246,8 @@ async function clearAllLoginLogs() {
 
 async function renderStudentReviewRecords(selectedExamId) {
   const content = $("adminContent");
-  const examList = sortByDateDesc(examsCache, "start_date");
+  // 考試日期索引已於管理資料載入時排序，匯出頁直接共用，避免每次進入頁面重複複製與排序。
+  const examList = examsByDateDescCache;
   const activeStudents = studentsCache.filter(student => student.is_active === true);
   const currentExamId = selectedExamId ||
     (examList.length ? String(examList[0].id) : "");
