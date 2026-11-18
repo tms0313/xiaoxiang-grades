@@ -58,6 +58,13 @@ let profileRolesCache = [];
 let studentsCache = [];
 let examsCache = [];
 let profilesCache = [];
+let studentsByIdCache = new Map();
+let parentProfilesByIdCache = new Map();
+
+function rebuildAdminEntityIndexes() {
+  studentsByIdCache = new Map(studentsCache.map(student => [String(student.id), student]));
+  parentProfilesByIdCache = new Map(profilesCache.map(profile => [String(profile.id), profile]));
+}
 let scoresCache = [];
 let adminHighestPreviewCache = new Map();
 
@@ -765,6 +772,7 @@ async function handleLogout() {
   studentsCache = [];
   examsCache = [];
   profilesCache = [];
+  rebuildAdminEntityIndexes();
   scoresCache = [];
   invalidateAdminHighestPreviewCache();
   guardianLinksCache = [];
@@ -970,6 +978,7 @@ async function loadAdminData() {
   studentsCache = results[0].data || [];
   examsCache = results[1].data || [];
   profilesCache = allProfiles.filter(profile => profile.role === "parent");
+  rebuildAdminEntityIndexes();
   scoresCache = results[3].data || [];
   invalidateAdminHighestPreviewCache();
   guardianLinksCache = results[4].data || [];
@@ -1368,7 +1377,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   const content = $("adminContent");
 
   // 本次畫面渲染共用索引，避免每一筆成績列都重新掃描學生與考試快取。
-  const studentById = new Map(studentsCache.map(student => [String(student.id), student]));
+  const studentById = studentsByIdCache;
   const examById = new Map(examsCache.map(exam => [String(exam.id), exam]));
 
   function getStudent(id) {
@@ -3741,8 +3750,8 @@ async function deleteExam(id) {
 
 function renderGuardians() {
   const content = $("adminContent");
-  const studentsById = new Map(studentsCache.map(student => [String(student.id), student]));
-  const parentsById = new Map(profilesCache.map(parent => [String(parent.id), parent]));
+  const studentsById = studentsByIdCache;
+  const parentsById = parentProfilesByIdCache;
   const firstLinkedStudentByGuardian = new Map();
   const linkedStudentIds = new Set();
   const boundGuardianIds = new Set();
@@ -5066,7 +5075,7 @@ async function renderLoginLogs() {
     const logs = results[0].data || [];
     const allProfiles = results[1].data || [];
     const profilesById = new Map(allProfiles.map(profile => [String(profile.id), profile]));
-    const studentsById = new Map(studentsCache.map(student => [String(student.id), student]));
+    const studentsById = studentsByIdCache;
     const studentNamesByGuardian = new Map();
 
     // 每位家長的綁定學生姓名只整理一次，避免每筆登入紀錄重複 map／Set。
@@ -5504,7 +5513,7 @@ function exportCsv() {
   ];
 
   const selectedIdSet = new Set(selectedIds);
-  const studentsById = new Map(studentsCache.map(student => [String(student.id), student]));
+  const studentsById = studentsByIdCache;
   const examsById = new Map();
   examsCache.forEach(function (exam) {
     const examId = String(exam.id);
@@ -5691,7 +5700,7 @@ async function renderTermExamEntry() {
       overviewStaticCache={
         years:[...new Set(records.map(x=>String(x.academic_year||"")))].filter(Boolean).sort((a,b)=>b.localeCompare(a,"zh-Hant",{numeric:true})),
         options:subjects.map((name,i)=>({key:keys[i],name})).concat([{key:"total_score",name:"總分"},{key:"class_rank",name:"班排名"},{key:"school_rank",name:"校排名"}]),
-        studentsById:new Map(studentsCache.map(student=>[String(student.id),student]))
+        studentsById:studentsByIdCache
       };
     }
     const years=overviewStaticCache.years,options=overviewStaticCache.options,studentsById=overviewStaticCache.studentsById;
