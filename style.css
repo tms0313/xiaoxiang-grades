@@ -468,14 +468,33 @@ footer {
   vertical-align: middle;
 }
 
-/* 週成績登錄：儲存考試／清除按鈕固定左右並排於同一行 */
-#examFormActions {
+/* 週成績登錄：開始日期、結束日期及操作按鈕固定同一行 */
+#examFormRow {
   display: flex !important;
   flex-direction: row !important;
   flex-wrap: nowrap !important;
-  width: max-content;
+  align-items: flex-end !important;
+  gap: 10px;
+  width: 100%;
   max-width: 100%;
   margin: 5px 0 !important;
-  gap: 10px;
-  align-items: center;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+#examFormRow .field {
+  flex: 0 0 180px;
+  width: 180px;
+  margin: 0 !important;
+}
+#examFormRow .field input {
+  display: block;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0;
+}
+#examFormRow > .btn {
+  flex: 0 0 auto;
+  white-space: nowrap !important;
+  min-width: max-content;
+  margin: 0 0 1px !important;
 }
