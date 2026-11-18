@@ -2807,13 +2807,24 @@ async function refreshScoreCacheForScope(examId, subject, scope) {
   }
 
   const refreshedRows = result.data || [];
-  scoresCache = scoresCache.filter(function (item) {
-    return !(
-      String(item.exam_id) === String(examId) &&
+  const normalizedExamId = String(examId);
+  const normalizedScope = String(scope || "").trim();
+  let retainedCount = 0;
+  for (let index = 0; index < scoresCache.length; index += 1) {
+    const item = scoresCache[index];
+    const isRefreshedScope =
+      String(item.exam_id) === normalizedExamId &&
       item.subject === subject &&
-      String(item.scope || "").trim() === String(scope || "").trim()
-    );
-  }).concat(refreshedRows);
+      String(item.scope || "").trim() === normalizedScope;
+    if (!isRefreshedScope) {
+      scoresCache[retainedCount] = item;
+      retainedCount += 1;
+    }
+  }
+  scoresCache.length = retainedCount;
+  refreshedRows.forEach(function (item) {
+    scoresCache.push(item);
+  });
   rebuildScoresByIdCache();
   invalidateAdminHighestPreviewCache();
 
