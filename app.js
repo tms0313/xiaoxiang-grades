@@ -6766,14 +6766,19 @@ async function renderTeacherDashboard() {
   });
 
   teacherStudentsByClassSubject = new Map();
-  const teacherActiveStudentSubjectKeys = new Set(
-    teacherStudentSubjectsCache.map(item =>
-      JSON.stringify([String(item.student_id), item.subject])
-    )
-  );
+  const teacherActiveSubjectsByStudent = new Map();
+  teacherStudentSubjectsCache.forEach(function (item) {
+    const studentId = String(item.student_id);
+    if (!teacherActiveSubjectsByStudent.has(studentId)) {
+      teacherActiveSubjectsByStudent.set(studentId, new Set());
+    }
+    teacherActiveSubjectsByStudent.get(studentId).add(item.subject);
+  });
   teacherStudentsCache.forEach(function (student) {
+    const activeSubjects = teacherActiveSubjectsByStudent.get(String(student.id));
+    if (!activeSubjects) return;
     SUBJECTS.forEach(function (subject) {
-      if (!teacherActiveStudentSubjectKeys.has(JSON.stringify([String(student.id), subject]))) return;
+      if (!activeSubjects.has(subject)) return;
       const key = JSON.stringify([student.class_name, subject]);
       if (!teacherStudentsByClassSubject.has(key)) teacherStudentsByClassSubject.set(key, []);
       teacherStudentsByClassSubject.get(key).push(student);
