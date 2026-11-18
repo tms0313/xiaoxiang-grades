@@ -3774,9 +3774,10 @@ async function saveExam(event) {
   }
 
   if (id) {
-    const linkedScoreCount = scoresCache.filter(score =>
-      String(score.exam_id) === String(id)
-    ).length;
+    let linkedScoreCount = 0;
+    scoresCache.forEach(score => {
+      if (String(score.exam_id) === String(id)) linkedScoreCount += 1;
+    });
     if (linkedScoreCount > 0 && !confirm(
       "這個考試場次目前已有 " + linkedScoreCount + " 筆成績。\n\n" +
       "修改日期只會改變考試週期的顯示，不會刪除或搬移成績。\n" +
