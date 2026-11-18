@@ -1358,16 +1358,15 @@ function renderAdminClassHighestPreview() {
   }
   const rows = cachedPreview.rows;
 
-  const classOptions = Array.from(new Set(
+  const availableClassNames = new Set(
     studentsCache.map(student => student.class_name).filter(Boolean)
-  )).sort(function (a, b) {
-    const ai = classOrder.indexOf(a);
-    const bi = classOrder.indexOf(b);
-    if (ai >= 0 && bi >= 0) return ai - bi;
-    if (ai >= 0) return -1;
-    if (bi >= 0) return 1;
-    return a.localeCompare(b, "zh-Hant");
-  });
+  );
+  const knownClassNames = new Set(classOrder);
+  const classOptions = classOrder.filter(className => availableClassNames.has(className));
+  const otherClassOptions = Array.from(availableClassNames)
+    .filter(className => !knownClassNames.has(className))
+    .sort((a, b) => a.localeCompare(b, "zh-Hant"));
+  classOptions.push(...otherClassOptions);
 
   const filteredRows = rows.filter(function (item) {
     return (!adminHighestPreviewClassName || item.className === adminHighestPreviewClassName) &&
