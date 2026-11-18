@@ -5312,7 +5312,7 @@ async function renderStudentReviewRecords(selectedExamId) {
           "<div class='panel' style='margin:0;padding:14px;text-align:center'><div class='muted'>未檢閱</div><div style='font-size:26px;font-weight:900;color:#bd4242'>" + pendingCount + "</div></div>" +
           "<div class='panel' style='margin:0;padding:14px;text-align:center'><div class='muted'>完成率</div><div style='font-size:26px;font-weight:900;color:#315d86'>" + completionRate + "%</div></div>" +
         "</div>" +
-        "<p class='muted'>統計範圍：目前在學學生，共 " + visibleStudents.length + " 人。</p>" +
+        "<p class='muted'>統計範圍：目前在學學生，共 " + visibleCount + " 人。</p>" +
         "<div class='table-wrap'><table style='min-width:620px'><thead><tr>" +
           "<th>班級</th><th>學生編號</th><th>學生姓名</th><th>檢閱狀態</th><th>檢閱時間</th>" +
         "</tr></thead><tbody>" +
