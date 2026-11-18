@@ -2835,6 +2835,15 @@ async function refreshScoreCacheForScope(examId, subject, scope) {
   refreshedRows.forEach(function (item) {
     scoresCache.push(item);
   });
+  // 同步目前成績登錄條件索引，避免刷新快取後仍指向舊物件。
+  bulkEntryExistingScoresByStudent = new Map(
+    refreshedRows.map(item => [String(item.student_id), item])
+  );
+  bulkEntryScoreContextKey = JSON.stringify([
+    normalizedExamId,
+    subject,
+    normalizedScope
+  ]);
   rebuildScoresByIdCache();
   invalidateAdminHighestPreviewCache();
 
