@@ -2083,6 +2083,9 @@ async function excludeMissingRemindersBatch(items) {
   const keepPanelOpen = !!(excludedPanel && excludedPanel.style.display !== "none");
   let successCount = 0;
   const failures = [];
+  const knownExclusionIds = new Set(
+    missingExclusionsCache.map(row => String(row.id))
+  );
 
   for (const item of uniqueItems) {
     try {
@@ -2113,8 +2116,10 @@ async function excludeMissingRemindersBatch(items) {
         }
       }
       if (!exclusionRow) throw new Error("無法確認排除紀錄");
-      if (!missingExclusionsCache.some(row => String(row.id) === String(exclusionRow.id))) {
+      const exclusionId = String(exclusionRow.id);
+      if (!knownExclusionIds.has(exclusionId)) {
         missingExclusionsCache.push(exclusionRow);
+        knownExclusionIds.add(exclusionId);
       }
       successCount++;
     } catch (error) {
