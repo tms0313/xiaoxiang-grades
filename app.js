@@ -4866,6 +4866,19 @@ function renderPasswords() {
   };
 }
 
+function getLinkedStudentNames(parentUserId) {
+  const studentsById = new Map(
+    studentsCache.map(student => [String(student.id), student])
+  );
+  const names = new Set();
+  guardianLinksCache.forEach(function (link) {
+    if (String(link.guardian_id) !== String(parentUserId)) return;
+    const student = studentsById.get(String(link.student_id));
+    if (student && student.full_name) names.add(student.full_name);
+  });
+  return Array.from(names);
+}
+
 async function resetParentPassword(parentUserId) {
   const parent = profilesCache.find(profile => String(profile.id) === String(parentUserId));
   if (!parent) {
@@ -4873,13 +4886,7 @@ async function resetParentPassword(parentUserId) {
     return;
   }
 
-  const linkedStudentNames = Array.from(new Set(
-    guardianLinksCache
-      .filter(link => String(link.guardian_id) === String(parentUserId))
-      .map(link => studentsCache.find(student => String(student.id) === String(link.student_id)))
-      .filter(Boolean)
-      .map(student => student.full_name)
-  ));
+  const linkedStudentNames = getLinkedStudentNames(parentUserId);
   const loginAccount = parent.email || parent.phone || "未設定";
   if (!confirm(
     "確定重設這位家長的登入密碼嗎？\n\n" +
@@ -4932,11 +4939,7 @@ async function deleteParentAccount(parentUserId) {
   }
 
   const loginAccount = parent.email || parent.phone || "未設定";
-  const linkedStudentNames = Array.from(new Set(guardianLinksCache
-    .filter(link => String(link.guardian_id) === String(parentUserId))
-    .map(link => studentsCache.find(student => String(student.id) === String(link.student_id)))
-    .filter(Boolean)
-    .map(student => student.full_name)));
+  const linkedStudentNames = getLinkedStudentNames(parentUserId);
   const confirmed = confirm(
     "確定要永久刪除以下家長帳號？\n\n" +
     "家長姓名：" + (parent.display_name || "未命名") + "\n" +
