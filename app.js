@@ -712,6 +712,15 @@ style.textContent += "\n" +
   ".parent-review-btn:disabled { background:#e2e7ec; color:#64748b; border:1px solid #d2d9e1; opacity:1; cursor:not-allowed; box-shadow:none; }" +
   "@media(max-width:600px) { .parent-review-action { margin-top:5px; } .parent-review-btn { max-width:none; min-height:46px; font-size:15px; } }";
 
+
+/* 全站學生名單：統一採用週成績登錄的緊湊列距 */
+style.textContent += "\n" +
+  ".overview-table tbody td,.student-management-table tbody td,.bulk-score-entry-table tbody td,.term-bulk-table tbody td,.term-exam-overview-table tbody td,.alumni-score-table tbody td,.student-record-table tbody td { padding:5px 8px !important; line-height:1.3 !important; }" +
+  ".teacher-score-row { min-height:0 !important; padding:5px 4px !important; }" +
+  ".guardian-linked-student { padding:5px 8px !important; }" +
+  ".student-card { margin:5px auto !important; }" +
+  "@media(max-width:600px) { .teacher-score-row { min-height:0 !important; padding:5px 2px !important; } .student-card { margin:5px 0 !important; } }";
+
 document.head.appendChild(style);
 
 // ==================================================
@@ -5459,7 +5468,7 @@ async function renderStudentReviewRecords(selectedExamId) {
           "<div class='panel' style='margin:0;padding:14px;text-align:center'><div class='muted'>完成率</div><div style='font-size:26px;font-weight:900;color:#315d86'>" + completionRate + "%</div></div>" +
         "</div>" +
         "<p class='muted'>統計範圍：目前在學學生，共 " + visibleCount + " 人。</p>" +
-        "<div class='table-wrap'><table style='min-width:620px'><thead><tr>" +
+        "<div class='table-wrap'><table class='student-record-table' style='min-width:620px'><thead><tr>" +
           "<th>班級</th><th>學生編號</th><th>學生姓名</th><th>檢閱狀態</th><th>檢閱時間</th>" +
         "</tr></thead><tbody>" +
           (rows || "<tr><td colspan='5' class='empty'>此班級目前沒有在學學生。</td></tr>") +
