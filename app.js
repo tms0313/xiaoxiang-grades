@@ -1180,10 +1180,10 @@ function renderAdminClassHighestPreview() {
   const content = $("adminContent");
   if (!content) return;
 
-  const latestThreeExams = sortByDateDesc(
-    examsCache.filter(exam => exam.start_date || exam.end_date),
-    "start_date"
-  ).slice(0, 3);
+  // 考試索引已依日期排序；直接篩選並取前三筆，避免每次切換頁面重複排序。
+  const latestThreeExams = examsByDateDescCache
+    .filter(exam => exam.start_date || exam.end_date)
+    .slice(0, 3);
 
   if (!latestThreeExams.length) {
     content.innerHTML =
