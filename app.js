@@ -796,7 +796,7 @@ async function loadCurrentProfile() {
 
   const result = await db
     .from("profiles")
-    .select("*")
+    .select("role")
     .eq("id", currentUser.id)
     .maybeSingle();
 
