@@ -71,6 +71,32 @@ function attendancePreviewInjectStyles() {
   document.head.appendChild(style);
 }
 
+function buildAttendancePreviewRecords(session) {
+  const activeStudentIds = new Set();
+  if (Array.isArray(studentSubjectsCache)) {
+    studentSubjectsCache.forEach(item => {
+      if (item && item.is_active === true && item.subject === session.subject && item.student_id != null) {
+        activeStudentIds.add(String(item.student_id));
+      }
+    });
+  }
+
+  return (Array.isArray(studentsCache) ? studentsCache : [])
+    .filter(student =>
+      student.class_name === "國一班" &&
+      student.is_active !== false &&
+      activeStudentIds.has(String(student.id))
+    )
+    .sort((a, b) => String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant"))
+    .map(student => ({
+      student_id: student.id,
+      name: student.full_name || "未命名學生",
+      status: "normal",
+      late: 0,
+      checkin: "checked_in"
+    }));
+}
+
 function renderAttendanceManagement() {
   attendancePreviewInjectStyles();
   const content = document.getElementById("adminContent");
@@ -114,25 +140,7 @@ function renderAttendanceManagement() {
   content.querySelectorAll("[data-att-preview-session]").forEach(button => {
     button.addEventListener("click", function () {
       attendancePreviewSessionIndex = Number(this.dataset.attPreviewSession);
-      attendancePreviewRecords = (Array.isArray(studentsCache) ? studentsCache : [])
-        .filter(student =>
-          student.class_name === "國一班" &&
-          student.is_active !== false &&
-          Array.isArray(studentSubjectsCache) &&
-          studentSubjectsCache.some(item =>
-            String(item.student_id) === String(student.id) &&
-            item.subject === ATTENDANCE_PREVIEW_SCHEDULE[attendancePreviewSessionIndex].subject &&
-            item.is_active === true
-          )
-        )
-        .sort((a, b) => String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant"))
-        .map(student => ({
-          student_id: student.id,
-          name: student.full_name || "未命名學生",
-          status: "normal",
-          late: 0,
-          checkin: "checked_in"
-        }));
+      attendancePreviewRecords = buildAttendancePreviewRecords(ATTENDANCE_PREVIEW_SCHEDULE[attendancePreviewSessionIndex]);
       renderAttendanceManagement();
     });
   });
@@ -192,25 +200,7 @@ function renderAttendancePreviewDetail() {
   });
 
   document.getElementById("attendancePreviewReset").addEventListener("click", function () {
-    attendancePreviewRecords = (Array.isArray(studentsCache) ? studentsCache : [])
-      .filter(student =>
-          student.class_name === "國一班" &&
-          student.is_active !== false &&
-          Array.isArray(studentSubjectsCache) &&
-          studentSubjectsCache.some(item =>
-            String(item.student_id) === String(student.id) &&
-            item.subject === ATTENDANCE_PREVIEW_SCHEDULE[attendancePreviewSessionIndex].subject &&
-            item.is_active === true
-          )
-        )
-      .sort((a, b) => String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant"))
-      .map(student => ({
-        student_id: student.id,
-        name: student.full_name || "未命名學生",
-        status: "normal",
-        late: 0,
-        checkin: "checked_in"
-      }));
+    attendancePreviewRecords = buildAttendancePreviewRecords(ATTENDANCE_PREVIEW_SCHEDULE[attendancePreviewSessionIndex]);
     renderAttendancePreviewDetail();
   });
 
