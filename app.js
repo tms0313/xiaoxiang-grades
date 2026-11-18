@@ -5556,6 +5556,23 @@ async function renderTermExamEntry() {
   let recordsById=new Map();
   let recordsByStudentKey=new Map();
   let overviewStaticCache=null;
+  const termStudentsByClass = new Map();
+  studentsCache.forEach(function(student) {
+    if (student.is_active === false) return;
+    if (!termStudentsByClass.has(student.class_name)) {
+      termStudentsByClass.set(student.class_name, []);
+    }
+    termStudentsByClass.get(student.class_name).push(student);
+  });
+  termStudentsByClass.forEach(function(students) {
+    students.sort((a, b) =>
+      String(a.student_code || "").localeCompare(
+        String(b.student_code || ""),
+        "zh-Hant",
+        { numeric: true }
+      )
+    );
+  });
   const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||"null")||d;}catch(_){return d;}};
   const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(_){}};
   const available=y=>String(y).trim()==="114"?["國一班","國二班"]:classes;
@@ -5582,8 +5599,7 @@ async function renderTermExamEntry() {
   function renderRoster(){
     const c=criteria(),root=$("termExamRoster");
     if(!ready(c)){root.innerHTML="<div class='empty'>請先選擇學年度、學期、段考及班級，系統就會帶入整班學生。</div>";return;}
-    const students=studentsCache.filter(x=>x.class_name===rosterClass(c.year,c.className)&&x.is_active!==false)
-      .sort((a,b)=>String(a.student_code||"").localeCompare(String(b.student_code||""),"zh-Hant",{numeric:true}));
+    const students=termStudentsByClass.get(rosterClass(c.year,c.className)) || [];
     if(!students.length){root.innerHTML="<div class='empty'>目前班級沒有在學學生。</div>";return;}
     const classDraft=(drafts()[cid(c)]||{});
     const rows=students.map(st=>{
