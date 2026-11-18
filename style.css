@@ -492,6 +492,14 @@ footer {
   max-width: none !important;
   min-width: 0;
 }
+
+/* 開始日期、結束日期與考試週期下拉選單統一高度 */
+#examFormRow .field input,
+#scoreExam {
+  height: 40px !important;
+  min-height: 40px !important;
+  box-sizing: border-box;
+}
 #examFormRow > .btn {
   display: inline-flex;
   flex: 0 0 64px !important;
