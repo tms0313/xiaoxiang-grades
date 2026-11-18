@@ -47,6 +47,7 @@ if (typeof supabaseClient === "undefined") {
 const db = supabaseClient;
 
 const SUBJECTS = ["國文", "英文", "數學", "自然"];
+const classOrder = ["國一班", "國二班", "國三班"];
 
 const GRADE_OPTIONS = ["A++", "A+", "A", "B++", "B+", "B", "C", "缺考", "請假"];
 
