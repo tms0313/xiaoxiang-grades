@@ -73,6 +73,11 @@ function rebuildAdminEntityIndexes() {
   parentProfilesByIdCache = new Map(profilesCache.map(profile => [String(profile.id), profile]));
 }
 let scoresCache = [];
+let scoresByIdCache = new Map();
+
+function rebuildScoresByIdCache() {
+  scoresByIdCache = new Map(scoresCache.map(score => [String(score.id), score]));
+}
 let adminHighestPreviewCache = new Map();
 
 function invalidateAdminHighestPreviewCache() {
@@ -782,6 +787,7 @@ async function handleLogout() {
   profilesCache = [];
   rebuildAdminEntityIndexes();
   scoresCache = [];
+  rebuildScoresByIdCache();
   invalidateAdminHighestPreviewCache();
   guardianLinksCache = [];
 
@@ -993,6 +999,7 @@ async function loadAdminData() {
   examsCache = results[1].data || [];
   rebuildExamIndexes();
   scoresCache = results[3].data || [];
+  rebuildScoresByIdCache();
   invalidateAdminHighestPreviewCache();
   guardianLinksCache = results[4].data || [];
   studentSubjectsCache = results[5].data || [];
@@ -1060,6 +1067,7 @@ async function refreshOverviewData() {
   }
 
   scoresCache = results[0].data || [];
+  rebuildScoresByIdCache();
   invalidateAdminHighestPreviewCache();
   missingExclusionsCache = results[1].data || [];
 
@@ -2288,7 +2296,7 @@ async function editScore(scoreId) {
     subject: $("overviewSubject") ? $("overviewSubject").value : "",
     status: $("overviewStatus") ? $("overviewStatus").value : "all"
   };
-  const score = scoresCache.find(item => String(item.id) === String(scoreId));
+  const score = scoresByIdCache.get(String(scoreId));
   if (!score) {
     showMessage("找不到這筆成績資料，請重新整理。", "error");
     return;
@@ -2477,6 +2485,7 @@ async function editScore(scoreId) {
       scoresCache = scoresCache.map(function (item) {
         return String(item.id) === String(scoreId) ? result.data : item;
       });
+      scoresByIdCache.set(String(scoreId), result.data);
       invalidateAdminHighestPreviewCache();
 
       closeScoreEditModal();
@@ -2504,7 +2513,7 @@ async function deleteScore(scoreId) {
     subject: $("overviewSubject") ? $("overviewSubject").value : "",
     status: $("overviewStatus") ? $("overviewStatus").value : "all"
   };
-  const score = scoresCache.find(item => String(item.id) === String(scoreId));
+  const score = scoresByIdCache.get(String(scoreId));
 
   if (!score) {
     showMessage("找不到這筆成績資料，請重新整理。", "error");
@@ -2805,6 +2814,7 @@ async function refreshScoreCacheForScope(examId, subject, scope) {
       String(item.scope || "").trim() === String(scope || "").trim()
     );
   }).concat(refreshedRows);
+  rebuildScoresByIdCache();
   invalidateAdminHighestPreviewCache();
 
   return refreshedRows;
@@ -2891,6 +2901,7 @@ async function saveSingleBulkScoreRow(row) {
     } else {
       scoresCache.push(result.data);
     }
+    scoresByIdCache.set(String(result.data.id), result.data);
     invalidateAdminHighestPreviewCache();
     const nameCell = row.children[1];
     if (nameCell && !nameCell.textContent.includes("已有成績")) {
