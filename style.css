@@ -434,3 +434,13 @@ footer {
   line-height: 1.3 !important;
   vertical-align: middle;
 }
+
+
+/* 已排除提醒：恢復提醒按鈕尺寸比照家長綁定區的重設密碼按鈕，保留綠色 */
+.excluded-reminders-table [data-restore-missing] {
+  width: 58px !important;
+  min-width: 58px !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  padding: 0 5px !important;
+}
