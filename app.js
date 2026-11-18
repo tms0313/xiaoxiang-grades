@@ -67,6 +67,17 @@ function invalidateAdminHighestPreviewCache() {
 let missingExclusionsCache = [];
 let guardianLinksCache = [];
 let studentSubjectsCache = [];
+let activeSubjectsByStudentCache = new Map();
+
+function rebuildActiveSubjectsByStudentCache() {
+  activeSubjectsByStudentCache = new Map();
+  studentSubjectsCache.forEach(function (item) {
+    if (item.is_active !== true) return;
+    const studentId = String(item.student_id);
+    if (!activeSubjectsByStudentCache.has(studentId)) activeSubjectsByStudentCache.set(studentId, []);
+    activeSubjectsByStudentCache.get(studentId).push(item);
+  });
+}
 let teacherProfilesCache = [];
 let teacherAssignmentsCache = [];
 let teacherStudentsCache = [];
@@ -963,6 +974,7 @@ async function loadAdminData() {
   invalidateAdminHighestPreviewCache();
   guardianLinksCache = results[4].data || [];
   studentSubjectsCache = results[5].data || [];
+  rebuildActiveSubjectsByStudentCache();
   teacherAssignmentsCache = results[6].data || [];
   profileRolesCache = results[7].data || [];
   missingExclusionsCache = results[8].data || [];
@@ -3321,17 +3333,9 @@ function renderStudents() {
   const subjectFilter = $("studentSubjectFilter") ? $("studentSubjectFilter").value : "all";
   const keywordFilter = $("studentKeywordFilter") ? $("studentKeywordFilter").value : "";
 
-  // 只索引有效修課科目；後續班級／科目篩選與列表渲染直接取用，
-  // 避免每位學生重複建立 filter 陣列。
-  const activeSubjectsByStudent = new Map();
-  studentSubjectsCache.forEach(function (item) {
-    if (item.is_active !== true) return;
-    const studentId = String(item.student_id);
-    if (!activeSubjectsByStudent.has(studentId)) activeSubjectsByStudent.set(studentId, []);
-    activeSubjectsByStudent.get(studentId).push(item);
-  });
+  // 修課科目索引於管理資料載入時建立，搜尋／篩選時直接重用。
   const getActiveSubjects = studentId =>
-    activeSubjectsByStudent.get(String(studentId)) || [];
+    activeSubjectsByStudentCache.get(String(studentId)) || [];
 
   // 將狀態、班級與修課科目條件合併為單次學生快取遍歷，
   // 避免先建立 matchingStudents 再建立 enrolledStudents 兩份中間陣列。
@@ -3475,9 +3479,7 @@ function editStudent(id) {
   $("studentName").value = student.full_name || "";
   $("studentClass").value = student.class_name || "";
   const activeSubjectSet = new Set(
-    studentSubjectsCache
-      .filter(item => String(item.student_id) === String(student.id) && item.is_active === true)
-      .map(item => item.subject)
+    (activeSubjectsByStudentCache.get(String(student.id)) || []).map(item => item.subject)
   );
   document.querySelectorAll("input[name='studentSubject']").forEach(function (checkbox) {
     checkbox.checked = activeSubjectSet.has(checkbox.value);
