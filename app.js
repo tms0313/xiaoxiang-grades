@@ -67,10 +67,21 @@ function rebuildExamIndexes() {
 }
 let profilesCache = [];
 let studentsByIdCache = new Map();
+let activeStudentsByClassCache = new Map();
 let parentProfilesByIdCache = new Map();
 
 function rebuildAdminEntityIndexes() {
-  studentsByIdCache = new Map(studentsCache.map(student => [String(student.id), student]));
+  studentsByIdCache = new Map();
+  activeStudentsByClassCache = new Map();
+  studentsCache.forEach(function (student) {
+    studentsByIdCache.set(String(student.id), student);
+    if (student.is_active === false) return;
+    const className = String(student.class_name || "");
+    if (!activeStudentsByClassCache.has(className)) {
+      activeStudentsByClassCache.set(className, []);
+    }
+    activeStudentsByClassCache.get(className).push(student);
+  });
   parentProfilesByIdCache = new Map(profilesCache.map(profile => [String(profile.id), profile]));
 }
 let scoresCache = [];
@@ -3221,10 +3232,12 @@ function renderScoreEntry() {
 
 function getScoreEntryStudents() {
   const className = $("scoreClass") ? $("scoreClass").value : "";
-  return studentsCache.filter(student =>
-    student.is_active !== false &&
-    (!className || student.class_name === className)
-  );
+  if (className) return activeStudentsByClassCache.get(className) || [];
+  const allActiveStudents = [];
+  activeStudentsByClassCache.forEach(function (students) {
+    allActiveStudents.push(...students);
+  });
+  return allActiveStudents;
 }
 
 function updateScoreStudentOptions(keepSelection) {
