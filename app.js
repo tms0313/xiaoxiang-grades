@@ -2046,8 +2046,8 @@ async function excludeMissingRemindersBatch(items) {
     [item.examId, item.studentId, item.subject, item.scope || ""].join("|"), item
   ])).values());
   const details = uniqueItems.map(item => {
-    const student = studentsCache.find(row => String(row.id) === String(item.studentId));
-    const exam = examsCache.find(row => String(row.id) === String(item.examId));
+    const student = studentsByIdCache.get(String(item.studentId));
+    const exam = examsByIdCache.get(String(item.examId));
     return student && exam
       ? student.full_name + "（" + student.class_name + "／" + formatDateRange(exam) + "／" + item.subject + "）"
       : null;
@@ -2110,7 +2110,7 @@ async function excludeMissingRemindersBatch(items) {
       }
       successCount++;
     } catch (error) {
-      const student = studentsCache.find(row => String(row.id) === String(item.studentId));
+      const student = studentsByIdCache.get(String(item.studentId));
       failures.push((student ? student.full_name : item.studentId) + "：" + error.message);
     }
   }
@@ -2138,8 +2138,8 @@ async function excludeMissingReminder(item) {
     subject: $("overviewSubject") ? $("overviewSubject").value : "",
     status: $("overviewStatus") ? $("overviewStatus").value : "all"
   };
-  const student = studentsCache.find(row => String(row.id) === String(item.studentId));
-  const exam = examsCache.find(row => String(row.id) === String(item.examId));
+  const student = studentsByIdCache.get(String(item.studentId));
+  const exam = examsByIdCache.get(String(item.examId));
   if (!student || !exam) {
     showMessage("找不到學生或考試資料，請重新整理。", "error");
     return;
@@ -2293,8 +2293,8 @@ async function editScore(scoreId) {
     showMessage("找不到這筆成績資料，請重新整理。", "error");
     return;
   }
-  const student = studentsCache.find(item => String(item.id) === String(score.student_id));
-  const exam = examsCache.find(item => String(item.id) === String(score.exam_id));
+  const student = studentsByIdCache.get(String(score.student_id));
+  const exam = examsByIdCache.get(String(score.exam_id));
   if (!student || !exam) {
     showMessage("找不到學生或考試資料，無法修改成績。", "error");
     return;
@@ -2511,8 +2511,8 @@ async function deleteScore(scoreId) {
     return;
   }
 
-  const student = studentsCache.find(item => String(item.id) === String(score.student_id));
-  const exam = examsCache.find(item => String(item.id) === String(score.exam_id));
+  const student = studentsByIdCache.get(String(score.student_id));
+  const exam = examsByIdCache.get(String(score.exam_id));
 
   if (!student || !exam) {
     showMessage("無法確認學生或考試資料，請重新整理。", "error");
@@ -2815,7 +2815,7 @@ async function saveSingleBulkScoreRow(row) {
   const button = row.querySelector("[data-save-bulk-row]");
   const message = $("bulkScoreEntryMessage");
   const studentId = row.dataset.bulkStudent;
-  const student = studentsCache.find(item => String(item.id) === String(studentId));
+  const student = studentsByIdCache.get(String(studentId));
   const examId = $("scoreExam").value;
   const className = $("scoreClass").value;
   const subject = $("scoreSubject").value;
@@ -3189,7 +3189,7 @@ function moveScoreStudent(offset) {
 }
 
 function updateScoreMode(refreshStudentOptions) {
-  const student = studentsCache.find(item => String(item.id) === String($("scoreStudent").value));
+  const student = studentsByIdCache.get(String($("scoreStudent").value));
   const subject = $("scoreSubject").value;
   const grade3 = student && isGrade3Class(student.class_name);
   const grade3Math = student && isGrade3Math(student.class_name, subject);
@@ -3214,7 +3214,7 @@ function updateGrade3AbsenceMode(studentOverride) {
   updateGradeSelectStyle(otherGrade);
   const student = arguments.length
     ? studentOverride
-    : $("scoreStudent") ? studentsCache.find(item => String(item.id) === String($("scoreStudent").value)) : null;
+    : $("scoreStudent") ? studentsByIdCache.get(String($("scoreStudent").value)) : null;
   const subject = $("scoreSubject") ? $("scoreSubject").value : "";
   const grade3Math = student && isGrade3Math(student.class_name, subject);
   const grade3Other = student && isGrade3Class(student.class_name) && !grade3Math;
@@ -3246,7 +3246,7 @@ async function saveScore(event) {
   const examId = $("scoreExam").value;
   const subject = $("scoreSubject").value;
   const scope = $("scoreScope").value.trim();
-  const student = studentsCache.find(item => String(item.id) === String(studentId));
+  const student = studentsByIdCache.get(String(studentId));
   if (!student || !examId || !subject || !scope) {
     showMessage("請完整選擇考試週期、學生、科目並填寫考試範圍。", "error", true);
     return;
@@ -3500,7 +3500,7 @@ function clearStudentForm() {
 }
 
 function editStudent(id) {
-  const student = studentsCache.find(item => item.id === id);
+  const student = studentsByIdCache.get(String(id));
   if (!student) return;
 
   $("studentEditId").value = student.id;
@@ -3595,7 +3595,7 @@ async function saveStudent(event) {
 }
 
 async function toggleStudentStatus(id) {
-  const student = studentsCache.find(item => String(item.id) === String(id));
+  const student = studentsByIdCache.get(String(id));
   if (!student) {
     showMessage("找不到學生資料，請重新整理。", "error");
     return;
@@ -3627,7 +3627,7 @@ async function toggleStudentStatus(id) {
 }
 
 async function deleteStudent(id) {
-  const student = studentsCache.find(item => item.id === id);
+  const student = studentsByIdCache.get(String(id));
   if (!student) return;
 
   if (!confirm("確定刪除學生「" + student.full_name + "」？\n\n若此學生仍有成績或家長綁定，資料庫可能會拒絕刪除。")) return;
@@ -4274,7 +4274,7 @@ async function createParentAccount(event) {
     return;
   }
 
-  const student = studentsCache.find(item => String(item.id) === String(studentId));
+  const student = studentsByIdCache.get(String(studentId));
   if (!student) {
     showMessage("找不到所選學生，請重新整理後再試。", "error");
     return;
