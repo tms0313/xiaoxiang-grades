@@ -5532,6 +5532,7 @@ async function renderTermExamEntry() {
   const keys=["subject_chinese","subject_english","subject_math","subject_history","subject_geography","subject_civics","subject_natural"];
   const classes=["國一班","國二班","國三班"], draftKey="xiaoxiang-term-exam-entry-draft-v2", prefKey="xiaoxiang-term-exam-entry-selection-v2";
   let records=[];
+  let overviewStaticCache=null;
   const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||"null")||d;}catch(_){return d;}};
   const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(_){}};
   const available=y=>String(y).trim()==="114"?["國一班","國二班"]:classes;
@@ -5623,10 +5624,15 @@ async function renderTermExamEntry() {
   function updateClasses(){const sel=$("termClass"),old=sel.value,list=available($("termAcademicYear").value);sel.innerHTML="<option value=''>請選擇班級</option>"+list.map(x=>"<option value='"+x+"'>"+x+"</option>").join("");sel.value=list.includes(old)?old:"";}
   function renderRecords(){
     const root=$("termExamRecords"),p={year:root.querySelector("#termFilterYear")?.value||"",semester:root.querySelector("#termFilterSemester")?.value||"",exam:root.querySelector("#termFilterExam")?.value||"",className:root.querySelector("#termFilterClass")?.value||"",subject:root.querySelector("#termFilterSubject")?.value||"total_score",name:root.querySelector("#termFilterStudentName")?.value||""};
-    const years=[...new Set(records.map(x=>String(x.academic_year||"")))].filter(Boolean).sort((a,b)=>b.localeCompare(a,"zh-Hant",{numeric:true}));
-    const options=subjects.map((name,i)=>({key:keys[i],name})).concat([{key:"total_score",name:"總分"},{key:"class_rank",name:"班排名"},{key:"school_rank",name:"校排名"}]);
+    if(!overviewStaticCache){
+      overviewStaticCache={
+        years:[...new Set(records.map(x=>String(x.academic_year||"")))].filter(Boolean).sort((a,b)=>b.localeCompare(a,"zh-Hant",{numeric:true})),
+        options:subjects.map((name,i)=>({key:keys[i],name})).concat([{key:"total_score",name:"總分"},{key:"class_rank",name:"班排名"},{key:"school_rank",name:"校排名"}]),
+        studentsById:new Map(studentsCache.map(student=>[String(student.id),student]))
+      };
+    }
+    const years=overviewStaticCache.years,options=overviewStaticCache.options,studentsById=overviewStaticCache.studentsById;
     const chosen=options.find(x=>x.key===p.subject)||options[0],q=p.name.trim().toLocaleLowerCase();
-    const studentsById=new Map(studentsCache.map(student=>[String(student.id),student]));
     const filtered=records.filter(r=>{const student=studentsById.get(String(r.student_id));const studentName=String(student?.full_name||"");return(!p.year||String(r.academic_year)===p.year)&&(!p.semester||r.semester===p.semester)&&(!p.exam||String(r.exam_number)===p.exam)&&(!p.className||r.class_name===p.className)&&(!q||studentName.toLocaleLowerCase().includes(q));});
     const sorted=filtered.slice().sort((a,b)=>{const av=a[chosen.key],bv=b[chosen.key];const an=av==null||av===""?null:Number(av),bn=bv==null||bv===""?null:Number(bv);if(an===null&&bn!==null)return 1;if(bn===null&&an!==null)return -1;if(an!==null&&bn!==null&&an!==bn)return bn-an;return String(studentsById.get(String(a.student_id))?.full_name||"").localeCompare(String(studentsById.get(String(b.student_id))?.full_name||""),"zh-Hant");});
     const rows=sorted.map(r=>{const st=studentsById.get(String(r.student_id)),v=r[chosen.key],score=chosen.key!=="class_rank"&&chosen.key!=="school_rank";return "<tr><td>"+escapeHtml(r.academic_year+" ("+(r.semester==="上學期"?"上":"下")+") "+(["","第一次","第二次","第三次"][Number(r.exam_number)]||""))+"</td><td>"+escapeHtml(r.class_name)+"</td><td>"+escapeHtml(st?.full_name||"學生資料不存在")+"</td><td>"+(v==null?"—":score&&Number(v)<60?"<span class='low-score'>"+escapeHtml(v)+"</span>":escapeHtml(v))+"</td><td class='action-cell'><div class='action-buttons'><button class='btn btn-small' data-term-edit='"+escapeHtml(r.id)+"'>修改</button><button class='btn btn-danger btn-small' data-term-delete='"+escapeHtml(r.id)+"'>刪除</button></div></td></tr>";}).join("");
@@ -5634,7 +5640,7 @@ async function renderTermExamEntry() {
       (filtered.length?"<div class='table-wrap'><table class='term-exam-overview-table'><thead><tr><th>考試</th><th>班級</th><th>學生</th><th>"+chosen.name+"</th><th>操作</th></tr></thead><tbody>"+rows+"</tbody></table></div>":"<div class='empty'>"+(records.length?"目前篩選條件沒有符合的段考成績。":"目前尚無段考成績。")+"</div>");
     for(const id of ["termFilterYear","termFilterSemester","termFilterExam","termFilterClass","termFilterSubject","termFilterStudentName"]){const el=root.querySelector("#"+id);const map={"termFilterYear":"year","termFilterSemester":"semester","termFilterExam":"exam","termFilterClass":"className","termFilterSubject":"subject","termFilterStudentName":"name"};el.value=p[map[id]]||"";if(id==="termFilterSubject")el.value=chosen.key;el.addEventListener("change",renderRecords);}
   }
-  async function loadRecords(){const res=await db.from("term_exam_scores").select("*").order("academic_year",{ascending:false}).order("semester").order("exam_number").order("class_name").order("student_id");if(res.error)throw res.error;records=res.data||[];renderRecords();}
+  async function loadRecords(){const res=await db.from("term_exam_scores").select("*").order("academic_year",{ascending:false}).order("semester").order("exam_number").order("class_name").order("student_id");if(res.error)throw res.error;records=res.data||[];overviewStaticCache=null;renderRecords();}
   const saved=read(prefKey,{});
   content.innerHTML="<h2 class='section-title'>段考成績登錄</h2><div class='panel term-exam-form'><div class='form-grid'>"+
     "<div class='field'><label for='termAcademicYear'>學年度（手動輸入）</label><input id='termAcademicYear' maxlength='20' placeholder='例如：115' value='"+escapeHtml(saved.year||"")+"'></div>"+
