@@ -2629,11 +2629,12 @@ function renderBulkScoreEntryRows() {
     return;
   }
   // 依學生管理中的修課設定篩選，只列出該科目已啟用的在學學生。
-  const subjectStudentIds = new Set(studentSubjectsCache
-    .filter(function (item) {
-      return item.subject === subject && item.is_active === true;
-    })
-    .map(function (item) { return String(item.student_id); }));
+  const subjectStudentIds = new Set();
+  studentSubjectsCache.forEach(function (item) {
+    if (item.subject === subject && item.is_active === true) {
+      subjectStudentIds.add(String(item.student_id));
+    }
+  });
   const students = getScoreEntryStudents().filter(function (student) {
     return student.class_name === className && subjectStudentIds.has(String(student.id));
   });
@@ -2687,23 +2688,25 @@ function renderBulkScoreEntryRows() {
     "<div class='table-wrap'><table style='min-width:620px'><thead><tr><th>編號</th><th>學生</th>" +
     (grade3Math ? "<th>數學分數</th><th>模擬考等級</th>" : grade3 ? "<th>答對題數</th><th>模擬考等級</th>" : "<th>成績</th><th>出席狀態</th>") +
     "<th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
-  root.querySelectorAll("[data-bulk-grade]").forEach(function (select) {
-    select.value = select.closest("tr").dataset.bulkStudent
-      ? (draftRows[select.closest("tr").dataset.bulkStudent] || {}).grade || "" : "";
-  });
-  root.querySelectorAll("[data-bulk-status]").forEach(function (select) {
-    const row = select.closest("tr");
-    const savedStatus = (draftRows[row.dataset.bulkStudent] || {}).status;
-    const existing = existingScoreByStudent.get(String(row.dataset.bulkStudent));
-    select.value = savedStatus || (existing && existing.grade_level === "請假" ? "請假" : "normal");
+  // 等級與出席狀態在同一次 DOM 遍歷中初始化，避免重複查詢相同表格。
+  root.querySelectorAll("[data-bulk-grade], [data-bulk-status]").forEach(function (control) {
+    const row = control.closest("tr");
+    const studentKey = String(row.dataset.bulkStudent);
+    const draft = draftRows[studentKey] || {};
+    const existing = existingScoreByStudent.get(studentKey);
+    if (control.matches("[data-bulk-grade]")) {
+      control.value = Object.prototype.hasOwnProperty.call(draft, "grade")
+        ? draft.grade
+        : existing && existing.grade_level || "";
+      return;
+    }
+    control.value = draft.status ||
+      (existing && existing.grade_level === "請假" ? "請假" : "normal");
     const input = row.querySelector("[data-bulk-score]");
-    input.disabled = select.value === "請假";
-    if (input.disabled) input.value = "";
-  });
-  root.querySelectorAll("[data-bulk-grade]").forEach(function (select) {
-    const row = select.closest("tr");
-    const existing = existingScoreByStudent.get(String(row.dataset.bulkStudent));
-    if (!draftRows[row.dataset.bulkStudent] && existing) select.value = existing.grade_level || "";
+    if (input) {
+      input.disabled = control.value === "請假";
+      if (input.disabled) input.value = "";
+    }
   });
   root.oninput = saveBulkScoreDraft;
   root.onchange = function (event) {
