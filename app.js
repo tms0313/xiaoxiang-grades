@@ -5751,7 +5751,7 @@ async function renderTermExamEntry() {
       (filtered.length?"<div class='table-wrap'><table class='term-exam-overview-table'><thead><tr><th>考試</th><th>班級</th><th>學生</th><th>"+chosen.name+"</th><th>操作</th></tr></thead><tbody>"+rows+"</tbody></table></div>":"<div class='empty'>"+(records.length?"目前篩選條件沒有符合的段考成績。":"目前尚無段考成績。")+"</div>");
     for(const id of ["termFilterYear","termFilterSemester","termFilterExam","termFilterClass","termFilterSubject","termFilterStudentName"]){const el=root.querySelector("#"+id);const map={"termFilterYear":"year","termFilterSemester":"semester","termFilterExam":"exam","termFilterClass":"className","termFilterSubject":"subject","termFilterStudentName":"name"};el.value=p[map[id]]||"";if(id==="termFilterSubject")el.value=chosen.key;el.addEventListener("change",renderRecords);}
   }
-  async function loadRecords(){const res=await db.from("term_exam_scores").select("*").order("academic_year",{ascending:false}).order("semester").order("exam_number").order("class_name").order("student_id");if(res.error)throw res.error;records=res.data||[];recordsById=new Map(records.map(record=>[String(record.id),record]));recordsByStudentKey=new Map();records.forEach(record=>recordsByStudentKey.set(termRecordKey(record.academic_year,record.semester,record.exam_number,record.student_id),record));overviewStaticCache=null;renderRecords();}
+  async function loadRecords(){const res=await db.from("term_exam_scores").select("id, academic_year, semester, exam_number, class_name, student_id, subject_chinese, subject_english, subject_math, subject_history, subject_geography, subject_civics, subject_natural, total_score, class_rank, school_rank").order("academic_year",{ascending:false}).order("semester").order("exam_number").order("class_name").order("student_id");if(res.error)throw res.error;records=res.data||[];recordsById=new Map(records.map(record=>[String(record.id),record]));recordsByStudentKey=new Map();records.forEach(record=>recordsByStudentKey.set(termRecordKey(record.academic_year,record.semester,record.exam_number,record.student_id),record));overviewStaticCache=null;renderRecords();}
   const saved=read(prefKey,{});
   content.innerHTML="<h2 class='section-title'>段考成績登錄</h2><div class='panel term-exam-form'><div class='form-grid'>"+
     "<div class='field'><label for='termAcademicYear'>學年度（手動輸入）</label><input id='termAcademicYear' maxlength='20' placeholder='例如：115' value='"+escapeHtml(saved.year||"")+"'></div>"+
@@ -5954,7 +5954,7 @@ async function renderAlumniMockScores() {
   }
 
   async function loadRecords() {
-    const result = await db.from("alumni_mock_scores").select("*")
+    const result = await db.from("alumni_mock_scores").select("id, academic_year, student_name, exam_scope, exam_range, district_gender_rank, district_rank, composition_score, admission_school, chinese, math, english, social_studies, natural_science, total_grade")
       .order("academic_year", { ascending: false })
       .order("exam_scope", { ascending: true })
       .order("total_grade", { ascending: false })
