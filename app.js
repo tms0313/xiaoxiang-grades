@@ -6536,7 +6536,6 @@ async function renderTeacherDashboard() {
     )
   );
   teacherStudentsCache.forEach(function (student) {
-    if (student.is_active === false) return;
     SUBJECTS.forEach(function (subject) {
       if (!teacherActiveStudentSubjectKeys.has(JSON.stringify([String(student.id), subject]))) return;
       const key = JSON.stringify([student.class_name, subject]);
