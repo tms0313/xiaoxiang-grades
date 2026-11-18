@@ -5031,14 +5031,19 @@ async function renderLoginLogs() {
     const allProfiles = results[1].data || [];
     const profilesById = new Map(allProfiles.map(profile => [String(profile.id), profile]));
     const studentsById = new Map(studentsCache.map(student => [String(student.id), student]));
-    const studentsByGuardian = new Map();
+    const studentNamesByGuardian = new Map();
 
+    // 每位家長的綁定學生姓名只整理一次，避免每筆登入紀錄重複 map／Set。
     guardianLinksCache.forEach(link => {
       const guardianId = String(link.guardian_id);
       const student = studentsById.get(String(link.student_id));
       if (!student) return;
-      if (!studentsByGuardian.has(guardianId)) studentsByGuardian.set(guardianId, []);
-      studentsByGuardian.get(guardianId).push(student);
+      if (!studentNamesByGuardian.has(guardianId)) studentNamesByGuardian.set(guardianId, new Set());
+      studentNamesByGuardian.get(guardianId).add(student.full_name);
+    });
+    const linkedStudentNamesByGuardian = new Map();
+    studentNamesByGuardian.forEach((names, guardianId) => {
+      linkedStudentNamesByGuardian.set(guardianId, Array.from(names).join("、"));
     });
 
     // 日期格式器與教師名稱索引在整次渲染共用，避免每筆登入紀錄重複建立。
@@ -5078,8 +5083,7 @@ async function renderLoginLogs() {
           loginRoleLabel = "家長";
           loginRoleBadgeClass = "login-role-parent";
         }
-        const linkedStudents = studentsByGuardian.get(String(log.user_id)) || [];
-        loginIdentity = Array.from(new Set(linkedStudents.map(student => student.full_name))).join("、") || "尚未綁定學生";
+        loginIdentity = linkedStudentNamesByGuardian.get(String(log.user_id)) || "尚未綁定學生";
       }
 
       const logDate = log.created_at ? new Date(log.created_at) : null;
