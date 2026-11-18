@@ -468,8 +468,13 @@ footer {
   vertical-align: middle;
 }
 
-/* 週成績登錄：儲存考試／清除按鈕列距比照學生資料列 */
+/* 週成績登錄：儲存考試／清除按鈕固定左右並排於同一行 */
 #examFormActions {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  width: max-content;
+  max-width: 100%;
   margin: 5px 0 !important;
   gap: 10px;
   align-items: center;
