@@ -1761,7 +1761,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
           if (matchedStudents.length) matchedEnrolledGroupCount += 1;
         }
         const enrolledStudents = matchingEnrolledStudentsByClassSubject.get(enrollmentKey);
-        if (!enrolledStudents || !visibleStudents.length) return;
+        if (!enrolledStudents || !enrolledStudents.length) return;
 
         registeredGroup.scopes.forEach(function (scope) {
           enrolledStudents.forEach(function (student) {
