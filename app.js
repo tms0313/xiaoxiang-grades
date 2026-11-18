@@ -4981,6 +4981,22 @@ async function renderLoginLogs() {
       studentsByGuardian.get(guardianId).push(student);
     });
 
+    // 日期格式器與教師名稱索引在整次渲染共用，避免每筆登入紀錄重複建立。
+    const logDateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit"
+    });
+    const logDateDisplayFormatter = new Intl.DateTimeFormat("zh-TW", {
+      timeZone: "Asia/Taipei", year: "numeric", month: "numeric", day: "numeric"
+    });
+    const logTimeDisplayFormatter = new Intl.DateTimeFormat("zh-TW", {
+      timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+    });
+    const teacherNamesByEmail = {
+      "black951165@gmail.com": "王炫老師",
+      "tingning1995120@gmail.com": "溫老師",
+      "nice0220@hotmail.com": "林一老師"
+    };
+
     const rows = logs.map(function (log) {
       const profile = profilesById.get(String(log.user_id));
 
@@ -4995,13 +5011,8 @@ async function renderLoginLogs() {
       } else if (profile && profile.role === "teacher") {
         loginRoleLabel = "老師";
         loginRoleBadgeClass = "login-role-teacher";
-        const teacherNames = {
-          "black951165@gmail.com": "王炫老師",
-          "tingning1995120@gmail.com": "溫老師",
-          "nice0220@hotmail.com": "林一老師"
-        };
         const teacherEmail = String(profile.email || "").trim().toLowerCase();
-        loginIdentity = teacherNames[teacherEmail] || profile.email || "教師帳號";
+        loginIdentity = teacherNamesByEmail[teacherEmail] || profile.email || "教師帳號";
       } else {
         if (profile && profile.role === "parent") {
           loginRoleLabel = "家長";
@@ -5012,18 +5023,9 @@ async function renderLoginLogs() {
       }
 
       const logDate = log.created_at ? new Date(log.created_at) : null;
-      const dateParts = logDate
-        ? new Intl.DateTimeFormat("en-CA", {
-            timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit"
-          }).formatToParts(logDate)
-        : [];
-      const dateValues = Object.fromEntries(dateParts.map(part => [part.type, part.value]));
-      const dateKey = logDate
-        ? dateValues.year + "-" + dateValues.month + "-" + dateValues.day
-        : "";
+      const dateKey = logDate ? logDateKeyFormatter.format(logDate) : "";
       const displayTime = logDate
-        ? logDate.toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" }) + "　　" +
-          logDate.toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })
+        ? logDateDisplayFormatter.format(logDate) + "　　" + logTimeDisplayFormatter.format(logDate)
         : "—";
       const searchText = [
         loginRoleLabel, loginIdentity, profile && profile.email, log.user_id
