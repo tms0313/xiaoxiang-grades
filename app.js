@@ -3748,26 +3748,28 @@ function renderGuardians() {
       "</option>";
   }).join("");
 
-  function buildGuardianRows() {
-    const selectedClass = $("guardianClass") ? $("guardianClass").value : "";
-    const keyword = $("guardianKeyword")
-      ? $("guardianKeyword").value.trim().toLocaleLowerCase()
-      : "";
-    const matches = value => !keyword || String(value || "").toLocaleLowerCase().includes(keyword);
-    const rows = [];
+  // 靜態列資料只建立一次；搜尋時只比對預先整理好的文字，避免每次輸入都重建所有 HTML。
+  const guardianRowItems = [];
 
-    guardianLinksCache.forEach(function (link) {
-      const parent = parentsById.get(String(link.guardian_id));
-      const student = studentsById.get(String(link.student_id));
-      if (!student) return;
-      if (selectedClass && student.class_name !== selectedClass) return;
+  guardianLinksCache.forEach(function (link) {
+    const parent = parentsById.get(String(link.guardian_id));
+    const student = studentsById.get(String(link.student_id));
+    if (!student) return;
 
-      const loginIdentity = parent ? (parent.email || parent.phone || "") : "";
-      const parentName = student.full_name + "家長";
-      if (!matches(student.full_name) && !matches(student.student_code) &&
-          !matches(student.class_name) && !matches(loginIdentity) && !matches(parentName)) return;
+    const loginIdentity = parent ? (parent.email || parent.phone || "") : "";
+    const parentName = student.full_name + "家長";
+    const searchText = [
+      student.full_name,
+      student.student_code,
+      student.class_name,
+      loginIdentity,
+      parentName
+    ].join(" ").toLocaleLowerCase();
 
-      rows.push(
+    guardianRowItems.push({
+      className: student.class_name,
+      searchText: searchText,
+      html:
         "<tr>" +
           "<td>" + escapeHtml(student.class_name) + "</td>" +
           "<td>" + escapeHtml(student.full_name) + "</td>" +
@@ -3786,17 +3788,20 @@ function renderGuardians() {
             "</div>" +
           "</td>" +
         "</tr>"
-      );
     });
+  });
 
-    profilesCache.forEach(function (parent) {
-      if (parent.role !== "parent") return;
-      const parentId = String(parent.id);
-      if (boundGuardianIds.has(parentId)) return;
-      const loginIdentity = parent.email || parent.phone || "";
-      const parentName = parent.display_name || loginIdentity || "未設定家長";
-      if (!matches(parentName) && !matches(loginIdentity) && !matches("尚未綁定學生")) return;
-      rows.push(
+  profilesCache.forEach(function (parent) {
+    if (parent.role !== "parent") return;
+    const parentId = String(parent.id);
+    if (boundGuardianIds.has(parentId)) return;
+
+    const loginIdentity = parent.email || parent.phone || "";
+    const parentName = parent.display_name || loginIdentity || "未設定家長";
+    guardianRowItems.push({
+      className: "",
+      searchText: [parentName, loginIdentity, "尚未綁定學生"].join(" ").toLocaleLowerCase(),
+      html:
         "<tr class='guardian-unbound-row'>" +
           "<td>—</td>" +
           "<td>—</td>" +
@@ -3808,15 +3813,20 @@ function renderGuardians() {
             "<button class='btn btn-danger btn-small' data-delete-parent='" + escapeHtml(parent.id) + "'>刪除帳號</button>" +
           "</div></td>" +
         "</tr>"
-      );
     });
+  });
 
-    activeStudents.forEach(function (student) {
-      if (linkedStudentIds.has(String(student.id))) return;
-      if (selectedClass && student.class_name !== selectedClass) return;
-      if (!matches(student.full_name) && !matches(student.student_code) &&
-          !matches(student.class_name) && !matches("尚未綁定家長")) return;
-      rows.push(
+  activeStudents.forEach(function (student) {
+    if (linkedStudentIds.has(String(student.id))) return;
+    guardianRowItems.push({
+      className: student.class_name,
+      searchText: [
+        student.full_name,
+        student.student_code,
+        student.class_name,
+        "尚未綁定家長"
+      ].join(" ").toLocaleLowerCase(),
+      html:
         "<tr class='guardian-unbound-row'>" +
           "<td>" + escapeHtml(student.class_name) + "</td>" +
           "<td>" + escapeHtml(student.full_name) + "</td>" +
@@ -3824,7 +3834,20 @@ function renderGuardians() {
           "<td><span class='guardian-status-unbound'>尚未綁定家長</span></td>" +
           "<td class='action-cell'>請建立家長帳號並完成綁定</td>" +
         "</tr>"
-      );
+    });
+  });
+
+  function buildGuardianRows() {
+    const selectedClass = $("guardianClass") ? $("guardianClass").value : "";
+    const keyword = $("guardianKeyword")
+      ? $("guardianKeyword").value.trim().toLocaleLowerCase()
+      : "";
+    const rows = [];
+
+    guardianRowItems.forEach(function (item) {
+      if (selectedClass && item.className !== selectedClass) return;
+      if (keyword && !item.searchText.includes(keyword)) return;
+      rows.push(item.html);
     });
 
     return rows.join("");
