@@ -3098,7 +3098,7 @@ function moveScoreStudent(offset) {
   const next = index < 0 ? 0 : index + offset;
   if (next < 0 || next >= students.length) return;
   $("scoreStudent").value = students[next].id;
-  updateScoreStudentOptions(true);
+  // updateScoreMode() 內部會更新學生選單與前後筆按鈕，避免重複重建整份選單。
   updateScoreMode();
   saveScoreEntryProgress();
 }
