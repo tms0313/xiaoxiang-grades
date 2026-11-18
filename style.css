@@ -494,12 +494,16 @@ footer {
 }
 #examFormRow > .btn {
   display: inline-flex;
-  flex: 0 0 70px !important;
-  width: 70px !important;
-  min-width: 70px !important;
-  max-width: 70px;
+  flex: 0 0 60px !important;
+  width: 60px !important;
+  min-width: 60px !important;
+  max-width: 60px;
+  height: 32px !important;
+  min-height: 32px !important;
   justify-content: center;
+  align-items: center;
+  font-size: 12px !important;
   white-space: nowrap !important;
-  padding: 0 4px !important;
+  padding: 0 8px !important;
   margin: 0 0 1px !important;
 }
