@@ -3084,10 +3084,19 @@ function updateScoreStudentOptions(keepSelection) {
     return "<option value='" + escapeHtml(student.id) + "'>" +
       escapeHtml(student.student_code + "｜" + student.full_name) + "</option>";
   }).join("");
-  if (previousId && students.some(item => String(item.id) === String(previousId))) select.value = previousId;
+  let selectedIndex = -1;
+  if (previousId) {
+    for (let i = 0; i < students.length; i++) {
+      if (String(students[i].id) === String(previousId)) {
+        selectedIndex = i;
+        break;
+      }
+    }
+  }
+  if (selectedIndex >= 0) select.value = previousId;
   const count = $("scoreStudentCount");
   if (count) count.textContent = "目前 " + students.length + " 位學生";
-  const index = students.findIndex(item => String(item.id) === String(select.value));
+  const index = selectedIndex;
   if ($("scorePrevStudent")) $("scorePrevStudent").disabled = index <= 0;
   if ($("scoreNextStudent")) $("scoreNextStudent").disabled = index < 0 || index >= students.length - 1;
 }
