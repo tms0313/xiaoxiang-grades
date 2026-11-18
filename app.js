@@ -2797,7 +2797,7 @@ function renderBulkScoreEntryRows() {
       fields + "<td><button class='btn btn-small' type='button' data-save-bulk-row>單筆儲存</button></td></tr>";
   }).join("");
   root.innerHTML = "<div class='muted' style='margin-bottom:10px'>共 " + students.length + " 位學生；只會儲存有填寫資料的學生。</div>" +
-    "<div class='table-wrap'><table style='min-width:620px'><thead><tr><th>編號</th><th>學生</th>" +
+    "<div class='table-wrap'><table class='bulk-score-entry-table' style='min-width:620px'><thead><tr><th>編號</th><th>學生</th>" +
     (grade3Math ? "<th>數學分數</th><th>模擬考等級</th>" : grade3 ? "<th>答對題數</th><th>模擬考等級</th>" : "<th>成績</th><th>出席狀態</th>") +
     "<th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
   // 等級與出席狀態在同一次 DOM 遍歷中初始化，避免重複查詢相同表格。
