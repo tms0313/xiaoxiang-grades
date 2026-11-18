@@ -971,7 +971,7 @@ async function loadAdminData() {
     db.from("students").select("*").order("student_code"),
     db.from("exams").select("*").order("start_date", { ascending: false }),
     db.from("profiles").select("id, role, display_name, email, phone"),
-    db.from("scores").select("*"),
+    db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level"),
     db.from("guardian_students").select("*"),
     db.from("student_subjects").select("student_id, subject, is_active"),
     db.from("teacher_assignments").select("id, teacher_id, class_name, subject"),
@@ -1048,7 +1048,7 @@ async function loadAdminData() {
  */
 async function refreshOverviewData() {
   const results = await Promise.all([
-    db.from("scores").select("*"),
+    db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level"),
     db.from("score_missing_exclusions").select("*")
   ]);
 
@@ -2468,7 +2468,7 @@ async function editScore(scoreId) {
       const result = await db.from("scores")
         .update(payload)
         .eq("id", scoreId)
-        .select("*")
+        .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
         .single();
       if (result.error) throw result.error;
       if (!result.data) throw new Error("資料已送出，但未取得更新後的成績內容，請重新整理確認。");
@@ -2788,7 +2788,7 @@ function renderBulkScoreEntryRows() {
 async function refreshScoreCacheForScope(examId, subject, scope) {
   const result = await db
     .from("scores")
-    .select("*")
+    .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
     .eq("exam_id", examId)
     .eq("subject", subject)
     .eq("scope", scope);
@@ -2880,7 +2880,7 @@ async function saveSingleBulkScoreRow(row) {
   try {
     const payload = { student_id: studentId, exam_id: examId, subject, scope, score, correct_count: correctCount, grade_level: gradeLevel };
     const result = duplicate
-      ? await db.from("scores").update(payload).eq("id", duplicate.id).select("*").single()
+      ? await db.from("scores").update(payload).eq("id", duplicate.id).select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").single()
       : await db.from("scores").insert(payload).select("*").single();
     if (result.error) throw result.error;
     if (!result.data) throw new Error("成績已送出，但未取得儲存後的資料，請重新整理確認。");
