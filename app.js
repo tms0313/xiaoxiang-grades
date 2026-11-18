@@ -5072,17 +5072,25 @@ async function renderLoginLogs() {
     "<div class='empty'>正在讀取登入紀錄……</div>";
 
   try {
-    const results = await Promise.all([
-      db.from("login_events").select("user_id, created_at").order("created_at", { ascending: false }).limit(200),
-      db.from("profiles").select("id, role, email")
-    ]);
+    // 先取得最近 200 筆登入紀錄，再只查這批紀錄涉及的帳號，避免傳輸整張 profiles。
+    const logsResult = await db.from("login_events")
+      .select("user_id, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (logsResult.error) throw logsResult.error;
 
-    if (results[0].error) throw results[0].error;
-    if (results[1].error) throw results[1].error;
-
-    const logs = results[0].data || [];
-    const allProfiles = results[1].data || [];
-    const profilesById = new Map(allProfiles.map(profile => [String(profile.id), profile]));
+    const logs = logsResult.data || [];
+    const loggedUserIds = Array.from(new Set(
+      logs.map(log => String(log.user_id)).filter(Boolean)
+    ));
+    let profilesById = new Map();
+    if (loggedUserIds.length) {
+      const profilesResult = await db.from("profiles")
+        .select("id, role, email")
+        .in("id", loggedUserIds);
+      if (profilesResult.error) throw profilesResult.error;
+      profilesById = new Map((profilesResult.data || []).map(profile => [String(profile.id), profile]));
+    }
     const studentsById = studentsByIdCache;
     const studentNamesByGuardian = new Map();
 
