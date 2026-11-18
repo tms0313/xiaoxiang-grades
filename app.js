@@ -6231,7 +6231,11 @@ async function renderParentDashboard() {
     return parentReviewByStudentExam.get(parentStudentExamKey(student.id, exam.id));
   }
 
+  let cachedTaiwanDateTime = null;
+
   function getTaiwanDateTime() {
+    if (cachedTaiwanDateTime) return cachedTaiwanDateTime;
+
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Taipei",
       year: "numeric",
@@ -6249,7 +6253,8 @@ async function renderParentDashboard() {
       result[part.type] = part.value;
     });
 
-    return result;
+    cachedTaiwanDateTime = result;
+    return cachedTaiwanDateTime;
   }
 
   function isExamReleased(exam) {
