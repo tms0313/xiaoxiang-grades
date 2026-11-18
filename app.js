@@ -68,6 +68,9 @@ let teacherStudentsCache = [];
 let teacherExamsCache = [];
 let teacherScoresCache = [];
 let teacherStudentSubjectsCache = [];
+let teacherPermittedSubjectsByClass = new Map();
+let teacherStudentsByClassSubject = new Map();
+let teacherScoresByStudentExamSubject = new Map();
 let teacherSelectedExamId = "";
 let teacherSelectedClassName = "";
 let scoreEntrySavedCount = 0;
@@ -6517,6 +6520,40 @@ async function renderTeacherDashboard() {
   teacherStudentSubjectsCache = results[3].data || [];
   teacherScoresCache = results[4].data || [];
 
+  // 教師頁切換考試或班級時重用授課、修課與成績索引，避免每次重新掃描完整快取。
+  teacherPermittedSubjectsByClass = new Map();
+  teacherAssignmentsCache.forEach(function (item) {
+    if (!teacherPermittedSubjectsByClass.has(item.class_name)) {
+      teacherPermittedSubjectsByClass.set(item.class_name, new Set());
+    }
+    teacherPermittedSubjectsByClass.get(item.class_name).add(item.subject);
+  });
+
+  teacherStudentsByClassSubject = new Map();
+  const teacherActiveStudentSubjectKeys = new Set(
+    teacherStudentSubjectsCache.map(item =>
+      JSON.stringify([String(item.student_id), item.subject])
+    )
+  );
+  teacherStudentsCache.forEach(function (student) {
+    if (student.is_active === false) return;
+    SUBJECTS.forEach(function (subject) {
+      if (!teacherActiveStudentSubjectKeys.has(JSON.stringify([String(student.id), subject]))) return;
+      const key = JSON.stringify([student.class_name, subject]);
+      if (!teacherStudentsByClassSubject.has(key)) teacherStudentsByClassSubject.set(key, []);
+      teacherStudentsByClassSubject.get(key).push(student);
+    });
+  });
+
+  teacherScoresByStudentExamSubject = new Map();
+  teacherScoresCache.forEach(function (item) {
+    const key = JSON.stringify([String(item.student_id), String(item.exam_id), item.subject]);
+    if (!teacherScoresByStudentExamSubject.has(key)) {
+      teacherScoresByStudentExamSubject.set(key, []);
+    }
+    teacherScoresByStudentExamSubject.get(key).push(item);
+  });
+
   if (!teacherAssignmentsCache.length) {
     appRoot.innerHTML =
       "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1><small>教師專區</small></div>" +
@@ -6544,30 +6581,10 @@ function renderTeacherResults() {
     exam => String(exam.id) === String(teacherSelectedExamId)
   );
 
-  // 每次渲染先建立授課、修課與成績索引，避免學生逐筆掃描整份快取。
-  const permittedSubjectsByClass = new Map();
-  teacherAssignmentsCache.forEach(function (item) {
-    if (!permittedSubjectsByClass.has(item.class_name)) {
-      permittedSubjectsByClass.set(item.class_name, new Set());
-    }
-    permittedSubjectsByClass.get(item.class_name).add(item.subject);
-  });
-  const activeStudentSubjectKeys = new Set(
-    teacherStudentSubjectsCache.map(item => JSON.stringify([String(item.student_id), item.subject]))
-  );
   const scoreKey = (studentId, examId, subject) =>
     JSON.stringify([String(studentId), String(examId), subject]);
-  const scoresByStudentExamSubject = new Map();
-  if (selectedExam) {
-    teacherScoresCache.forEach(function (item) {
-      if (String(item.exam_id) !== String(selectedExam.id)) return;
-      const key = scoreKey(item.student_id, item.exam_id, item.subject);
-      if (!scoresByStudentExamSubject.has(key)) scoresByStudentExamSubject.set(key, []);
-      scoresByStudentExamSubject.get(key).push(item);
-    });
-  }
 
-  const permittedClasses = Array.from(permittedSubjectsByClass.keys());
+  const permittedClasses = Array.from(teacherPermittedSubjectsByClass.keys());
   const classOrder = ["國一班", "國二班", "國三班"];
   const visibleClasses = classOrder.filter(function (className) {
     return permittedClasses.includes(className) &&
@@ -6575,19 +6592,16 @@ function renderTeacherResults() {
   });
 
   const classSections = visibleClasses.map(function (className) {
-    const permittedSubjects = permittedSubjectsByClass.get(className) || new Set();
+    const permittedSubjects = teacherPermittedSubjectsByClass.get(className) || new Set();
     const subjects = SUBJECTS.filter(subject => permittedSubjects.includes(subject));
 
     const subjectSections = subjects.map(function (subject) {
-      const students = teacherStudentsCache.filter(function (student) {
-        return student.class_name === className &&
-          activeStudentSubjectKeys.has(JSON.stringify([String(student.id), subject]));
-      });
+      const students = teacherStudentsByClassSubject.get(JSON.stringify([className, subject])) || [];
 
       const groups = new Map();
       students.forEach(function (student) {
         const studentScores = selectedExam
-          ? (scoresByStudentExamSubject.get(scoreKey(student.id, selectedExam.id, subject)) || [])
+          ? (teacherScoresByStudentExamSubject.get(scoreKey(student.id, selectedExam.id, subject)) || [])
           : [];
 
         const records = studentScores.length ? studentScores : [null];
