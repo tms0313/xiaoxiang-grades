@@ -1274,9 +1274,8 @@ function renderAdminClassHighestPreview() {
   const previewExamKey = String(selectedExam.id);
   let cachedPreview = adminHighestPreviewCache.get(previewExamKey);
   if (!cachedPreview) {
-  const studentMap = new Map(
-    studentsCache.map(student => [String(student.id), student])
-  );
+  // 重用管理員資料載入時建立的學生 ID 索引，避免每次切換考試重新建 Map。
+  const studentMap = studentsByIdCache;
   const groups = new Map();
 
   scoresCache.forEach(function (score) {
