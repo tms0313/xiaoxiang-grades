@@ -5256,20 +5256,17 @@ async function renderStudentReviewRecords(selectedExamId) {
         (result.data || []).map(record => [String(record.student_id), record])
       );
       const selectedClass = classSelect.value;
-      const visibleStudents = activeStudents.filter(function(student) {
-        return !selectedClass || student.class_name === selectedClass;
-      });
+      let visibleCount = 0;
+      let reviewedCount = 0;
+      const rowHtml = [];
 
-      const reviewedCount = visibleStudents.filter(student =>
-        reviewMap.has(String(student.id))
-      ).length;
-      const pendingCount = visibleStudents.length - reviewedCount;
-      const completionRate = visibleStudents.length
-        ? Math.round(reviewedCount / visibleStudents.length * 100)
-        : 0;
+      activeStudents.forEach(function(student) {
+        if (selectedClass && student.class_name !== selectedClass) return;
 
-      const rows = visibleStudents.map(function(student) {
+        visibleCount++;
         const record = reviewMap.get(String(student.id));
+        if (record) reviewedCount++;
+
         const status = record
           ? "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#e3f5e9;color:#20683d;font-size:14px;line-height:30px;font-weight:800;white-space:nowrap'>已檢閱</span>"
           : "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#fde8e8;color:#a32626;font-size:14px;line-height:30px;font-weight:800;white-space:nowrap'>未檢閱</span>";
@@ -5285,14 +5282,20 @@ async function renderStudentReviewRecords(selectedExamId) {
             })
           : "—";
 
-        return "<tr>" +
+        rowHtml.push("<tr>" +
           "<td>" + escapeHtml(student.class_name || "—") + "</td>" +
           "<td>" + escapeHtml(student.student_code || "—") + "</td>" +
           "<td>" + escapeHtml(student.full_name || "—") + "</td>" +
           "<td>" + status + "</td>" +
           "<td>" + escapeHtml(reviewedAt) + "</td>" +
-        "</tr>";
-      }).join("");
+        "</tr>");
+      });
+
+      const pendingCount = visibleCount - reviewedCount;
+      const completionRate = visibleCount
+        ? Math.round(reviewedCount / visibleCount * 100)
+        : 0;
+      const rows = rowHtml.join("");
 
       recordContent.innerHTML =
         "<div class='grid' style='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:8px 0 18px'>" +
