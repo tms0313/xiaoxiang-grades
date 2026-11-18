@@ -5451,15 +5451,18 @@ function exportCsv() {
 
   const selectedIdSet = new Set(selectedIds);
   const studentsById = new Map(studentsCache.map(student => [String(student.id), student]));
-  const examsById = new Map(examsCache.map(exam => [String(exam.id), exam]));
-  const selectedScores = scoresCache.filter(function (score) {
-    return selectedIdSet.has(String(score.exam_id));
+  const examsById = new Map();
+  examsCache.forEach(function (exam) {
+    const examId = String(exam.id);
+    if (selectedIdSet.has(examId)) examsById.set(examId, exam);
   });
 
-  selectedScores.forEach(function (score) {
+  let exportedCount = 0;
+  scoresCache.forEach(function (score) {
+    if (!selectedIdSet.has(String(score.exam_id))) return;
+
     const student = studentsById.get(String(score.student_id));
     const exam = examsById.get(String(score.exam_id));
-
     if (!student || !exam) return;
 
     rows.push([
@@ -5473,6 +5476,7 @@ function exportCsv() {
       score.correct_count,
       score.grade_level
     ].map(csvCell).join(","));
+    exportedCount++;
   });
 
   const today = new Date().toLocaleDateString("en-CA", {
@@ -5487,7 +5491,7 @@ function exportCsv() {
 
   showMessage(
     "CSV 成績表已產生，共匯出 " +
-    selectedScores.length +
+    exportedCount +
     " 筆成績資料。",
     "success"
   );
