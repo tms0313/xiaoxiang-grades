@@ -1717,14 +1717,14 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
     // 依目前篩選條件選擇資料量最小的索引作為候選集，避免每次輸入都掃描全部成績。
     let scoreCandidates = scoresCache;
-    if (examId && scoresByExam.has(String(examId))) scoreCandidates = scoresByExam.get(String(examId));
-    if (className && scoresByClass.has(className) &&
-        scoresByClass.get(className).length < scoreCandidates.length) {
-      scoreCandidates = scoresByClass.get(className);
+    if (examId) scoreCandidates = scoresByExam.get(String(examId)) || [];
+    if (className) {
+      const classCandidates = scoresByClass.get(className) || [];
+      if (classCandidates.length < scoreCandidates.length) scoreCandidates = classCandidates;
     }
-    if (subject && scoresBySubject.has(subject) &&
-        scoresBySubject.get(subject).length < scoreCandidates.length) {
-      scoreCandidates = scoresBySubject.get(subject);
+    if (subject) {
+      const subjectCandidates = scoresBySubject.get(subject) || [];
+      if (subjectCandidates.length < scoreCandidates.length) scoreCandidates = subjectCandidates;
     }
 
     const scoreScanStartedAt = performance.now();
@@ -1749,10 +1749,12 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const matchingEnrolledStudentsByClassSubject = new Map();
     let matchedEnrolledGroupCount = 0;
 
+    let registeredGroupsCheckedCount = 0;
     examsToCheck.forEach(function (selectedExam) {
       const currentExamId = String(selectedExam.id);
       const examGroups = registeredGroupsByExam.get(currentExamId);
       if (!examGroups) return;
+      registeredGroupsCheckedCount += examGroups.size;
 
       examGroups.forEach(function (registeredGroup) {
         const targetClass = registeredGroup.className;
@@ -1859,10 +1861,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       scoreScanMs: scoreScanMs,
       missingCompareMs: missingCompareMs,
       examsChecked: examsToCheck.length,
-      registeredGroupsChecked: examsToCheck.reduce(function (count, exam) {
-        const groups = registeredGroupsByExam.get(String(exam.id));
-        return count + (groups ? groups.size : 0);
-      }, 0),
+      registeredGroupsChecked: registeredGroupsCheckedCount,
       matchedEnrolledGroups: matchedEnrolledGroupCount,
       statusFilterMs: statusFilterMs,
       sortMs: sortMs,
