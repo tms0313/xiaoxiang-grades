@@ -2804,13 +2804,18 @@ async function saveSingleBulkScoreRow(row) {
   try {
     const payload = { student_id: studentId, exam_id: examId, subject, scope, score, correct_count: correctCount, grade_level: gradeLevel };
     const result = duplicate
-      ? await db.from("scores").update(payload).eq("id", duplicate.id)
-      : await db.from("scores").insert(payload);
+      ? await db.from("scores").update(payload).eq("id", duplicate.id).select("*").single()
+      : await db.from("scores").insert(payload).select("*").single();
     if (result.error) throw result.error;
-    try {
-      await refreshScoreCacheForScope(examId, subject, scope);
-    } catch (refreshError) {
-      console.warn(refreshError);
+    if (!result.data) throw new Error("成績已送出，但未取得儲存後的資料，請重新整理確認。");
+
+    // 單筆儲存只更新快取中的該筆成績，避免重新查詢整個考試範圍。
+    if (duplicate) {
+      scoresCache = scoresCache.map(function (item) {
+        return String(item.id) === String(duplicate.id) ? result.data : item;
+      });
+    } else {
+      scoresCache = scoresCache.concat(result.data);
     }
     const nameCell = row.children[1];
     if (nameCell && !nameCell.textContent.includes("已有成績")) {
