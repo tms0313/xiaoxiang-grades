@@ -1994,7 +1994,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
   if (overviewAutoRefreshTimer) clearInterval(overviewAutoRefreshTimer);
   overviewAutoRefreshTimer = setInterval(async function () {
-    if (activeTab !== "overview" || overviewAutoRefreshBusy || !$("overviewRows")) return;
+    if (document.visibilityState === "hidden" || activeTab !== "overview" || overviewAutoRefreshBusy || !$("overviewRows")) return;
 
     overviewAutoRefreshBusy = true;
     const currentFilters = {
