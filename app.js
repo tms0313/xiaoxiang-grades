@@ -1694,15 +1694,10 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const examsToCheck = examId
       ? [getExam(examId)].filter(Boolean)
       : overviewExamsByDateDesc;
+    // 只在實際遇到已登錄的班級／科目組合時，才篩選該組修課學生；
+    // 同一組合跨多場考試時共用結果，避免每次搜尋掃描全部修課群組。
     const matchingEnrolledStudentsByClassSubject = new Map();
-    enrolledStudentsByClassSubject.forEach(function (group, groupKey) {
-      const targetClass = group.className;
-      const targetSubject = group.subject;
-      if (className && targetClass !== className) return;
-      if (subject && targetSubject !== subject) return;
-      const matchedStudents = group.students.filter(matchesStudent);
-      if (matchedStudents.length) matchingEnrolledStudentsByClassSubject.set(groupKey, matchedStudents);
-    });
+    let matchedEnrolledGroupCount = 0;
 
     examsToCheck.forEach(function (selectedExam) {
       const currentExamId = String(selectedExam.id);
@@ -1715,7 +1710,16 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         if (className && targetClass !== className) return;
         if (subject && targetSubject !== subject) return;
 
-        const enrolledStudents = matchingEnrolledStudentsByClassSubject.get(keyOf(targetClass, targetSubject));
+        const enrollmentKey = keyOf(targetClass, targetSubject);
+        if (!matchingEnrolledStudentsByClassSubject.has(enrollmentKey)) {
+          const enrollmentGroup = enrolledStudentsByClassSubject.get(enrollmentKey);
+          const matchedStudents = enrollmentGroup
+            ? enrollmentGroup.students.filter(matchesStudent)
+            : [];
+          matchingEnrolledStudentsByClassSubject.set(enrollmentKey, matchedStudents);
+          if (matchedStudents.length) matchedEnrolledGroupCount += 1;
+        }
+        const enrolledStudents = matchingEnrolledStudentsByClassSubject.get(enrollmentKey);
         if (!enrolledStudents || !enrolledStudents.length) return;
 
         registeredGroup.scopes.forEach(function (scope) {
@@ -1809,7 +1813,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         const groups = registeredGroupsByExam.get(String(exam.id));
         return count + (groups ? groups.size : 0);
       }, 0),
-      matchedEnrolledGroups: matchingEnrolledStudentsByClassSubject.size,
+      matchedEnrolledGroups: matchedEnrolledGroupCount,
       statusFilterMs: statusFilterMs,
       sortMs: sortMs,
       totalMs: performance.now() - filterStartedAt,
