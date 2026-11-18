@@ -968,8 +968,8 @@ async function loadAdminData() {
   const adminQueriesStartedAt = performance.now();
   // profiles 原本分別查詢家長、教師及全部帳號；合併為一次讀取，降低後台啟動時的重複請求。
   const results = await Promise.all([
-    db.from("students").select("*").order("student_code"),
-    db.from("exams").select("*").order("start_date", { ascending: false }),
+    db.from("students").select("id, student_code, full_name, class_name, is_active").order("student_code"),
+    db.from("exams").select("id, title, start_date, end_date").order("start_date", { ascending: false }),
     db.from("profiles").select("id, role, display_name, email, phone"),
     db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level"),
     db.from("guardian_students").select("*"),
