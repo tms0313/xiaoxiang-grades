@@ -365,8 +365,8 @@ footer {
 .guardian-management-table td { overflow-wrap: normal; word-break: normal; }
 .guardian-management-table .action-buttons [data-reset-parent],
 .guardian-management-table .action-buttons [data-delete-parent] {
-  width: 60px !important;
-  min-width: 60px !important;
+  width: 64px !important;
+  min-width: 64px !important;
   font-size: 12px !important;
 }
 
@@ -494,10 +494,10 @@ footer {
 }
 #examFormRow > .btn {
   display: inline-flex;
-  flex: 0 0 60px !important;
-  width: 60px !important;
-  min-width: 60px !important;
-  max-width: 60px;
+  flex: 0 0 64px !important;
+  width: 64px !important;
+  min-width: 64px !important;
+  max-width: 64px;
   height: 32px !important;
   min-height: 32px !important;
   justify-content: center;
