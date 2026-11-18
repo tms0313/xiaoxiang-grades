@@ -970,7 +970,7 @@ async function loadAdminData() {
   const results = await Promise.all([
     db.from("students").select("*").order("student_code"),
     db.from("exams").select("*").order("start_date", { ascending: false }),
-    db.from("profiles").select("*"),
+    db.from("profiles").select("id, role, display_name, email, phone"),
     db.from("scores").select("*"),
     db.from("guardian_students").select("*"),
     db.from("student_subjects").select("student_id, subject, is_active"),
