@@ -3843,20 +3843,30 @@ function renderGuardians() {
     });
   });
 
+  // 預先建立班級索引；選定班級時只掃描該班列資料，全部班級仍沿用原始順序。
+  const guardianRowsByClass = new Map();
+  guardianRowItems.forEach(function (item) {
+    if (!item.className) return;
+    if (!guardianRowsByClass.has(item.className)) guardianRowsByClass.set(item.className, []);
+    guardianRowsByClass.get(item.className).push(item);
+  });
+
   function buildGuardianRows() {
     const selectedClass = $("guardianClass") ? $("guardianClass").value : "";
     const keyword = $("guardianKeyword")
       ? $("guardianKeyword").value.trim().toLocaleLowerCase()
       : "";
+    const candidates = selectedClass
+      ? (guardianRowsByClass.get(selectedClass) || [])
+      : guardianRowItems;
     const rows = [];
 
-    guardianRowItems.forEach(function (item) {
-      if (selectedClass && item.className !== selectedClass) return;
+    candidates.forEach(function (item) {
       if (keyword && !item.searchText.includes(keyword)) return;
       rows.push(item.html);
     });
 
-    return rows.join("");
+    return { html: rows.join(""), count: rows.length };
   }
 
   content.innerHTML =
@@ -3896,7 +3906,7 @@ function renderGuardians() {
       "<div class='table-wrap'><table class='guardian-management-table'>" +
         "<thead><tr><th>班級</th><th>學生姓名</th><th>家長名稱／帳號</th><th>綁定狀態</th><th>操作</th></tr></thead>" +
         "<tbody id='guardianRows'>" +
-          (buildGuardianRows() || "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>") +
+          (buildGuardianRows().html || "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>") +
         "</tbody>" +
       "</table></div>" +
     "</div>";
@@ -3905,14 +3915,11 @@ function renderGuardians() {
   $("guardianForm").addEventListener("submit", saveGuardianBinding);
 
   function refreshGuardianRows() {
-    const rows = buildGuardianRows();
+    const result = buildGuardianRows();
     $("guardianRows").innerHTML =
-      rows || "<tr><td colspan='5' class='empty'>沒有符合條件的家長或學生</td></tr>";
-    const count = $("guardianRows").querySelector(".empty")
-      ? 0
-      : $("guardianRows").querySelectorAll("tr").length;
+      result.html || "<tr><td colspan='5' class='empty'>沒有符合條件的家長或學生</td></tr>";
     const counter = $("guardianResultCount");
-    if (counter) counter.textContent = "符合條件 " + count + " 筆";
+    if (counter) counter.textContent = "符合條件 " + result.count + " 筆";
   }
 
   $("guardianClass").addEventListener("change", refreshGuardianRows);
