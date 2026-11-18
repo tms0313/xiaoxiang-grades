@@ -972,11 +972,11 @@ async function loadAdminData() {
     db.from("exams").select("id, title, start_date, end_date").order("start_date", { ascending: false }),
     db.from("profiles").select("id, role, display_name, email, phone"),
     db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level"),
-    db.from("guardian_students").select("*"),
+    db.from("guardian_students").select("guardian_id, student_id"),
     db.from("student_subjects").select("student_id, subject, is_active"),
     db.from("teacher_assignments").select("id, teacher_id, class_name, subject"),
     db.from("profile_roles").select("user_id, role").eq("role", "teacher"),
-    db.from("score_missing_exclusions").select("*")
+    db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope")
   ]);
   const adminQueriesMs = performance.now() - adminQueriesStartedAt;
 
@@ -1049,7 +1049,7 @@ async function loadAdminData() {
 async function refreshOverviewData() {
   const results = await Promise.all([
     db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level"),
-    db.from("score_missing_exclusions").select("*")
+    db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope")
   ]);
 
   if (results[0].error) {
@@ -2085,14 +2085,14 @@ async function excludeMissingRemindersBatch(items) {
           subject: item.subject,
           scope: item.scope || ""
         })
-        .select("*")
+        .select("id, exam_id, student_id, subject, scope")
         .single();
 
       let exclusionRow = result.data;
       if (result.error) {
         if (result.error.code === "23505") {
           const existing = await db.from("score_missing_exclusions")
-            .select("*")
+            .select("id, exam_id, student_id, subject, scope")
             .eq("exam_id", item.examId)
             .eq("student_id", item.studentId)
             .eq("subject", item.subject)
@@ -2164,7 +2164,7 @@ async function excludeMissingReminder(item) {
         subject: item.subject,
         scope: item.scope || ""
       })
-      .select("*")
+      .select("id, exam_id, student_id, subject, scope")
       .single();
 
     let exclusionRow = result.data;
@@ -2173,7 +2173,7 @@ async function excludeMissingReminder(item) {
       // 若同一提醒已被其他管理員排除，將既有資料讀回即可，不執行 UPDATE。
       if (result.error.code === "23505") {
         const existing = await db.from("score_missing_exclusions")
-          .select("*")
+          .select("id, exam_id, student_id, subject, scope")
           .eq("exam_id", item.examId)
           .eq("student_id", item.studentId)
           .eq("subject", item.subject)
