@@ -2794,11 +2794,22 @@ async function saveSingleBulkScoreRow(row) {
     }
     score = value;
   }
-  const duplicate = scoresCache.find(item =>
-    String(item.student_id) === String(studentId) &&
-    String(item.exam_id) === String(examId) && item.subject === subject &&
-    String(item.scope || "").trim() === scope
-  );
+  // 一次掃描同時找出既有成績及其快取位置，避免儲存後再完整複製陣列。
+  let duplicate = null;
+  let duplicateIndex = -1;
+  for (let index = 0; index < scoresCache.length; index += 1) {
+    const item = scoresCache[index];
+    if (
+      String(item.student_id) === String(studentId) &&
+      String(item.exam_id) === String(examId) &&
+      item.subject === subject &&
+      String(item.scope || "").trim() === scope
+    ) {
+      duplicate = item;
+      duplicateIndex = index;
+      break;
+    }
+  }
   if (duplicate && !confirm(student.full_name + " 已有相同考試、科目及範圍的成績，是否覆蓋？")) return;
   button.disabled = true; button.textContent = "儲存中";
   try {
@@ -2809,13 +2820,11 @@ async function saveSingleBulkScoreRow(row) {
     if (result.error) throw result.error;
     if (!result.data) throw new Error("成績已送出，但未取得儲存後的資料，請重新整理確認。");
 
-    // 單筆儲存只更新快取中的該筆成績，避免重新查詢整個考試範圍。
-    if (duplicate) {
-      scoresCache = scoresCache.map(function (item) {
-        return String(item.id) === String(duplicate.id) ? result.data : item;
-      });
+    // 直接替換既有位置或附加新資料，避免 map/concat 複製整份快取陣列。
+    if (duplicateIndex >= 0) {
+      scoresCache[duplicateIndex] = result.data;
     } else {
-      scoresCache = scoresCache.concat(result.data);
+      scoresCache.push(result.data);
     }
     const nameCell = row.children[1];
     if (nameCell && !nameCell.textContent.includes("已有成績")) {
