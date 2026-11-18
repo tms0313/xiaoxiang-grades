@@ -107,6 +107,8 @@ let teacherPermittedSubjectsByClass = new Map();
 let teacherStudentsByClassSubject = new Map();
 let teacherScoresByStudentExamSubject = new Map();
 let scoreEntryStudentsByClassSubject = new Map();
+let bulkEntryExistingScoresByStudent = new Map();
+let bulkEntryScoreContextKey = "";
 let teacherSelectedExamId = "";
 let teacherSelectedClassName = "";
 let scoreEntrySavedCount = 0;
@@ -2709,6 +2711,8 @@ function renderBulkScoreEntryRows() {
   const className = $("scoreClass").value;
   const subject = $("scoreSubject").value;
   if (!examId || !className || !subject || !String($("scoreScope").value || "").trim()) {
+    bulkEntryExistingScoresByStudent = new Map();
+    bulkEntryScoreContextKey = "";
     root.innerHTML = "<div class='empty'>請先選擇考試週期、班級、科目，並填寫考試範圍。</div>";
     return;
   }
@@ -2734,6 +2738,9 @@ function renderBulkScoreEntryRows() {
       existingScoreByStudent.set(String(score.student_id), score);
     }
   });
+  // 將本次登錄條件的既有成績索引保留給單筆儲存共用，避免每按一次都掃描整份快取。
+  bulkEntryExistingScoresByStudent = existingScoreByStudent;
+  bulkEntryScoreContextKey = JSON.stringify([String(examId), subject, scope]);
   const rows = students.map(function (student) {
     const existing = existingScoreByStudent.get(String(student.id));
     const draft = draftRows[String(student.id)] || {};
@@ -2883,22 +2890,11 @@ async function saveSingleBulkScoreRow(row) {
     }
     score = value;
   }
-  // 一次掃描同時找出既有成績及其快取位置，避免儲存後再完整複製陣列。
-  let duplicate = null;
-  let duplicateIndex = -1;
-  for (let index = 0; index < scoresCache.length; index += 1) {
-    const item = scoresCache[index];
-    if (
-      String(item.student_id) === String(studentId) &&
-      String(item.exam_id) === String(examId) &&
-      item.subject === subject &&
-      String(item.scope || "").trim() === scope
-    ) {
-      duplicate = item;
-      duplicateIndex = index;
-      break;
-    }
-  }
+  // 重用名冊渲染時建立的條件索引，單筆儲存不再掃描整份成績快取。
+  const scoreContextKey = JSON.stringify([String(examId), subject, scope]);
+  const duplicate = bulkEntryScoreContextKey === scoreContextKey
+    ? bulkEntryExistingScoresByStudent.get(String(studentId)) || null
+    : null;
   if (duplicate && !confirm(student.full_name + " 已有相同考試、科目及範圍的成績，是否覆蓋？")) return;
   button.disabled = true; button.textContent = "儲存中";
   try {
@@ -2909,13 +2905,16 @@ async function saveSingleBulkScoreRow(row) {
     if (result.error) throw result.error;
     if (!result.data) throw new Error("成績已送出，但未取得儲存後的資料，請重新整理確認。");
 
-    // 直接替換既有位置或附加新資料，避免 map/concat 複製整份快取陣列。
-    if (duplicateIndex >= 0) {
-      scoresCache[duplicateIndex] = result.data;
+    // 更新既有物件或附加新資料，維持共用條件索引與 ID 索引的一致性。
+    if (duplicate) {
+      Object.assign(duplicate, result.data);
+      bulkEntryExistingScoresByStudent.set(String(studentId), duplicate);
+      scoresByIdCache.set(String(result.data.id), duplicate);
     } else {
       scoresCache.push(result.data);
+      bulkEntryExistingScoresByStudent.set(String(studentId), result.data);
+      scoresByIdCache.set(String(result.data.id), result.data);
     }
-    scoresByIdCache.set(String(result.data.id), result.data);
     invalidateAdminHighestPreviewCache();
     const nameCell = row.children[1];
     if (nameCell && !nameCell.textContent.includes("已有成績")) {
