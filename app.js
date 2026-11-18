@@ -3042,20 +3042,26 @@ async function saveBulkScores() {
     message.style.display = "block";
     return;
   }
-  // 先將目前考試／科目／範圍的既有成績建立索引，避免逐位學生反覆掃描整份 scoresCache。
-  const existingScoreByStudent = new Map();
-  scoresCache.forEach(function (score) {
-    if (
-      String(score.exam_id) !== String(examId) ||
-      score.subject !== subject ||
-      String(score.scope || "").trim() !== scope
-    ) return;
-    const key = String(score.student_id);
-    if (!existingScoreByStudent.has(key)) existingScoreByStudent.set(key, score);
-  });
-  const studentById = new Map(
-    studentsCache.map(student => [String(student.id), student])
-  );
+  // 優先重用表格渲染時建立的相同條件索引；只有條件不符時才重新掃描成績快取。
+  const currentScoreContextKey = JSON.stringify([String(examId), subject, scope]);
+  let existingScoreByStudent = bulkEntryScoreContextKey === currentScoreContextKey
+    ? bulkEntryExistingScoresByStudent
+    : null;
+  if (!existingScoreByStudent) {
+    existingScoreByStudent = new Map();
+    scoresCache.forEach(function (score) {
+      if (
+        String(score.exam_id) !== String(examId) ||
+        score.subject !== subject ||
+        String(score.scope || "").trim() !== scope
+      ) return;
+      const key = String(score.student_id);
+      if (!existingScoreByStudent.has(key)) existingScoreByStudent.set(key, score);
+    });
+    bulkEntryExistingScoresByStudent = existingScoreByStudent;
+    bulkEntryScoreContextKey = currentScoreContextKey;
+  }
+  const studentById = studentsByIdCache;
   const duplicates = entries.filter(entry =>
     existingScoreByStudent.has(String(entry.studentId))
   );
