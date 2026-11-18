@@ -1602,7 +1602,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     "<div id='excludedRemindersPanel' class='panel' style='display:none;margin-top:18px'>" +
       "<h3>已排除的未登錄提醒</h3>" +
       "<p class='muted'>這裡只管理已排除的提醒；按下「恢復提醒」後，該筆資料會重新列入未登錄清單。</p>" +
-      "<div class='table-wrap'><table><thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>操作</th></tr></thead>" +
+      "<div class='table-wrap'><table class='excluded-reminders-table'><thead><tr><th>考試區間</th><th>班級</th><th>編號</th><th>姓名</th><th>科目</th><th>考試範圍</th><th>操作</th></tr></thead>" +
       "<tbody id='excludedReminderRows'>" + (buildExcludedReminderRows() || "<tr><td colspan='7' class='empty'>目前沒有已排除的提醒</td></tr>") + "</tbody></table></div>" +
     "</div>" +
     "<div class='table-wrap'><table class='overview-table'>" +
