@@ -436,11 +436,20 @@ footer {
 }
 
 
-/* 已排除提醒：恢復提醒按鈕尺寸比照家長綁定區的重設密碼按鈕，保留綠色 */
+/* 已排除提醒：縮短恢復提醒按鈕高度，增加文字左右留白，保留綠色 */
 .excluded-reminders-table [data-restore-missing] {
-  width: 58px !important;
-  min-width: 58px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  width: 68px !important;
+  min-width: 68px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 0 9px !important;
   font-size: 13px !important;
   font-weight: 800 !important;
-  padding: 0 5px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
 }
