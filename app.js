@@ -5523,11 +5523,8 @@ function exportCsv() {
 
   const selectedIdSet = new Set(selectedIds);
   const studentsById = studentsByIdCache;
-  const examsById = new Map();
-  examsCache.forEach(function (exam) {
-    const examId = String(exam.id);
-    if (selectedIdSet.has(examId)) examsById.set(examId, exam);
-  });
+  // 直接重用管理資料載入時建立的考試索引，避免每次匯出都重新掃描全部考試。
+  const examsById = examsByIdCache;
 
   let exportedCount = 0;
   scoresCache.forEach(function (score) {
