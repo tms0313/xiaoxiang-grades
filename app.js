@@ -59,6 +59,11 @@ let studentsCache = [];
 let examsCache = [];
 let profilesCache = [];
 let scoresCache = [];
+let adminHighestPreviewCache = new Map();
+
+function invalidateAdminHighestPreviewCache() {
+  adminHighestPreviewCache.clear();
+}
 let missingExclusionsCache = [];
 let guardianLinksCache = [];
 let studentSubjectsCache = [];
@@ -750,6 +755,7 @@ async function handleLogout() {
   examsCache = [];
   profilesCache = [];
   scoresCache = [];
+  invalidateAdminHighestPreviewCache();
   guardianLinksCache = [];
 
   loginPage();
@@ -954,6 +960,7 @@ async function loadAdminData() {
   examsCache = results[1].data || [];
   profilesCache = allProfiles.filter(profile => profile.role === "parent");
   scoresCache = results[3].data || [];
+  invalidateAdminHighestPreviewCache();
   guardianLinksCache = results[4].data || [];
   studentSubjectsCache = results[5].data || [];
   teacherAssignmentsCache = results[6].data || [];
@@ -1010,6 +1017,7 @@ async function refreshOverviewData() {
   }
 
   scoresCache = results[0].data || [];
+  invalidateAdminHighestPreviewCache();
   missingExclusionsCache = results[1].data || [];
 
   // 保留原有每週提醒名單清理規則。
@@ -1168,6 +1176,10 @@ function renderAdminClassHighestPreview() {
       escapeHtml(formatDateRange(exam)) + "</option>";
   }).join("");
 
+  // 同一考試週期的最高分統計只計算一次；班級／科目篩選直接重用結果。
+  const previewExamKey = String(selectedExam.id);
+  let cachedPreview = adminHighestPreviewCache.get(previewExamKey);
+  if (!cachedPreview) {
   const studentMap = new Map(
     studentsCache.map(student => [String(student.id), student])
   );
@@ -1247,6 +1259,10 @@ function renderAdminClassHighestPreview() {
     if (subjectDiff !== 0) return subjectDiff;
     return a.scope.localeCompare(b.scope, "zh-Hant");
   });
+    cachedPreview = { rows: rows };
+    adminHighestPreviewCache.set(previewExamKey, cachedPreview);
+  }
+  const rows = cachedPreview.rows;
 
   const classOptions = Array.from(new Set(
     studentsCache.map(student => student.class_name).filter(Boolean)
@@ -2419,6 +2435,7 @@ async function editScore(scoreId) {
       scoresCache = scoresCache.map(function (item) {
         return String(item.id) === String(scoreId) ? result.data : item;
       });
+      invalidateAdminHighestPreviewCache();
 
       closeScoreEditModal();
       renderOverview(overviewFilters);
@@ -2746,6 +2763,7 @@ async function refreshScoreCacheForScope(examId, subject, scope) {
       String(item.scope || "").trim() === String(scope || "").trim()
     );
   }).concat(refreshedRows);
+  invalidateAdminHighestPreviewCache();
 
   return refreshedRows;
 }
@@ -2831,6 +2849,7 @@ async function saveSingleBulkScoreRow(row) {
     } else {
       scoresCache.push(result.data);
     }
+    invalidateAdminHighestPreviewCache();
     const nameCell = row.children[1];
     if (nameCell && !nameCell.textContent.includes("已有成績")) {
       nameCell.innerHTML = escapeHtml(student.full_name) + " <span class='muted'>（已有成績）</span>";
