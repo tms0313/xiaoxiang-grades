@@ -4985,12 +4985,23 @@ async function resetParentPassword(parentUserId) {
     }
 
     const data = result.data || {};
-    if (data.success === false) throw new Error(data.error || "重設家長密碼失敗。");
-    const temporaryPassword = data.temporaryPassword || data.tempPassword || data.initialPassword || "123456";
+    if (data.success !== true) {
+      throw new Error(data.error || "伺服器未確認密碼重設成功，請確認後再試。");
+    }
+
+    const temporaryPassword = [
+      data.temporaryPassword,
+      data.tempPassword,
+      data.initialPassword
+    ].find(value => typeof value === "string" && value.trim());
+
+    if (!temporaryPassword) {
+      throw new Error("伺服器未回傳有效的臨時密碼。為避免提供錯誤密碼，系統不會顯示重設成功，請先確認帳號狀態。");
+    }
 
     await loadAdminData();
     renderGuardians();
-    showMessage("家長密碼已重設。臨時密碼：" + temporaryPassword + "。請將臨時密碼提供給家長。", "success");
+    showMessage("家長密碼已重設。臨時密碼：" + temporaryPassword.trim() + "。請將臨時密碼提供給家長。", "success");
   } catch (error) {
     if (button) {
       button.disabled = false;
