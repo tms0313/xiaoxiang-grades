@@ -68,15 +68,18 @@ function rebuildExamIndexes() {
 let profilesCache = [];
 let studentsByIdCache = new Map();
 let activeStudentsCache = [];
+let explicitlyActiveStudentsCache = [];
 let activeStudentsByClassCache = new Map();
 let parentProfilesByIdCache = new Map();
 
 function rebuildAdminEntityIndexes() {
   studentsByIdCache = new Map();
   activeStudentsCache = [];
+  explicitlyActiveStudentsCache = [];
   activeStudentsByClassCache = new Map();
   studentsCache.forEach(function (student) {
     studentsByIdCache.set(String(student.id), student);
+    if (student.is_active === true) explicitlyActiveStudentsCache.push(student);
     if (student.is_active === false) return;
     activeStudentsCache.push(student);
     const className = String(student.class_name || "");
@@ -3886,7 +3889,7 @@ function renderGuardians() {
       "</option>";
   }).join("");
 
-  const activeStudents = studentsCache.filter(student => student.is_active !== false);
+  const activeStudents = activeStudentsCache;
   const studentOptions = activeStudents.map(function (student) {
     return "<option value='" + escapeHtml(student.id) + "'>" +
       escapeHtml(student.class_name + "｜" + student.student_code + "｜" + student.full_name) +
@@ -5360,7 +5363,7 @@ async function renderStudentReviewRecords(selectedExamId) {
   const content = $("adminContent");
   // 考試日期索引已於管理資料載入時排序，匯出頁直接共用，避免每次進入頁面重複複製與排序。
   const examList = examsByDateDescCache;
-  const activeStudents = studentsCache.filter(student => student.is_active === true);
+  const activeStudents = explicitlyActiveStudentsCache;
   const currentExamId = selectedExamId ||
     (examList.length ? String(examList[0].id) : "");
 
