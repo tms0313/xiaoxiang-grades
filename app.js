@@ -2644,8 +2644,13 @@ function renderBulkScoreEntryRows() {
       subjectStudentIds.add(String(item.student_id));
     }
   });
-  const students = getScoreEntryStudents().filter(function (student) {
-    return student.class_name === className && subjectStudentIds.has(String(student.id));
+  const students = [];
+  studentsCache.forEach(function (student) {
+    if (student.is_active !== false &&
+        student.class_name === className &&
+        subjectStudentIds.has(String(student.id))) {
+      students.push(student);
+    }
   });
   if (!students.length) {
     root.innerHTML = "<div class='empty'>此班目前沒有設定修讀「" + escapeHtml(subject) + "」的在學學生，請先至學生管理確認修課設定。</div>";
