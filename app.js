@@ -3186,7 +3186,7 @@ function renderScoreEntry() {
     });
   });
   // 同一頁面的考試選項與考試列表共用排序結果，避免重複排序。
-  const sortedExams = sortByDateDesc(examsCache, "start_date");
+  const sortedExams = examsByDateDescCache;
   const examOptions = sortedExams.map(function (exam) {
     return "<option value='" + escapeHtml(exam.id) + "'>" + escapeHtml(formatDateRange(exam)) + "</option>";
   }).join("");
