@@ -5405,7 +5405,8 @@ async function renderStudentReviewRecords(selectedExamId) {
 function renderExport() {
   const content = $("adminContent");
 
-  const examList = sortByDateDesc(examsCache, "start_date");
+  // 直接重用管理資料載入時已排序的考試索引，避免重複排序。
+  const examList = examsByDateDescCache;
 
   const examOptions = examList.map(function (exam) {
     return (
