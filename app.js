@@ -134,6 +134,19 @@ function invalidateAdminHighestPreviewCache() {
 }
 let missingExclusionsCache = [];
 let guardianLinksCache = [];
+let guardiansWithBindingsCache = new Set();
+let guardianStudentBindingKeysCache = new Set();
+
+function rebuildGuardianBindingIndexes() {
+  guardiansWithBindingsCache = new Set();
+  guardianStudentBindingKeysCache = new Set();
+  guardianLinksCache.forEach(function (link) {
+    guardiansWithBindingsCache.add(String(link.guardian_id));
+    guardianStudentBindingKeysCache.add(
+      JSON.stringify([String(link.guardian_id), String(link.student_id)])
+    );
+  });
+}
 let studentSubjectsCache = [];
 let activeSubjectsByStudentCache = new Map();
 
@@ -850,6 +863,7 @@ async function handleLogout() {
   rebuildScoresByIdCache();
   invalidateAdminHighestPreviewCache();
   guardianLinksCache = [];
+  rebuildGuardianBindingIndexes();
 
   loginPage();
 }
@@ -1062,6 +1076,7 @@ async function loadAdminData() {
   rebuildScoresByIdCache();
   invalidateAdminHighestPreviewCache();
   guardianLinksCache = results[4].data || [];
+  rebuildGuardianBindingIndexes();
   studentSubjectsCache = results[5].data || [];
   rebuildActiveSubjectsByStudentCache();
   teacherAssignmentsCache = results[6].data || [];
@@ -4108,9 +4123,7 @@ async function deleteUnboundParentAccount(parentId) {
     return;
   }
 
-  const hasBinding = guardianLinksCache.some(
-    link => String(link.guardian_id) === String(parentId)
-  );
+  const hasBinding = guardiansWithBindingsCache.has(String(parentId));
 
   if (hasBinding) {
     showMessage("這個家長帳號仍有學生綁定，請先解除所有綁定後再刪除。", "error");
@@ -4486,10 +4499,9 @@ async function saveGuardianBinding(event) {
     return;
   }
 
-  const exists = guardianLinksCache.some(function (item) {
-    return String(item.guardian_id) === String(guardianId) &&
-      String(item.student_id) === String(studentId);
-  });
+  const exists = guardianStudentBindingKeysCache.has(
+    JSON.stringify([String(guardianId), String(studentId)])
+  );
 
   if (exists) {
     showMessage("這筆家長與學生綁定已存在，請勿重複建立。", "error");
