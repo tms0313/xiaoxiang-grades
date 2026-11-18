@@ -6257,8 +6257,20 @@ async function renderParentDashboard() {
     return cachedTaiwanDateTime;
   }
 
+  const releasedExamCache = new Map();
+
   function isExamReleased(exam) {
-    if (!exam || !exam.end_date) return false;
+    if (!exam) return false;
+
+    const examKey = String(exam.id || "");
+    if (examKey && releasedExamCache.has(examKey)) {
+      return releasedExamCache.get(examKey);
+    }
+
+    if (!exam.end_date) {
+      if (examKey) releasedExamCache.set(examKey, false);
+      return false;
+    }
 
     const taiwan = getTaiwanDateTime();
 
@@ -6281,11 +6293,19 @@ async function renderParentDashboard() {
     if (today > releaseDate) return true;
     if (today < releaseDate) return false;
 
-    return Number(taiwan.hour) > 20 ||
+    const released = today > releaseDate || (
+      today === releaseDate &&
       (
-        Number(taiwan.hour) === 20 &&
-        Number(taiwan.minute) >= 0
-      );
+        Number(taiwan.hour) > 20 ||
+        (
+          Number(taiwan.hour) === 20 &&
+          Number(taiwan.minute) >= 0
+        )
+      )
+    );
+
+    if (examKey) releasedExamCache.set(examKey, released);
+    return released;
   }
 
   function getStudentScores(student, exam) {
