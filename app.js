@@ -5381,11 +5381,12 @@ function renderExport() {
   const downloadButton = $("downloadCsv");
 
   function updateExportSelection() {
-    const selectedCount = checkboxes.filter(function (checkbox) {
-      return checkbox.checked;
-    }).length;
-
+    let selectedCount = 0;
     const totalCount = checkboxes.length;
+
+    checkboxes.forEach(function (checkbox) {
+      if (checkbox.checked) selectedCount++;
+    });
 
     selectAll.checked =
       totalCount > 0 && selectedCount === totalCount;
