@@ -1720,7 +1720,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
           if (matchedStudents.length) matchedEnrolledGroupCount += 1;
         }
         const enrolledStudents = matchingEnrolledStudentsByClassSubject.get(enrollmentKey);
-        if (!enrolledStudents || !enrolledStudents.length) return;
+        if (!enrolledStudents || !visibleStudents.length) return;
 
         registeredGroup.scopes.forEach(function (scope) {
           enrolledStudents.forEach(function (student) {
@@ -3306,20 +3306,18 @@ function renderStudents() {
   const getActiveSubjects = studentId =>
     activeSubjectsByStudent.get(String(studentId)) || [];
 
-  const matchingStudents = studentsCache.filter(function (student) {
+  // 將狀態、班級與修課科目條件合併為單次學生快取遍歷，
+  // 避免先建立 matchingStudents 再建立 enrolledStudents 兩份中間陣列。
+  const visibleStudents = [];
+  studentsCache.forEach(function (student) {
     const active = student.is_active !== false;
-    const statusMatch = filter === "active" ? active : !active;
-    const classMatch = classFilter === "all" || student.class_name === classFilter;
-    return statusMatch && classMatch;
-  });
-
-  const enrolledStudents = matchingStudents.filter(function (student) {
-    return subjectFilter === "all" || getActiveSubjects(student.id).some(function (item) {
+    if ((filter === "active" ? !active : active)) return;
+    if (classFilter !== "all" && student.class_name !== classFilter) return;
+    if (subjectFilter !== "all" && !getActiveSubjects(student.id).some(function (item) {
       return item.subject === subjectFilter;
-    });
+    })) return;
+    visibleStudents.push(student);
   });
-
-  const visibleStudents = enrolledStudents;
 
   const rows = visibleStudents.map(function (student) {
     const active = student.is_active !== false;
@@ -3366,7 +3364,7 @@ function renderStudents() {
         "<label for='studentKeywordFilter'><strong>搜尋：</strong></label>" +
         "<input id='studentKeywordFilter' class='student-search-input' type='search' placeholder='輸入姓名或學生編號' aria-label='搜尋學生姓名或學生編號'>" +
         "<button class='btn btn-small btn-secondary' type='button' id='studentClearFilters'>清除篩選</button>" +
-        "<span id='studentSubjectCount' class='student-filter-count'>符合條件 " + enrolledStudents.length + " 人</span>" +
+        "<span id='studentSubjectCount' class='student-filter-count'>符合條件 " + visibleStudents.length + " 人</span>" +
       "</div>" +
       "<div class='table-wrap'><table class='student-management-table'>" +
         "<thead><tr><th>學生編號</th><th>姓名</th><th>班級</th><th>修課科目</th><th>狀態</th><th>操作</th></tr></thead>" +
