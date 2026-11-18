@@ -67,15 +67,18 @@ function rebuildExamIndexes() {
 }
 let profilesCache = [];
 let studentsByIdCache = new Map();
+let activeStudentsCache = [];
 let activeStudentsByClassCache = new Map();
 let parentProfilesByIdCache = new Map();
 
 function rebuildAdminEntityIndexes() {
   studentsByIdCache = new Map();
+  activeStudentsCache = [];
   activeStudentsByClassCache = new Map();
   studentsCache.forEach(function (student) {
     studentsByIdCache.set(String(student.id), student);
     if (student.is_active === false) return;
+    activeStudentsCache.push(student);
     const className = String(student.class_name || "");
     if (!activeStudentsByClassCache.has(className)) {
       activeStudentsByClassCache.set(className, []);
@@ -3233,11 +3236,7 @@ function renderScoreEntry() {
 function getScoreEntryStudents() {
   const className = $("scoreClass") ? $("scoreClass").value : "";
   if (className) return activeStudentsByClassCache.get(className) || [];
-  const allActiveStudents = [];
-  activeStudentsByClassCache.forEach(function (students) {
-    allActiveStudents.push(...students);
-  });
-  return allActiveStudents;
+  return activeStudentsCache;
 }
 
 function updateScoreStudentOptions(keepSelection) {
