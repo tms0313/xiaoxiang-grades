@@ -1849,9 +1849,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const rowsBeforeStatus = rows.length;
     const statusFilterStartedAt = performance.now();
     let missingCount = 0;
-    const filteredRows = [];
+    const sortableRows = [];
 
-    // 同一輪遍歷同時計算未登錄數量與狀態篩選，避免 reduce/filter 連續掃描及重建原陣列。
+    // 同一輪遍歷同時計算未登錄數量、狀態篩選及排序欄位，避免建立中間 filteredRows 陣列。
     rows.forEach(function (item) {
       if (item.missing) missingCount += 1;
       let include = true;
@@ -1865,16 +1865,8 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
             scoreClass(item.score.score, item.student.class_name, item.score.subject) === "low-score";
         }
       }
-      if (include) filteredRows.push(item);
-    });
-
-    const statusFilterMs = performance.now() - statusFilterStartedAt;
-    rows = filteredRows;
-
-    // 先計算排序欄位，再排序；比較器不再反覆讀取物件、轉字串或建立 locale 選項。
-    const sortStartedAt = performance.now();
-    const sortableRows = rows.map(function (item) {
-      return {
+      if (!include) return;
+      sortableRows.push({
         item: item,
         date: String((item.exam && (item.exam.end_date || item.exam.start_date)) || ""),
         examId: String(item.exam && item.exam.id || ""),
@@ -1882,8 +1874,13 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         missing: !!item.missing,
         studentCode: String(item.student.student_code || ""),
         scope: String(item.scope || (item.score && item.score.scope) || "")
-      };
+      });
     });
+
+    const statusFilterMs = performance.now() - statusFilterStartedAt;
+
+    // 排序欄位已在前一輪遍歷建立，排序比較器不再反覆讀取物件或轉換字串。
+    const sortStartedAt = performance.now();
 
     sortableRows.sort(function (a, b) {
       if (a.date !== b.date) return b.date.localeCompare(a.date);
