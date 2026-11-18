@@ -3107,12 +3107,14 @@ function moveScoreStudent(offset) {
   const next = index < 0 ? 0 : index + offset;
   if (next < 0 || next >= students.length) return;
   $("scoreStudent").value = students[next].id;
-  // updateScoreMode() 內部會更新學生選單與前後筆按鈕，避免重複重建整份選單。
-  updateScoreMode();
+  // 學生名單沒有改變，只更新前後筆狀態，不重建整份下拉選單。
+  if ($("scorePrevStudent")) $("scorePrevStudent").disabled = next <= 0;
+  if ($("scoreNextStudent")) $("scoreNextStudent").disabled = next >= students.length - 1;
+  updateScoreMode(false);
   saveScoreEntryProgress();
 }
 
-function updateScoreMode() {
+function updateScoreMode(refreshStudentOptions) {
   const student = studentsCache.find(item => String(item.id) === String($("scoreStudent").value));
   const subject = $("scoreSubject").value;
   const grade3 = student && isGrade3Class(student.class_name);
@@ -3127,7 +3129,7 @@ function updateScoreMode() {
   $("grade3MathGrade").required = !!grade3Math;
   $("correctCount").required = !!grade3Other;
   $("gradeLevel").required = !!grade3Other;
-  updateScoreStudentOptions(true);
+  if (refreshStudentOptions !== false) updateScoreStudentOptions(true);
   updateGrade3AbsenceMode(student);
 }
 
