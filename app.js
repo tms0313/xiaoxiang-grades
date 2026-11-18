@@ -2230,8 +2230,8 @@ async function restoreMissingReminder(exclusionId) {
     return;
   }
 
-  const student = studentsCache.find(item => String(item.id) === String(exclusion.student_id));
-  const exam = examsCache.find(item => String(item.id) === String(exclusion.exam_id));
+  const student = studentsByIdCache.get(String(exclusion.student_id));
+  const exam = examsByIdCache.get(String(exclusion.exam_id));
   if (!student || !exam) {
     showMessage("找不到對應的學生或考試資料，請重新整理。", "error", true);
     return;
@@ -3309,7 +3309,7 @@ async function saveScore(event) {
     const newResult = gradeLevel === "缺考" || gradeLevel === "請假" ? gradeLevel :
       grade3Math ? scoreValue + " 分／" + gradeLevel :
       grade3 ? correctCount + " 題／" + gradeLevel : scoreValue + " 分";
-    const exam = examsCache.find(item => String(item.id) === String(examId));
+    const exam = examsByIdCache.get(String(examId));
     if (!confirm("發現相同資料，是否覆蓋原有成績？\n\n" +
       "考試：" + formatDateRange(exam) + "\n" +
       "學生：" + student.full_name + "（" + student.class_name + "）\n" +
@@ -3336,7 +3336,7 @@ async function saveScore(event) {
     updateScoreMode();
     const counter = $("scoreEntryCounter");
     if (counter) counter.textContent = "本次頁面已成功登錄 " + scoreEntrySavedCount + " 筆";
-    const savedExam = examsCache.find(item => String(item.id) === String(examId));
+    const savedExam = examsByIdCache.get(String(examId));
     const savedResultText = gradeLevel === "請假" || gradeLevel === "缺考" ? gradeLevel :
       grade3Math ? scoreValue + " 分／" + gradeLevel :
       grade3 ? correctCount + " 題／" + gradeLevel : scoreValue + " 分";
@@ -3658,7 +3658,7 @@ function clearExamForm() {
 }
 
 function editExam(id) {
-  const exam = examsCache.find(item => String(item.id) === String(id));
+  const exam = examsByIdCache.get(String(id));
   if (!exam) return;
 
   $("examEditId").value = exam.id;
@@ -3744,7 +3744,7 @@ async function saveExam(event) {
 }
 
 async function deleteExam(id) {
-  const exam = examsCache.find(item => String(item.id) === String(id));
+  const exam = examsByIdCache.get(String(id));
   if (!exam) return;
 
   if (!confirm(
@@ -4010,9 +4010,7 @@ function renderGuardians() {
 // ==================================================
 
 async function deleteUnboundParentAccount(parentId) {
-  const parent = profilesCache.find(
-    item => String(item.id) === String(parentId)
-  );
+  const parent = parentProfilesByIdCache.get(String(parentId));
 
   if (!parent) {
     showMessage("找不到這位家長的帳號資料，請重新整理。", "error");
@@ -4069,7 +4067,7 @@ async function deleteUnboundParentAccount(parentId) {
 // ==================================================
 
 async function editParentAccount(parentId) {
-  const parent = profilesCache.find(item => String(item.id) === String(parentId));
+  const parent = parentProfilesByIdCache.get(String(parentId));
 
   if (!parent) {
     showMessage("找不到這位家長的帳號資料，請重新整理。", "error");
@@ -4597,7 +4595,7 @@ function renderTeacherManagement() {
 async function addTeacherRoleToParent(event) {
   event.preventDefault();
   const userId = $("existingParentForTeacher").value;
-  const profile = profilesCache.find(item => String(item.id) === String(userId));
+  const profile = parentProfilesByIdCache.get(String(userId));
   if (!profile) {
     showMessage("請選擇有效的既有家長帳號。", "error");
     return;
@@ -4967,7 +4965,7 @@ function getLinkedStudentNames(parentUserId) {
 }
 
 async function resetParentPassword(parentUserId) {
-  const parent = profilesCache.find(profile => String(profile.id) === String(parentUserId));
+  const parent = parentProfilesByIdCache.get(String(parentUserId));
   if (!parent) {
     showMessage("找不到這筆家長帳號資料，請重新整理後再試。", "error");
     return;
@@ -5027,9 +5025,7 @@ async function resetParentPassword(parentUserId) {
 }
 
 async function deleteParentAccount(parentUserId) {
-  const parent = profilesCache.find(function (profile) {
-    return String(profile.id) === String(parentUserId);
-  });
+  const parent = parentProfilesByIdCache.get(String(parentUserId));
 
   if (!parent) {
     showMessage("找不到這筆家長帳號資料，請重新整理後再試。", "error");
