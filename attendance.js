@@ -172,17 +172,24 @@ function renderAttendancePreviewDetail() {
     "<div class='att-preview-actions'><button type='button' class='btn btn-success' id='attendancePreviewSave'>預覽整班儲存</button><button type='button' class='btn btn-secondary' id='attendancePreviewReset'>重設示意資料</button></div>" +
     "<p class='att-preview-muted' id='attendancePreviewMessage' aria-live='polite'>提醒：目前僅為畫面操作示範，按下儲存不會寫入資料庫。</p>";
 
-  panel.querySelectorAll("[data-att-preview-row]").forEach(row => {
-    const status = row.querySelector(".att-status");
-    const late = row.querySelector(".att-late");
-    const checkin = row.querySelector(".att-checkin");
-    status.addEventListener("change", function () {
-      const isPresent = this.value === "normal";
-      late.disabled = !isPresent;
-      checkin.disabled = !isPresent;
-      if (!isPresent) { late.value = "0"; }
-    });
-  });
+  panel.onchange = function (event) {
+    const target = event.target;
+    if (!target.matches(".att-status, .att-late, .att-checkin")) return;
+
+    if (target.matches(".att-status")) {
+      const row = target.closest("[data-att-preview-row]");
+      if (row) {
+        const isPresent = target.value === "normal";
+        const late = row.querySelector(".att-late");
+        const checkin = row.querySelector(".att-checkin");
+        late.disabled = !isPresent;
+        checkin.disabled = !isPresent;
+        if (!isPresent) late.value = "0";
+      }
+    }
+
+    updateAttendancePreviewStats();
+  };
 
   document.getElementById("attendancePreviewSave").addEventListener("click", function () {
     const rows = panel.querySelectorAll("[data-att-preview-row]");
@@ -225,7 +232,4 @@ function updateAttendancePreviewStats() {
     "<div class='att-preview-stat'><strong>" + leave + "</strong>請假</div>" +
     "<div class='att-preview-stat'><strong>" + late + " 分鐘</strong>遲到合計</div>" +
     "<div class='att-preview-stat'><strong>" + uncheckin + " 次</strong>未打卡</div>";
-  panel.querySelectorAll("select,input").forEach(input => {
-    input.addEventListener("change", updateAttendancePreviewStats);
-  });
 }
