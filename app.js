@@ -76,7 +76,12 @@ let scoresCache = [];
 let scoresByIdCache = new Map();
 
 function rebuildScoresByIdCache() {
-  scoresByIdCache = new Map(scoresCache.map(score => [String(score.id), score]));
+  const nextIndex = new Map();
+  for (let index = 0; index < scoresCache.length; index += 1) {
+    const score = scoresCache[index];
+    nextIndex.set(String(score.id), score);
+  }
+  scoresByIdCache = nextIndex;
 }
 let adminHighestPreviewCache = new Map();
 
