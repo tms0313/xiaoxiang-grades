@@ -4675,14 +4675,14 @@ function renderTeacherManagement() {
   content.onclick = async function (event) {
     const resetButton = event.target.closest("[data-reset-teacher]");
     if (resetButton) {
-      const profile = teacherProfilesCache.find(item => String(item.id) === String(resetButton.dataset.resetTeacher));
+      const profile = teacherById.get(String(resetButton.dataset.resetTeacher));
       if (profile) await manageTeacherAccount("reset_password", profile.id, profile.email || "");
       return;
     }
 
     const deleteButton = event.target.closest("[data-delete-teacher]");
     if (deleteButton) {
-      const profile = teacherProfilesCache.find(item => String(item.id) === String(deleteButton.dataset.deleteTeacher));
+      const profile = teacherById.get(String(deleteButton.dataset.deleteTeacher));
       if (profile) await manageTeacherAccount("delete", profile.id, profile.email || "");
       return;
     }
