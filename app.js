@@ -3209,7 +3209,7 @@ function renderScoreEntry() {
     "<div class='panel'><h3 id='examFormTitle'>新增考試</h3><form id='examForm'><input type='hidden' id='examEditId'>" +
     "<div class='form-grid'><div class='field'><label>開始日期</label><input id='examStart' type='date' style='width:100%;max-width:180px' required></div>" +
     "<div class='field'><label>結束日期</label><input id='examEnd' type='date' style='width:100%;max-width:180px' required></div></div>" +
-    "<div class='toolbar'><button class='btn btn-success' type='submit'>儲存考試</button><button class='btn btn-secondary' type='button' id='examCancel'>清除</button></div></form></div>" +
+    "<div class='toolbar' id='examFormActions'><button class='btn btn-success' type='submit'>儲存考試</button><button class='btn btn-secondary' type='button' id='examCancel'>清除</button></div></form></div>" +
     "<div class='table-wrap'><table class='exam-management-table'><thead><tr><th>開始日期</th><th>結束日期</th><th>操作</th></tr></thead><tbody>" +
     (examRows || "<tr><td colspan='3' class='empty'>尚無考試資料</td></tr>") + "</tbody></table></div>" +
     "<div class='panel'><h3>成績登錄</h3><div class='form-grid'>" +
