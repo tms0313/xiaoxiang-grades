@@ -164,6 +164,8 @@ let teacherProfilesCache = [];
 let teacherAssignmentsCache = [];
 let teacherStudentsCache = [];
 let teacherExamsCache = [];
+let teacherExamsByIdCache = new Map();
+let teacherExamOptionsCache = "";
 let teacherScoresCache = [];
 let teacherStudentSubjectsCache = [];
 let teacherPermittedSubjectsByClass = new Map();
@@ -6755,6 +6757,11 @@ async function renderTeacherDashboard() {
   teacherExamsCache = (results[2].data || []).sort(function (a, b) {
     return String(b.end_date || b.start_date || "").localeCompare(String(a.end_date || a.start_date || ""));
   });
+  teacherExamsByIdCache = new Map(teacherExamsCache.map(exam => [String(exam.id), exam]));
+  teacherExamOptionsCache = teacherExamsCache.map(function (exam) {
+    return "<option value='" + escapeHtml(exam.id) + "'>" +
+      escapeHtml(formatDateRange(exam)) + "</option>";
+  }).join("");
   teacherStudentSubjectsCache = results[3].data || [];
   teacherScoresCache = results[4].data || [];
 
@@ -6814,14 +6821,9 @@ async function renderTeacherDashboard() {
 }
 
 function renderTeacherResults() {
-  const examOptions = teacherExamsCache.map(function (exam) {
-    return "<option value='" + escapeHtml(exam.id) + "'>" +
-      escapeHtml(formatDateRange(exam)) + "</option>";
-  }).join("");
+  const examOptions = teacherExamOptionsCache;
 
-  const selectedExam = teacherExamsCache.find(
-    exam => String(exam.id) === String(teacherSelectedExamId)
-  );
+  const selectedExam = teacherExamsByIdCache.get(String(teacherSelectedExamId)) || null;
 
   const scoreKey = (studentId, examId, subject) =>
     JSON.stringify([String(studentId), String(examId), subject]);
