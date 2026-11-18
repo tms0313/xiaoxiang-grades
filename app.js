@@ -992,8 +992,6 @@ async function loadAdminData() {
   studentsCache = results[0].data || [];
   examsCache = results[1].data || [];
   rebuildExamIndexes();
-  profilesCache = allProfiles.filter(profile => profile.role === "parent");
-  rebuildAdminEntityIndexes();
   scoresCache = results[3].data || [];
   invalidateAdminHighestPreviewCache();
   guardianLinksCache = results[4].data || [];
@@ -1003,6 +1001,30 @@ async function loadAdminData() {
   profileRolesCache = results[7].data || [];
   missingExclusionsCache = results[8].data || [];
 
+  // 一次走訪帳號資料，同時建立家長清單與教師索引，避免重複 filter 全表。
+  const additionalTeacherIds = new Set(profileRolesCache.map(item => String(item.user_id)));
+  const parentProfiles = [];
+  const teacherMap = new Map();
+  allProfiles.forEach(profile => {
+    const profileId = String(profile.id);
+    if (profile.role === "parent") parentProfiles.push(profile);
+    if (profile.role === "teacher") {
+      teacherMap.set(profileId, {
+        ...profile,
+        isAdditionalTeacherRole: false
+      });
+    }
+    if (additionalTeacherIds.has(profileId)) {
+      teacherMap.set(profileId, {
+        ...profile,
+        isAdditionalTeacherRole: true
+      });
+    }
+  });
+  profilesCache = parentProfiles;
+  rebuildAdminEntityIndexes();
+  teacherProfilesCache = Array.from(teacherMap.values());
+
   // 新一週成績於週六 20:00 開放時，自動清除上一週的已排除提醒名單。
   try {
     await cleanupPreviousWeekExclusions();
@@ -1010,21 +1032,6 @@ async function loadAdminData() {
     console.error("清除上一週已排除提醒失敗：", error);
   }
 
-  const additionalTeacherIds = new Set(profileRolesCache.map(item => String(item.user_id)));
-  const teacherMap = new Map();
-  allProfiles.filter(profile => profile.role === "teacher").forEach(profile => {
-    teacherMap.set(String(profile.id), {
-      ...profile,
-      isAdditionalTeacherRole: false
-    });
-  });
-  allProfiles.filter(profile => additionalTeacherIds.has(String(profile.id))).forEach(profile => {
-    teacherMap.set(String(profile.id), {
-      ...profile,
-      isAdditionalTeacherRole: true
-    });
-  });
-  teacherProfilesCache = Array.from(teacherMap.values());
   adminDataLoadMetrics = {
     queryMs: adminQueriesMs,
     totalMs: performance.now() - adminLoadStartedAt,
