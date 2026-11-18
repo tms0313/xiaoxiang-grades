@@ -5240,21 +5240,30 @@ async function renderStudentReviewRecords(selectedExamId) {
     return;
   }
 
-  async function loadRecords() {
+  let cachedReviewExamId = "";
+  let cachedReviewMap = new Map();
+
+  async function loadRecords(forceReload) {
+    const selectedExamId = examSelect.value;
     recordContent.innerHTML = "<div class='empty'>正在讀取檢閱紀錄……</div>";
     refreshButton.disabled = true;
 
     try {
-      const result = await db
-        .from("score_review_records")
-        .select("student_id, reviewed_at")
-        .eq("exam_id", examSelect.value);
+      if (forceReload || cachedReviewExamId !== selectedExamId) {
+        const result = await db
+          .from("score_review_records")
+          .select("student_id, reviewed_at")
+          .eq("exam_id", selectedExamId);
 
-      if (result.error) throw result.error;
+        if (result.error) throw result.error;
 
-      const reviewMap = new Map(
-        (result.data || []).map(record => [String(record.student_id), record])
-      );
+        cachedReviewMap = new Map(
+          (result.data || []).map(record => [String(record.student_id), record])
+        );
+        cachedReviewExamId = selectedExamId;
+      }
+
+      const reviewMap = cachedReviewMap;
       const selectedClass = classSelect.value;
       let visibleCount = 0;
       let reviewedCount = 0;
@@ -5318,9 +5327,15 @@ async function renderStudentReviewRecords(selectedExamId) {
     }
   }
 
-  examSelect.addEventListener("change", loadRecords);
-  classSelect.addEventListener("change", loadRecords);
-  refreshButton.addEventListener("click", loadRecords);
+  examSelect.addEventListener("change", function () {
+    loadRecords();
+  });
+  classSelect.addEventListener("change", function () {
+    loadRecords();
+  });
+  refreshButton.addEventListener("click", function () {
+    loadRecords(true);
+  });
   await loadRecords();
 }
 
