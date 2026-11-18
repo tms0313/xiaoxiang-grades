@@ -71,6 +71,7 @@ let teacherStudentSubjectsCache = [];
 let teacherPermittedSubjectsByClass = new Map();
 let teacherStudentsByClassSubject = new Map();
 let teacherScoresByStudentExamSubject = new Map();
+let scoreEntryStudentsByClassSubject = new Map();
 let teacherSelectedExamId = "";
 let teacherSelectedClassName = "";
 let scoreEntrySavedCount = 0;
@@ -2640,21 +2641,8 @@ function renderBulkScoreEntryRows() {
     root.innerHTML = "<div class='empty'>請先選擇考試週期、班級、科目，並填寫考試範圍。</div>";
     return;
   }
-  // 依學生管理中的修課設定篩選，只列出該科目已啟用的在學學生。
-  const subjectStudentIds = new Set();
-  studentSubjectsCache.forEach(function (item) {
-    if (item.subject === subject && item.is_active === true) {
-      subjectStudentIds.add(String(item.student_id));
-    }
-  });
-  const students = [];
-  studentsCache.forEach(function (student) {
-    if (student.is_active !== false &&
-        student.class_name === className &&
-        subjectStudentIds.has(String(student.id))) {
-      students.push(student);
-    }
-  });
+  // 班級／科目學生名單已在頁面初始化時分組，切換條件不再重掃全部修課與學生資料。
+  const students = scoreEntryStudentsByClassSubject.get(JSON.stringify([className, subject])) || [];
   if (!students.length) {
     root.innerHTML = "<div class='empty'>此班目前沒有設定修讀「" + escapeHtml(subject) + "」的在學學生，請先至學生管理確認修課設定。</div>";
     return;
@@ -3009,6 +2997,23 @@ async function saveBulkScores() {
 
 function renderScoreEntry() {
   const content = $("adminContent");
+  // 本次成績登錄頁面建立班級／科目學生索引，切換考試範圍時直接重用。
+  scoreEntryStudentsByClassSubject = new Map();
+  const activeSubjectStudentIds = new Set();
+  studentSubjectsCache.forEach(function (item) {
+    if (item.is_active === true) {
+      activeSubjectStudentIds.add(JSON.stringify([String(item.student_id), item.subject]));
+    }
+  });
+  studentsCache.forEach(function (student) {
+    if (student.is_active === false) return;
+    SUBJECTS.forEach(function (subject) {
+      if (!activeSubjectStudentIds.has(JSON.stringify([String(student.id), subject]))) return;
+      const key = JSON.stringify([student.class_name, subject]);
+      if (!scoreEntryStudentsByClassSubject.has(key)) scoreEntryStudentsByClassSubject.set(key, []);
+      scoreEntryStudentsByClassSubject.get(key).push(student);
+    });
+  });
   // 同一頁面的考試選項與考試列表共用排序結果，避免重複排序。
   const sortedExams = sortByDateDesc(examsCache, "start_date");
   const examOptions = sortedExams.map(function (exam) {
