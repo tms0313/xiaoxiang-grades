@@ -3128,15 +3128,17 @@ function updateScoreMode() {
   $("correctCount").required = !!grade3Other;
   $("gradeLevel").required = !!grade3Other;
   updateScoreStudentOptions(true);
-  updateGrade3AbsenceMode();
+  updateGrade3AbsenceMode(student);
 }
 
-function updateGrade3AbsenceMode() {
+function updateGrade3AbsenceMode(studentOverride) {
   const mathGrade = $("grade3MathGrade");
   const otherGrade = $("gradeLevel");
   updateGradeSelectStyle(mathGrade);
   updateGradeSelectStyle(otherGrade);
-  const student = $("scoreStudent") ? studentsCache.find(item => String(item.id) === String($("scoreStudent").value)) : null;
+  const student = arguments.length
+    ? studentOverride
+    : $("scoreStudent") ? studentsCache.find(item => String(item.id) === String($("scoreStudent").value)) : null;
   const subject = $("scoreSubject") ? $("scoreSubject").value : "";
   const grade3Math = student && isGrade3Math(student.class_name, subject);
   const grade3Other = student && isGrade3Class(student.class_name) && !grade3Math;
