@@ -56,6 +56,7 @@ let currentProfile = null;
 let currentHasTeacher = false;
 let currentMode = "";
 let profileRolesCache = [];
+let teacherRoleIdsCache = new Set();
 let studentsCache = [];
 let examsCache = [];
 let examsByIdCache = new Map();
@@ -854,6 +855,7 @@ async function handleLogout() {
   currentHasTeacher = false;
   currentMode = "";
   profileRolesCache = [];
+  teacherRoleIdsCache = new Set();
   studentsCache = [];
   examsCache = [];
   rebuildExamIndexes();
@@ -1081,6 +1083,7 @@ async function loadAdminData() {
   rebuildActiveSubjectsByStudentCache();
   teacherAssignmentsCache = results[6].data || [];
   profileRolesCache = results[7].data || [];
+  teacherRoleIdsCache = new Set(profileRolesCache.filter(item => item.role === "teacher").map(item => String(item.user_id)));
   missingExclusionsCache = results[8].data || [];
 
   // 一次走訪帳號資料，同時建立家長清單與教師索引，避免重複 filter 全表。
@@ -4565,9 +4568,7 @@ async function removeGuardianBinding(guardianId, studentId) {
 function renderTeacherManagement() {
   const content = $("adminContent");
   const teacherById = new Map(teacherProfilesCache.map(profile => [String(profile.id), profile]));
-  const teacherRoleIds = new Set(
-    profileRolesCache.filter(item => item.role === "teacher").map(item => String(item.user_id))
-  );
+  const teacherRoleIds = teacherRoleIdsCache;
   const teacherOptions = teacherProfilesCache.map(function (profile) {
     return "<option value='" + escapeHtml(profile.id) + "'>" +
       escapeHtml(profile.email || profile.display_name || profile.id) +
