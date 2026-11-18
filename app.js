@@ -6593,7 +6593,7 @@ function renderTeacherResults() {
 
   const classSections = visibleClasses.map(function (className) {
     const permittedSubjects = teacherPermittedSubjectsByClass.get(className) || new Set();
-    const subjects = SUBJECTS.filter(subject => permittedSubjects.includes(subject));
+    const subjects = SUBJECTS.filter(subject => permittedSubjects.has(subject));
 
     const subjectSections = subjects.map(function (subject) {
       const students = teacherStudentsByClassSubject.get(JSON.stringify([className, subject])) || [];
