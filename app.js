@@ -2978,10 +2978,12 @@ async function saveBulkScores() {
 
 function renderScoreEntry() {
   const content = $("adminContent");
-  const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
+  // 同一頁面的考試選項與考試列表共用排序結果，避免重複排序。
+  const sortedExams = sortByDateDesc(examsCache, "start_date");
+  const examOptions = sortedExams.map(function (exam) {
     return "<option value='" + escapeHtml(exam.id) + "'>" + escapeHtml(formatDateRange(exam)) + "</option>";
   }).join("");
-  const examRows = sortByDateDesc(examsCache, "start_date").map(function (exam) {
+  const examRows = sortedExams.map(function (exam) {
     return "<tr><td>" + escapeHtml(formatDate(exam.start_date)) + "</td><td>" + escapeHtml(formatDate(exam.end_date)) +
       "</td><td class='action-cell'><div class='action-buttons'><button class='btn btn-small' data-edit-exam='" + escapeHtml(exam.id) +
       "'>修改</button><button class='btn btn-danger btn-small' data-delete-exam='" + escapeHtml(exam.id) + "'>刪除</button></div></td></tr>";
