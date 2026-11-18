@@ -1506,7 +1506,6 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
   const overviewIndexBuildStartedAt = performance.now();
   const keyOf = (...parts) => parts.map(value => String(value == null ? "" : value).trim()).join("\u001f");
   const scoreKeys = new Set();
-  const registeredScopes = new Map();
   const registeredGroupsByExam = new Map();
   const scoresByExam = new Map();
   const scoresByClass = new Map();
@@ -1536,19 +1535,19 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     scoreKeys.add(keyOf(score.exam_id, score.student_id, score.subject, normalizedScope));
     if (score.grade_level === "請假" || !normalizedScope) return;
     const groupKey = keyOf(score.exam_id, student.class_name, score.subject);
-    if (!registeredScopes.has(groupKey)) registeredScopes.set(groupKey, new Set());
-    const scopeSet = registeredScopes.get(groupKey);
-    scopeSet.add(normalizedScope);
     const examKey = String(score.exam_id);
     if (!registeredGroupsByExam.has(examKey)) registeredGroupsByExam.set(examKey, new Map());
     const examGroups = registeredGroupsByExam.get(examKey);
-    if (!examGroups.has(groupKey)) {
-      examGroups.set(groupKey, {
+    let registeredGroup = examGroups.get(groupKey);
+    if (!registeredGroup) {
+      registeredGroup = {
         className: student.class_name,
         subject: score.subject,
-        scopes: scopeSet
-      });
+        scopes: new Set()
+      };
+      examGroups.set(groupKey, registeredGroup);
     }
+    registeredGroup.scopes.add(normalizedScope);
   });
 
   const exclusionKeys = new Set(missingExclusionsCache.map(item =>
