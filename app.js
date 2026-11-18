@@ -934,10 +934,8 @@ function hasLatestExamReachedReleaseTime(exam) {
 }
 
 async function cleanupPreviousWeekExclusions() {
-  const datedExams = sortByDateDesc(
-    examsCache.filter(exam => exam.start_date || exam.end_date),
-    "start_date"
-  );
+  // 管理資料載入時已建立日期排序索引；週期性檢查直接重用，避免重複排序。
+  const datedExams = examsByDateDescCache.filter(exam => exam.start_date || exam.end_date);
 
   // 必須有本週與上一週兩筆考試，且本週成績已到週六 20:00 開放時間。
   if (datedExams.length < 2 || !hasLatestExamReachedReleaseTime(datedExams[0])) {
