@@ -403,3 +403,26 @@ footer {
   line-height: 1 !important;
   white-space: nowrap;
 }
+
+
+/* 週成績登錄：縮小學生資料列的垂直間距 */
+.bulk-score-entry-table th,
+.bulk-score-entry-table td {
+  padding: 5px 8px;
+  line-height: 1.3;
+  vertical-align: middle;
+}
+.bulk-score-entry-table td input,
+.bulk-score-entry-table td select {
+  height: 36px;
+  min-height: 36px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.bulk-score-entry-table td [data-save-bulk-row] {
+  min-height: 32px;
+  margin: 0;
+  padding: 5px 9px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
