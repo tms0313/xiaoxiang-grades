@@ -2881,7 +2881,7 @@ async function saveSingleBulkScoreRow(row) {
     const payload = { student_id: studentId, exam_id: examId, subject, scope, score, correct_count: correctCount, grade_level: gradeLevel };
     const result = duplicate
       ? await db.from("scores").update(payload).eq("id", duplicate.id).select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").single()
-      : await db.from("scores").insert(payload).select("*").single();
+      : await db.from("scores").insert(payload).select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").single();
     if (result.error) throw result.error;
     if (!result.data) throw new Error("成績已送出，但未取得儲存後的資料，請重新整理確認。");
 
