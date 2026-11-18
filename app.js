@@ -2951,10 +2951,12 @@ async function saveSingleBulkScoreRow(row) {
       Object.assign(duplicate, result.data);
       bulkEntryExistingScoresByStudent.set(String(studentId), duplicate);
       scoresByIdCache.set(String(result.data.id), duplicate);
+      updateScoreCompositeIndex(duplicate);
     } else {
       scoresCache.push(result.data);
       bulkEntryExistingScoresByStudent.set(String(studentId), result.data);
       scoresByIdCache.set(String(result.data.id), result.data);
+      updateScoreCompositeIndex(result.data);
     }
     invalidateAdminHighestPreviewCache();
     const nameCell = row.children[1];
