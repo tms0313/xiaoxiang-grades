@@ -169,6 +169,8 @@ let teacherStudentSubjectsCache = [];
 let teacherPermittedSubjectsByClass = new Map();
 let teacherStudentsByClassSubject = new Map();
 let teacherScoresByStudentExamSubject = new Map();
+const teacherStudentCodeCollator = new Intl.Collator("zh-Hant", { numeric: true });
+const teacherStudentNameCollator = new Intl.Collator("zh-Hant");
 let scoreEntryStudentsByClassSubject = new Map();
 let bulkEntryExistingScoresByStudent = new Map();
 let bulkEntryScoreContextKey = "";
@@ -6886,8 +6888,8 @@ function renderTeacherResults() {
         const rows = entry[1].sort((a, b) =>
           Number(a.isLeaveOrAbsent) - Number(b.isLeaveOrAbsent) ||
           (b.sortScore - a.sortScore) ||
-          a.code.localeCompare(b.code, "zh-Hant", { numeric: true }) ||
-          String(a.student.full_name).localeCompare(String(b.student.full_name), "zh-Hant")
+          teacherStudentCodeCollator.compare(a.code, b.code) ||
+          teacherStudentNameCollator.compare(String(a.student.full_name || ""), String(b.student.full_name || ""))
         ).map(function (item) {
           return "<div class='teacher-score-row'>" +
             "<div class='teacher-score-student'>" + escapeHtml(item.student.full_name) +
