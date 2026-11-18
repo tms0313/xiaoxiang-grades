@@ -57,6 +57,13 @@ let currentMode = "";
 let profileRolesCache = [];
 let studentsCache = [];
 let examsCache = [];
+let examsByIdCache = new Map();
+let examsByDateDescCache = [];
+
+function rebuildExamIndexes() {
+  examsByIdCache = new Map(examsCache.map(exam => [String(exam.id), exam]));
+  examsByDateDescCache = sortByDateDesc(examsCache, "start_date");
+}
 let profilesCache = [];
 let studentsByIdCache = new Map();
 let parentProfilesByIdCache = new Map();
@@ -771,6 +778,7 @@ async function handleLogout() {
   profileRolesCache = [];
   studentsCache = [];
   examsCache = [];
+  rebuildExamIndexes();
   profilesCache = [];
   rebuildAdminEntityIndexes();
   scoresCache = [];
@@ -977,6 +985,7 @@ async function loadAdminData() {
   const allProfiles = results[2].data || [];
   studentsCache = results[0].data || [];
   examsCache = results[1].data || [];
+  rebuildExamIndexes();
   profilesCache = allProfiles.filter(profile => profile.role === "parent");
   rebuildAdminEntityIndexes();
   scoresCache = results[3].data || [];
@@ -1378,7 +1387,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
   // 本次畫面渲染共用索引，避免每一筆成績列都重新掃描學生與考試快取。
   const studentById = studentsByIdCache;
-  const examById = new Map(examsCache.map(exam => [String(exam.id), exam]));
+  const examById = examsByIdCache;
 
   function getStudent(id) {
     return studentById.get(String(id));
@@ -1493,7 +1502,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     }).filter(Boolean).join("");
   }
 
-  const examOptions = sortByDateDesc(examsCache, "start_date").map(function (exam) {
+  const examOptions = examsByDateDescCache.map(function (exam) {
     return "<option value='" + escapeHtml(exam.id) + "'>" +
       escapeHtml(formatDateRange(exam)) + "</option>";
   }).join("");
@@ -1615,7 +1624,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     group.students.push(student);
   });
   // 考試日期排序不隨搜尋條件改變，在本次畫面生命週期只計算一次。
-  const overviewExamsByDateDesc = sortByDateDesc(examsCache, "start_date");
+  const overviewExamsByDateDesc = examsByDateDescCache;
   const overviewIndexBuildMs = performance.now() - overviewIndexBuildStartedAt;
   const overviewPerf = {
     indexBuildMs: overviewIndexBuildMs,
