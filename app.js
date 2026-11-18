@@ -943,6 +943,14 @@ async function cleanupPreviousWeekExclusions() {
   }
 
   const previousExamId = datedExams[1].id;
+  const previousExamKey = String(previousExamId);
+
+  // 快取中沒有上一週的排除紀錄時，不必再送出空的 DELETE 請求。
+  const hasPreviousWeekExclusions = missingExclusionsCache.some(
+    item => String(item.exam_id) === previousExamKey
+  );
+  if (!hasPreviousWeekExclusions) return;
+
   const result = await db.from("score_missing_exclusions")
     .delete()
     .eq("exam_id", previousExamId);
@@ -951,7 +959,7 @@ async function cleanupPreviousWeekExclusions() {
 
   // 同步更新前端快取，避免本次畫面仍顯示已清除的名單。
   missingExclusionsCache = missingExclusionsCache.filter(
-    item => String(item.exam_id) !== String(previousExamId)
+    item => String(item.exam_id) !== previousExamKey
   );
 }
 
