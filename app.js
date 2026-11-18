@@ -161,6 +161,7 @@ function rebuildActiveSubjectsByStudentCache() {
   });
 }
 let teacherProfilesCache = [];
+let teacherProfilesByIdCache = new Map();
 let teacherAssignmentsCache = [];
 let teacherStudentsCache = [];
 let teacherExamsCache = [];
@@ -1113,6 +1114,7 @@ async function loadAdminData() {
   profilesCache = parentProfiles;
   rebuildAdminEntityIndexes();
   teacherProfilesCache = Array.from(teacherMap.values());
+  teacherProfilesByIdCache = new Map(teacherProfilesCache.map(profile => [String(profile.id), profile]));
 
   // 新一週成績於週六 20:00 開放時，自動清除上一週的已排除提醒名單。
   try {
@@ -4571,7 +4573,7 @@ async function removeGuardianBinding(guardianId, studentId) {
 
 function renderTeacherManagement() {
   const content = $("adminContent");
-  const teacherById = new Map(teacherProfilesCache.map(profile => [String(profile.id), profile]));
+  const teacherById = teacherProfilesByIdCache;
   const teacherRoleIds = teacherRoleIdsCache;
   const teacherOptions = teacherProfilesCache.map(function (profile) {
     return "<option value='" + escapeHtml(profile.id) + "'>" +
@@ -4732,9 +4734,8 @@ async function addTeacherRoleToParent(event) {
 }
 
 async function removeAdditionalTeacherRole(userId) {
-  const profile = teacherProfilesCache.find(item =>
-    String(item.id) === String(userId) && item.isAdditionalTeacherRole
-  );
+  const profile = teacherProfilesByIdCache.get(String(userId));
+  if (!profile || !profile.isAdditionalTeacherRole) return;
   if (!profile) return;
   if (!confirm(
     "確定移除此帳號的教師身分？\n\n" +
