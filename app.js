@@ -2486,11 +2486,9 @@ async function editScore(scoreId) {
       if (result.error) throw result.error;
       if (!result.data) throw new Error("資料已送出，但未取得更新後的成績內容，請重新整理確認。");
 
-      // 直接以資料庫回傳的最新資料更新前端快取，確保畫面立即反映修改結果。
-      scoresCache = scoresCache.map(function (item) {
-        return String(item.id) === String(scoreId) ? result.data : item;
-      });
-      scoresByIdCache.set(String(scoreId), result.data);
+      // 原地更新既有成績物件，保留 scoresCache 陣列與 ID 索引的參照，避免複製／遍歷整份成績快取。
+      Object.assign(score, result.data);
+      scoresByIdCache.set(String(scoreId), score);
       invalidateAdminHighestPreviewCache();
 
       closeScoreEditModal();
