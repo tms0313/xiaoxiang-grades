@@ -817,3 +817,54 @@ footer {
   vertical-align: middle;
   text-overflow: clip;
 }
+
+
+/* 段考成績登錄：學期、段考、班級標籤與下拉選單完整顯示 */
+.term-exam-form .field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  min-width: 0;
+}
+.term-exam-form .field label {
+  flex: 0 0 auto;
+  height: auto !important;
+  min-height: 22px;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  line-height: 1.5 !important;
+  white-space: nowrap;
+}
+.term-exam-form #termSemester,
+.term-exam-form #termExamNumber,
+.term-exam-form #termClass {
+  display: block !important;
+  width: 100% !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  box-sizing: border-box !important;
+  padding: 0 10px !important;
+  font-family: inherit !important;
+  font-size: 16px !important;
+  line-height: normal !important;
+  vertical-align: middle;
+}
+
+/* 成績匯出：縮小考試週期各列的上下間距 */
+.export-period-list {
+  gap: 2px !important;
+  row-gap: 2px !important;
+}
+.export-period-item {
+  margin: 0 !important;
+  padding: 3px 8px !important;
+  gap: 8px !important;
+  min-height: 0 !important;
+  line-height: 1.2 !important;
+}
+.export-period-item .export-period-date {
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
