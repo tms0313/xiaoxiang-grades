@@ -4034,7 +4034,10 @@ async function deleteExam(id) {
     const result = await db.from("exams").delete().eq("id", id);
     if (result.error) throw result.error;
 
-    await loadAdminData();
+    examsCache = examsCache.filter(function (item) {
+      return String(item.id) !== String(id);
+    });
+    rebuildExamIndexes();
     renderScoreEntry();
     showMessage("考試資料已刪除。", "success");
 
