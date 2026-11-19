@@ -169,7 +169,31 @@ async function loadAttendanceSessionStudents() {
     return;
   }
 
-  attendanceLoadedStudents = studentsResult.data || [];
+  const classStudents = studentsResult.data || [];
+  if (classStudents.length) {
+    const subjectEnrollmentsResult = await db
+      .from("student_subjects")
+      .select("student_id")
+      .in("student_id", classStudents.map(student => student.id))
+      .eq("subject", attendanceSelectedSession.subject)
+      .eq("is_active", true);
+
+    if (subjectEnrollmentsResult.error) {
+      panel.innerHTML = "<div class='attendance-status-message error'>讀取學生修課科目失敗：" +
+        attendanceEscape(subjectEnrollmentsResult.error.message) + "</div>";
+      return;
+    }
+
+    const enrolledStudentIds = new Set(
+      (subjectEnrollmentsResult.data || []).map(item => String(item.student_id))
+    );
+    attendanceLoadedStudents = classStudents.filter(student =>
+      enrolledStudentIds.has(String(student.id))
+    );
+  } else {
+    attendanceLoadedStudents = [];
+  }
+
   let existingRecords = [];
 
   if (attendanceSavedSessionId) {
