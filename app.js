@@ -325,6 +325,28 @@ function sortByDateDesc(items, field) {
   });
 }
 
+/**
+ * 分頁讀取 Supabase 資料，避免單次查詢達到回傳筆數上限時遺漏紀錄。
+ * queryFactory 每次都建立新的查詢，確保每一頁使用獨立查詢。
+ */
+async function fetchAllRows(queryFactory, pageSize) {
+  const size = Math.max(1, Number(pageSize) || 1000);
+  const rows = [];
+  let offset = 0;
+
+  while (true) {
+    const result = await queryFactory().range(offset, offset + size - 1);
+    if (result.error) return { data: null, error: result.error };
+
+    const page = result.data || [];
+    rows.push(...page);
+    if (page.length < size) break;
+    offset += size;
+  }
+
+  return { data: rows, error: null };
+}
+
 function downloadText(filename, content, mimeType) {
   const blob = new Blob(["\uFEFF", content], {
     type: mimeType || "text/plain;charset=utf-8"
@@ -1061,7 +1083,7 @@ async function loadAdminData() {
     db.from("students").select("id, student_code, full_name, class_name, is_active").order("student_code"),
     db.from("exams").select("id, title, start_date, end_date").order("start_date", { ascending: false }),
     db.from("profiles").select("id, role, display_name, email, phone"),
-    db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level"),
+    fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")),
     db.from("guardian_students").select("guardian_id, student_id"),
     db.from("student_subjects").select("student_id, subject, is_active"),
     db.from("teacher_assignments").select("id, teacher_id, class_name, subject"),
@@ -1142,7 +1164,7 @@ async function loadAdminData() {
  */
 async function refreshOverviewData() {
   const results = await Promise.all([
-    db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level"),
+    fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")),
     db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope")
   ]);
 
@@ -6872,7 +6894,7 @@ async function renderTeacherDashboard() {
     db.from("students").select("id, class_name, student_code, full_name").eq("is_active", true).order("student_code"),
     db.from("exams").select("id, start_date, end_date"),
     db.from("student_subjects").select("student_id, subject").eq("is_active", true),
-    db.from("scores").select("student_id, exam_id, subject, scope, grade_level, score, correct_count")
+    fetchAllRows(() => db.from("scores").select("student_id, exam_id, subject, scope, grade_level, score, correct_count"))
   ]);
 
   const labels = ["授課權限", "學生資料", "考試資料", "學生修課資料", "成績資料"];
