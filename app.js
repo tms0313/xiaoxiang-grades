@@ -2663,10 +2663,10 @@ async function deleteScore(scoreId) {
     const result = await db.from("scores").delete().eq("id", scoreId);
     if (result.error) throw result.error;
 
-    await loadAdminData();
+    await refreshOverviewData();
     renderOverview(overviewFilters);
 
-    // 成績總覽刪除後保留原篩選條件與捲動位置，不顯示系統通知。
+    // 成績總覽刪除後只更新總覽資料，保留篩選條件與捲動位置，不顯示系統通知。
     const systemMessage = $("systemMessage");
     if (systemMessage) systemMessage.style.display = "none";
     window.scrollTo({ top: overviewScrollY, behavior: "auto" });
