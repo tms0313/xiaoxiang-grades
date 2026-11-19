@@ -615,6 +615,7 @@ style.textContent = [
   ".parent-highest-crown::after { content:none; }",
 
   ".student-management-table { width:100%; min-width:650px; table-layout:fixed; }",
+  ".student-management-table td.student-subject-cell { font-size:inherit !important; font-weight:400 !important; }",
   ".student-management-table th:nth-child(1),.student-management-table td:nth-child(1) { width:20%; }",
   ".student-management-table th:nth-child(2),.student-management-table td:nth-child(2) { width:19%; }",
   ".student-management-table th:nth-child(3),.student-management-table td:nth-child(3) { width:15%; }",
