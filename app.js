@@ -1083,7 +1083,7 @@ async function loadAdminData() {
     db.from("students").select("id, student_code, full_name, class_name, is_active").order("student_code"),
     db.from("exams").select("id, title, start_date, end_date").order("start_date", { ascending: false }),
     db.from("profiles").select("id, role, display_name, email, phone"),
-    fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")),
+    fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").order("id", { ascending: true })),
     db.from("guardian_students").select("guardian_id, student_id"),
     db.from("student_subjects").select("student_id, subject, is_active"),
     db.from("teacher_assignments").select("id, teacher_id, class_name, subject"),
@@ -1164,7 +1164,7 @@ async function loadAdminData() {
  */
 async function refreshOverviewData() {
   const results = await Promise.all([
-    fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")),
+    fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").order("id", { ascending: true })),
     db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope")
   ]);
 
@@ -6894,7 +6894,7 @@ async function renderTeacherDashboard() {
     db.from("students").select("id, class_name, student_code, full_name").eq("is_active", true).order("student_code"),
     db.from("exams").select("id, start_date, end_date"),
     db.from("student_subjects").select("student_id, subject").eq("is_active", true),
-    fetchAllRows(() => db.from("scores").select("student_id, exam_id, subject, scope, grade_level, score, correct_count"))
+    fetchAllRows(() => db.from("scores").select("student_id, exam_id, subject, scope, grade_level, score, correct_count").order("student_id", { ascending: true }).order("exam_id", { ascending: true }).order("subject", { ascending: true }).order("scope", { ascending: true }))
   ]);
 
   const labels = ["授課權限", "學生資料", "考試資料", "學生修課資料", "成績資料"];
