@@ -66,6 +66,7 @@ function attendanceInjectStyles() {
     ".attendance-record-table{min-width:1020px}",
     ".attendance-record-table th,.attendance-record-table td{padding:5px 8px!important;line-height:1.3!important;vertical-align:middle}",
     ".attendance-record-table select,.attendance-record-table input{width:100%;min-width:100px;padding:8px;border:1px solid #ccd4df;border-radius:7px;background:#fff}",
+    ".attendance-record-table .attendance-status-select{border-radius:8px!important;overflow:hidden}",
     ".attendance-record-table .attendance-late-input{min-width:76px;text-align:center}",
     ".attendance-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}",
     ".attendance-status-message{margin:12px 0;padding:11px 13px;border-radius:8px;background:#edf4fa;color:#315d86}",
