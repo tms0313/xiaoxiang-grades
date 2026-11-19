@@ -739,3 +739,35 @@ footer {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* 修正管理表單指定下拉選單文字垂直裁切 */
+#studentClass,
+#guardianParent,
+#guardianStudent,
+#existingParentForTeacher,
+#alumniExamScope {
+  display: block;
+  width: 100%;
+  height: 40px !important;
+  min-height: 40px !important;
+  box-sizing: border-box !important;
+  padding: 6px 10px !important;
+  line-height: normal !important;
+  font-size: 16px;
+  vertical-align: middle;
+  text-overflow: clip;
+}
+
+/* 成績匯出：考試週期清單列距比照學生資料列 */
+.export-period-list {
+  gap: 5px !important;
+}
+.export-period-item {
+  padding: 5px 8px !important;
+  min-height: 0 !important;
+  line-height: 1.3 !important;
+}
+.export-period-item .export-period-date {
+  line-height: 1.3 !important;
+}
