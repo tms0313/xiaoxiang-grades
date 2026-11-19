@@ -3138,6 +3138,18 @@ async function saveBulkScores() {
   }
   // 優先重用表格渲染時建立的相同條件索引；只有條件不符時才重新掃描成績快取。
   const currentScoreContextKey = JSON.stringify([String(examId), subject, scope]);
+  // 上次若遇到網路中斷且快取同步失敗，重試前先向資料庫重新確認，
+  // 避免已成功寫入的資料因本機索引過舊而被誤判為新資料。
+  if (bulkEntryScoreContextKey === "__stale__") {
+    try {
+      await refreshScoreCacheForScope(examId, subject, scope);
+    } catch (refreshError) {
+      message.textContent = "目前無法確認資料庫最新成績，為避免重複寫入，請確認網路後重新整理管理頁再試。";
+      message.className = "system-message error";
+      message.style.display = "block";
+      return;
+    }
+  }
   let existingScoreByStudent = bulkEntryScoreContextKey === currentScoreContextKey
     ? bulkEntryExistingScoresByStudent
     : null;
@@ -3179,11 +3191,16 @@ async function saveBulkScores() {
     for (let start = 0; start < entries.length; start += batchSize) {
       const batch = entries.slice(start, start + batchSize);
       const results = await Promise.all(batch.map(async function (entry) {
-        const duplicate = existingScoreByStudent.get(String(entry.studentId));
-        const result = duplicate
-          ? await db.from("scores").update(entry.payload).eq("id", duplicate.id)
-          : await db.from("scores").insert(entry.payload);
-        return { entry: entry, error: result.error || null };
+        try {
+          const duplicate = existingScoreByStudent.get(String(entry.studentId));
+          const result = duplicate
+            ? await db.from("scores").update(entry.payload).eq("id", duplicate.id)
+            : await db.from("scores").insert(entry.payload);
+          return { entry: entry, error: result.error || null };
+        } catch (error) {
+          // 單筆請求若因網路問題直接 reject，也要保留同批其他學生的處理結果。
+          return { entry: entry, error: error };
+        }
       }));
 
       results.forEach(function (item) {
@@ -3205,7 +3222,9 @@ async function saveBulkScores() {
         await refreshScoreCacheForScope(examId, subject, scope);
       } catch (refreshError) {
         console.warn(refreshError);
-        cacheWarning = "；提醒：成績已寫入資料庫，但本機快取同步失敗，請重新整理管理頁";
+        // 無法確認遠端最終狀態時，鎖定成績索引；下次儲存必須先重新向資料庫讀取。
+        bulkEntryScoreContextKey = "__stale__";
+        cacheWarning = "；提醒：部分成績可能已寫入，但最新資料確認失敗。請確認網路後重新整理管理頁，再檢查未完成項目";
       }
     }
     message.textContent = "完成 " + saved + " 筆" + (failures.length ? "；失敗 " + failures.length + " 筆：" + failures.join("；") : "；全部成功。") +
