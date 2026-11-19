@@ -339,7 +339,10 @@ function downloadText(filename, content, mimeType) {
   a.click();
   a.remove();
 
-  URL.revokeObjectURL(url);
+  // 延後釋放下載網址，避免部分行動瀏覽器尚未開始讀取 Blob 就失效。
+  window.setTimeout(function () {
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
 
 function csvCell(value) {
