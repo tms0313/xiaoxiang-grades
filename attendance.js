@@ -68,6 +68,7 @@ function attendanceInjectStyles() {
     ".attendance-record-table select,.attendance-record-table input{width:100%;min-width:100px;padding:8px;border:1px solid #ccd4df;border-radius:7px;background:#fff}",
     ".attendance-record-table .attendance-status-select{border-radius:8px!important;overflow:hidden}",
     ".attendance-record-table .attendance-late-input{min-width:76px;height:36px;min-height:36px;box-sizing:border-box;text-align:center}",
+    ".attendance-record-table .attendance-late-input.has-late-value{color:#d32626;font-weight:800}",
     ".attendance-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}",
     ".attendance-status-message{margin:12px 0;padding:11px 13px;border-radius:8px;background:#edf4fa;color:#315d86}",
     ".attendance-status-message.error{background:#fde8e8;color:#a32626}",
@@ -263,12 +264,18 @@ async function loadAttendanceSessionStudents() {
     const statusSelect = row.querySelector(".attendance-status-select");
     const lateInput = row.querySelector(".attendance-late-input");
     const checkinSelect = row.querySelector(".attendance-checkin-select");
+    const updateLateAppearance = function () {
+      lateInput.classList.toggle("has-late-value", lateInput.value !== "" && Number(lateInput.value) > 0);
+    };
+    updateLateAppearance();
+    lateInput.addEventListener("input", updateLateAppearance);
     statusSelect.addEventListener("change", function () {
       const normal = this.value === "normal";
       lateInput.disabled = !normal;
       checkinSelect.disabled = !normal;
       if (!normal) {
         lateInput.value = "0";
+        updateLateAppearance();
         checkinSelect.value = "";
       } else if (!checkinSelect.value) {
         checkinSelect.value = "";
