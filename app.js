@@ -3302,17 +3302,27 @@ function renderScoreEntry() {
   });
   $("examForm").addEventListener("submit", saveExam);
   $("examCancel").addEventListener("click", clearExamForm);
-  $("examDateRangeDisplay").addEventListener("click", openExamDateCalendar);
-  $("examCalendarTrigger").addEventListener("click", openExamDateCalendar);
-  $("examDateCalendar").addEventListener("click", function (event) {
+  // 日期選擇器改由頁面容器統一代理事件，避免動態重繪後點擊事件失效。
+  content.addEventListener("click", function (event) {
+    const trigger = event.target.closest("#examDateRangeDisplay, #examCalendarTrigger");
+    if (trigger) {
+      event.preventDefault();
+      event.stopPropagation();
+      openExamDateCalendar();
+      return;
+    }
+    const calendar = event.target.closest("#examDateCalendar");
+    if (!calendar) return;
     const nav = event.target.closest("[data-exam-calendar-nav]");
     const day = event.target.closest("[data-exam-calendar-date]");
     if (nav) {
+      event.preventDefault();
       examCalendarMonth.setMonth(examCalendarMonth.getMonth() + Number(nav.dataset.examCalendarNav));
       renderExamDateCalendar();
       return;
     }
     if (!day) return;
+    event.preventDefault();
     const selectedDate = day.dataset.examCalendarDate;
     if (!examCalendarSelectingEnd) {
       $("examStart").value = selectedDate;
