@@ -677,13 +677,20 @@ footer {
   line-height: 30px !important;
   border-radius: 6px !important;
 }
-/* 修正週成績登錄科目選單文字垂直遭裁切 */
+/* 週成績登錄：班級與科目選單使用完全相同的文字尺寸 */
+#scoreClass,
+#scoreSubject {
+  font-family: inherit !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: normal !important;
+  text-align: left;
+  text-overflow: clip;
+}
+
+/* 科目選單保留 40px 高度並避免文字垂直裁切 */
 #scoreSubject {
   display: block !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
-  line-height: normal !important;
-  font-family: inherit;
-  font-size: 13.333px;
-  text-overflow: clip;
 }
