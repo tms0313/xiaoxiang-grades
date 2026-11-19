@@ -69,6 +69,7 @@ function attendanceInjectStyles() {
     ".attendance-record-table .attendance-status-select{border-radius:8px!important;overflow:hidden}",
     ".attendance-record-table .attendance-late-input{min-width:76px;height:36px;min-height:36px;box-sizing:border-box;text-align:center}",
     ".attendance-record-table .attendance-late-input.has-late-value{color:#d32626;font-weight:800}",
+    ".attendance-record-table .attendance-checkin-select.is-unchecked,.attendance-record-table .attendance-parent-signature-select.is-unsigned{color:#d32626;font-weight:800}",
     ".attendance-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}",
     ".attendance-status-message{margin:12px 0;padding:11px 13px;border-radius:8px;background:#edf4fa;color:#315d86}",
     ".attendance-status-message.error{background:#fde8e8;color:#a32626}",
@@ -264,11 +265,22 @@ async function loadAttendanceSessionStudents() {
     const statusSelect = row.querySelector(".attendance-status-select");
     const lateInput = row.querySelector(".attendance-late-input");
     const checkinSelect = row.querySelector(".attendance-checkin-select");
+    const signatureSelect = row.querySelector(".attendance-parent-signature-select");
+    const updateCheckinAppearance = function () {
+      checkinSelect.classList.toggle("is-unchecked", checkinSelect.value === "not_checked_in");
+    };
+    const updateSignatureAppearance = function () {
+      signatureSelect.classList.toggle("is-unsigned", signatureSelect.value === "unsigned");
+    };
     const updateLateAppearance = function () {
       lateInput.classList.toggle("has-late-value", lateInput.value !== "" && Number(lateInput.value) > 0);
     };
     updateLateAppearance();
+    updateCheckinAppearance();
+    updateSignatureAppearance();
     lateInput.addEventListener("input", updateLateAppearance);
+    checkinSelect.addEventListener("change", updateCheckinAppearance);
+    signatureSelect.addEventListener("change", updateSignatureAppearance);
     statusSelect.addEventListener("change", function () {
       const normal = this.value === "normal";
       lateInput.disabled = !normal;
@@ -277,6 +289,7 @@ async function loadAttendanceSessionStudents() {
         lateInput.value = "0";
         updateLateAppearance();
         checkinSelect.value = "";
+        updateCheckinAppearance();
       } else if (!checkinSelect.value) {
         checkinSelect.value = "";
       }
