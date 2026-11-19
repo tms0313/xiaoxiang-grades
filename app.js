@@ -2724,6 +2724,14 @@ let examCalendarMonth = new Date();
 let examCalendarOpen = false;
 let examCalendarSelectingEnd = false;
 
+// 點擊日期日曆以外的任何位置時，關閉懸浮日曆（桌面與手機共用）。
+document.addEventListener("click", function (event) {
+  if (!examCalendarOpen) return;
+  if (event.target.closest("#examDateCalendar, #examDateRangeDisplay, #examCalendarTrigger")) return;
+  examCalendarOpen = false;
+  renderExamDateCalendar();
+});
+
 function formatExamDateDisplay(value) {
   return value ? value.replace(/-/g, "/") : "";
 }
