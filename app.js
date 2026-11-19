@@ -791,7 +791,11 @@ style.textContent += "\n" +
   ".teacher-score-row { min-height:0 !important; padding:5px 4px !important; }" +
   ".guardian-linked-student { padding:5px 8px !important; }" +
   ".student-card { margin:5px auto !important; }" +
-  "@media(max-width:600px) { .teacher-score-row { min-height:0 !important; padding:5px 2px !important; } .student-card { margin:5px 0 !important; } }";
+  "@media(max-width:600px) { .teacher-score-row { min-height:0 !important; padding:5px 2px !important; } .student-card { margin:5px 0 !important; } }" +
+  ".term-exam-overview-table tbody td:not(.action-cell),.term-exam-overview-table tbody td:not(.action-cell) * { font-size:16px !important; }" +
+  ".term-bulk-table tbody td,.term-bulk-table tbody td .term-student-name-text,.term-bulk-table tbody td input[data-term-score],.term-bulk-table tbody td input[data-term-class-rank],.term-bulk-table tbody td input[data-term-school-rank],.term-bulk-table tbody td.term-total-cell { font-size:16px !important; }" +
+  ".term-bulk-table tbody td .term-student-name small { font-size:11px !important; }" +
+  ".term-bulk-table tbody td .term-completion-mark { font-size:14px !important; }";
 
 document.head.appendChild(style);
 
