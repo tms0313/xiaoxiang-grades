@@ -5357,7 +5357,14 @@ async function deleteParentAccount(parentUserId) {
       throw new Error(data.error || "刪除家長帳號失敗。");
     }
 
-    await loadAdminData();
+    profilesCache = profilesCache.filter(function (profile) {
+      return String(profile.id) !== String(parentUserId);
+    });
+    guardianLinksCache = guardianLinksCache.filter(function (link) {
+      return String(link.guardian_id) !== String(parentUserId);
+    });
+    rebuildAdminEntityIndexes();
+    rebuildGuardianBindingIndexes();
     renderGuardians();
     showMessage("家長帳號已刪除，學生資料及成績均已保留。", "success");
   } catch (error) {
