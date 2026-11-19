@@ -4325,7 +4325,11 @@ async function deleteUnboundParentAccount(parentId) {
       throw new Error(data.error || "家長帳號刪除失敗。");
     }
 
-    await loadAdminData();
+    // 未綁定家長刪除成功後，只移除該筆家長快取並重建索引。
+    profilesCache = profilesCache.filter(
+      profile => String(profile.id) !== String(parentId)
+    );
+    rebuildAdminEntityIndexes();
     renderGuardians();
     showMessage("家長登入帳號及資料已成功刪除。", "success");
 
