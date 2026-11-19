@@ -5696,8 +5696,18 @@ async function renderStudentReviewRecords(selectedExamId) {
       let visibleCount = 0;
       let reviewedCount = 0;
       const rowHtml = [];
+      const reviewClassOrder = { "國一班": 1, "國二班": 2, "國三班": 3 };
+      const sortedReviewStudents = activeStudents.slice().sort(function(a, b) {
+        const classA = String(a.class_name || "");
+        const classB = String(b.class_name || "");
+        const orderA = reviewClassOrder[classA] || 99;
+        const orderB = reviewClassOrder[classB] || 99;
+        if (orderA !== orderB) return orderA - orderB;
+        if (orderA === 99 && classA !== classB) return classA.localeCompare(classB, "zh-Hant");
+        return 0;
+      });
 
-      activeStudents.forEach(function(student) {
+      sortedReviewStudents.forEach(function(student) {
         if (selectedClass && student.class_name !== selectedClass) return;
 
         visibleCount++;
