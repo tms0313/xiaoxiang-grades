@@ -627,3 +627,29 @@ footer {
   box-sizing: border-box !important;
   vertical-align: middle;
 }
+
+
+/* iPhone：避免日期日曆被橫向捲動容器裁切，改為換行並完整展開 */
+@media (max-width: 600px) {
+  #examFormRow {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+    align-items: flex-end !important;
+  }
+  #examFormRow .exam-date-range-field {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  #examFormRow .exam-date-range-control {
+    width: 100%;
+  }
+  #examFormRow .exam-date-calendar {
+    position: absolute;
+    left: 0;
+    right: auto;
+    width: min(280px, calc(100vw - 48px));
+    max-width: calc(100vw - 48px);
+    z-index: 9999;
+  }
+}
