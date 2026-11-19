@@ -1080,15 +1080,15 @@ async function loadAdminData() {
   const adminQueriesStartedAt = performance.now();
   // profiles 原本分別查詢家長、教師及全部帳號；合併為一次讀取，降低後台啟動時的重複請求。
   const results = await Promise.all([
-    db.from("students").select("id, student_code, full_name, class_name, is_active").order("student_code"),
-    db.from("exams").select("id, title, start_date, end_date").order("start_date", { ascending: false }),
-    db.from("profiles").select("id, role, display_name, email, phone"),
+    fetchAllRows(() => db.from("students").select("id, student_code, full_name, class_name, is_active").order("id", { ascending: true })),
+    fetchAllRows(() => db.from("exams").select("id, title, start_date, end_date").order("id", { ascending: true })),
+    fetchAllRows(() => db.from("profiles").select("id, role, display_name, email, phone").order("id", { ascending: true })),
     fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").order("id", { ascending: true })),
-    db.from("guardian_students").select("guardian_id, student_id"),
-    db.from("student_subjects").select("student_id, subject, is_active"),
-    db.from("teacher_assignments").select("id, teacher_id, class_name, subject"),
-    db.from("profile_roles").select("user_id, role").eq("role", "teacher"),
-    db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope")
+    fetchAllRows(() => db.from("guardian_students").select("guardian_id, student_id").order("guardian_id", { ascending: true }).order("student_id", { ascending: true })),
+    fetchAllRows(() => db.from("student_subjects").select("student_id, subject, is_active").order("student_id", { ascending: true }).order("subject", { ascending: true })),
+    fetchAllRows(() => db.from("teacher_assignments").select("id, teacher_id, class_name, subject").order("id", { ascending: true })),
+    fetchAllRows(() => db.from("profile_roles").select("user_id, role").eq("role", "teacher").order("user_id", { ascending: true })),
+    fetchAllRows(() => fetchAllRows(() => db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope").order("id", { ascending: true })).order("id", { ascending: true }))
   ]);
   const adminQueriesMs = performance.now() - adminQueriesStartedAt;
 
