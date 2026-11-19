@@ -4692,7 +4692,9 @@ async function saveGuardianBinding(event) {
       throw result.error;
     }
 
-    await loadAdminData();
+    // 新增綁定只影響家長綁定快取，無須重新載入整套管理端資料。
+    guardianLinksCache.push({ guardian_id: guardianId, student_id: studentId });
+    rebuildGuardianBindingIndexes();
     renderGuardians();
     showMessage("家長與學生已成功綁定。", "success");
 
@@ -4718,7 +4720,12 @@ async function removeGuardianBinding(guardianId, studentId) {
 
     if (result.error) throw result.error;
 
-    await loadAdminData();
+    // 解除綁定只同步對應的本機關聯資料與索引。
+    guardianLinksCache = guardianLinksCache.filter(link =>
+      !(String(link.guardian_id) === String(guardianId) &&
+        String(link.student_id) === String(studentId))
+    );
+    rebuildGuardianBindingIndexes();
     renderGuardians();
     showMessage("已解除綁定。", "success");
 
