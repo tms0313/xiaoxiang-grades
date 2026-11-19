@@ -615,3 +615,15 @@ footer {
   #examFormRow .exam-date-range-field { flex-basis: 240px; width: 240px; }
   .exam-date-calendar { width: min(280px, calc(100vw - 48px)); }
 }
+
+
+/* 週成績登錄：考試週期下拉選單高度與班級篩選一致，避免選項文字裁切 */
+#scoreExam,
+#scoreClass {
+  height: 40px !important;
+  min-height: 40px !important;
+  line-height: normal !important;
+  padding: 6px 10px !important;
+  box-sizing: border-box !important;
+  vertical-align: middle;
+}
