@@ -654,3 +654,26 @@ footer {
     z-index: 9999;
   }
 }
+
+
+/* 週成績登錄：科目與考試範圍欄位高度比照班級篩選 */
+#scoreSubject,
+#scoreScope {
+  height: 40px !important;
+  min-height: 40px !important;
+  box-sizing: border-box !important;
+}
+
+/* 週成績總覽：未登錄列新增修改按鈕，與排除提醒保持一致高度 */
+.overview-table .overview-missing-row .overview-edit-missing-btn {
+  flex: 0 0 42px !important;
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 14px !important;
+  line-height: 30px !important;
+  border-radius: 6px !important;
+}
