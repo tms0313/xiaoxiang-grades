@@ -486,7 +486,7 @@ footer {
   width: 180px;
   margin: 0 !important;
 }
-#examFormRow .field input {
+#examFormRow .field input:not([type='hidden']) {
   display: block;
   width: 100% !important;
   max-width: none !important;
@@ -494,7 +494,7 @@ footer {
 }
 
 /* 開始日期、結束日期與考試週期下拉選單統一高度 */
-#examFormRow .field input,
+#examFormRow .field input:not([type='hidden']),
 #scoreExam {
   height: 40px !important;
   min-height: 40px !important;
@@ -514,4 +514,104 @@ footer {
   white-space: nowrap !important;
   padding: 0 8px !important;
   margin: 0 0 1px !important;
+}
+
+
+/* 週成績登錄：單一欄位選取考試日期區間 */
+#examFormRow .exam-date-range-field {
+  position: relative;
+  flex: 0 0 280px;
+  width: 280px;
+}
+.exam-date-range-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+#examFormRow .exam-date-range-control input#examDateRangeDisplay {
+  width: 100% !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 42px 0 11px;
+  border: 1px solid #ccd4df;
+  border-radius: 7px;
+  background: #fff;
+  color: #263445;
+  cursor: pointer;
+  font-size: 14px;
+}
+.exam-calendar-trigger {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 6px;
+  background: #edf1f5;
+  color: #315d86;
+  font-size: 19px;
+  line-height: 1;
+}
+.exam-calendar-trigger:hover { background: #dfe8f1; }
+.exam-date-calendar {
+  position: absolute;
+  z-index: 1200;
+  top: calc(100% + 7px);
+  left: 0;
+  width: 280px;
+  padding: 12px;
+  border: 1px solid #d7e0e9;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(31,55,82,.18);
+}
+.exam-date-calendar[hidden] { display: none !important; }
+.exam-calendar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.exam-calendar-heading strong { color: #23466b; font-size: 15px; }
+.exam-calendar-heading button {
+  width: 32px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #edf1f5;
+  color: #315d86;
+  font-size: 22px;
+}
+.exam-calendar-weekdays,
+.exam-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  text-align: center;
+}
+.exam-calendar-weekdays { margin-bottom: 5px; color: #64748b; font-size: 12px; font-weight: 700; }
+.exam-calendar-weekdays span { padding: 5px 0; }
+.exam-calendar-empty { min-height: 34px; }
+.exam-calendar-day {
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 7px;
+  background: #fff;
+  color: #263445;
+  font-size: 13px;
+}
+.exam-calendar-day:hover { background: #edf3f9; }
+.exam-calendar-day.in-range { background: #e8f1fa; color: #23466b; }
+.exam-calendar-day.selected { background: #315d86; color: #fff; }
+.exam-calendar-hint { margin: 9px 0 0; color: #64748b; font-size: 12px; text-align: center; }
+@media (max-width: 600px) {
+  #examFormRow .exam-date-range-field { flex-basis: 240px; width: 240px; }
+  .exam-date-calendar { width: min(280px, calc(100vw - 48px)); }
 }
