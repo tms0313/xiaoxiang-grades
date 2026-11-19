@@ -1088,7 +1088,7 @@ async function loadAdminData() {
     fetchAllRows(() => db.from("student_subjects").select("student_id, subject, is_active").order("student_id", { ascending: true }).order("subject", { ascending: true })),
     fetchAllRows(() => db.from("teacher_assignments").select("id, teacher_id, class_name, subject").order("id", { ascending: true })),
     fetchAllRows(() => db.from("profile_roles").select("user_id, role").eq("role", "teacher").order("user_id", { ascending: true })),
-    fetchAllRows(() => fetchAllRows(() => db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope").order("id", { ascending: true })).order("id", { ascending: true }))
+    fetchAllRows(() => db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope").order("id", { ascending: true }))
   ]);
   const adminQueriesMs = performance.now() - adminQueriesStartedAt;
 
@@ -1165,7 +1165,7 @@ async function loadAdminData() {
 async function refreshOverviewData() {
   const results = await Promise.all([
     fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").order("id", { ascending: true })),
-    db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope")
+    fetchAllRows(() => db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope").order("id", { ascending: true }))
   ]);
 
   if (results[0].error) {
