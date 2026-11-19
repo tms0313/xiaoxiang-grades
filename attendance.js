@@ -63,8 +63,8 @@ function attendanceInjectStyles() {
     ".attendance-session-btn:hover,.attendance-session-btn:focus-visible,.attendance-session-btn.active{border:2px solid #315d86;background:#315d86;color:#fff}",
     ".attendance-session-btn:hover strong,.attendance-session-btn:hover span,.attendance-session-btn:focus-visible strong,.attendance-session-btn:focus-visible span,.attendance-session-btn.active strong,.attendance-session-btn.active span{color:#fff}",
     ".attendance-session-btn:disabled{opacity:.6;cursor:not-allowed}",
-    ".attendance-record-table{min-width:850px}",
-    ".attendance-record-table th,.attendance-record-table td{padding:9px 8px;vertical-align:middle}",
+    ".attendance-record-table{min-width:1020px}",
+    ".attendance-record-table th,.attendance-record-table td{padding:5px 8px!important;line-height:1.3!important;vertical-align:middle}",
     ".attendance-record-table select,.attendance-record-table input{width:100%;min-width:100px;padding:8px;border:1px solid #ccd4df;border-radius:7px;background:#fff}",
     ".attendance-record-table .attendance-late-input{min-width:76px;text-align:center}",
     ".attendance-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}",
@@ -199,7 +199,7 @@ async function loadAttendanceSessionStudents() {
   if (attendanceSavedSessionId) {
     const recordsResult = await db
       .from("attendance_records")
-      .select("student_id,attendance_status,late_minutes,checkin_status")
+      .select("student_id,attendance_status,late_minutes,checkin_status,parent_signature_status")
       .eq("session_id", attendanceSavedSessionId);
 
     if (recordsResult.error) {
@@ -215,6 +215,7 @@ async function loadAttendanceSessionStudents() {
     const record = recordsByStudent.get(String(student.id)) || {};
     const status = record.attendance_status === "absent" ? "leave" : (record.attendance_status || "normal");
     const checkin = record.checkin_status || "";
+    const parentSignature = record.parent_signature_status || "unsigned";
     const inactiveCheckin = status !== "normal" ? "disabled" : "";
     return "<tr data-attendance-row data-student-id='" + attendanceEscape(student.id) + "'>" +
       "<td>" + attendanceEscape(student.student_code) + "</td>" +
@@ -231,6 +232,10 @@ async function loadAttendanceSessionStudents() {
         "<option value='checked_in' " + (checkin === "checked_in" ? "selected" : "") + ">打卡</option>" +
         "<option value='not_checked_in' " + (checkin === "not_checked_in" ? "selected" : "") + ">未打卡</option>" +
       "</select></td>" +
+      "<td><select class='attendance-parent-signature-select' aria-label='家長簽名狀態'>" +
+        "<option value='signed' " + (parentSignature === "signed" ? "selected" : "") + ">已簽</option>" +
+        "<option value='unsigned' " + (parentSignature !== "signed" ? "selected" : "") + ">未簽</option>" +
+      "</select></td>" +
     "</tr>";
   }).join("");
 
@@ -244,7 +249,7 @@ async function loadAttendanceSessionStudents() {
       : "<p class='muted'>這堂課尚未儲存紀錄，完成登錄後可一次儲存全班。</p>") +
     (attendanceLoadedStudents.length
       ? "<div class='table-wrap'><table class='attendance-record-table'>" +
-          "<thead><tr><th>學生編號</th><th>學生姓名</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th></tr></thead>" +
+          "<thead><tr><th>學生編號</th><th>學生姓名</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th><th>家長簽名</th></tr></thead>" +
           "<tbody>" + rows + "</tbody></table></div>" +
         "<div class='attendance-actions'>" +
           "<button type='button' class='btn btn-success' id='attendanceSaveButton'>儲存全班紀錄</button>" +
@@ -305,7 +310,8 @@ async function saveAttendanceSessionRecords() {
       student_id: row.dataset.studentId,
       attendance_status: status,
       late_minutes: status === "normal" ? late : 0,
-      checkin_status: status === "normal" ? checkin : null
+      checkin_status: status === "normal" ? checkin : null,
+      parent_signature_status: row.querySelector(".attendance-parent-signature-select").value
     });
   }
 
@@ -340,7 +346,8 @@ async function saveAttendanceSessionRecords() {
       student_id: item.student_id,
       attendance_status: item.attendance_status,
       late_minutes: item.late_minutes,
-      checkin_status: item.checkin_status
+      checkin_status: item.checkin_status,
+      parent_signature_status: item.parent_signature_status
     }));
 
     const saveResult = await db
