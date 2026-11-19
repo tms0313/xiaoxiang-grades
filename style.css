@@ -102,6 +102,14 @@ h1 {
   font-size: 14px;
 }
 
+/* 全站單行輸入框與下拉選單統一高度，基準比照「全部考試週期」 */
+input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+select {
+  height: 40px !important;
+  min-height: 40px !important;
+  box-sizing: border-box;
+}
+
 /* ==============================
    表單
 ============================== */
