@@ -3874,7 +3874,9 @@ async function toggleStudentStatus(id) {
 
     if (result.error) throw result.error;
 
-    await loadAdminData();
+    // 學生狀態變更只影響學生快取與依賴學生狀態的索引，不必重載整套管理資料。
+    student.is_active = nextStatus;
+    rebuildAdminEntityIndexes();
     renderStudents();
     showMessage("學生「" + student.full_name + "」已" + action + "。", "success");
   } catch (error) {
