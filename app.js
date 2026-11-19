@@ -6530,17 +6530,21 @@ async function renderParentDashboard() {
   // 三項資料彼此獨立，並行讀取，避免家長首頁逐項等待網路往返。
   const parentDataRequests = await Promise.all([
     reviewExamIds.length > 0
-      ? db.from("scores")
+      ? fetchAllRows(() => db.from("scores")
           .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
           .in("student_id", studentIds)
           .in("exam_id", reviewExamIds)
+          .order("id", { ascending: true }))
       : Promise.resolve({ data: [], error: null }),
     db.rpc("get_parent_class_scope_highest_scores"),
     reviewExamIds.length > 0 && studentIds.length > 0
-      ? db.from("score_review_records")
+      ? fetchAllRows(() => db.from("score_review_records")
           .select("exam_id, student_id, guardian_id, reviewed_at")
           .in("exam_id", reviewExamIds)
           .in("student_id", studentIds)
+          .order("exam_id", { ascending: true })
+          .order("student_id", { ascending: true })
+          .order("guardian_id", { ascending: true }))
       : Promise.resolve({ data: [], error: null })
   ]);
 
