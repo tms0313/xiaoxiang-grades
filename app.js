@@ -4066,7 +4066,14 @@ function renderGuardians() {
       "</option>";
   }).join("");
 
-  const activeStudents = activeStudentsCache;
+  // 家長綁定的學生下拉選單固定依國一、國二、國三排序；同班學生維持原有資料順序。
+  const activeStudents = activeStudentsCache.slice().sort(function (a, b) {
+    const aRank = classOrder.indexOf(a.class_name);
+    const bRank = classOrder.indexOf(b.class_name);
+    const normalizedARank = aRank < 0 ? classOrder.length : aRank;
+    const normalizedBRank = bRank < 0 ? classOrder.length : bRank;
+    return normalizedARank - normalizedBRank;
+  });
   const studentOptions = activeStudents.map(function (student) {
     return "<option value='" + escapeHtml(student.id) + "'>" +
       escapeHtml(student.class_name + "｜" + student.student_code + "｜" + student.full_name) +
