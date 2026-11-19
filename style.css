@@ -677,3 +677,13 @@ footer {
   line-height: 30px !important;
   border-radius: 6px !important;
 }
+/* 修正週成績登錄科目選單文字垂直遭裁切 */
+#scoreSubject {
+  display: block !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: normal !important;
+  font-family: inherit;
+  font-size: 15px;
+  text-overflow: clip;
+}
