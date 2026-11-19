@@ -868,3 +868,9 @@ footer {
   margin: 0 !important;
   line-height: 1.2 !important;
 }
+/* 學生管理：狀態欄置中，位於修課科目與操作欄之間 */
+.student-management-table th:nth-child(5),
+.student-management-table td:nth-child(5) {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
