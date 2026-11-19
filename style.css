@@ -478,7 +478,8 @@ footer {
   width: 100%;
   max-width: 100%;
   margin: 5px 0 !important;
-  overflow-x: auto;
+  /* 桌面版日期日曆需浮在表單上方，不能被捲動容器裁切 */
+  overflow: visible !important;
   padding-bottom: 2px;
 }
 #examFormRow .field {
