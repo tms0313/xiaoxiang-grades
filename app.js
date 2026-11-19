@@ -1605,6 +1605,9 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
           "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
           "' data-scope='" + escapeHtml(scope || "") + "' data-selection-key='" + escapeHtml(selectionKey) + "'" +
           selectedAttribute + ">選取此筆</label>" +
+          "<button class='btn btn-small overview-edit-missing-btn' data-edit-missing='1' data-exam-id='" + escapeHtml(exam.id) +
+          "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
+          "' data-scope='" + escapeHtml(scope || "") + "'>修改</button>" +
           "<button class='btn btn-danger btn-small overview-exclude-reminder-btn' data-exclude-missing='1' data-exam-id='" + escapeHtml(exam.id) +
           "' data-student-id='" + escapeHtml(student.id) + "' data-subject='" + escapeHtml(subject) +
           "' data-scope='" + escapeHtml(scope || "") + "'>排除提醒</button>" +
@@ -2097,11 +2100,21 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
   content.onclick = async function (event) {
     const editButton = event.target.closest("[data-edit-score]");
+    const editMissingButton = event.target.closest("[data-edit-missing]");
     const deleteButton = event.target.closest("[data-delete-score]");
     const excludeButton = event.target.closest("[data-exclude-missing]");
     const restoreButton = event.target.closest("[data-restore-missing]");
 
     if (editButton) await editScore(editButton.dataset.editScore);
+    if (editMissingButton) {
+      await editScore(null, {
+        examId: editMissingButton.dataset.examId,
+        studentId: editMissingButton.dataset.studentId,
+        subject: editMissingButton.dataset.subject,
+        scope: editMissingButton.dataset.scope
+      });
+      return;
+    }
     if (deleteButton) await deleteScore(deleteButton.dataset.deleteScore);
     if (restoreButton) {
       await restoreMissingReminder(restoreButton.dataset.restoreMissing);
@@ -2396,7 +2409,8 @@ function handleScoreEditEscape(event) {
   if (event.key === "Escape") closeScoreEditModal();
 }
 
-async function editScore(scoreId) {
+async function editScore(scoreId, missingEntry) {
+  const isNewScore = !!missingEntry;
   const overviewScrollY = window.scrollY;
   const overviewFilters = {
     search: $("overviewSearch") ? $("overviewSearch").value : "",
@@ -2405,7 +2419,17 @@ async function editScore(scoreId) {
     subject: $("overviewSubject") ? $("overviewSubject").value : "",
     status: $("overviewStatus") ? $("overviewStatus").value : "all"
   };
-  const score = scoresByIdCache.get(String(scoreId));
+  const score = isNewScore
+    ? {
+        student_id: missingEntry.studentId,
+        exam_id: missingEntry.examId,
+        subject: missingEntry.subject,
+        scope: missingEntry.scope || "",
+        score: null,
+        correct_count: null,
+        grade_level: null
+      }
+    : scoresByIdCache.get(String(scoreId));
   if (!score) {
     showMessage("找不到這筆成績資料，請重新整理。", "error");
     return;
@@ -2430,7 +2454,7 @@ async function editScore(scoreId) {
   modal.className = "score-edit-overlay";
   modal.innerHTML =
     "<div class='score-edit-dialog' role='dialog' aria-modal='true' aria-labelledby='scoreEditTitle'>" +
-      "<div class='score-edit-header'><div><h3 id='scoreEditTitle'>修改成績</h3><p>" +
+      "<div class='score-edit-header'><div><h3 id='scoreEditTitle'>" + (isNewScore ? "新增未登錄成績" : "修改成績") + "</h3><p>" +
         escapeHtml(student.full_name) + "｜" + escapeHtml(student.class_name) + "｜" + escapeHtml(formatDateRange(exam)) +
       "</p></div><button type='button' class='score-edit-close' id='scoreEditClose' aria-label='關閉'>×</button></div>" +
       "<form id='scoreEditForm'>" +
@@ -2438,7 +2462,7 @@ async function editScore(scoreId) {
         "<div class='field'><label for='scoreEditSubject'>科目</label><select id='scoreEditSubject' required>" + subjectOptions + "</select></div>" +
         "<div class='field'><label for='scoreEditScope'>考試範圍</label><input id='scoreEditScope' type='text' maxlength='120' required value='" + escapeHtml(score.scope || "") + "'></div>" +
         "<div id='scoreEditValueFields'></div>" +
-        "<p class='score-edit-note'>修改後會更新原有紀錄，不會新增另一筆成績。</p>" +
+        "<p class='score-edit-note'>" + (isNewScore ? "儲存後會新增這位學生的成績紀錄。" : "修改後會更新原有紀錄，不會新增另一筆成績。") + "</p>" +
         "<div class='score-edit-actions'><button type='button' class='btn btn-secondary' id='scoreEditCancel'>取消</button><button type='submit' class='btn btn-success' id='scoreEditSave'>儲存修改</button></div>" +
       "</form>" +
     "</div>";
@@ -2514,7 +2538,7 @@ async function editScore(scoreId) {
     const duplicateScore = scoresByStudentExamSubjectScopeCache.get(
       getScoreCompositeKey(score.student_id, score.exam_id, subject, scope)
     );
-    const hasOtherDuplicate = duplicateScore && String(duplicateScore.id) !== String(scoreId);
+    const hasOtherDuplicate = duplicateScore && (isNewScore || String(duplicateScore.id) !== String(scoreId));
     if (hasOtherDuplicate) {
       showScoreEditError("這位學生已有相同考試、科目及範圍的成績紀錄。請調整科目或考試範圍，避免重複資料。");
       return;
@@ -2565,9 +2589,9 @@ async function editScore(scoreId) {
       : grade3Math ? scoreValue + " 分／" + gradeLevel
       : grade3 ? correctCount + " 題／" + gradeLevel
       : scoreValue + " 分";
-    if (!confirm("確認修改這筆成績嗎？\n\n學生：" + student.full_name +
+    if (!confirm((isNewScore ? "確認新增這筆成績嗎？" : "確認修改這筆成績嗎？") + "\n\n學生：" + student.full_name +
       "\n科目：" + subject + "\n考試範圍：" + scope + "\n成績：" + resultLabel +
-      "\n\n此操作會更新原有資料，不會新增另一筆成績。")) return;
+      "\n\n" + (isNewScore ? "此操作會新增一筆成績紀錄。" : "此操作會更新原有資料，不會新增另一筆成績。"))) return;
 
     const payload = {
       subject: subject,
@@ -2579,30 +2603,46 @@ async function editScore(scoreId) {
     saveButton.disabled = true;
     saveButton.textContent = "儲存中……";
     try {
-      const result = await db.from("scores")
-        .update(payload)
-        .eq("id", scoreId)
-        .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
-        .single();
+      const result = isNewScore
+        ? await db.from("scores")
+            .insert({
+              student_id: score.student_id,
+              exam_id: score.exam_id,
+              ...payload
+            })
+            .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
+            .single()
+        : await db.from("scores")
+            .update(payload)
+            .eq("id", scoreId)
+            .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
+            .single();
       if (result.error) throw result.error;
-      if (!result.data) throw new Error("資料已送出，但未取得更新後的成績內容，請重新整理確認。");
+      if (!result.data) throw new Error("資料已送出，但未取得成績內容，請重新整理確認。");
 
-      // 更新複合索引時先移除舊鍵，再寫入新鍵，維持科目／範圍修改後的查找正確性。
-      const previousCompositeKey = getScoreCompositeKey(
-        score.student_id, score.exam_id, score.subject, score.scope
-      );
-      Object.assign(score, result.data);
-      scoresByIdCache.set(String(scoreId), score);
-      updateScoreCompositeIndex(score, previousCompositeKey);
-      invalidateAdminHighestPreviewCache();
+      if (isNewScore) {
+        // 新增未登錄成績後只刷新成績資料，確保總覽與複合索引同步。
+        await refreshOverviewData();
+      } else {
+        // 更新複合索引時先移除舊鍵，再寫入新鍵，維持科目／範圍修改後的查找正確性。
+        const previousCompositeKey = getScoreCompositeKey(
+          score.student_id, score.exam_id, score.subject, score.scope
+        );
+        Object.assign(score, result.data);
+        scoresByIdCache.set(String(scoreId), score);
+        updateScoreCompositeIndex(score, previousCompositeKey);
+        invalidateAdminHighestPreviewCache();
+      }
 
       closeScoreEditModal();
       renderOverview(overviewFilters);
-      showMessage("「" + student.full_name + "」的成績已修改成功。", "success", true);
+      showMessage(isNewScore
+        ? "「" + student.full_name + "」的成績已新增成功。"
+        : "「" + student.full_name + "」的成績已修改成功。", "success", true);
       window.scrollTo({ top: overviewScrollY, behavior: "auto" });
     } catch (error) {
       saveButton.disabled = false;
-      saveButton.textContent = "儲存修改";
+      saveButton.textContent = isNewScore ? "新增成績" : "儲存修改";
       showScoreEditError("修改成績失敗，原資料未變更。原因：" + error.message);
     }
   });
