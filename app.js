@@ -5299,8 +5299,10 @@ async function resetParentPassword(parentUserId) {
       throw new Error("伺服器未回傳有效的臨時密碼。為避免提供錯誤密碼，系統不會顯示重設成功，請先確認帳號狀態。");
     }
 
-    await loadAdminData();
-    renderGuardians();
+    if (button) {
+      button.disabled = false;
+      button.textContent = "重設密碼";
+    }
     showMessage("家長密碼已重設。臨時密碼：" + temporaryPassword.trim() + "。請將臨時密碼提供給家長。", "success");
   } catch (error) {
     if (button) {
