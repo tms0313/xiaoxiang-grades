@@ -2717,10 +2717,55 @@ function getCurrentWeekExamDates() {
   return { start: toLocalDateString(monday), end: toLocalDateString(saturday) };
 }
 
+let examCalendarMonth = new Date();
+let examCalendarOpen = false;
+let examCalendarSelectingEnd = false;
+
+function formatExamDateDisplay(value) {
+  return value ? value.replace(/-/g, "/") : "";
+}
+function updateExamDateRangeDisplay() {
+  const display = $("examDateRangeDisplay");
+  if (!display) return;
+  const start = $("examStart").value;
+  const end = $("examEnd").value;
+  display.value = start && end ? formatExamDateDisplay(start) + " ～ " + formatExamDateDisplay(end)
+    : start ? formatExamDateDisplay(start) + " ～ 請選擇結束日期" : "請選擇開始日期與結束日期";
+}
+function renderExamDateCalendar() {
+  const panel = $("examDateCalendar");
+  if (!panel) return;
+  const year = examCalendarMonth.getFullYear(), month = examCalendarMonth.getMonth();
+  const offset = new Date(year, month, 1).getDay(), count = new Date(year, month + 1, 0).getDate();
+  const start = $("examStart").value, end = $("examEnd").value, cells = [];
+  for (let i = 0; i < offset; i++) cells.push("<span class='exam-calendar-empty'></span>");
+  for (let day = 1; day <= count; day++) {
+    const date = year + "-" + String(month + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+    const selected = date === start || date === end, inRange = start && end && date > start && date < end;
+    cells.push("<button type='button' class='exam-calendar-day" + (selected ? " selected" : "") + (inRange ? " in-range" : "") + "' data-exam-calendar-date='" + date + "'>" + day + "</button>");
+  }
+  panel.innerHTML = "<div class='exam-calendar-heading'><button type='button' data-exam-calendar-nav='-1' aria-label='上個月'>‹</button><strong>" +
+    year + " 年 " + (month + 1) + " 月</strong><button type='button' data-exam-calendar-nav='1' aria-label='下個月'>›</button></div>" +
+    "<div class='exam-calendar-weekdays'><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>" +
+    "<div class='exam-calendar-days'>" + cells.join("") + "</div><p class='exam-calendar-hint'>" +
+    (examCalendarSelectingEnd ? "請選擇結束日期" : "請選擇開始日期") + "</p>";
+  panel.hidden = !examCalendarOpen;
+}
+function openExamDateCalendar() {
+  if (!$("examDateCalendar")) return;
+  examCalendarOpen = true;
+  const parts = ($("examStart").value || getCurrentWeekExamDates().start).split("-").map(Number);
+  examCalendarMonth = new Date(parts[0], parts[1] - 1, 1);
+  examCalendarSelectingEnd = Boolean($("examStart").value && !$("examEnd").value);
+  renderExamDateCalendar();
+}
 function setDefaultExamDates() {
   const dates = getCurrentWeekExamDates();
   if ($("examStart")) $("examStart").value = dates.start;
   if ($("examEnd")) $("examEnd").value = dates.end;
+  updateExamDateRangeDisplay();
+  examCalendarOpen = false;
+  renderExamDateCalendar();
 }
 
 const BULK_SCORE_DRAFT_KEY = "xiaoxiang_bulk_score_entry_draft_v1";
@@ -3208,8 +3253,11 @@ function renderScoreEntry() {
     "<h2 class='section-title'>週成績登錄</h2>" +
     "<div class='panel'><h3 id='examFormTitle'>新增考試</h3><form id='examForm'><input type='hidden' id='examEditId'>" +
     "<div id='examFormRow'>" +
-    "<div class='field'><label>開始日期</label><input id='examStart' type='date' required></div>" +
-    "<div class='field'><label>結束日期</label><input id='examEnd' type='date' required></div>" +
+    "<div class='field exam-date-range-field'><label for='examDateRangeDisplay'>考試日期區間</label><div class='exam-date-range-control'>" +
+    "<input id='examDateRangeDisplay' type='text' readonly aria-label='選擇考試開始與結束日期' placeholder='請選擇日期區間'>" +
+    "<button type='button' class='exam-calendar-trigger' id='examCalendarTrigger' aria-label='開啟日期日曆'>▦</button>" +
+    "<div id='examDateCalendar' class='exam-date-calendar' hidden></div></div>" +
+    "<input id='examStart' type='hidden'><input id='examEnd' type='hidden'></div>" +
     "<button class='btn btn-success' type='submit'>儲存考試</button>" +
     "<button class='btn btn-secondary' type='button' id='examCancel'>清除</button>" +
     "</div></form></div>" +
@@ -3254,6 +3302,35 @@ function renderScoreEntry() {
   });
   $("examForm").addEventListener("submit", saveExam);
   $("examCancel").addEventListener("click", clearExamForm);
+  $("examDateRangeDisplay").addEventListener("click", openExamDateCalendar);
+  $("examCalendarTrigger").addEventListener("click", openExamDateCalendar);
+  $("examDateCalendar").addEventListener("click", function (event) {
+    const nav = event.target.closest("[data-exam-calendar-nav]");
+    const day = event.target.closest("[data-exam-calendar-date]");
+    if (nav) {
+      examCalendarMonth.setMonth(examCalendarMonth.getMonth() + Number(nav.dataset.examCalendarNav));
+      renderExamDateCalendar();
+      return;
+    }
+    if (!day) return;
+    const selectedDate = day.dataset.examCalendarDate;
+    if (!examCalendarSelectingEnd) {
+      $("examStart").value = selectedDate;
+      $("examEnd").value = "";
+      examCalendarSelectingEnd = true;
+      const parts = selectedDate.split("-").map(Number);
+      examCalendarMonth = new Date(parts[0], parts[1] - 1, 1);
+    } else if (selectedDate < $("examStart").value) {
+      $("examStart").value = selectedDate;
+      $("examEnd").value = "";
+    } else {
+      $("examEnd").value = selectedDate;
+      examCalendarSelectingEnd = false;
+      examCalendarOpen = false;
+    }
+    updateExamDateRangeDisplay();
+    renderExamDateCalendar();
+  });
   content.onclick = async function (event) {
     const editButton = event.target.closest("[data-edit-exam]");
     const deleteButton = event.target.closest("[data-delete-exam]");
@@ -3781,6 +3858,10 @@ function editExam(id) {
   $("examEditId").value = exam.id;
   $("examStart").value = exam.start_date || "";
   $("examEnd").value = exam.end_date || "";
+  updateExamDateRangeDisplay();
+  examCalendarOpen = false;
+  examCalendarSelectingEnd = false;
+  renderExamDateCalendar();
   $("examFormTitle").textContent = "修改考試日期";
 
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3800,7 +3881,7 @@ async function saveExam(event) {
 
   if (endDate < startDate) {
     showMessage("結束日期不可早於開始日期。", "error");
-    $("examEnd").focus();
+    $("examDateRangeDisplay").focus();
     return;
   }
 
@@ -3811,7 +3892,7 @@ async function saveExam(event) {
   });
   if (duplicate) {
     showMessage("這個考試日期區間已存在（" + formatDateRange(duplicate) + "），請確認是否選錯週期。", "error");
-    $("examStart").focus();
+    $("examDateRangeDisplay").focus();
     return;
   }
 
