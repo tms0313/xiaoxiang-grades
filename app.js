@@ -4476,7 +4476,18 @@ async function editParentAccount(parentId) {
       throw new Error(data.error || "家長資料更新失敗。");
     }
 
-    await loadAdminData();
+    // 家長資料更新只同步該筆 profiles 快取，學生與成績資料無須重載。
+    profilesCache = profilesCache.map(function (profile) {
+      if (String(profile.id) !== String(parentId)) return profile;
+      return {
+        ...profile,
+        display_name: displayName,
+        ...(isPhoneAccount
+          ? { phone: phone }
+          : { email: email })
+      };
+    });
+    rebuildAdminEntityIndexes();
     renderGuardians();
 
     showMessage(
