@@ -707,3 +707,35 @@ footer {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
+
+
+/* 段考成績登錄：避免學期、段考、班級欄位標籤與選單文字裁切 */
+.term-exam-form .form-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 14px;
+}
+.term-exam-form .field {
+  min-width: 0;
+}
+.term-exam-form .field label {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: visible;
+  line-height: 1.45;
+}
+.term-exam-form .field select,
+.term-exam-form .field input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  line-height: normal;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+@media (max-width: 600px) {
+  .term-exam-form .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
