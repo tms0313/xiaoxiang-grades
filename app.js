@@ -3901,7 +3901,12 @@ async function saveExam(event) {
       String(exam.end_date || "") === endDate;
   });
   if (duplicate) {
-    showMessage("這個考試日期區間已存在（" + formatDateRange(duplicate) + "），請確認是否選錯週期。", "error");
+    alert(
+      "無法新增或修改考試！\n\n" +
+      "資料庫中已經存在相同的考試日期區間：\n" +
+      formatDateRange(duplicate) +
+      "\n\n為避免覆蓋原有考試及成績，系統已取消這次儲存。"
+    );
     $("examDateRangeDisplay").focus();
     return;
   }
