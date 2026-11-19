@@ -5746,9 +5746,9 @@ async function renderStudentReviewRecords(selectedExamId) {
 
       recordContent.innerHTML =
         "<div class='grid' style='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:8px 0 18px'>" +
-          "<div class='panel' style='margin:0;padding:14px;text-align:center'><div class='muted'>已檢閱</div><div style='font-size:26px;font-weight:900;color:#27845b'>" + reviewedCount + "</div></div>" +
-          "<div class='panel' style='margin:0;padding:14px;text-align:center'><div class='muted'>未檢閱</div><div style='font-size:26px;font-weight:900;color:#bd4242'>" + pendingCount + "</div></div>" +
-          "<div class='panel' style='margin:0;padding:14px;text-align:center'><div class='muted'>完成率</div><div style='font-size:26px;font-weight:900;color:#315d86'>" + completionRate + "%</div></div>" +
+          "<div class='panel' style='margin:0;padding:7px 10px;text-align:center'><div class='muted' style='line-height:1.2'>已檢閱</div><div style='font-size:22px;line-height:1.2;font-weight:900;color:#27845b'>" + reviewedCount + "</div></div>" +
+          "<div class='panel' style='margin:0;padding:7px 10px;text-align:center'><div class='muted' style='line-height:1.2'>未檢閱</div><div style='font-size:22px;line-height:1.2;font-weight:900;color:#bd4242'>" + pendingCount + "</div></div>" +
+          "<div class='panel' style='margin:0;padding:7px 10px;text-align:center'><div class='muted' style='line-height:1.2'>完成率</div><div style='font-size:22px;line-height:1.2;font-weight:900;color:#315d86'>" + completionRate + "%</div></div>" +
         "</div>" +
         "<p class='muted'>統計範圍：目前在學學生，共 " + visibleCount + " 人。</p>" +
         "<div class='table-wrap'><table class='student-record-table' style='min-width:620px'><thead><tr>" +
