@@ -328,11 +328,16 @@ async function loadAttendanceSessionStudents() {
   }
 }
 
+let attendanceSaveInProgress = false;
+
 async function saveAttendanceSessionRecords() {
   const button = $("attendanceSaveButton");
   const message = $("attendanceSaveMessage");
-  if (!button || !attendanceSelectedSession) return;
+  if (!button || !message || !attendanceSelectedSession || attendanceSaveInProgress) return;
 
+  // 儲存期間固定使用本次選取的課堂快照，避免切換日期／課堂後寫入錯誤資料。
+  const selectedDate = attendanceSelectedDate;
+  const selectedSession = { ...attendanceSelectedSession };
   const payload = [];
   const rows = document.querySelectorAll("#attendanceSessionContent [data-attendance-row]");
 
@@ -368,6 +373,7 @@ async function saveAttendanceSessionRecords() {
     return;
   }
 
+  attendanceSaveInProgress = true;
   button.disabled = true;
   button.textContent = "儲存中……";
 
@@ -375,10 +381,10 @@ async function saveAttendanceSessionRecords() {
     const sessionResult = await db
       .from("attendance_sessions")
       .upsert({
-        session_date: attendanceSelectedDate,
-        class_name: attendanceSelectedSession.className,
-        subject: attendanceSelectedSession.subject,
-        start_time: attendanceSelectedSession.time
+        session_date: selectedDate,
+        class_name: selectedSession.className,
+        subject: selectedSession.subject,
+        start_time: selectedSession.time
       }, {
         onConflict: "session_date,class_name,subject,start_time"
       })
@@ -387,9 +393,9 @@ async function saveAttendanceSessionRecords() {
 
     if (sessionResult.error) throw sessionResult.error;
 
-    attendanceSavedSessionId = sessionResult.data.id;
+    const savedSessionId = sessionResult.data.id;
     const records = payload.map(item => ({
-      session_id: attendanceSavedSessionId,
+      session_id: savedSessionId,
       student_id: item.student_id,
       attendance_status: item.attendance_status,
       late_minutes: item.late_minutes,
@@ -403,14 +409,29 @@ async function saveAttendanceSessionRecords() {
 
     if (saveResult.error) throw saveResult.error;
 
+    // 只有仍停留在原課堂時，才更新目前畫面使用的既有課堂 ID。
+    if (
+      attendanceSelectedDate === selectedDate &&
+      attendanceSelectedSession &&
+      attendanceSelectedSession.className === selectedSession.className &&
+      attendanceSelectedSession.subject === selectedSession.subject &&
+      attendanceSelectedSession.time === selectedSession.time
+    ) {
+      attendanceSavedSessionId = savedSessionId;
+    }
+
     message.className = "attendance-status-message success";
     message.textContent = "全班 " + records.length + " 位學生的出缺席紀錄已儲存。";
-    button.textContent = "儲存全班紀錄";
-    button.disabled = false;
   } catch (error) {
     message.className = "attendance-status-message error";
     message.textContent = "儲存失敗：" + (error.message || String(error));
-    button.textContent = "儲存全班紀錄";
-    button.disabled = false;
+  } finally {
+    attendanceSaveInProgress = false;
+    // 舊畫面可能已因切換日期／課堂而卸載；只更新仍在畫面上的按鈕。
+    const currentButton = $("attendanceSaveButton");
+    if (currentButton) {
+      currentButton.textContent = "儲存全班紀錄";
+      currentButton.disabled = false;
+    }
   }
 }
