@@ -6285,7 +6285,7 @@ async function renderAlumniMockScores() {
       return String(record.academic_year || "").toLowerCase().includes(yearQuery) &&
         String(record.student_name || "").toLowerCase().includes(nameQuery) &&
         (!typeQuery || String(record.exam_scope || "") === typeQuery) &&
-        (!rangeQuery || String(record.exam_range || "") === rangeQuery);
+        (!rangeQuery || record.exam_scope === "會考" || String(record.exam_range || "") === rangeQuery);
     });
     const isOnlyCeesExam = typeQuery === "會考";
     if (!filtered.length) {
@@ -6309,7 +6309,7 @@ async function renderAlumniMockScores() {
         "<td>" + escapeHtml(record.academic_year) + "</td>" +
         "<td>" + escapeHtml(record.student_name) + "</td>" +
         "<td>" + escapeHtml(record.exam_scope === "正式模考" ? "北北基" : record.exam_scope === "班內模考" ? "班內" : record.exam_scope) + "</td>" +
-        (isOnlyCeesExam ? "" : "<td>" + escapeHtml(record.exam_range || "") + "</td>" +
+        (isOnlyCeesExam ? "" : "<td>" + escapeHtml(record.exam_scope === "會考" ? "" : (record.exam_range || "")) + "</td>" +
         "<td class='alumni-score-number'>" + (record.exam_scope === "正式模考" && record.district_gender_rank != null ? escapeHtml(Number(record.district_gender_rank).toLocaleString("en-US")) : "—") + "</td>" +
         "<td class='alumni-score-number'>" + (record.exam_scope === "正式模考" && record.district_rank != null ? escapeHtml(Number(record.district_rank).toLocaleString("en-US")) : "—") + "</td>") +
         "<td>" + (record.exam_scope === "會考" ? escapeHtml(record.admission_school || "") : "") + "</td>" +
@@ -6385,7 +6385,9 @@ async function renderAlumniMockScores() {
     if (years.includes(selectedYear)) yearSelect.value = selectedYear;
     const rangeSelect = $("alumniRangeFilter");
     const selectedRange = rangeSelect.value;
-    const ranges = Array.from(new Set(records.map(function (record) {
+    const ranges = Array.from(new Set(records.filter(function (record) {
+      return record.exam_scope !== "會考";
+    }).map(function (record) {
       return String(record.exam_range || "").trim();
     }).filter(Boolean))).sort(compareExamRange);
     rangeSelect.innerHTML = "<option value=''>全部考試範圍</option>" +
@@ -6415,7 +6417,7 @@ async function renderAlumniMockScores() {
       return String(record.academic_year || "").toLowerCase().includes(yearQuery) &&
         String(record.student_name || "").toLowerCase().includes(nameQuery) &&
         (!typeQuery || String(record.exam_scope || "") === typeQuery) &&
-        (!rangeQuery || String(record.exam_range || "") === rangeQuery);
+        (!rangeQuery || record.exam_scope === "會考" || String(record.exam_range || "") === rangeQuery);
     });
     if (!filtered.length) {
       alert("目前沒有符合篩選條件的成績可匯出。");
