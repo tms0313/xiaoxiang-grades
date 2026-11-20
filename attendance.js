@@ -87,6 +87,9 @@ function renderAttendanceManagement() {
   const content = $("adminContent");
   if (!content) return;
 
+  // 切換日期或重新繪製管理頁時，立即作廢尚未完成的舊載入請求。
+  attendanceLoadRequestId++;
+
   if (!attendanceSelectedDate) attendanceSelectedDate = attendanceTaipeiDateISO();
   attendanceSelectedSession = null;
   attendanceLoadedStudents = [];
