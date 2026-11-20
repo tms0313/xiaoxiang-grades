@@ -6354,11 +6354,17 @@ async function renderAlumniMockScores() {
       return left.localeCompare(right, "zh-Hant", { numeric: true });
     }
     records.sort(function (a, b) {
-      // 先依學年度由新到舊排列；同學年度內只依總分由高到低排序。
+      // 先依學年度由新到舊；同學年度先依模考範圍分組，會考（範圍最大）固定最後，
+      // 同一範圍內再依總分由高到低排列。
       const yearOrder = String(b.academic_year || "").localeCompare(
         String(a.academic_year || ""), "zh-Hant", { numeric: true }
       );
       if (yearOrder) return yearOrder;
+      const aIsCees = a.exam_scope === "會考";
+      const bIsCees = b.exam_scope === "會考";
+      if (aIsCees !== bIsCees) return aIsCees ? 1 : -1;
+      const rangeOrder = compareExamRange(a.exam_range, b.exam_range);
+      if (rangeOrder) return rangeOrder;
       const scoreOrder = Number(b.total_grade || 0) - Number(a.total_grade || 0);
       if (scoreOrder) return scoreOrder;
       return String(a.student_name || "").localeCompare(
