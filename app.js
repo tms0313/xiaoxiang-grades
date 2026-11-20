@@ -6778,32 +6778,6 @@ async function renderParentDashboard() {
     return cachedTaiwanDateTime;
   }
 
-  let cachedTaiwanDateTime = null;
-
-  function getTaiwanDateTime() {
-    if (cachedTaiwanDateTime) return cachedTaiwanDateTime;
-
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Taipei",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23"
-    }).formatToParts(new Date());
-
-    const result = {};
-
-    parts.forEach(function (part) {
-      result[part.type] = part.value;
-    });
-
-    cachedTaiwanDateTime = result;
-    return cachedTaiwanDateTime;
-  }
-
   // 家長端僅顯示本週彙總，不呈現每日或逐堂明細。
   const taiwanToday = getTaiwanDateTime();
   const todayISO = taiwanToday.year + "-" + taiwanToday.month + "-" + taiwanToday.day;
