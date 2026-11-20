@@ -90,12 +90,7 @@ function attendanceInjectStyles() {
     ".attendance-record-table th:nth-child(4),.attendance-record-table td:nth-child(4){width:100px;min-width:100px;max-width:100px}",
     ".attendance-record-table th:nth-child(5),.attendance-record-table td:nth-child(5){width:100px;min-width:100px;max-width:100px}",
     ".attendance-record-table .attendance-late-input{width:100px!important;min-width:100px!important;max-width:100px!important;padding:3px!important}",
-    ".attendance-record-table th:last-child,.attendance-record-table td:last-child{width:76px;min-width:76px;max-width:76px;white-space:nowrap;text-align:center}",
-    ".attendance-record-table .attendance-row-actions{display:table-cell;white-space:nowrap;overflow:visible}",
-    ".attendance-record-table .attendance-delete-one{position:relative;z-index:1;visibility:visible;opacity:1}",
-    ".attendance-record-table .attendance-row-actions{white-space:nowrap;text-align:center}",
-    ".attendance-record-table .attendance-delete-one{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:32px;min-height:32px;margin:0;padding:0 10px;border:1px solid #d7a0a0;border-radius:7px;background:#fff;color:#b32626;font-size:14px;font-weight:800;line-height:30px;white-space:nowrap;cursor:pointer}",
-    ".attendance-record-table .attendance-delete-one:disabled,.attendance-clear-session:disabled{opacity:.55;cursor:not-allowed}",
+    ".attendance-clear-session:disabled{opacity:.55;cursor:not-allowed}",
     ".attendance-clear-session{border:1px solid #d7a0a0!important;background:#fff!important;color:#b32626!important}",
     ".attendance-record-table th,.attendance-record-table td{padding:5px 4px!important;line-height:1.3!important;vertical-align:middle}",
     ".attendance-record-table select,.attendance-record-table input{width:100%;min-width:100px;height:32px;min-height:32px;box-sizing:border-box;padding:4px 6px;border:1px solid #ccd4df;border-radius:7px;background:#fff;font-size:16px;line-height:1.3}",
@@ -378,7 +373,6 @@ async function loadAttendanceSessionStudents() {
         "<option value='checked_in' " + (checkin === "checked_in" ? "selected" : "") + ">打卡</option>" +
         "<option value='not_checked_in' " + (checkin === "not_checked_in" ? "selected" : "") + ">未打卡</option>" +
       "</select></td>" +
-      "<td class='attendance-row-actions'>" + (record.id ? "<button type='button' class='attendance-delete-one' data-attendance-delete-student='" + attendanceEscape(student.id) + "'>刪除</button>" : "<span class='muted'>—</span>") + "</td>" +
     "</tr>";
   }).join("");
 
@@ -392,7 +386,7 @@ async function loadAttendanceSessionStudents() {
       : "<p class='muted'>這堂課尚未儲存紀錄，完成登錄後可一次儲存全班。</p>") +
     (attendanceLoadedStudents.length
       ? "<div class='table-wrap'><table class='attendance-record-table'>" +
-          "<thead><tr><th>學生編號</th><th>學生姓名</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th><th>操作</th></tr></thead>" +
+          "<thead><tr><th>學生編號</th><th>學生姓名</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th></tr></thead>" +
           "<tbody>" + rows + "</tbody></table></div>" +
         "<div class='attendance-actions'>" +
           "<button type='button' class='btn btn-success' id='attendanceSaveButton' " + (attendanceSaveInProgress ? "disabled" : "") + ">" + (attendanceSaveInProgress ? "前一堂儲存中……" : "儲存全班紀錄") + "</button>" +
@@ -434,11 +428,6 @@ async function loadAttendanceSessionStudents() {
   if ($("attendanceSaveButton")) {
     $("attendanceSaveButton").addEventListener("click", saveAttendanceSessionRecords);
     $("attendanceReloadButton").addEventListener("click", loadAttendanceSessionStudents);
-    panel.querySelectorAll("[data-attendance-delete-student]").forEach(button => {
-      button.addEventListener("click", function () {
-        deleteAttendanceStudentRecord(this.dataset.attendanceDeleteStudent, this);
-      });
-    });
     if ($("attendanceClearSessionButton")) {
       $("attendanceClearSessionButton").addEventListener("click", clearAttendanceSessionRecords);
     }
@@ -554,35 +543,6 @@ async function saveAttendanceSessionRecords() {
   }
 }
 
-
-async function deleteAttendanceStudentRecord(studentId, button) {
-  if (!attendanceSavedSessionId || attendanceSaveInProgress) return;
-  const student = attendanceLoadedStudents.find(item => String(item.id) === String(studentId));
-  const studentName = student ? student.full_name : "這位學生";
-  if (!confirm("確定刪除「" + studentName + "」本堂出缺席紀錄嗎？此操作無法復原。")) return;
-
-  const sessionId = attendanceSavedSessionId;
-  const message = $("attendanceSaveMessage");
-  if (button) button.disabled = true;
-  try {
-    const result = await db.from("attendance_records").delete()
-      .eq("session_id", sessionId).eq("student_id", studentId);
-    if (result.error) throw result.error;
-    await loadAttendanceSessionStudents();
-    if (attendanceSelectedDate.slice(0, 7) === attendanceCalendarMonth) loadAttendanceCalendarMarks();
-    const currentMessage = $("attendanceSaveMessage");
-    if (currentMessage) {
-      currentMessage.className = "attendance-status-message success";
-      currentMessage.textContent = studentName + " 本堂出缺席紀錄已刪除。";
-    }
-  } catch (error) {
-    if (button) button.disabled = false;
-    if (message) {
-      message.className = "attendance-status-message error";
-      message.textContent = "刪除失敗：" + (error.message || String(error));
-    }
-  }
-}
 
 async function clearAttendanceSessionRecords() {
   if (!attendanceSavedSessionId || attendanceSaveInProgress) return;
