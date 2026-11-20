@@ -239,11 +239,6 @@ function renderAttendanceManagement() {
   renderAttendanceCalendar();
   loadAttendanceCalendarMarks();
 
-  $("attendanceDate").addEventListener("change", function () {
-    attendanceSelectedDate = this.value || attendanceTaipeiDateISO();
-    attendanceCalendarMonth = attendanceSelectedDate.slice(0, 7);
-    renderAttendanceManagement();
-  });
 
   content.querySelectorAll("[data-attendance-session]").forEach(button => {
     button.addEventListener("click", async function () {
