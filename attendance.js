@@ -24,6 +24,7 @@ let attendanceSelectedDate = "";
 let attendanceSelectedSession = null;
 let attendanceLoadedStudents = [];
 let attendanceSavedSessionId = "";
+let attendanceLoadRequestId = 0;
 
 function attendanceTaipeiDateISO(dateValue) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -139,72 +140,94 @@ async function loadAttendanceSessionStudents() {
   const panel = $("attendanceSessionContent");
   if (!panel || !attendanceSelectedSession) return;
 
+  // 避免快速切換課堂時，較慢的舊請求覆蓋最新畫面。
+  const requestId = ++attendanceLoadRequestId;
+  const selectedDate = attendanceSelectedDate;
+  const selectedSession = { ...attendanceSelectedSession };
+
   panel.innerHTML = "<div class='empty'>正在載入學生名單及既有紀錄……</div>";
   attendanceSavedSessionId = "";
 
-  const sessionLookup = await db
-    .from("attendance_sessions")
-    .select("id")
-    .eq("session_date", attendanceSelectedDate)
-    .eq("class_name", attendanceSelectedSession.className)
-    .eq("subject", attendanceSelectedSession.subject)
-    .eq("start_time", attendanceSelectedSession.time)
-    .maybeSingle();
+  // 課堂與學生資料互不依賴，平行讀取以縮短等待時間。
+  const [sessionLookup, studentsResult] = await Promise.all([
+    db
+      .from("attendance_sessions")
+      .select("id")
+      .eq("session_date", selectedDate)
+      .eq("class_name", selectedSession.className)
+      .eq("subject", selectedSession.subject)
+      .eq("start_time", selectedSession.time)
+      .maybeSingle(),
+    db
+      .from("students")
+      .select("id,student_code,full_name,class_name")
+      .eq("class_name", selectedSession.className)
+      .eq("is_active", true)
+      .order("student_code", { ascending: true })
+  ]);
+
+  if (requestId !== attendanceLoadRequestId) return;
 
   if (sessionLookup.error) {
     panel.innerHTML = "<div class='attendance-status-message error'>讀取課堂資料失敗：" +
       attendanceEscape(sessionLookup.error.message) + "</div>";
     return;
   }
-
-  if (sessionLookup.data) attendanceSavedSessionId = sessionLookup.data.id;
-
-  const studentsResult = await db
-    .from("students")
-    .select("id,student_code,full_name,class_name")
-    .eq("class_name", attendanceSelectedSession.className)
-    .eq("is_active", true)
-    .order("student_code", { ascending: true });
-
   if (studentsResult.error) {
     panel.innerHTML = "<div class='attendance-status-message error'>讀取學生名單失敗：" +
       attendanceEscape(studentsResult.error.message) + "</div>";
     return;
   }
 
+  const savedSessionId = sessionLookup.data ? sessionLookup.data.id : "";
+  attendanceSavedSessionId = savedSessionId;
   const classStudents = studentsResult.data || [];
-  if (classStudents.length) {
-    const subjectEnrollmentsResult = await db
-      .from("student_subjects")
-      .select("student_id")
-      .in("student_id", classStudents.map(student => student.id))
-      .eq("subject", attendanceSelectedSession.subject)
-      .eq("is_active", true);
 
+  // 修課名單與既有紀錄互不依賴，第二階段也平行讀取。
+  const followUpQueries = [];
+  if (classStudents.length) {
+    followUpQueries.push(
+      db
+        .from("student_subjects")
+        .select("student_id")
+        .in("student_id", classStudents.map(student => student.id))
+        .eq("subject", selectedSession.subject)
+        .eq("is_active", true)
+    );
+  }
+  if (savedSessionId) {
+    followUpQueries.push(
+      db
+        .from("attendance_records")
+        .select("student_id,attendance_status,late_minutes,checkin_status,parent_signature_status")
+        .eq("session_id", savedSessionId)
+    );
+  }
+
+  const followUpResults = await Promise.all(followUpQueries);
+  if (requestId !== attendanceLoadRequestId) return;
+
+  let resultIndex = 0;
+  let enrolledStudentIds = new Set();
+  if (classStudents.length) {
+    const subjectEnrollmentsResult = followUpResults[resultIndex++];
     if (subjectEnrollmentsResult.error) {
       panel.innerHTML = "<div class='attendance-status-message error'>讀取學生修課科目失敗：" +
         attendanceEscape(subjectEnrollmentsResult.error.message) + "</div>";
       return;
     }
-
-    const enrolledStudentIds = new Set(
+    enrolledStudentIds = new Set(
       (subjectEnrollmentsResult.data || []).map(item => String(item.student_id))
     );
-    attendanceLoadedStudents = classStudents.filter(student =>
-      enrolledStudentIds.has(String(student.id))
-    );
-  } else {
-    attendanceLoadedStudents = [];
   }
 
+  attendanceLoadedStudents = classStudents.filter(student =>
+    enrolledStudentIds.has(String(student.id))
+  );
+
   let existingRecords = [];
-
-  if (attendanceSavedSessionId) {
-    const recordsResult = await db
-      .from("attendance_records")
-      .select("student_id,attendance_status,late_minutes,checkin_status,parent_signature_status")
-      .eq("session_id", attendanceSavedSessionId);
-
+  if (savedSessionId) {
+    const recordsResult = followUpResults[resultIndex];
     if (recordsResult.error) {
       panel.innerHTML = "<div class='attendance-status-message error'>讀取既有出缺席紀錄失敗：" +
         attendanceEscape(recordsResult.error.message) + "</div>";
