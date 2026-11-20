@@ -874,3 +874,14 @@ footer {
   text-align: center !important;
   vertical-align: middle !important;
 }
+
+/* 歷屆模考資料總覽：篩選下拉選單文字大小比照段考成績總覽 */
+.alumni-filter-row #alumniYearFilter,
+.alumni-filter-row #alumniTypeFilter,
+.alumni-filter-row #alumniRangeFilter,
+.alumni-filter-row #alumniSubjectFilter {
+  font-family: inherit !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: normal !important;
+}
