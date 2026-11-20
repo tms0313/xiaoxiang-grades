@@ -1921,10 +1921,13 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     // 只有篩選條件真的改變才清除舊條件的勾選。
     selectedMissingItems.clear();
 
-    const matchesStudent = function (student) {
-      if (!student || (className && student.class_name !== className)) return false;
-      return !search || (studentSearchIndex.get(String(student.id)) || "").includes(search);
-    };
+    // 每次篩選先計算符合條件的學生集合，避免同一學生每筆成績都重複執行文字搜尋。
+    const matchedStudentIds = new Set();
+    studentsCache.forEach(function (student) {
+      if (!student || (className && student.class_name !== className)) return;
+      if (search && !(studentSearchIndex.get(String(student.id)) || "").includes(search)) return;
+      matchedStudentIds.add(String(student.id));
+    });
 
     // 依目前篩選條件選擇資料量最小的索引作為候選集，避免每次輸入都掃描全部成績。
     let scoreCandidates = scoresCache;
@@ -1943,8 +1946,10 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     scoreCandidates.forEach(function (score) {
       if (examId && String(score.exam_id) !== String(examId)) return;
       if (subject && score.subject !== subject) return;
-      const student = studentById.get(String(score.student_id));
-      if (!matchesStudent(student)) return;
+      const studentId = String(score.student_id);
+      if (!matchedStudentIds.has(studentId)) return;
+      const student = studentById.get(studentId);
+      if (!student) return;
       const exam = getExam(score.exam_id);
       if (exam) rows.push({ score: score, student: student, exam: exam });
     });
@@ -1977,7 +1982,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
         if (!matchingEnrolledStudentsByClassSubject.has(enrollmentKey)) {
           const enrollmentGroup = enrolledStudentsByClassSubject.get(enrollmentKey);
           const matchedStudents = enrollmentGroup
-            ? enrollmentGroup.students.filter(matchesStudent)
+            ? enrollmentGroup.students.filter(student => matchedStudentIds.has(String(student.id)))
             : [];
           matchingEnrolledStudentsByClassSubject.set(enrollmentKey, matchedStudents);
           if (matchedStudents.length) matchedEnrolledGroupCount += 1;
