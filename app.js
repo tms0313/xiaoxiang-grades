@@ -6601,6 +6601,16 @@ async function renderParentDashboard() {
   document.body.classList.add("parent-page");
   const content = $("appRoot");
 
+  if (!document.getElementById("parentAttendanceSummaryStyles")) {
+    const attendanceStyle = document.createElement("style");
+    attendanceStyle.id = "parentAttendanceSummaryStyles";
+    attendanceStyle.textContent =
+      ".parent-attendance-summary{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 16px;padding:12px 14px;border:1px solid #dce5ed;border-radius:10px;background:#f5f8fb;color:#31506c;font-size:14px;line-height:1.6}" +
+      ".parent-attendance-summary strong{font-weight:800}" +
+      ".parent-attendance-summary .attendance-alert{color:#bd3030;font-weight:800}";
+    document.head.appendChild(attendanceStyle);
+  }
+
   const profileResult = await db
     .from("guardian_students")
     .select("student_id")
@@ -6758,6 +6768,74 @@ async function renderParentDashboard() {
 
     cachedTaiwanDateTime = result;
     return cachedTaiwanDateTime;
+  }
+
+  // 家長端僅顯示本週彙總，不呈現每日或逐堂明細。
+  const taiwanToday = getTaiwanDateTime();
+  const todayISO = taiwanToday.year + "-" + taiwanToday.month + "-" + taiwanToday.day;
+  const weekStartDate = new Date(todayISO + "T00:00:00Z");
+  const weekday = weekStartDate.getUTCDay();
+  weekStartDate.setUTCDate(weekStartDate.getUTCDate() + (weekday === 0 ? -6 : 1 - weekday));
+  const weekStartISO = weekStartDate.toISOString().slice(0, 10);
+  weekStartDate.setUTCDate(weekStartDate.getUTCDate() + 6);
+  const weekEndISO = weekStartDate.toISOString().slice(0, 10);
+
+  let parentAttendanceRecords = [];
+  let parentAttendanceLoadError = null;
+  const attendanceSessionsResult = await db
+    .from("attendance_sessions")
+    .select("id")
+    .gte("session_date", weekStartISO)
+    .lte("session_date", weekEndISO);
+
+  if (attendanceSessionsResult.error) {
+    parentAttendanceLoadError = attendanceSessionsResult.error;
+  } else {
+    const attendanceSessionIds = (attendanceSessionsResult.data || []).map(item => item.id);
+    if (attendanceSessionIds.length) {
+      const attendanceRecordsResult = await fetchAllRows(() => db
+        .from("attendance_records")
+        .select("student_id,attendance_status,late_minutes,checkin_status")
+        .in("session_id", attendanceSessionIds)
+        .in("student_id", studentIds));
+      if (attendanceRecordsResult.error) {
+        parentAttendanceLoadError = attendanceRecordsResult.error;
+      } else {
+        parentAttendanceRecords = attendanceRecordsResult.data || [];
+      }
+    }
+  }
+
+  const parentAttendanceByStudent = new Map();
+  parentAttendanceRecords.forEach(function (record) {
+    const key = String(record.student_id);
+    if (!parentAttendanceByStudent.has(key)) {
+      parentAttendanceByStudent.set(key, { recordCount: 0, lateMinutes: 0, uncheckedCount: 0 });
+    }
+    const summary = parentAttendanceByStudent.get(key);
+    summary.recordCount++;
+    if (record.attendance_status === "normal") {
+      summary.lateMinutes += Math.max(0, Number(record.late_minutes) || 0);
+      if (record.checkin_status === "not_checked_in") summary.uncheckedCount++;
+    }
+  });
+
+  function buildParentAttendanceSummary(student) {
+    if (parentAttendanceLoadError) {
+      return "<div class='parent-attendance-summary'>本週出缺席資料暫時無法讀取，請稍後再試。</div>";
+    }
+    const summary = parentAttendanceByStudent.get(String(student.id));
+    if (!summary || summary.recordCount === 0) {
+      return "<div class='parent-attendance-summary'>本週尚無出缺席紀錄。</div>";
+    }
+    return (
+      "<div class='parent-attendance-summary'>" +
+        "<span>本週遲到 <strong" + (summary.lateMinutes > 0 ? " class='attendance-alert'" : "") + ">" +
+          summary.lateMinutes + "</strong> 分鐘</span>" +
+        "<span>本週未打卡 <strong" + (summary.uncheckedCount > 0 ? " class='attendance-alert'" : "") + ">" +
+          summary.uncheckedCount + "</strong> 次</span>" +
+      "</div>"
+    );
   }
 
   const releasedExamCache = new Map();
@@ -6962,6 +7040,7 @@ async function renderParentDashboard() {
           "<span class='student-name'>" + escapeHtml(student.full_name) + "</span>" +
           "<span class='student-class'>" + escapeHtml(student.class_name) + "</span>" +
         "</h3>" +
+        buildParentAttendanceSummary(student) +
         examCards +
       "</div>"
     );
