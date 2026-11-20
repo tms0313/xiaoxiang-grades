@@ -405,6 +405,7 @@ style.textContent = [
 
   ".field { margin-bottom:16px; }",
   ".field label { display:block; font-weight:700; margin-bottom:7px; }",
+  ".exam-date-range-field > label { font-size:16px !important; font-weight:700 !important; line-height:1.5 !important; }",
   ".field input,.field select { width:100%; padding:12px; border:1px solid #ccd4df; border-radius:8px; background:#fff; }",
   ".student-subject-field > label { display:block; margin-bottom:9px; }",
   ".student-subject-options { display:flex; align-items:center; flex-wrap:nowrap; gap:26px; }",
