@@ -6605,9 +6605,17 @@ async function renderParentDashboard() {
     const attendanceStyle = document.createElement("style");
     attendanceStyle.id = "parentAttendanceSummaryStyles";
     attendanceStyle.textContent =
-      ".parent-attendance-summary{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 16px;padding:12px 14px;border:1px solid #dce5ed;border-radius:10px;background:#f5f8fb;color:#31506c;font-size:14px;line-height:1.6}" +
-      ".parent-attendance-summary strong{font-weight:800}" +
-      ".parent-attendance-summary .attendance-alert{color:#bd3030;font-weight:800}";
+      ".parent-attendance-summary{margin:0 0 18px;padding:0}" +
+      ".parent-attendance-summary-title{margin:0 0 9px;color:#526477;font-size:14px;font-weight:700}" +
+      ".parent-attendance-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}" +
+      ".parent-attendance-stat{display:flex;flex-direction:column;gap:5px;min-width:0;padding:12px 14px;border:1px solid #dce5ed;border-radius:10px;background:#f5f8fb}" +
+      ".parent-attendance-stat-label{color:#647487;font-size:13px;line-height:1.4}" +
+      ".parent-attendance-stat-value{color:#31506c;font-size:23px;font-weight:800;line-height:1.25;font-variant-numeric:tabular-nums}" +
+      ".parent-attendance-stat-value small{font-size:13px;font-weight:600}" +
+      ".parent-attendance-stat-value.attendance-alert{color:#bd3030}" +
+      ".parent-attendance-empty,.parent-attendance-error{margin:0 0 16px;padding:11px 13px;border:1px solid #dce5ed;border-radius:10px;background:#f5f8fb;color:#647487;font-size:13px;line-height:1.6}" +
+      ".parent-attendance-error{border-color:#f0d0d0;background:#fff5f5;color:#a32626}" +
+      "@media(max-width:380px){.parent-attendance-summary-grid{gap:7px}.parent-attendance-stat{padding:10px}.parent-attendance-stat-value{font-size:20px}}";
     document.head.appendChild(attendanceStyle);
   }
 
@@ -6822,19 +6830,28 @@ async function renderParentDashboard() {
 
   function buildParentAttendanceSummary(student) {
     if (parentAttendanceLoadError) {
-      return "<div class='parent-attendance-summary'>本週出缺席資料暫時無法讀取，請稍後再試。</div>";
+      return "<div class='parent-attendance-error' role='alert'>本週出缺席資料暫時無法讀取，請稍後再試。</div>";
     }
     const summary = parentAttendanceByStudent.get(String(student.id));
     if (!summary || summary.recordCount === 0) {
-      return "<div class='parent-attendance-summary'>本週尚無出缺席紀錄。</div>";
+      return "<div class='parent-attendance-empty'>本週尚無出缺席紀錄。</div>";
     }
     return (
-      "<div class='parent-attendance-summary'>" +
-        "<span>本週遲到 <strong" + (summary.lateMinutes > 0 ? " class='attendance-alert'" : "") + ">" +
-          summary.lateMinutes + "</strong> 分鐘</span>" +
-        "<span>本週未打卡 <strong" + (summary.uncheckedCount > 0 ? " class='attendance-alert'" : "") + ">" +
-          summary.uncheckedCount + "</strong> 次</span>" +
-      "</div>"
+      "<section class='parent-attendance-summary' aria-label='本週出缺席摘要'>" +
+        "<h4 class='parent-attendance-summary-title'>本週出缺席摘要</h4>" +
+        "<div class='parent-attendance-summary-grid'>" +
+          "<div class='parent-attendance-stat'>" +
+            "<span class='parent-attendance-stat-label'>本週遲到</span>" +
+            "<span class='parent-attendance-stat-value" + (summary.lateMinutes > 0 ? " attendance-alert" : "") + "'>" +
+              summary.lateMinutes + " <small>分鐘</small></span>" +
+          "</div>" +
+          "<div class='parent-attendance-stat'>" +
+            "<span class='parent-attendance-stat-label'>本週未打卡</span>" +
+            "<span class='parent-attendance-stat-value" + (summary.uncheckedCount > 0 ? " attendance-alert" : "") + "'>" +
+              summary.uncheckedCount + " <small>次</small></span>" +
+          "</div>" +
+        "</div>" +
+      "</section>"
     );
   }
 
