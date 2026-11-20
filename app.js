@@ -6778,6 +6778,109 @@ async function renderParentDashboard() {
     return cachedTaiwanDateTime;
   }
 
+  let cachedTaiwanDateTime = null;
+
+  function getTaiwanDateTime() {
+    if (cachedTaiwanDateTime) return cachedTaiwanDateTime;
+
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Taipei",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23"
+    }).formatToParts(new Date());
+
+    const result = {};
+
+    parts.forEach(function (part) {
+      result[part.type] = part.value;
+    });
+
+    cachedTaiwanDateTime = result;
+    return cachedTaiwanDateTime;
+  }
+
+  // 家長端僅顯示本週彙總，不呈現每日或逐堂明細。
+  const taiwanToday = getTaiwanDateTime();
+  const todayISO = taiwanToday.year + "-" + taiwanToday.month + "-" + taiwanToday.day;
+  const weekStartDate = new Date(todayISO + "T00:00:00Z");
+  const weekday = weekStartDate.getUTCDay();
+  weekStartDate.setUTCDate(weekStartDate.getUTCDate() + (weekday === 0 ? -6 : 1 - weekday));
+  const weekStartISO = weekStartDate.toISOString().slice(0, 10);
+  weekStartDate.setUTCDate(weekStartDate.getUTCDate() + 6);
+  const weekEndISO = weekStartDate.toISOString().slice(0, 10);
+
+  let parentAttendanceRecords = [];
+  let parentAttendanceLoadError = null;
+  const attendanceSessionsResult = await db
+    .from("attendance_sessions")
+    .select("id")
+    .gte("session_date", weekStartISO)
+    .lte("session_date", weekEndISO);
+
+  if (attendanceSessionsResult.error) {
+    parentAttendanceLoadError = attendanceSessionsResult.error;
+  } else {
+    const attendanceSessionIds = (attendanceSessionsResult.data || []).map(item => item.id);
+    if (attendanceSessionIds.length) {
+      const attendanceRecordsResult = await fetchAllRows(() => db
+        .from("attendance_records")
+        .select("student_id,attendance_status,late_minutes,checkin_status")
+        .in("session_id", attendanceSessionIds)
+        .in("student_id", studentIds));
+      if (attendanceRecordsResult.error) {
+        parentAttendanceLoadError = attendanceRecordsResult.error;
+      } else {
+        parentAttendanceRecords = attendanceRecordsResult.data || [];
+      }
+    }
+  }
+
+  const parentAttendanceByStudent = new Map();
+  parentAttendanceRecords.forEach(function (record) {
+    const key = String(record.student_id);
+    if (!parentAttendanceByStudent.has(key)) {
+      parentAttendanceByStudent.set(key, { recordCount: 0, lateMinutes: 0, uncheckedCount: 0 });
+    }
+    const summary = parentAttendanceByStudent.get(key);
+    summary.recordCount++;
+    if (record.attendance_status === "normal") {
+      summary.lateMinutes += Math.max(0, Number(record.late_minutes) || 0);
+      if (record.checkin_status === "not_checked_in") summary.uncheckedCount++;
+    }
+  });
+
+  function buildParentAttendanceSummary(student) {
+    if (parentAttendanceLoadError) {
+      return "<div class='parent-attendance-error' role='alert'>本週出缺席資料暫時無法讀取，請稍後再試。</div>";
+    }
+    const summary = parentAttendanceByStudent.get(String(student.id));
+    if (!summary || summary.recordCount === 0) {
+      return "<div class='parent-attendance-empty'>本週尚無出缺席紀錄。</div>";
+    }
+    return (
+      "<section class='parent-attendance-summary' aria-label='本週出缺席摘要'>" +
+        "<h4 class='parent-attendance-summary-title'>本週出缺席摘要</h4>" +
+        "<div class='parent-attendance-summary-grid'>" +
+          "<div class='parent-attendance-stat'>" +
+            "<span class='parent-attendance-stat-label'>本週遲到</span>" +
+            "<span class='parent-attendance-stat-value" + (summary.lateMinutes > 0 ? " attendance-alert" : "") + "'>" +
+              summary.lateMinutes + " <small>分鐘</small></span>" +
+          "</div>" +
+          "<div class='parent-attendance-stat'>" +
+            "<span class='parent-attendance-stat-label'>本週未打卡</span>" +
+            "<span class='parent-attendance-stat-value" + (summary.uncheckedCount > 0 ? " attendance-alert" : "") + "'>" +
+              summary.uncheckedCount + " <small>次</small></span>" +
+          "</div>" +
+        "</div>" +
+      "</section>"
+    );
+  }
+
   const releasedExamCache = new Map();
 
   function isExamReleased(exam) {
@@ -6979,6 +7082,7 @@ async function renderParentDashboard() {
         "<h3 class='student-heading'>" +
           "<span class='student-name'>" + escapeHtml(student.full_name) + "</span>" +
           "<span class='student-class'>" + escapeHtml(student.class_name) + "</span>" +
+        buildParentAttendanceSummary(student) +
         "</h3>" +
         examCards +
       "</div>"
