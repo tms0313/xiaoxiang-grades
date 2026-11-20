@@ -220,11 +220,7 @@ function renderAttendanceManagement() {
 
   content.innerHTML =
     "<h2 class='section-title'>出缺席管理</h2>" +
-    "<div class='toolbar'>" +
-      "<label for='attendanceDate'><strong>上課日期</strong></label>" +
-      "<input type='date' id='attendanceDate' value='" + attendanceEscape(attendanceSelectedDate) + "'>" +
-      "<span class='muted'>" + dayLabels[day] + "</span>" +
-    "</div>" +
+    
     "<div id='attendanceCalendar' class='attendance-calendar' aria-label='出缺席登錄日期日曆'></div>" +
     "<div class='panel'>" +
       "<h3>當日課程</h3>" +
