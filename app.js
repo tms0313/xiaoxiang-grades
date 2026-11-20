@@ -6838,7 +6838,6 @@ async function renderParentDashboard() {
     }
     return (
       "<section class='parent-attendance-summary' aria-label='本週出缺席摘要'>" +
-        "<h4 class='parent-attendance-summary-title'>本週出缺席摘要</h4>" +
         "<div class='parent-attendance-summary-grid'>" +
           "<div class='parent-attendance-stat'>" +
             "<span class='parent-attendance-stat-label'>本週遲到</span>" +
