@@ -282,7 +282,7 @@ async function loadAttendanceSessionStudents() {
           "<tbody>" + rows + "</tbody></table></div>" +
         "<div class='attendance-actions'>" +
           "<button type='button' class='btn btn-success' id='attendanceSaveButton' " + (attendanceSaveInProgress ? "disabled" : "") + ">" + (attendanceSaveInProgress ? "前一堂儲存中……" : "儲存全班紀錄") + "</button>" +
-          "<button type='button' class='btn btn-secondary' id='attendanceReloadButton'>重新載入</button>" +
+          "<button type='button' class='btn btn-secondary' id='attendanceReloadButton' " + (attendanceSaveInProgress ? "disabled" : "") + ">重新載入</button>" +
         "</div>" +
         "<div id='attendanceSaveMessage' aria-live='polite'></div>"
       : "<div class='empty'>此班目前沒有啟用中的學生。</div>");
@@ -433,5 +433,7 @@ async function saveAttendanceSessionRecords() {
       currentButton.textContent = "儲存全班紀錄";
       currentButton.disabled = false;
     }
+    const currentReloadButton = $("attendanceReloadButton");
+    if (currentReloadButton) currentReloadButton.disabled = false;
   }
 }
