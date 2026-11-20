@@ -152,6 +152,7 @@ function renderAttendanceCalendar(errorText) {
     button.addEventListener("click", function () {
       const next = new Date(range.year, range.month - 1 + Number(this.dataset.attendanceCalendarMonth), 1);
       attendanceCalendarMonth = next.getFullYear() + "-" + String(next.getMonth() + 1).padStart(2, "0");
+      attendanceCalendarMarkedDates = new Set();
       renderAttendanceCalendar();
       loadAttendanceCalendarMarks();
     });
@@ -239,6 +240,7 @@ function renderAttendanceManagement() {
 
   $("attendanceDate").addEventListener("change", function () {
     attendanceSelectedDate = this.value || attendanceTaipeiDateISO();
+    attendanceCalendarMonth = attendanceSelectedDate.slice(0, 7);
     renderAttendanceManagement();
   });
 
