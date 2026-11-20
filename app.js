@@ -1096,17 +1096,22 @@ async function cleanupPreviousWeekExclusions() {
 async function loadAdminData() {
   const adminLoadStartedAt = performance.now();
   const adminQueriesStartedAt = performance.now();
+  const measureAdminQuery = async (name, queryFactory) => {
+    const startedAt = performance.now();
+    const result = await fetchAllRows(queryFactory);
+    return { ...result, elapsedMs: performance.now() - startedAt, metricName: name };
+  };
   // profiles 原本分別查詢家長、教師及全部帳號；合併為一次讀取，降低後台啟動時的重複請求。
   const results = await Promise.all([
-    fetchAllRows(() => db.from("students").select("id, student_code, full_name, class_name, is_active").order("id", { ascending: true })),
-    fetchAllRows(() => db.from("exams").select("id, title, start_date, end_date").order("id", { ascending: true })),
-    fetchAllRows(() => db.from("profiles").select("id, role, display_name, email, phone").order("id", { ascending: true })),
-    fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").order("id", { ascending: true })),
-    fetchAllRows(() => db.from("guardian_students").select("guardian_id, student_id").order("guardian_id", { ascending: true }).order("student_id", { ascending: true })),
-    fetchAllRows(() => db.from("student_subjects").select("student_id, subject, is_active").order("student_id", { ascending: true }).order("subject", { ascending: true })),
-    fetchAllRows(() => db.from("teacher_assignments").select("id, teacher_id, class_name, subject").order("id", { ascending: true })),
-    fetchAllRows(() => db.from("profile_roles").select("user_id, role").eq("role", "teacher").order("user_id", { ascending: true })),
-    fetchAllRows(() => db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope").order("id", { ascending: true }))
+    measureAdminQuery("學生資料", () => db.from("students").select("id, student_code, full_name, class_name, is_active").order("id", { ascending: true })),
+    measureAdminQuery("考試資料", () => db.from("exams").select("id, title, start_date, end_date").order("id", { ascending: true })),
+    measureAdminQuery("全部帳號", () => db.from("profiles").select("id, role, display_name, email, phone").order("id", { ascending: true })),
+    measureAdminQuery("成績資料", () => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").order("id", { ascending: true })),
+    measureAdminQuery("家長綁定資料", () => db.from("guardian_students").select("guardian_id, student_id").order("guardian_id", { ascending: true }).order("student_id", { ascending: true })),
+    measureAdminQuery("學生修課資料", () => db.from("student_subjects").select("student_id, subject, is_active").order("student_id", { ascending: true }).order("subject", { ascending: true })),
+    measureAdminQuery("教師授課權限", () => db.from("teacher_assignments").select("id, teacher_id, class_name, subject").order("id", { ascending: true })),
+    measureAdminQuery("額外身分資料", () => db.from("profile_roles").select("user_id, role").eq("role", "teacher").order("user_id", { ascending: true })),
+    measureAdminQuery("未登錄排除資料", () => db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope").order("id", { ascending: true }))
   ]);
   const adminQueriesMs = performance.now() - adminQueriesStartedAt;
 
@@ -1171,7 +1176,12 @@ async function loadAdminData() {
     totalMs: performance.now() - adminLoadStartedAt,
     students: studentsCache.length,
     exams: examsCache.length,
-    scores: scoresCache.length
+    scores: scoresCache.length,
+    queryBreakdown: results.map(result => ({
+      name: result.metricName,
+      elapsedMs: result.elapsedMs,
+      rows: (result.data || []).length
+    }))
   };
 }
 
@@ -1673,6 +1683,10 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
   content.innerHTML =
     "<h2 class='section-title'>週成績總覽</h2>" +
+    "<details class='overview-perf-details' style='margin:0 0 12px;padding:10px 14px;background:#f8fafc;border:1px solid #dbe3ec;border-radius:8px'>" +
+      "<summary style='cursor:pointer;font-weight:700;color:#526579'>系統效能診斷（展開查看資料載入與篩選耗時）</summary>" +
+      "<pre id='overviewPerfSummary' style='white-space:pre-wrap;word-break:break-word;font:12px/1.6 Arial,sans-serif;color:#526579;margin:10px 0 0'>資料統計中……</pre>" +
+    "</details>" +
     "<div class='toolbar'>" +
       "<input id='overviewSearch' placeholder='搜尋學生姓名或編號'>" +
       "<select id='overviewExam'><option value=''>全部考試週期</option>" + examOptions + "</select>" +
@@ -1806,6 +1820,12 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     return [
       "小象成績總覽效能紀錄",
       "管理員資料載入：" + (adminDataLoadMetrics ? adminDataLoadMetrics.totalMs.toFixed(2) + " ms（Supabase 查詢 " + adminDataLoadMetrics.queryMs.toFixed(2) + " ms）" : "尚無資料"),
+      ...(adminDataLoadMetrics && adminDataLoadMetrics.queryBreakdown
+        ? adminDataLoadMetrics.queryBreakdown
+            .slice()
+            .sort((a, b) => b.elapsedMs - a.elapsedMs)
+            .map(item => "資料表 " + item.name + "：" + item.elapsedMs.toFixed(2) + " ms／" + item.rows + " 筆")
+        : []),
       "索引建立：" + overviewPerf.indexBuildMs.toFixed(2) + " ms",
       "資料量：學生 " + overviewPerf.students + "、考試 " + overviewPerf.exams + "、成績 " + overviewPerf.scores,
       "修課群組：" + overviewPerf.enrolledGroups,
