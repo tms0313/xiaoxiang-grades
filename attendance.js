@@ -25,6 +25,9 @@ let attendanceSelectedSession = null;
 let attendanceLoadedStudents = [];
 let attendanceSavedSessionId = "";
 let attendanceLoadRequestId = 0;
+let attendanceCalendarMonth = "";
+let attendanceCalendarMarkedDates = new Set();
+let attendanceCalendarRequestId = 0;
 
 function attendanceTaipeiDateISO(dateValue) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -57,6 +60,21 @@ function attendanceInjectStyles() {
   const style = document.createElement("style");
   style.id = "attendanceFeatureStyles";
   style.textContent = [
+    ".attendance-calendar{max-width:390px;margin:12px 0 18px;padding:12px;border:1px solid #d7e0e9;border-radius:12px;background:#fff}",
+    ".attendance-calendar-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}",
+    ".attendance-calendar-heading strong{color:#23466b;font-size:15px}",
+    ".attendance-calendar-heading button{width:32px;height:30px;min-height:30px;margin:0;padding:0;border:0;border-radius:6px;background:#edf1f5;color:#315d86;font-size:20px}",
+    ".attendance-calendar-weekdays,.attendance-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}",
+    ".attendance-calendar-weekdays{margin-bottom:5px;color:#64748b;font-size:12px;font-weight:700}",
+    ".attendance-calendar-weekdays span{padding:5px 0}",
+    ".attendance-calendar-day{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:100%;height:38px;min-height:38px;margin:0;padding:2px;border:1px solid transparent;border-radius:7px;background:#fff;color:#263445;font-size:13px}",
+    ".attendance-calendar-day:hover{background:#edf3f9}",
+    ".attendance-calendar-day.selected{border-color:#315d86;background:#315d86;color:#fff}",
+    ".attendance-calendar-day.has-records:after{content:'';display:block;width:6px;height:6px;border-radius:50%;background:#dc2626}",
+    ".attendance-calendar-day.selected.has-records:after{background:#fff}",
+    ".attendance-calendar-empty{height:38px}",
+    ".attendance-calendar-legend{margin:8px 0 0;color:#64748b;font-size:12px}",
+    ".attendance-calendar-error{margin:6px 0;color:#b32626;font-size:12px}",
     ".attendance-session-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:14px 0 20px}",
     ".attendance-session-btn{display:flex;flex-direction:column;align-items:flex-start;gap:5px;width:100%;padding:14px;border:1px solid #d7e0e9;border-radius:10px;background:#fff;color:#263445;text-align:left}",
     ".attendance-session-btn strong{font-size:16px;color:#23466b}",
@@ -84,6 +102,93 @@ function attendanceInjectStyles() {
     "@media(max-width:600px){.attendance-session-grid{grid-template-columns:1fr}.attendance-session-btn{padding:12px}.attendance-parent-summary{font-size:13px}}"
   ].join("");
   document.head.appendChild(style);
+}
+
+function attendanceCalendarMonthRange(monthISO) {
+  const parts = monthISO.split("-").map(Number);
+  const year = parts[0], month = parts[1];
+  const first = year + "-" + String(month).padStart(2, "0") + "-01";
+  const lastDay = new Date(year, month, 0).getDate();
+  const last = year + "-" + String(month).padStart(2, "0") + "-" + String(lastDay).padStart(2, "0");
+  return { year: year, month: month, first: first, last: last, lastDay: lastDay };
+}
+
+function renderAttendanceCalendar(errorText) {
+  const calendar = $("attendanceCalendar");
+  if (!calendar) return;
+  const range = attendanceCalendarMonthRange(attendanceCalendarMonth);
+  const firstWeekday = new Date(range.year, range.month - 1, 1).getDay();
+  const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+  let cells = "";
+  for (let i = 0; i < firstWeekday; i++) cells += "<span class='attendance-calendar-empty'></span>";
+  for (let day = 1; day <= range.lastDay; day++) {
+    const dateISO = range.year + "-" + String(range.month).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+    const selected = dateISO === attendanceSelectedDate ? " selected" : "";
+    const marked = attendanceCalendarMarkedDates.has(dateISO) ? " has-records" : "";
+    cells += "<button type='button' class='attendance-calendar-day" + selected + marked +
+      "' data-attendance-calendar-date='" + dateISO + "' aria-label='" + dateISO +
+      (marked ? "，已有出缺席紀錄" : "") + "'><span>" + day + "</span></button>";
+  }
+  calendar.innerHTML =
+    "<div class='attendance-calendar-heading'>" +
+      "<button type='button' data-attendance-calendar-month='-1' aria-label='上一個月'>‹</button>" +
+      "<strong>" + range.year + " 年 " + range.month + " 月</strong>" +
+      "<button type='button' data-attendance-calendar-month='1' aria-label='下一個月'>›</button>" +
+    "</div>" +
+    "<div class='attendance-calendar-weekdays'>" + weekdays.map(day => "<span>" + day + "</span>").join("") + "</div>" +
+    "<div class='attendance-calendar-days'>" + cells + "</div>" +
+    "<p class='attendance-calendar-legend'>紅點表示當日已有出缺席紀錄</p>" +
+    (errorText ? "<p class='attendance-calendar-error'>" + attendanceEscape(errorText) + "</p>" : "");
+
+  calendar.querySelectorAll("[data-attendance-calendar-date]").forEach(button => {
+    button.addEventListener("click", function () {
+      attendanceSelectedDate = this.dataset.attendanceCalendarDate;
+      const dateInput = $("attendanceDate");
+      if (dateInput) dateInput.value = attendanceSelectedDate;
+      renderAttendanceManagement();
+    });
+  });
+  calendar.querySelectorAll("[data-attendance-calendar-month]").forEach(button => {
+    button.addEventListener("click", function () {
+      const next = new Date(range.year, range.month - 1 + Number(this.dataset.attendanceCalendarMonth), 1);
+      attendanceCalendarMonth = next.getFullYear() + "-" + String(next.getMonth() + 1).padStart(2, "0");
+      renderAttendanceCalendar();
+      loadAttendanceCalendarMarks();
+    });
+  });
+}
+
+async function loadAttendanceCalendarMarks() {
+  const requestId = ++attendanceCalendarRequestId;
+  const range = attendanceCalendarMonthRange(attendanceCalendarMonth);
+  const sessionsResult = await db.from("attendance_sessions")
+    .select("id,session_date")
+    .gte("session_date", range.first)
+    .lte("session_date", range.last);
+  if (requestId !== attendanceCalendarRequestId) return;
+  if (sessionsResult.error) {
+    renderAttendanceCalendar("日期紀錄讀取失敗：" + sessionsResult.error.message);
+    return;
+  }
+  const sessions = sessionsResult.data || [];
+  if (!sessions.length) {
+    attendanceCalendarMarkedDates = new Set();
+    renderAttendanceCalendar();
+    return;
+  }
+  const recordsResult = await db.from("attendance_records")
+    .select("session_id")
+    .in("session_id", sessions.map(item => item.id));
+  if (requestId !== attendanceCalendarRequestId) return;
+  if (recordsResult.error) {
+    renderAttendanceCalendar("日期紀錄讀取失敗：" + recordsResult.error.message);
+    return;
+  }
+  const recordedSessionIds = new Set((recordsResult.data || []).map(item => String(item.session_id)));
+  attendanceCalendarMarkedDates = new Set(
+    sessions.filter(item => recordedSessionIds.has(String(item.id))).map(item => item.session_date)
+  );
+  renderAttendanceCalendar();
 }
 
 function renderAttendanceManagement() {
@@ -114,6 +219,7 @@ function renderAttendanceManagement() {
       "<input type='date' id='attendanceDate' value='" + attendanceEscape(attendanceSelectedDate) + "'>" +
       "<span class='muted'>" + dayLabels[day] + "</span>" +
     "</div>" +
+    "<div id='attendanceCalendar' class='attendance-calendar' aria-label='出缺席登錄日期日曆'></div>" +
     "<div class='panel'>" +
       "<h3>當日課程</h3>" +
       (sessions.length
@@ -126,6 +232,10 @@ function renderAttendanceManagement() {
         : "<div class='empty'>當日沒有排定課程。</div>") +
       "<div id='attendanceSessionContent'><div class='empty'>請選擇上方課程，載入學生名單。</div></div>" +
     "</div>";
+
+  if (!attendanceCalendarMonth) attendanceCalendarMonth = attendanceSelectedDate.slice(0, 7);
+  renderAttendanceCalendar();
+  loadAttendanceCalendarMarks();
 
   $("attendanceDate").addEventListener("change", function () {
     attendanceSelectedDate = this.value || attendanceTaipeiDateISO();
@@ -436,6 +546,7 @@ async function saveAttendanceSessionRecords() {
 
     message.className = "attendance-status-message success";
     message.textContent = "全班 " + records.length + " 位學生的出缺席紀錄已儲存。";
+    if (selectedDate.slice(0, 7) === attendanceCalendarMonth) loadAttendanceCalendarMarks();
   } catch (error) {
     message.className = "attendance-status-message error";
     message.textContent = "儲存失敗：" + (error.message || String(error));
@@ -467,6 +578,7 @@ async function deleteAttendanceStudentRecord(studentId, button) {
       .eq("session_id", sessionId).eq("student_id", studentId);
     if (result.error) throw result.error;
     await loadAttendanceSessionStudents();
+    if (attendanceSelectedDate.slice(0, 7) === attendanceCalendarMonth) loadAttendanceCalendarMarks();
     const currentMessage = $("attendanceSaveMessage");
     if (currentMessage) {
       currentMessage.className = "attendance-status-message success";
@@ -500,6 +612,7 @@ async function clearAttendanceSessionRecords() {
     if (result.error) throw result.error;
     attendanceSavedSessionId = "";
     await loadAttendanceSessionStudents();
+    if (attendanceSelectedDate.slice(0, 7) === attendanceCalendarMonth) loadAttendanceCalendarMarks();
     const currentMessage = $("attendanceSaveMessage");
     if (currentMessage) {
       currentMessage.className = "attendance-status-message success";
