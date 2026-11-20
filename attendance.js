@@ -68,7 +68,7 @@ function attendanceInjectStyles() {
     ".attendance-record-table .attendance-row-actions{white-space:nowrap;text-align:center}",
     ".attendance-record-table .attendance-delete-one{padding:6px 10px;border:1px solid #d7a0a0;border-radius:7px;background:#fff;color:#b32626;font-size:13px;cursor:pointer}",
     ".attendance-record-table .attendance-delete-one:disabled,.attendance-clear-session:disabled{opacity:.55;cursor:not-allowed}",
-    ".attendance-clear-session{border:1px solid #d7a0a0!important;background:#fff!important;color:#b32626!important}"
+    ".attendance-clear-session{border:1px solid #d7a0a0!important;background:#fff!important;color:#b32626!important}",
     ".attendance-record-table th,.attendance-record-table td{padding:5px 8px!important;line-height:1.3!important;vertical-align:middle}",
     ".attendance-record-table select,.attendance-record-table input{width:100%;min-width:100px;padding:8px;border:1px solid #ccd4df;border-radius:7px;background:#fff}",
     ".attendance-record-table .attendance-status-select{border-radius:8px!important;overflow:hidden}",
