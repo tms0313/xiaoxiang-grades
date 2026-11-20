@@ -1193,17 +1193,32 @@ async function refreshOverviewData() {
     throw new Error("未登錄排除資料讀取失敗：" + results[1].error.message);
   }
 
-  scoresCache = results[0].data || [];
-  rebuildScoresByIdCache();
-  invalidateAdminHighestPreviewCache();
-  missingExclusionsCache = results[1].data || [];
+  const nextScores = results[0].data || [];
+  const nextExclusions = results[1].data || [];
+  const previousScoresSignature = JSON.stringify(scoresCache);
+  const previousExclusionsSignature = JSON.stringify(missingExclusionsCache);
+  const scoresChanged = previousScoresSignature !== JSON.stringify(nextScores);
+  const exclusionsChanged = previousExclusionsSignature !== JSON.stringify(nextExclusions);
 
-  // 保留原有每週提醒名單清理規則。
+  // 資料未變動時保留既有索引，避免每次背景輪詢都重建整份成績索引。
+  if (scoresChanged) {
+    scoresCache = nextScores;
+    rebuildScoresByIdCache();
+    invalidateAdminHighestPreviewCache();
+  }
+  if (exclusionsChanged) {
+    missingExclusionsCache = nextExclusions;
+  }
+
+  // 保留原有每週提醒名單清理規則；若清理了舊資料，也會觸發畫面更新。
   try {
     await cleanupPreviousWeekExclusions();
   } catch (error) {
     console.error("清除上一週已排除提醒失敗：", error);
   }
+
+  return scoresChanged ||
+    previousExclusionsSignature !== JSON.stringify(missingExclusionsCache);
 }
 
 async function renderDashboard() {
@@ -2167,8 +2182,8 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     const keepPanelOpen = !!(excludedPanel && excludedPanel.style.display !== "none");
 
     try {
-      await refreshOverviewData();
-      if (activeTab === "overview" && $("overviewRows")) {
+      const dataChanged = await refreshOverviewData();
+      if (dataChanged && activeTab === "overview" && $("overviewRows")) {
         renderOverview(currentFilters, keepPanelOpen);
         window.scrollTo({ top: currentScrollY, behavior: "auto" });
       }
