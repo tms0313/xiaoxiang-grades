@@ -1683,10 +1683,6 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
   content.innerHTML =
     "<h2 class='section-title'>週成績總覽</h2>" +
-    "<details class='overview-perf-details' style='margin:0 0 12px;padding:10px 14px;background:#f8fafc;border:1px solid #dbe3ec;border-radius:8px'>" +
-      "<summary style='cursor:pointer;font-weight:700;color:#526579'>系統效能診斷（展開查看資料載入與篩選耗時）</summary>" +
-      "<pre id='overviewPerfSummary' style='white-space:pre-wrap;word-break:break-word;font:12px/1.6 Arial,sans-serif;color:#526579;margin:10px 0 0'>資料統計中……</pre>" +
-    "</details>" +
     "<div class='toolbar'>" +
       "<input id='overviewSearch' placeholder='搜尋學生姓名或編號'>" +
       "<select id='overviewExam'><option value=''>全部考試週期</option>" + examOptions + "</select>" +
