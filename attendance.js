@@ -92,7 +92,7 @@ function attendanceInjectStyles() {
     ".attendance-record-table .attendance-status-select{border-radius:8px!important;overflow:hidden}",
     ".attendance-record-table .attendance-late-input{min-width:76px;height:32px;min-height:32px;box-sizing:border-box;text-align:center;font-size:16px;}",
     ".attendance-record-table .attendance-late-input.has-late-value{color:#d32626;font-weight:800}",
-    ".attendance-record-table .attendance-checkin-select.is-unchecked,.attendance-record-table .attendance-parent-signature-select.is-unsigned{color:#d32626;font-weight:800}",
+    ".attendance-record-table .attendance-checkin-select.is-unchecked{color:#d32626;font-weight:800}",
     ".attendance-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}",
     ".attendance-status-message{margin:12px 0;padding:11px 13px;border-radius:8px;background:#edf4fa;color:#315d86}",
     ".attendance-status-message.error{background:#fde8e8;color:#a32626}",
@@ -318,7 +318,7 @@ async function loadAttendanceSessionStudents() {
     followUpQueries.push(
       db
         .from("attendance_records")
-        .select("id,student_id,attendance_status,late_minutes,checkin_status,parent_signature_status")
+        .select("id,student_id,attendance_status,late_minutes,checkin_status")
         .eq("session_id", savedSessionId)
     );
   }
@@ -360,7 +360,6 @@ async function loadAttendanceSessionStudents() {
     const record = recordsByStudent.get(String(student.id)) || {};
     const status = record.attendance_status === "absent" ? "leave" : (record.attendance_status || "normal");
     const checkin = record.checkin_status || "";
-    const parentSignature = record.parent_signature_status || "unsigned";
     const inactiveCheckin = status !== "normal" ? "disabled" : "";
     return "<tr data-attendance-row data-student-id='" + attendanceEscape(student.id) + "'>" +
       "<td>" + attendanceEscape(student.student_code) + "</td>" +
@@ -377,10 +376,6 @@ async function loadAttendanceSessionStudents() {
         "<option value='checked_in' " + (checkin === "checked_in" ? "selected" : "") + ">打卡</option>" +
         "<option value='not_checked_in' " + (checkin === "not_checked_in" ? "selected" : "") + ">未打卡</option>" +
       "</select></td>" +
-      "<td><select class='attendance-parent-signature-select' aria-label='家長簽名狀態'>" +
-        "<option value='signed' " + (parentSignature === "signed" ? "selected" : "") + ">已簽</option>" +
-        "<option value='unsigned' " + (parentSignature !== "signed" ? "selected" : "") + ">未簽</option>" +
-      "</select></td>" +
       "<td class='attendance-row-actions'>" + (record.id ? "<button type='button' class='attendance-delete-one' data-attendance-delete-student='" + attendanceEscape(student.id) + "'>刪除</button>" : "<span class='muted'>—</span>") + "</td>" +
     "</tr>";
   }).join("");
@@ -395,7 +390,7 @@ async function loadAttendanceSessionStudents() {
       : "<p class='muted'>這堂課尚未儲存紀錄，完成登錄後可一次儲存全班。</p>") +
     (attendanceLoadedStudents.length
       ? "<div class='table-wrap'><table class='attendance-record-table'>" +
-          "<thead><tr><th>學生編號</th><th>學生姓名</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th><th>家長簽名</th><th>操作</th></tr></thead>" +
+          "<thead><tr><th>學生編號</th><th>學生姓名</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th><th>操作</th></tr></thead>" +
           "<tbody>" + rows + "</tbody></table></div>" +
         "<div class='attendance-actions'>" +
           "<button type='button' class='btn btn-success' id='attendanceSaveButton' " + (attendanceSaveInProgress ? "disabled" : "") + ">" + (attendanceSaveInProgress ? "前一堂儲存中……" : "儲存全班紀錄") + "</button>" +
@@ -409,22 +404,16 @@ async function loadAttendanceSessionStudents() {
     const statusSelect = row.querySelector(".attendance-status-select");
     const lateInput = row.querySelector(".attendance-late-input");
     const checkinSelect = row.querySelector(".attendance-checkin-select");
-    const signatureSelect = row.querySelector(".attendance-parent-signature-select");
     const updateCheckinAppearance = function () {
       checkinSelect.classList.toggle("is-unchecked", checkinSelect.value === "not_checked_in");
-    };
-    const updateSignatureAppearance = function () {
-      signatureSelect.classList.toggle("is-unsigned", signatureSelect.value === "unsigned");
     };
     const updateLateAppearance = function () {
       lateInput.classList.toggle("has-late-value", lateInput.value !== "" && Number(lateInput.value) > 0);
     };
     updateLateAppearance();
     updateCheckinAppearance();
-    updateSignatureAppearance();
     lateInput.addEventListener("input", updateLateAppearance);
     checkinSelect.addEventListener("change", updateCheckinAppearance);
-    signatureSelect.addEventListener("change", updateSignatureAppearance);
     statusSelect.addEventListener("change", function () {
       const normal = this.value === "normal";
       lateInput.disabled = !normal;
@@ -488,8 +477,7 @@ async function saveAttendanceSessionRecords() {
       student_id: row.dataset.studentId,
       attendance_status: status,
       late_minutes: status === "normal" ? late : 0,
-      checkin_status: status === "normal" ? checkin : null,
-      parent_signature_status: row.querySelector(".attendance-parent-signature-select").value
+      checkin_status: status === "normal" ? checkin : null
     });
   }
 
@@ -526,7 +514,6 @@ async function saveAttendanceSessionRecords() {
       attendance_status: item.attendance_status,
       late_minutes: item.late_minutes,
       checkin_status: item.checkin_status,
-      parent_signature_status: item.parent_signature_status
     }));
 
     const saveResult = await db
