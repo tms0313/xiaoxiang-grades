@@ -83,7 +83,7 @@ function attendanceInjectStyles() {
     ".attendance-session-btn:hover strong,.attendance-session-btn:hover span,.attendance-session-btn:focus-visible strong,.attendance-session-btn:focus-visible span,.attendance-session-btn.active strong,.attendance-session-btn.active span{color:#fff}",
     ".attendance-session-btn:disabled{opacity:.6;cursor:not-allowed}",
     ".attendance-record-table{min-width:0;width:max-content;max-width:100%;table-layout:fixed}",
-    ".attendance-record-table th:nth-child(1),.attendance-record-table td:nth-child(1){width:80px;min-width:80px;max-width:80px}",
+    ".attendance-record-table th:nth-child(1),.attendance-record-table td:nth-child(1){width:180px;min-width:180px;max-width:180px}",
     ".attendance-record-table th:nth-child(2),.attendance-record-table td:nth-child(2){width:180px;min-width:180px;max-width:180px}",
     ".attendance-record-table th:nth-child(3),.attendance-record-table td:nth-child(3){width:208px;min-width:208px;max-width:208px}",
     ".attendance-record-table .attendance-status-select{width:100px!important;min-width:100px!important;max-width:100px!important;padding:3px!important}",
