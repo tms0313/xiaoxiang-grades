@@ -1190,6 +1190,26 @@ async function loadAdminData() {
  * 成績總覽背景更新：只同步總覽會即時變動的資料，
  * 避免每 60 秒重新讀取整套管理員資料。
  */
+function areRowsEqualByFields(previousRows, nextRows, fields) {
+  if (previousRows === nextRows) return true;
+  if (!Array.isArray(previousRows) || !Array.isArray(nextRows)) return false;
+  if (previousRows.length !== nextRows.length) return false;
+
+  for (let i = 0; i < previousRows.length; i++) {
+    const previousRow = previousRows[i];
+    const nextRow = nextRows[i];
+    if (!previousRow || !nextRow) {
+      if (previousRow !== nextRow) return false;
+      continue;
+    }
+    for (let j = 0; j < fields.length; j++) {
+      const field = fields[j];
+      if (previousRow[field] !== nextRow[field]) return false;
+    }
+  }
+  return true;
+}
+
 async function refreshOverviewData() {
   const results = await Promise.all([
     fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").order("id", { ascending: true })),
@@ -1205,12 +1225,19 @@ async function refreshOverviewData() {
 
   const nextScores = results[0].data || [];
   const nextExclusions = results[1].data || [];
-  const previousScoresSignature = JSON.stringify(scoresCache);
-  const previousExclusionsSignature = JSON.stringify(missingExclusionsCache);
-  const scoresChanged = previousScoresSignature !== JSON.stringify(nextScores);
-  const exclusionsChanged = previousExclusionsSignature !== JSON.stringify(nextExclusions);
+  const previousExclusions = missingExclusionsCache;
+  const scoresChanged = !areRowsEqualByFields(
+    scoresCache,
+    nextScores,
+    ["id", "student_id", "exam_id", "subject", "scope", "score", "correct_count", "grade_level"]
+  );
+  const exclusionsChanged = !areRowsEqualByFields(
+    previousExclusions,
+    nextExclusions,
+    ["id", "exam_id", "student_id", "subject", "scope"]
+  );
 
-  // 資料未變動時保留既有索引，避免每次背景輪詢都重建整份成績索引。
+  // 逐欄比較取代整份 JSON 序列化，減少每 60 秒輪詢時的字串配置與記憶體負擔。
   if (scoresChanged) {
     scoresCache = nextScores;
     rebuildScoresByIdCache();
@@ -1227,8 +1254,12 @@ async function refreshOverviewData() {
     console.error("清除上一週已排除提醒失敗：", error);
   }
 
-  return scoresChanged ||
-    previousExclusionsSignature !== JSON.stringify(missingExclusionsCache);
+  return scoresChanged || exclusionsChanged ||
+    !areRowsEqualByFields(
+      previousExclusions,
+      missingExclusionsCache,
+      ["id", "exam_id", "student_id", "subject", "scope"]
+    );
 }
 
 async function renderDashboard() {
