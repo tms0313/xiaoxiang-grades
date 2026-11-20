@@ -64,7 +64,11 @@ function attendanceInjectStyles() {
     ".attendance-session-btn:hover,.attendance-session-btn:focus-visible,.attendance-session-btn.active{border:2px solid #315d86;background:#315d86;color:#fff}",
     ".attendance-session-btn:hover strong,.attendance-session-btn:hover span,.attendance-session-btn:focus-visible strong,.attendance-session-btn:focus-visible span,.attendance-session-btn.active strong,.attendance-session-btn.active span{color:#fff}",
     ".attendance-session-btn:disabled{opacity:.6;cursor:not-allowed}",
-    ".attendance-record-table{min-width:1020px}",
+    ".attendance-record-table{min-width:1100px}",
+    ".attendance-record-table .attendance-row-actions{white-space:nowrap;text-align:center}",
+    ".attendance-record-table .attendance-delete-one{padding:6px 10px;border:1px solid #d7a0a0;border-radius:7px;background:#fff;color:#b32626;font-size:13px;cursor:pointer}",
+    ".attendance-record-table .attendance-delete-one:disabled,.attendance-clear-session:disabled{opacity:.55;cursor:not-allowed}",
+    ".attendance-clear-session{border:1px solid #d7a0a0!important;background:#fff!important;color:#b32626!important}"
     ".attendance-record-table th,.attendance-record-table td{padding:5px 8px!important;line-height:1.3!important;vertical-align:middle}",
     ".attendance-record-table select,.attendance-record-table input{width:100%;min-width:100px;padding:8px;border:1px solid #ccd4df;border-radius:7px;background:#fff}",
     ".attendance-record-table .attendance-status-select{border-radius:8px!important;overflow:hidden}",
@@ -202,7 +206,7 @@ async function loadAttendanceSessionStudents() {
     followUpQueries.push(
       db
         .from("attendance_records")
-        .select("student_id,attendance_status,late_minutes,checkin_status,parent_signature_status")
+        .select("id,student_id,attendance_status,late_minutes,checkin_status,parent_signature_status")
         .eq("session_id", savedSessionId)
     );
   }
@@ -265,6 +269,7 @@ async function loadAttendanceSessionStudents() {
         "<option value='signed' " + (parentSignature === "signed" ? "selected" : "") + ">已簽</option>" +
         "<option value='unsigned' " + (parentSignature !== "signed" ? "selected" : "") + ">未簽</option>" +
       "</select></td>" +
+      "<td class='attendance-row-actions'>" + (record.id ? "<button type='button' class='attendance-delete-one' data-attendance-delete-student='" + attendanceEscape(student.id) + "'>刪除</button>" : "<span class='muted'>—</span>") + "</td>" +
     "</tr>";
   }).join("");
 
@@ -278,11 +283,12 @@ async function loadAttendanceSessionStudents() {
       : "<p class='muted'>這堂課尚未儲存紀錄，完成登錄後可一次儲存全班。</p>") +
     (attendanceLoadedStudents.length
       ? "<div class='table-wrap'><table class='attendance-record-table'>" +
-          "<thead><tr><th>學生編號</th><th>學生姓名</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th><th>家長簽名</th></tr></thead>" +
+          "<thead><tr><th>學生編號</th><th>學生姓名</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th><th>家長簽名</th><th>操作</th></tr></thead>" +
           "<tbody>" + rows + "</tbody></table></div>" +
         "<div class='attendance-actions'>" +
           "<button type='button' class='btn btn-success' id='attendanceSaveButton' " + (attendanceSaveInProgress ? "disabled" : "") + ">" + (attendanceSaveInProgress ? "前一堂儲存中……" : "儲存全班紀錄") + "</button>" +
           "<button type='button' class='btn btn-secondary' id='attendanceReloadButton' " + (attendanceSaveInProgress ? "disabled" : "") + ">重新載入</button>" +
+          (attendanceSavedSessionId && existingRecords.length ? "<button type='button' class='btn attendance-clear-session' id='attendanceClearSessionButton' " + (attendanceSaveInProgress ? "disabled" : "") + ">清除整堂紀錄</button>" : "") +
         "</div>" +
         "<div id='attendanceSaveMessage' aria-live='polite'></div>"
       : "<div class='empty'>此班目前沒有啟用中的學生。</div>");
@@ -325,6 +331,14 @@ async function loadAttendanceSessionStudents() {
   if ($("attendanceSaveButton")) {
     $("attendanceSaveButton").addEventListener("click", saveAttendanceSessionRecords);
     $("attendanceReloadButton").addEventListener("click", loadAttendanceSessionStudents);
+    panel.querySelectorAll("[data-attendance-delete-student]").forEach(button => {
+      button.addEventListener("click", function () {
+        deleteAttendanceStudentRecord(this.dataset.attendanceDeleteStudent, this);
+      });
+    });
+    if ($("attendanceClearSessionButton")) {
+      $("attendanceClearSessionButton").addEventListener("click", clearAttendanceSessionRecords);
+    }
   }
 }
 
@@ -435,5 +449,70 @@ async function saveAttendanceSessionRecords() {
     }
     const currentReloadButton = $("attendanceReloadButton");
     if (currentReloadButton) currentReloadButton.disabled = false;
+  }
+}
+
+
+async function deleteAttendanceStudentRecord(studentId, button) {
+  if (!attendanceSavedSessionId || attendanceSaveInProgress) return;
+  const student = attendanceLoadedStudents.find(item => String(item.id) === String(studentId));
+  const studentName = student ? student.full_name : "這位學生";
+  if (!confirm("確定刪除「" + studentName + "」本堂出缺席紀錄嗎？此操作無法復原。")) return;
+
+  const sessionId = attendanceSavedSessionId;
+  const message = $("attendanceSaveMessage");
+  if (button) button.disabled = true;
+  try {
+    const result = await db.from("attendance_records").delete()
+      .eq("session_id", sessionId).eq("student_id", studentId);
+    if (result.error) throw result.error;
+    await loadAttendanceSessionStudents();
+    const currentMessage = $("attendanceSaveMessage");
+    if (currentMessage) {
+      currentMessage.className = "attendance-status-message success";
+      currentMessage.textContent = studentName + " 本堂出缺席紀錄已刪除。";
+    }
+  } catch (error) {
+    if (button) button.disabled = false;
+    if (message) {
+      message.className = "attendance-status-message error";
+      message.textContent = "刪除失敗：" + (error.message || String(error));
+    }
+  }
+}
+
+async function clearAttendanceSessionRecords() {
+  if (!attendanceSavedSessionId || attendanceSaveInProgress) return;
+  const sessionId = attendanceSavedSessionId;
+  const sessionLabel = attendanceSelectedDate + " " + attendanceSelectedSession.time +
+    " " + attendanceSelectedSession.className + " " + attendanceSelectedSession.subject;
+  if (!confirm("確定清除「" + sessionLabel + "」整堂出缺席紀錄嗎？\\n本堂所有學生紀錄都會刪除，但不影響學生資料及其他課堂紀錄。此操作無法復原。")) return;
+
+  const button = $("attendanceClearSessionButton");
+  const message = $("attendanceSaveMessage");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "清除中……";
+  }
+  try {
+    // 外鍵 ON DELETE CASCADE 會一併清除本堂 attendance_records。
+    const result = await db.from("attendance_sessions").delete().eq("id", sessionId);
+    if (result.error) throw result.error;
+    attendanceSavedSessionId = "";
+    await loadAttendanceSessionStudents();
+    const currentMessage = $("attendanceSaveMessage");
+    if (currentMessage) {
+      currentMessage.className = "attendance-status-message success";
+      currentMessage.textContent = "本堂所有出缺席紀錄已清除。";
+    }
+  } catch (error) {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "清除整堂紀錄";
+    }
+    if (message) {
+      message.className = "attendance-status-message error";
+      message.textContent = "清除失敗：" + (error.message || String(error));
+    }
   }
 }
