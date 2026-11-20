@@ -6354,15 +6354,17 @@ async function renderAlumniMockScores() {
       return left.localeCompare(right, "zh-Hant", { numeric: true });
     }
     records.sort(function (a, b) {
-      // 先依學年度由新到舊；同學年度先依模考範圍分組，會考（範圍最大）固定最後，
-      // 同一範圍內再依總分由高到低排列。
+      // 依學年度、模考類別、考試範圍排序；同一組內再依總級分由高到低排列。
       const yearOrder = String(b.academic_year || "").localeCompare(
         String(a.academic_year || ""), "zh-Hant", { numeric: true }
       );
       if (yearOrder) return yearOrder;
-      const aIsCees = a.exam_scope === "會考";
-      const bIsCees = b.exam_scope === "會考";
-      if (aIsCees !== bIsCees) return aIsCees ? 1 : -1;
+      const categoryOrder = { "班內模考": 0, "正式模考": 1, "會考": 2 };
+      const aCategory = Object.prototype.hasOwnProperty.call(categoryOrder, a.exam_scope)
+        ? categoryOrder[a.exam_scope] : 99;
+      const bCategory = Object.prototype.hasOwnProperty.call(categoryOrder, b.exam_scope)
+        ? categoryOrder[b.exam_scope] : 99;
+      if (aCategory !== bCategory) return aCategory - bCategory;
       const rangeOrder = compareExamRange(a.exam_range, b.exam_range);
       if (rangeOrder) return rangeOrder;
       const scoreOrder = Number(b.total_grade || 0) - Number(a.total_grade || 0);
