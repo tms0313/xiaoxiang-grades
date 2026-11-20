@@ -281,7 +281,7 @@ async function loadAttendanceSessionStudents() {
           "<thead><tr><th>學生編號</th><th>學生姓名</th><th>出缺席</th><th>遲到分鐘</th><th>打卡狀態</th><th>家長簽名</th></tr></thead>" +
           "<tbody>" + rows + "</tbody></table></div>" +
         "<div class='attendance-actions'>" +
-          "<button type='button' class='btn btn-success' id='attendanceSaveButton'>儲存全班紀錄</button>" +
+          "<button type='button' class='btn btn-success' id='attendanceSaveButton' " + (attendanceSaveInProgress ? "disabled" : "") + ">" + (attendanceSaveInProgress ? "前一堂儲存中……" : "儲存全班紀錄") + "</button>" +
           "<button type='button' class='btn btn-secondary' id='attendanceReloadButton'>重新載入</button>" +
         "</div>" +
         "<div id='attendanceSaveMessage' aria-live='polite'></div>"
