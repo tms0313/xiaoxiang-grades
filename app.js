@@ -4317,6 +4317,16 @@ function renderGuardians() {
   });
 
   // 預先建立班級索引；選定班級時只掃描該班列資料，全部班級仍沿用原始順序。
+  // 全部班級檢視時固定依國一、國二、國三排列；未綁定家長（無班級）排在最後。
+  // 使用穩定排序，班級內原有資料順序不變。
+  guardianRowItems.sort(function (a, b) {
+    const aIndex = a.className ? classOrder.indexOf(a.className) : classOrder.length;
+    const bIndex = b.className ? classOrder.indexOf(b.className) : classOrder.length;
+    const aRank = aIndex < 0 ? classOrder.length : aIndex;
+    const bRank = bIndex < 0 ? classOrder.length : bIndex;
+    return aRank - bRank;
+  });
+
   const guardianRowsByClass = new Map();
   guardianRowItems.forEach(function (item) {
     if (!item.className) return;
