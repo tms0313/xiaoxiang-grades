@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#17365d">
+  <title>小象文教機構｜成績管理系統</title>
+  <link rel="stylesheet" href="style.css?v=20261119-term-exam-export-spacing-v1select-text-v1size-v1-student-status-center-v1">
+</head>
+<body>
+  <main class="login-page">
+    <section class="login-card">
+      <div class="logo">小象</div>
+      <p class="school-name">小象文教機構</p>
+      <h1>成績管理系統</h1>
+      <p class="subtitle">學生學習紀錄與成績查詢平台</p>
+
+      <form id="loginForm">
+        <label for="email">電子郵件</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="請輸入電子郵件"
+          autocomplete="username"
+          required
+        >
+
+        <label for="password">登入密碼</label>
+        <input
+          id="password"
+          type="password"
+          placeholder="請輸入密碼"
+          autocomplete="current-password"
+          required
+        >
+
+        <button type="submit">登入系統</button>
+        <p id="message" role="status"></p>
+      </form>
+
+      <footer>
+        © 小象文教機構
+      </footer>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=20261113-143500"></script>
+  <script src="attendance.js?v=20261120-attendance-columns-160-input-width-v1"></script>
+  <script src="app.js?v=20261121-overview-matched-student-cache-v1"></script>
+</body>
+</html>
