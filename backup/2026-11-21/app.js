@@ -193,6 +193,7 @@ function rebuildActiveSubjectsByStudentCache() {
 }
 let teacherProfilesCache = [];
 let teacherProfilesByIdCache = new Map();
+let teacherDashboardRequestId = 0;
 let teacherAssignmentsCache = [];
 let teacherStudentsCache = [];
 let teacherExamsCache = [];
@@ -7338,6 +7339,8 @@ async function renderParentDashboard() {
 // ==================================================
 
 async function renderTeacherDashboard() {
+  // 防止快速切換模式時，較晚回來的舊請求覆蓋最新教師畫面。
+  const requestId = ++teacherDashboardRequestId;
   document.body.classList.remove("parent-page");
   document.body.classList.add("teacher-page");
   showLoading("正在載入教師授課資料……");
@@ -7349,6 +7352,7 @@ async function renderTeacherDashboard() {
   if (assignmentsResult.error) {
     throw new Error("授課權限讀取失敗：" + assignmentsResult.error.message);
   }
+  if (requestId !== teacherDashboardRequestId) return;
 
   teacherAssignmentsCache = assignmentsResult.data || [];
   if (!teacherAssignmentsCache.length) {
@@ -7387,6 +7391,8 @@ async function renderTeacherDashboard() {
       .eq("is_active", true)
       .in("subject", permittedSubjectsForQuery)
   ]);
+
+  if (requestId !== teacherDashboardRequestId) return;
 
   const labels = ["學生資料", "考試資料", "學生修課資料"];
   for (let i = 0; i < results.length; i++) {
