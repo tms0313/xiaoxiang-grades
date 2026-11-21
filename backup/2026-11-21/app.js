@@ -319,6 +319,14 @@ function gradeTag(gradeLevel) {
     "</span>";
 }
 
+function updateScoreInputWarning(input, enabled) {
+  if (!input) return;
+  const value = String(input.value == null ? "" : input.value).trim();
+  const isLow = enabled !== false && value !== "" &&
+    Number.isFinite(Number(value)) && Number(value) < 60;
+  input.classList.toggle("low-score", isLow);
+}
+
 function updateGradeSelectStyle(selectElement) {
   if (!selectElement) return;
 
@@ -3116,6 +3124,9 @@ function renderBulkScoreEntryRows() {
     (grade3Math ? "<th>數學分數</th><th>模擬考等級</th>" : grade3 ? "<th>答對題數</th><th>模擬考等級</th>" : "<th>成績</th><th>出席狀態</th>") +
     "<th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
   // 等級與出席狀態在同一次 DOM 遍歷中初始化，避免重複查詢相同表格。
+  root.querySelectorAll("[data-bulk-score]").forEach(function (input) {
+    updateScoreInputWarning(input, !grade3 || grade3Math);
+  });
   root.querySelectorAll("[data-bulk-grade], [data-bulk-status]").forEach(function (control) {
     const row = control.closest("tr");
     const studentKey = String(row.dataset.bulkStudent);
@@ -3135,7 +3146,12 @@ function renderBulkScoreEntryRows() {
       if (input.disabled) input.value = "";
     }
   });
-  root.oninput = saveBulkScoreDraft;
+  root.oninput = function (event) {
+    if (event.target.matches("[data-bulk-score]")) {
+      updateScoreInputWarning(event.target, !grade3 || grade3Math);
+    }
+    saveBulkScoreDraft();
+  };
   root.onchange = function (event) {
     if (event.target.matches("[data-bulk-status]")) {
       const input = event.target.closest("tr").querySelector("[data-bulk-score]");
@@ -6232,7 +6248,16 @@ async function renderTermExamEntry() {
     root.innerHTML="<div class='term-roster-toolbar'><span>共 "+students.length+" 位學生；填寫完成後可一次儲存整班。</span><span id='termDraftStatus' class='term-draft-status'>"+(Object.keys(classDraft).length?"已還原上次未完成的輸入":"輸入時會自動暫存")+"</span></div>"+
       "<div class='table-wrap term-roster-wrap'><table class='term-bulk-table'><thead><tr><th>學生</th>"+subjects.map(x=>"<th>"+x+"</th>").join("")+"<th>總分</th><th>班排</th><th>校排</th></tr></thead><tbody>"+rows+"</tbody></table></div>"+
       "<div class='toolbar term-bulk-actions'><button class='btn btn-success' id='termSaveClassButton' type='button'>儲存整班成績</button><button class='btn btn-secondary' id='termClearDraftButton' type='button'>清除未儲存暫存</button></div>";
-    root.querySelectorAll("tbody tr").forEach(row=>{row.querySelectorAll("input").forEach(input=>input.addEventListener("input",()=>{total(row);updateCompletionMark(row);saveDraft(row);}));updateCompletionMark(row);});
+    root.querySelectorAll("tbody tr").forEach(row=>{
+      row.querySelectorAll("input").forEach(input=>{
+        if(input.matches("[data-term-score]")) updateScoreInputWarning(input, true);
+        input.addEventListener("input",()=>{
+          if(input.matches("[data-term-score]")) updateScoreInputWarning(input, true);
+          total(row);updateCompletionMark(row);saveDraft(row);
+        });
+      });
+      updateCompletionMark(row);
+    });
     $("termSaveClassButton").addEventListener("click",saveClass);
     $("termClearDraftButton").addEventListener("click",()=>{if(!confirm("確定清除目前班級尚未儲存的暫存資料？已存入資料庫的成績不會受到影響。"))return;const all=drafts();delete all[cid(c)];write(draftKey,all);renderRoster();});
     const p=read(prefKey,{});if(p&&cid(p)===cid(c)&&p.studentId){
