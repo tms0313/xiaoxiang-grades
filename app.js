@@ -6725,21 +6725,29 @@ async function renderAlumniMockScores() {
       if (record) startEdit(record);
       return;
     }
+
     const deleteButton = event.target.closest("[data-alumni-delete]");
-    if (deleteButton) {
-      const record = records.find(item => String(item.id) === String(deleteButton.dataset.alumniDelete));
-      if (!record) return;
-      if (!confirm("確定要刪除「" + record.student_name + "」的「" + record.exam_scope + "」成績嗎？此動作無法復原。")) return;
-      deleteButton.disabled = true;
+    if (!deleteButton || deleteButton.disabled) return;
+    const record = records.find(item => String(item.id) === String(deleteButton.dataset.alumniDelete));
+    if (!record) return;
+    if (!confirm("確定要刪除「" + record.student_name + "」的「" + record.exam_scope + "」成績嗎？此動作無法復原。")) return;
+
+    deleteButton.disabled = true;
+    deleteButton.textContent = "刪除中……";
+    try {
       const result = await db.from("alumni_mock_scores").delete().eq("id", record.id);
-      if (result.error) {
-        alert("刪除歷屆成績失敗：" + result.error.message);
-        deleteButton.disabled = false;
-        return;
-      }
+      if (result.error) throw result.error;
       if (editingId === String(record.id)) resetForm();
       await loadRecords();
       showMessage("模考成績已刪除。", "success", true);
+    } catch (error) {
+      console.error("刪除歷屆模考成績失敗：", error);
+      alert("刪除歷屆成績失敗：" + (error && error.message ? error.message : "請確認網路連線後重試。"));
+    } finally {
+      if (deleteButton.isConnected) {
+        deleteButton.disabled = false;
+        deleteButton.textContent = "刪除";
+      }
     }
   });
 
