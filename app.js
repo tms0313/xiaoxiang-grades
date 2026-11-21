@@ -6986,7 +6986,7 @@ async function renderParentDashboard() {
   const todayISO = taiwanToday.year + "-" + taiwanToday.month + "-" + taiwanToday.day;
   const weekStartDate = new Date(todayISO + "T00:00:00Z");
   const weekday = weekStartDate.getUTCDay();
-  const isParentAttendanceReleased = weekday === 0 && Number(taiwanToday.hour) >= 20;
+  const isParentAttendanceReleased = weekday === 6 && Number(taiwanToday.hour) >= 20;
   weekStartDate.setUTCDate(weekStartDate.getUTCDate() + (weekday === 0 ? -6 : 1 - weekday));
   const weekStartISO = weekStartDate.toISOString().slice(0, 10);
   weekStartDate.setUTCDate(weekStartDate.getUTCDate() + 6);
