@@ -128,6 +128,37 @@ function updateScoreCompositeIndex(score, previousKey) {
     score
   );
 }
+
+// 成績新增／刪除成功時，直接同步前端快取，避免為單筆異動重新下載全體成績與提醒排除資料。
+function addScoreToLocalCache(score) {
+  if (!score || score.id == null) return;
+  scoresCache.push(score);
+  scoresByIdCache.set(String(score.id), score);
+  updateScoreCompositeIndex(score);
+  invalidateAdminHighestPreviewCache();
+}
+
+function removeScoreFromLocalCache(scoreId) {
+  const id = String(scoreId);
+  const cachedScore = scoresByIdCache.get(id);
+  if (!cachedScore) {
+    scoresCache = scoresCache.filter(score => String(score.id) !== id);
+    rebuildScoresByIdCache();
+    invalidateAdminHighestPreviewCache();
+    return;
+  }
+
+  const compositeKey = getScoreCompositeKey(
+    cachedScore.student_id, cachedScore.exam_id, cachedScore.subject, cachedScore.scope
+  );
+  if (scoresByStudentExamSubjectScopeCache.get(compositeKey) === cachedScore) {
+    scoresByStudentExamSubjectScopeCache.delete(compositeKey);
+  }
+  scoresByIdCache.delete(id);
+  const cacheIndex = scoresCache.indexOf(cachedScore);
+  if (cacheIndex >= 0) scoresCache.splice(cacheIndex, 1);
+  invalidateAdminHighestPreviewCache();
+}
 let adminHighestPreviewCache = new Map();
 
 function invalidateAdminHighestPreviewCache() {
@@ -2721,8 +2752,8 @@ async function editScore(scoreId, missingEntry) {
       if (!result.data) throw new Error("資料已送出，但未取得成績內容，請重新整理確認。");
 
       if (isNewScore) {
-        // 新增未登錄成績後只刷新成績資料，確保總覽與複合索引同步。
-        await refreshOverviewData();
+        // 新增成功後直接更新成績快取與索引，避免為單筆新增重新查詢整張成績表。
+        addScoreToLocalCache(result.data);
       } else {
         // 更新複合索引時先移除舊鍵，再寫入新鍵，維持科目／範圍修改後的查找正確性。
         const previousCompositeKey = getScoreCompositeKey(
@@ -2803,10 +2834,11 @@ async function deleteScore(scoreId) {
     const result = await db.from("scores").delete().eq("id", scoreId);
     if (result.error) throw result.error;
 
-    await refreshOverviewData();
+    // 刪除成功後直接從本機成績快取移除，避免為單筆刪除重新下載全體成績。
+    removeScoreFromLocalCache(scoreId);
     renderOverview(overviewFilters);
 
-    // 成績總覽刪除後只更新總覽資料，保留篩選條件與捲動位置，不顯示系統通知。
+    // 成績總覽刪除後保留篩選條件與捲動位置，不顯示系統通知。
     const systemMessage = $("systemMessage");
     if (systemMessage) systemMessage.style.display = "none";
     window.scrollTo({ top: overviewScrollY, behavior: "auto" });
