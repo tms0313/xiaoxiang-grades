@@ -7180,23 +7180,26 @@ async function renderParentDashboard() {
       button.disabled = true;
       button.textContent = "正在儲存……";
 
-      const result = await db
-        .from("score_review_records")
-        .insert({
-          exam_id: examId,
-          student_id: studentId,
-          guardian_id: currentUser.id
-        });
+      try {
+        const result = await db
+          .from("score_review_records")
+          .insert({
+            exam_id: examId,
+            student_id: studentId,
+            guardian_id: currentUser.id
+          });
 
-      if (result.error && result.error.code !== "23505") {
+        if (result.error && result.error.code !== "23505") {
+          throw new Error(result.error.message);
+        }
+
+        button.textContent = "已完成本週成績查閱";
+        button.disabled = true;
+      } catch (error) {
         button.disabled = false;
         button.textContent = "我已查閱本週成績";
-        alert("儲存檢閱紀錄失敗：" + result.error.message);
-        return;
+        alert("儲存檢閱紀錄失敗：" + (error && error.message ? error.message : "請確認網路連線後重試。"));
       }
-
-      button.textContent = "已完成本週成績查閱";
-      button.disabled = true;
     });
   });
 }
@@ -7507,7 +7510,7 @@ function renderTeacherResults() {
     });
   }
   $("teacherRefreshButton").addEventListener("click", async function () {
-    await renderTeacherDashboard();
+    await renderDashboard();
   });
 }
 
