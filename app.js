@@ -7208,16 +7208,15 @@ async function renderTeacherDashboard() {
   document.body.classList.add("teacher-page");
   showLoading("正在載入教師授課資料……");
 
-  // 教師查詢頁只取畫面實際使用的欄位，減少不必要的資料傳輸。
+  // 先取得授課範圍，再依授課班級／科目查詢成績，避免教師頁下載整張 scores 資料表。
   const results = await Promise.all([
     db.from("teacher_assignments").select("id, teacher_id, class_name, subject"),
     db.from("students").select("id, class_name, student_code, full_name").eq("is_active", true).order("student_code"),
     db.from("exams").select("id, start_date, end_date"),
-    db.from("student_subjects").select("student_id, subject").eq("is_active", true),
-    fetchAllRows(() => db.from("scores").select("student_id, exam_id, subject, scope, grade_level, score, correct_count").order("student_id", { ascending: true }).order("exam_id", { ascending: true }).order("subject", { ascending: true }).order("scope", { ascending: true }))
+    db.from("student_subjects").select("student_id, subject").eq("is_active", true)
   ]);
 
-  const labels = ["授課權限", "學生資料", "考試資料", "學生修課資料", "成績資料"];
+  const labels = ["授課權限", "學生資料", "考試資料", "學生修課資料"];
   for (let i = 0; i < results.length; i++) {
     if (results[i].error) {
       throw new Error(labels[i] + "讀取失敗：" + results[i].error.message);
@@ -7235,7 +7234,59 @@ async function renderTeacherDashboard() {
       escapeHtml(formatDateRange(exam)) + "</option>";
   }).join("");
   teacherStudentSubjectsCache = results[3].data || [];
-  teacherScoresCache = results[4].data || [];
+
+  // 只查詢有授課權限且學生實際有修習的班級／科目組合；每批最多 200 位學生。
+  const activeSubjectsByStudent = new Map();
+  teacherStudentSubjectsCache.forEach(function (item) {
+    const studentId = String(item.student_id);
+    if (!activeSubjectsByStudent.has(studentId)) activeSubjectsByStudent.set(studentId, new Set());
+    activeSubjectsByStudent.get(studentId).add(item.subject);
+  });
+
+  const teacherScoreQueries = [];
+  const teacherAssignmentKeys = new Set();
+  teacherAssignmentsCache.forEach(function (assignment) {
+    const assignmentKey = JSON.stringify([assignment.class_name, assignment.subject]);
+    if (teacherAssignmentKeys.has(assignmentKey)) return;
+    teacherAssignmentKeys.add(assignmentKey);
+
+    const studentIds = teacherStudentsCache
+      .filter(function (student) {
+        const activeSubjects = activeSubjectsByStudent.get(String(student.id));
+        return student.class_name === assignment.class_name &&
+          activeSubjects && activeSubjects.has(assignment.subject);
+      })
+      .map(student => String(student.id));
+
+    for (let i = 0; i < studentIds.length; i += 200) {
+      const batchIds = studentIds.slice(i, i + 200);
+      teacherScoreQueries.push(function () {
+        return fetchAllRows(() =>
+          db.from("scores")
+            .select("student_id, exam_id, subject, scope, grade_level, score, correct_count")
+            .eq("subject", assignment.subject)
+            .in("student_id", batchIds)
+            .order("student_id", { ascending: true })
+            .order("exam_id", { ascending: true })
+            .order("scope", { ascending: true })
+        );
+      });
+    }
+  });
+
+  const teacherScoreResults = [];
+  const teacherScoreConcurrency = 6;
+  for (let i = 0; i < teacherScoreQueries.length; i += teacherScoreConcurrency) {
+    const batchResults = await Promise.all(
+      teacherScoreQueries.slice(i, i + teacherScoreConcurrency).map(query => query())
+    );
+    teacherScoreResults.push(...batchResults);
+  }
+
+  for (const result of teacherScoreResults) {
+    if (result.error) throw new Error("成績資料讀取失敗：" + result.error.message);
+  }
+  teacherScoresCache = teacherScoreResults.flatMap(result => result.data || []);
 
   // 教師頁切換考試或班級時重用授課、修課與成績索引，避免每次重新掃描完整快取。
   teacherPermittedSubjectsByClass = new Map();
