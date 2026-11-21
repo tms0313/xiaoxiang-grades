@@ -6779,41 +6779,6 @@ async function renderParentDashboard() {
   ]);
 
 
-  // 將家長端成績、班級最高分及檢閱紀錄建立索引，避免每張成績卡反覆掃描陣列。
-  const parentStudentExamKey = (studentId, examId) =>
-    JSON.stringify([String(studentId), String(examId)]);
-  const parentHighestScoreKey = (studentId, examId, subject, scope) =>
-    JSON.stringify([String(studentId), String(examId), String(subject), String(scope || "")]);
-
-  const parentScoresByStudentExam = new Map();
-  parentScores.forEach(function (score) {
-    const key = parentStudentExamKey(score.student_id, score.exam_id);
-    if (!parentScoresByStudentExam.has(key)) parentScoresByStudentExam.set(key, []);
-    parentScoresByStudentExam.get(key).push(score);
-  });
-
-  const parentHighestScoreByKey = new Map();
-  parentClassHighestScores.forEach(function (item) {
-    const key = parentHighestScoreKey(item.student_id, item.exam_id, item.subject, item.scope);
-    if (!parentHighestScoreByKey.has(key)) parentHighestScoreByKey.set(key, item);
-  });
-
-  const parentReviewByStudentExam = new Map();
-  parentReviewRecords.forEach(function (record) {
-    const key = parentStudentExamKey(record.student_id, record.exam_id);
-    if (!parentReviewByStudentExam.has(key)) parentReviewByStudentExam.set(key, record);
-  });
-
-  function findClassHighestScore(student, exam, score) {
-    return parentHighestScoreByKey.get(
-      parentHighestScoreKey(student.id, exam.id, score.subject, score.scope)
-    );
-  }
-
-  function findReviewRecord(student, exam) {
-    return parentReviewByStudentExam.get(parentStudentExamKey(student.id, exam.id));
-  }
-
   let cachedTaiwanDateTime = null;
 
   function getTaiwanDateTime() {
@@ -6898,6 +6863,42 @@ async function renderParentDashboard() {
   // RPC 僅回傳已綁定孩子所在班級的最高分統計，不讀取其他學生的個別成績。
   const parentClassHighestScores = highestScoresResult.data || [];
   const parentReviewRecords = reviewResult.data || [];
+
+  // 將家長端成績、班級最高分及檢閱紀錄建立索引，避免每張成績卡反覆掃描陣列。
+  const parentStudentExamKey = (studentId, examId) =>
+    JSON.stringify([String(studentId), String(examId)]);
+  const parentHighestScoreKey = (studentId, examId, subject, scope) =>
+    JSON.stringify([String(studentId), String(examId), String(subject), String(scope || "")]);
+
+  const parentScoresByStudentExam = new Map();
+  parentScores.forEach(function (score) {
+    const key = parentStudentExamKey(score.student_id, score.exam_id);
+    if (!parentScoresByStudentExam.has(key)) parentScoresByStudentExam.set(key, []);
+    parentScoresByStudentExam.get(key).push(score);
+  });
+
+  const parentHighestScoreByKey = new Map();
+  parentClassHighestScores.forEach(function (item) {
+    const key = parentHighestScoreKey(item.student_id, item.exam_id, item.subject, item.scope);
+    if (!parentHighestScoreByKey.has(key)) parentHighestScoreByKey.set(key, item);
+  });
+
+  const parentReviewByStudentExam = new Map();
+  parentReviewRecords.forEach(function (record) {
+    const key = parentStudentExamKey(record.student_id, record.exam_id);
+    if (!parentReviewByStudentExam.has(key)) parentReviewByStudentExam.set(key, record);
+  });
+
+  function findClassHighestScore(student, exam, score) {
+    return parentHighestScoreByKey.get(
+      parentHighestScoreKey(student.id, exam.id, score.subject, score.scope)
+    );
+  }
+
+  function findReviewRecord(student, exam) {
+    return parentReviewByStudentExam.get(parentStudentExamKey(student.id, exam.id));
+  }
+
 
   const parentAttendanceByStudent = new Map();
   parentAttendanceRecords.forEach(function (record) {
