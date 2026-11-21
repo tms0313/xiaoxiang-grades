@@ -6758,7 +6758,7 @@ async function renderParentDashboard() {
   });
 
   // 三項資料彼此獨立，並行讀取，避免家長首頁逐項等待網路往返。
-  const parentDataRequests = await Promise.all([
+  const parentDataRequestsPromise = Promise.all([
     reviewExamIds.length > 0
       ? fetchAllRows(() => db.from("scores")
           .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
@@ -6871,11 +6871,14 @@ async function renderParentDashboard() {
 
   let parentAttendanceRecords = [];
   let parentAttendanceLoadError = null;
-  const attendanceSessionsResult = await db
-    .from("attendance_sessions")
-    .select("id")
-    .gte("session_date", weekStartISO)
-    .lte("session_date", weekEndISO);
+  // 出缺席課程清單與成績資料互不依賴，合併等待以減少家長首頁一次網路往返。
+  const [parentDataRequests, attendanceSessionsResult] = await Promise.all([
+    parentDataRequestsPromise,
+    db.from("attendance_sessions")
+      .select("id")
+      .gte("session_date", weekStartISO)
+      .lte("session_date", weekEndISO)
+  ]);
 
   if (attendanceSessionsResult.error) {
     parentAttendanceLoadError = attendanceSessionsResult.error;
