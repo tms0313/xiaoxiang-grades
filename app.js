@@ -7141,8 +7141,8 @@ async function renderParentDashboard() {
         "<h3 class='student-heading'>" +
           "<span class='student-name'>" + escapeHtml(student.full_name) + "</span>" +
           "<span class='student-class'>" + escapeHtml(student.class_name) + "</span>" +
-        buildParentAttendanceSummary(student) +
         "</h3>" +
+        buildParentAttendanceSummary(student) +
         examCards +
       "</div>"
     );
