@@ -6528,9 +6528,15 @@ async function renderAlumniMockScores() {
       const bCategory = Object.prototype.hasOwnProperty.call(categoryOrder, b.exam_scope)
         ? categoryOrder[b.exam_scope] : 99;
       if (aCategory !== bCategory) return aCategory - bCategory;
-      const rangeOrder = compareExamRange(a.exam_range, b.exam_range);
-      if (rangeOrder) return rangeOrder;
-      const scoreOrder = Number(b.total_grade || 0) - Number(a.total_grade || 0);
+      // 會考不使用考試範圍分組，直接依六科總級分由高到低排列。
+      if (a.exam_scope !== "會考" || b.exam_scope !== "會考") {
+        const rangeOrder = compareExamRange(a.exam_range, b.exam_range);
+        if (rangeOrder) return rangeOrder;
+      }
+      const scoreA = Number(a.total_grade);
+      const scoreB = Number(b.total_grade);
+      const scoreOrder = (Number.isFinite(scoreB) ? scoreB : -Infinity) -
+        (Number.isFinite(scoreA) ? scoreA : -Infinity);
       if (scoreOrder) return scoreOrder;
       return String(a.student_name || "").localeCompare(
         String(b.student_name || ""), "zh-Hant", { numeric: true }
