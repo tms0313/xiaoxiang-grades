@@ -677,6 +677,7 @@ style.textContent = [
   ".grade-leave { color:#8a5a00 !important; background:#fff0cf !important; font-weight:900 !important; }",
   ".grade-select-absent { color:#d32626 !important; font-weight:900 !important; }",
   ".grade-select-leave { color:#8a5a00 !important; font-weight:900 !important; }",
+  "#grade3MathGrade, #gradeLevel, #scoreEditGrade, .bulk-score-entry-table select[data-bulk-grade] { border-radius:9px !important; }",
   "option[value='缺考'] { color:#d32626; font-weight:900; }",
   "option[value='請假'] { color:#8a5a00; font-weight:900; }",
 
@@ -4924,8 +4925,22 @@ function renderTeacherManagement() {
     ? $("teacherAccountSelect").value
     : "";
 
-  const assignmentRows = teacherAssignmentsCache
-    .filter(item => !selectedTeacherId || String(item.teacher_id) === String(selectedTeacherId))
+  const assignmentSubjectOrder = { "國文": 1, "英文": 2, "自然": 3 };
+  const assignmentClassOrder = { "國一班": 1, "國二班": 2, "國三班": 3 };
+  const sortTeacherAssignments = function (items) {
+    return items.slice().sort(function (a, b) {
+      const subjectA = assignmentSubjectOrder[a.subject] || 99;
+      const subjectB = assignmentSubjectOrder[b.subject] || 99;
+      if (subjectA !== subjectB) return subjectA - subjectB;
+      const classA = assignmentClassOrder[a.class_name] || 99;
+      const classB = assignmentClassOrder[b.class_name] || 99;
+      if (classA !== classB) return classA - classB;
+      return 0;
+    });
+  };
+
+  const assignmentRows = sortTeacherAssignments(teacherAssignmentsCache
+    .filter(item => !selectedTeacherId || String(item.teacher_id) === String(selectedTeacherId)))
     .map(function (item) {
       const teacher = teacherById.get(String(item.teacher_id));
       return "<tr data-teacher-assignment-row='" + escapeHtml(item.id) + "'>" +
@@ -5002,8 +5017,8 @@ function renderTeacherManagement() {
 
   function refreshTeacherAssignmentRows() {
     const selected = $("teacherAssignmentFilter").value;
-    const rows = teacherAssignmentsCache
-      .filter(item => !selected || String(item.teacher_id) === String(selected))
+    const rows = sortTeacherAssignments(teacherAssignmentsCache
+      .filter(item => !selected || String(item.teacher_id) === String(selected)))
       .map(function (item) {
         const teacher = teacherById.get(String(item.teacher_id));
         return "<tr data-teacher-assignment-row='" + escapeHtml(item.id) + "'><td>" + escapeHtml(teacher ? teacher.email : "教師帳號") + "</td>" +
