@@ -792,7 +792,10 @@ style.textContent += "\n" +
 
 /* 全站學生名單：統一採用週成績登錄的緊湊列距 */
 style.textContent += "\n" +
-  ".overview-table tbody td,.student-management-table tbody td,.bulk-score-entry-table tbody td,.term-bulk-table tbody td,.term-exam-overview-table tbody td,.alumni-score-table tbody td,.student-record-table tbody td { padding:5px 8px !important; line-height:1.3 !important; }" +
+  ".overview-table tbody td,.student-management-table tbody td,.term-bulk-table tbody td,.term-exam-overview-table tbody td,.alumni-score-table tbody td,.student-record-table tbody td { padding:5px 8px !important; line-height:1.3 !important; }" +
+  ".bulk-score-entry-table tbody td { padding:0 8px !important; line-height:1.2 !important; vertical-align:middle !important; }" +
+  ".bulk-score-entry-table tbody td input,.bulk-score-entry-table tbody td select { box-sizing:border-box !important; height:28px !important; min-height:28px !important; max-height:28px !important; padding-top:2px !important; padding-bottom:2px !important; }" +
+  ".bulk-score-entry-table tbody td [data-save-bulk-row] { min-height:28px !important; padding:4px 9px !important; line-height:1.2 !important; }" +
   ".teacher-score-row { min-height:0 !important; padding:5px 4px !important; }" +
   ".guardian-linked-student { padding:5px 8px !important; }" +
   ".student-card { margin:5px auto !important; }" +
@@ -801,9 +804,8 @@ style.textContent += "\n" +
   ".term-bulk-table tbody td,.term-bulk-table tbody td .term-student-name-text,.term-bulk-table tbody td input[data-term-score],.term-bulk-table tbody td input[data-term-class-rank],.term-bulk-table tbody td input[data-term-school-rank],.term-bulk-table tbody td.term-total-cell { font-size:16px !important; }" +
   ".term-bulk-table tbody td .term-student-name small { font-size:11px !important; }" +
   ".term-bulk-table tbody td .term-completion-mark { font-size:14px !important; }" +
-  "/* 國三模擬考等級欄與分數欄等高，學生列距比照週成績登錄 */" +
-  ".bulk-score-entry-table tbody td { padding:5px 8px !important; line-height:1.3 !important; vertical-align:middle !important; }" +
-  ".bulk-score-entry-table tbody td [data-bulk-score],.bulk-score-entry-table tbody td [data-bulk-grade] { box-sizing:border-box !important; height:36px !important; min-height:36px !important; max-height:36px !important; line-height:1.2 !important; }";
+  "/* 模擬考等級與分數欄等高；週成績登錄學生列高比照週成績總覽 */" +
+  ".bulk-score-entry-table tbody td [data-bulk-score],.bulk-score-entry-table tbody td [data-bulk-grade] { box-sizing:border-box !important; height:28px !important; min-height:28px !important; max-height:28px !important; line-height:1.2 !important; }";
 
 document.head.appendChild(style);
 
