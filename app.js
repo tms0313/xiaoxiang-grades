@@ -1300,19 +1300,26 @@ async function refreshOverviewData() {
     );
 }
 
+let dashboardRenderRequestId = 0;
+
 async function renderDashboard() {
+  const requestId = ++dashboardRenderRequestId;
   showLoading("正在載入系統資料……");
 
   try {
     if (currentProfile.role === "admin") {
       await loadAdminData();
+      if (requestId !== dashboardRenderRequestId) return;
       renderAdminDashboard();
     } else if (currentProfile.role === "teacher" || currentMode === "teacher") {
       await renderTeacherDashboard();
+      if (requestId !== dashboardRenderRequestId) return;
     } else {
       await renderParentDashboard();
+      if (requestId !== dashboardRenderRequestId) return;
     }
   } catch (error) {
+    if (requestId !== dashboardRenderRequestId) return;
     appRoot.innerHTML =
       "<div class='dashboard'><h2>系統資料載入失敗</h2>" +
       "<p>" + escapeHtml(error.message) + "</p>" +
@@ -1320,7 +1327,7 @@ async function renderDashboard() {
 
     $("reloadButton").addEventListener("click", renderDashboard);
   } finally {
-    hideLoading();
+    if (requestId === dashboardRenderRequestId) hideLoading();
   }
 }
 
@@ -6813,7 +6820,10 @@ async function renderAlumniMockScores() {
 // 15. 家長端畫面
 // ==================================================
 
+let parentDashboardRequestId = 0;
+
 async function renderParentDashboard() {
+  const requestId = ++parentDashboardRequestId;
   document.body.classList.add("parent-page");
   const content = $("appRoot");
 
@@ -6840,6 +6850,7 @@ async function renderParentDashboard() {
     .select("student_id")
     .eq("guardian_id", currentUser.id);
 
+  if (requestId !== parentDashboardRequestId) return;
   if (profileResult.error) {
     throw new Error("讀取家長學生綁定失敗：" + profileResult.error.message);
   }
@@ -6849,6 +6860,7 @@ async function renderParentDashboard() {
   });
 
   // 尚未綁定學生的家長畫面
+  if (requestId !== parentDashboardRequestId) return;
   if (studentIds.length === 0) {
     content.innerHTML =
       "<div class='topbar'>" +
@@ -6879,6 +6891,7 @@ async function renderParentDashboard() {
       .limit(3)
   ]);
 
+  if (requestId !== parentDashboardRequestId) return;
   if (studentsResult.error) {
     throw new Error("讀取學生資料失敗：" + studentsResult.error.message);
   }
@@ -6963,6 +6976,7 @@ async function renderParentDashboard() {
       .lte("session_date", weekEndISO)
   ]);
 
+  if (requestId !== parentDashboardRequestId) return;
   if (attendanceSessionsResult.error) {
     parentAttendanceLoadError = attendanceSessionsResult.error;
   } else {
@@ -6973,6 +6987,7 @@ async function renderParentDashboard() {
         .select("student_id,attendance_status,late_minutes,checkin_status")
         .in("session_id", attendanceSessionIds)
         .in("student_id", studentIds));
+      if (requestId !== parentDashboardRequestId) return;
       if (attendanceRecordsResult.error) {
         parentAttendanceLoadError = attendanceRecordsResult.error;
       } else {
@@ -7345,6 +7360,8 @@ async function renderParentDashboard() {
 // ==================================================
 
 async function renderTeacherDashboard() {
+  // 教師模式啟動時，使尚未完成的家長頁面請求失效。
+  parentDashboardRequestId++;
   // 防止快速切換模式時，較晚回來的舊請求覆蓋最新教師畫面。
   const requestId = ++teacherDashboardRequestId;
   document.body.classList.remove("parent-page");
