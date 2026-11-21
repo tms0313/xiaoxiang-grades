@@ -6960,18 +6960,21 @@ async function renderParentDashboard() {
     const today =
       taiwan.year + "-" + taiwan.month + "-" + taiwan.day;
 
-    const endDate = new Date(exam.end_date + "T12:00:00+08:00");
+    // 考試日期是台灣日曆日期；使用 UTC 日期運算，避免家長裝置時區影響公告日。
+    const endDate = new Date(String(exam.end_date).slice(0, 10) + "T00:00:00Z");
+    if (Number.isNaN(endDate.getTime())) {
+      if (examKey) releasedExamCache.set(examKey, false);
+      return false;
+    }
 
-    const weekday = endDate.getDay();
-
+    const weekday = endDate.getUTCDay();
     const daysUntilSaturday = (6 - weekday + 7) % 7;
-
-    endDate.setDate(endDate.getDate() + daysUntilSaturday);
+    endDate.setUTCDate(endDate.getUTCDate() + daysUntilSaturday);
 
     const releaseDate =
-      endDate.getFullYear() + "-" +
-      String(endDate.getMonth() + 1).padStart(2, "0") + "-" +
-      String(endDate.getDate()).padStart(2, "0");
+      endDate.getUTCFullYear() + "-" +
+      String(endDate.getUTCMonth() + 1).padStart(2, "0") + "-" +
+      String(endDate.getUTCDate()).padStart(2, "0");
 
     if (today > releaseDate) return true;
     if (today < releaseDate) return false;
