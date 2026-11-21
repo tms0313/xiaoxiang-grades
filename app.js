@@ -6778,24 +6778,6 @@ async function renderParentDashboard() {
       : Promise.resolve({ data: [], error: null })
   ]);
 
-  const scoresResult = parentDataRequests[0];
-  const highestScoresResult = parentDataRequests[1];
-  const reviewResult = parentDataRequests[2];
-
-  if (scoresResult.error) {
-    throw new Error("讀取成績資料失敗：" + scoresResult.error.message);
-  }
-  if (highestScoresResult.error) {
-    throw new Error("讀取班級最高分失敗：" + highestScoresResult.error.message);
-  }
-  if (reviewResult.error) {
-    throw new Error("讀取成績檢閱紀錄失敗：" + reviewResult.error.message);
-  }
-
-  const parentScores = scoresResult.data || [];
-  // RPC 僅回傳已綁定孩子所在班級的最高分統計，不讀取其他學生的個別成績。
-  const parentClassHighestScores = highestScoresResult.data || [];
-  const parentReviewRecords = reviewResult.data || [];
 
   // 將家長端成績、班級最高分及檢閱紀錄建立索引，避免每張成績卡反覆掃描陣列。
   const parentStudentExamKey = (studentId, examId) =>
@@ -6897,6 +6879,25 @@ async function renderParentDashboard() {
       }
     }
   }
+
+  const scoresResult = parentDataRequests[0];
+  const highestScoresResult = parentDataRequests[1];
+  const reviewResult = parentDataRequests[2];
+
+  if (scoresResult.error) {
+    throw new Error("讀取成績資料失敗：" + scoresResult.error.message);
+  }
+  if (highestScoresResult.error) {
+    throw new Error("讀取班級最高分失敗：" + highestScoresResult.error.message);
+  }
+  if (reviewResult.error) {
+    throw new Error("讀取成績檢閱紀錄失敗：" + reviewResult.error.message);
+  }
+
+  const parentScores = scoresResult.data || [];
+  // RPC 僅回傳已綁定孩子所在班級的最高分統計，不讀取其他學生的個別成績。
+  const parentClassHighestScores = highestScoresResult.data || [];
+  const parentReviewRecords = reviewResult.data || [];
 
   const parentAttendanceByStudent = new Map();
   parentAttendanceRecords.forEach(function (record) {
