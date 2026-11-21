@@ -2282,7 +2282,13 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
 
     try {
       const dataChanged = await refreshOverviewData();
-      if (dataChanged && activeTab === "overview" && $("overviewRows")) {
+      const filtersStillMatch =
+        currentFilters.search === ($("overviewSearch") ? $("overviewSearch").value : "") &&
+        currentFilters.examId === ($("overviewExam") ? $("overviewExam").value : "") &&
+        currentFilters.className === ($("overviewClass") ? $("overviewClass").value : "") &&
+        currentFilters.subject === ($("overviewSubject") ? $("overviewSubject").value : "") &&
+        currentFilters.status === ($("overviewStatus") ? $("overviewStatus").value : "all");
+      if (dataChanged && activeTab === "overview" && $("overviewRows") && filtersStillMatch) {
         renderOverview(currentFilters, keepPanelOpen);
         window.scrollTo({ top: currentScrollY, behavior: "auto" });
       }
