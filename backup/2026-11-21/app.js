@@ -1303,6 +1303,8 @@ async function refreshOverviewData() {
 let dashboardRenderRequestId = 0;
 
 async function renderDashboard() {
+  // 每次重新進入任一角色頁面，都讓前一個家長頁面載入請求失效。
+  parentDashboardRequestId++;
   const requestId = ++dashboardRenderRequestId;
   showLoading("正在載入系統資料……");
 
