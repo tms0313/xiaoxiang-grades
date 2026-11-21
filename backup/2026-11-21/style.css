@@ -903,3 +903,6 @@ footer {
   max-height: 36px !important;
   line-height: 1.2 !important;
 }
+
+/* 成績登錄輸入中即時標示未達 60 分 */
+.bulk-score-input.low-score,.term-bulk-table input[data-term-score].low-score{color:#d32626 !important;font-weight:800 !important;}
