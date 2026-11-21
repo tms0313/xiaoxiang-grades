@@ -1907,6 +1907,10 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     updateOverviewPerfPanel();
   }
 
+  // 搜尋學生集合只依搜尋文字與班級變化；切換考試、科目或狀態時沿用快取。
+  let matchedStudentCacheSignature = null;
+  let matchedStudentIdsCache = new Set();
+
   function filterRows() {
     const filterStartedAt = performance.now();
     const search = $("overviewSearch").value.trim().toLowerCase();
@@ -1921,13 +1925,18 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
     // 只有篩選條件真的改變才清除舊條件的勾選。
     selectedMissingItems.clear();
 
-    // 每次篩選先計算符合條件的學生集合，避免同一學生每筆成績都重複執行文字搜尋。
-    const matchedStudentIds = new Set();
-    studentsCache.forEach(function (student) {
-      if (!student || (className && student.class_name !== className)) return;
-      if (search && !(studentSearchIndex.get(String(student.id)) || "").includes(search)) return;
-      matchedStudentIds.add(String(student.id));
-    });
+    // 只有搜尋文字或班級改變時才重建符合學生集合；考試、科目、狀態篩選共用此集合。
+    const matchedStudentCacheKey = JSON.stringify([search, className]);
+    if (matchedStudentCacheKey !== matchedStudentCacheSignature) {
+      matchedStudentIdsCache = new Set();
+      studentsCache.forEach(function (student) {
+        if (!student || (className && student.class_name !== className)) return;
+        if (search && !(studentSearchIndex.get(String(student.id)) || "").includes(search)) return;
+        matchedStudentIdsCache.add(String(student.id));
+      });
+      matchedStudentCacheSignature = matchedStudentCacheKey;
+    }
+    const matchedStudentIds = matchedStudentIdsCache;
 
     // 依目前篩選條件選擇資料量最小的索引作為候選集，避免每次輸入都掃描全部成績。
     let scoreCandidates = scoresCache;
