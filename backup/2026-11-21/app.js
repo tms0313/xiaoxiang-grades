@@ -6758,7 +6758,7 @@ async function renderParentDashboard() {
   });
 
   // 三項資料彼此獨立，並行讀取，避免家長首頁逐項等待網路往返。
-  const parentDataRequests = await Promise.all([
+  const parentDataRequestsPromise = Promise.all([
     reviewExamIds.length > 0
       ? fetchAllRows(() => db.from("scores")
           .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
@@ -6871,11 +6871,14 @@ async function renderParentDashboard() {
 
   let parentAttendanceRecords = [];
   let parentAttendanceLoadError = null;
-  const attendanceSessionsResult = await db
-    .from("attendance_sessions")
-    .select("id")
-    .gte("session_date", weekStartISO)
-    .lte("session_date", weekEndISO);
+  // 出缺席課程清單與成績資料互不依賴，合併等待以減少家長首頁一次網路往返。
+  const [parentDataRequests, attendanceSessionsResult] = await Promise.all([
+    parentDataRequestsPromise,
+    db.from("attendance_sessions")
+      .select("id")
+      .gte("session_date", weekStartISO)
+      .lte("session_date", weekEndISO)
+  ]);
 
   if (attendanceSessionsResult.error) {
     parentAttendanceLoadError = attendanceSessionsResult.error;
@@ -6957,18 +6960,21 @@ async function renderParentDashboard() {
     const today =
       taiwan.year + "-" + taiwan.month + "-" + taiwan.day;
 
-    const endDate = new Date(exam.end_date + "T12:00:00+08:00");
+    // 考試日期是台灣日曆日期；使用 UTC 日期運算，避免家長裝置時區影響公告日。
+    const endDate = new Date(String(exam.end_date).slice(0, 10) + "T00:00:00Z");
+    if (Number.isNaN(endDate.getTime())) {
+      if (examKey) releasedExamCache.set(examKey, false);
+      return false;
+    }
 
-    const weekday = endDate.getDay();
-
+    const weekday = endDate.getUTCDay();
     const daysUntilSaturday = (6 - weekday + 7) % 7;
-
-    endDate.setDate(endDate.getDate() + daysUntilSaturday);
+    endDate.setUTCDate(endDate.getUTCDate() + daysUntilSaturday);
 
     const releaseDate =
-      endDate.getFullYear() + "-" +
-      String(endDate.getMonth() + 1).padStart(2, "0") + "-" +
-      String(endDate.getDate()).padStart(2, "0");
+      endDate.getUTCFullYear() + "-" +
+      String(endDate.getUTCMonth() + 1).padStart(2, "0") + "-" +
+      String(endDate.getUTCDate()).padStart(2, "0");
 
     if (today > releaseDate) return true;
     if (today < releaseDate) return false;
@@ -7138,8 +7144,8 @@ async function renderParentDashboard() {
         "<h3 class='student-heading'>" +
           "<span class='student-name'>" + escapeHtml(student.full_name) + "</span>" +
           "<span class='student-class'>" + escapeHtml(student.class_name) + "</span>" +
-        buildParentAttendanceSummary(student) +
         "</h3>" +
+        buildParentAttendanceSummary(student) +
         examCards +
       "</div>"
     );
