@@ -6232,7 +6232,60 @@ async function renderTermExamEntry() {
   for(const id of ["termAcademicYear","termSemester","termExamNumber","termClass"]){$(id).addEventListener(id==="termAcademicYear"?"input":"change",()=>{if(id==="termAcademicYear")updateClasses();write(prefKey,criteria());renderRoster();});}
   try{
     await loadRecords();renderRoster();
-    $("termExamRecords").addEventListener("click",async e=>{const edit=e.target.closest("[data-term-edit]");if(edit){const rec=recordsById.get(edit.dataset.termEdit);if(!rec)return;$("termAcademicYear").value=rec.academic_year||"";updateClasses();$("termSemester").value=rec.semester||"";$("termExamNumber").value=String(rec.exam_number||"");$("termClass").value=rec.class_name||"";write(prefKey,criteria());renderRoster();const row=Array.from($("termExamRoster").querySelectorAll("tr[data-term-student]")).find(x=>x.dataset.termStudent===String(rec.student_id));if(row){keys.forEach((k,i)=>row.querySelector('[data-term-score="'+i+'"]').value=rec[k]==null?"":rec[k]);row.querySelector("[data-term-class-rank]").value=rec.class_rank==null?"":rec.class_rank;row.querySelector("[data-term-school-rank]").value=rec.school_rank==null?"":rec.school_rank;total(row);saveDraft(row);row.scrollIntoView({behavior:"smooth",block:"center"});}return;}const del=e.target.closest("[data-term-delete]");if(!del)return;const rec=recordsById.get(del.dataset.termDelete);if(!rec||!confirm("確定刪除這筆段考成績嗎？"))return;const res=await db.from("term_exam_scores").delete().eq("id",rec.id);if(res.error){alert("刪除失敗："+res.error.message);return;}await loadRecords();renderRoster();showMessage("段考成績已刪除。","success",true);});
+    $("termExamRecords").addEventListener("click", async e => {
+      const edit = e.target.closest("[data-term-edit]");
+      if (edit) {
+        const rec = recordsById.get(edit.dataset.termEdit);
+        if (!rec) return;
+        $("termAcademicYear").value = rec.academic_year || "";
+        updateClasses();
+        $("termSemester").value = rec.semester || "";
+        $("termExamNumber").value = String(rec.exam_number || "");
+        $("termClass").value = rec.class_name || "";
+        write(prefKey, criteria());
+        renderRoster();
+        const row = Array.from($("termExamRoster").querySelectorAll("tr[data-term-student]"))
+          .find(x => x.dataset.termStudent === String(rec.student_id));
+        if (row) {
+          keys.forEach((key, index) => {
+            row.querySelector('[data-term-score="' + index + '"]').value =
+              rec[key] == null ? "" : rec[key];
+          });
+          row.querySelector("[data-term-class-rank]").value =
+            rec.class_rank == null ? "" : rec.class_rank;
+          row.querySelector("[data-term-school-rank]").value =
+            rec.school_rank == null ? "" : rec.school_rank;
+          total(row);
+          saveDraft(row);
+          row.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        return;
+      }
+
+      const del = e.target.closest("[data-term-delete]");
+      if (!del || del.disabled) return;
+      const rec = recordsById.get(del.dataset.termDelete);
+      if (!rec || !confirm("確定刪除這筆段考成績嗎？")) return;
+
+      del.disabled = true;
+      const originalText = del.textContent;
+      del.textContent = "刪除中……";
+      try {
+        const result = await db.from("term_exam_scores").delete().eq("id", rec.id);
+        if (result.error) throw result.error;
+        await loadRecords();
+        renderRoster();
+        showMessage("段考成績已刪除。", "success", true);
+      } catch (error) {
+        console.error("刪除段考成績失敗：", error);
+        alert("刪除段考成績失敗：" + (error?.message || "請稍後再試。"));
+      } finally {
+        if (del.isConnected) {
+          del.disabled = false;
+          del.textContent = originalText;
+        }
+      }
+    });
   }catch(error){$("termExamRecords").innerHTML="<div class='system-message error' style='display:block'>讀取段考成績失敗："+escapeHtml(error.message)+"</div>";}
 }
 // ==================================================
