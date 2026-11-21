@@ -800,7 +800,10 @@ style.textContent += "\n" +
   ".term-exam-overview-table tbody td:not(.action-cell),.term-exam-overview-table tbody td:not(.action-cell) * { font-size:16px !important; }" +
   ".term-bulk-table tbody td,.term-bulk-table tbody td .term-student-name-text,.term-bulk-table tbody td input[data-term-score],.term-bulk-table tbody td input[data-term-class-rank],.term-bulk-table tbody td input[data-term-school-rank],.term-bulk-table tbody td.term-total-cell { font-size:16px !important; }" +
   ".term-bulk-table tbody td .term-student-name small { font-size:11px !important; }" +
-  ".term-bulk-table tbody td .term-completion-mark { font-size:14px !important; }";
+  ".term-bulk-table tbody td .term-completion-mark { font-size:14px !important; }" +
+  "/* 國三模擬考等級欄與分數欄等高，學生列距比照週成績登錄 */" +
+  ".bulk-score-entry-table tbody td { padding:5px 8px !important; line-height:1.3 !important; vertical-align:middle !important; }" +
+  ".bulk-score-entry-table tbody td [data-bulk-score],.bulk-score-entry-table tbody td [data-bulk-grade] { box-sizing:border-box !important; height:36px !important; min-height:36px !important; max-height:36px !important; line-height:1.2 !important; }";
 
 document.head.appendChild(style);
 
