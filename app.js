@@ -7208,24 +7208,61 @@ async function renderTeacherDashboard() {
   document.body.classList.add("teacher-page");
   showLoading("正在載入教師授課資料……");
 
-  // 先取得授課範圍，再依授課班級／科目查詢成績，避免教師頁下載整張 scores 資料表。
+  // 先取得教師授課範圍，後續學生與修課查詢只載入相關班級／科目。
+  const assignmentsResult = await db
+    .from("teacher_assignments")
+    .select("id, teacher_id, class_name, subject");
+  if (assignmentsResult.error) {
+    throw new Error("授課權限讀取失敗：" + assignmentsResult.error.message);
+  }
+
+  teacherAssignmentsCache = assignmentsResult.data || [];
+  if (!teacherAssignmentsCache.length) {
+    teacherStudentsCache = [];
+    teacherExamsCache = [];
+    teacherExamsByIdCache = new Map();
+    teacherExamOptionsCache = "";
+    teacherStudentSubjectsCache = [];
+    teacherScoresCache = [];
+    teacherPermittedSubjectsByClass = new Map();
+    teacherStudentsByClassSubject = new Map();
+    teacherScoresByStudentExamSubject = new Map();
+    appRoot.innerHTML =
+      "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1><small>教師專區</small></div>" +
+        "<div class='parent-top-actions'>" +
+          (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
+        "</div></div>" +
+      "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>" +
+      buildParentBottomNav();
+    bindParentActionButtons();
+    if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
+    return;
+  }
+
+  const permittedClassesForQuery = Array.from(new Set(teacherAssignmentsCache.map(item => item.class_name).filter(Boolean)));
+  const permittedSubjectsForQuery = Array.from(new Set(teacherAssignmentsCache.map(item => item.subject).filter(Boolean)));
   const results = await Promise.all([
-    db.from("teacher_assignments").select("id, teacher_id, class_name, subject"),
-    db.from("students").select("id, class_name, student_code, full_name").eq("is_active", true).order("student_code"),
+    db.from("students")
+      .select("id, class_name, student_code, full_name")
+      .eq("is_active", true)
+      .in("class_name", permittedClassesForQuery)
+      .order("student_code"),
     db.from("exams").select("id, start_date, end_date"),
-    db.from("student_subjects").select("student_id, subject").eq("is_active", true)
+    db.from("student_subjects")
+      .select("student_id, subject")
+      .eq("is_active", true)
+      .in("subject", permittedSubjectsForQuery)
   ]);
 
-  const labels = ["授課權限", "學生資料", "考試資料", "學生修課資料"];
+  const labels = ["學生資料", "考試資料", "學生修課資料"];
   for (let i = 0; i < results.length; i++) {
     if (results[i].error) {
       throw new Error(labels[i] + "讀取失敗：" + results[i].error.message);
     }
   }
 
-  teacherAssignmentsCache = results[0].data || [];
-  teacherStudentsCache = results[1].data || [];
-  teacherExamsCache = (results[2].data || []).sort(function (a, b) {
+  teacherStudentsCache = results[0].data || [];
+  teacherExamsCache = (results[1].data || []).sort(function (a, b) {
     return String(b.end_date || b.start_date || "").localeCompare(String(a.end_date || a.start_date || ""));
   });
   teacherExamsByIdCache = new Map(teacherExamsCache.map(exam => [String(exam.id), exam]));
@@ -7233,7 +7270,7 @@ async function renderTeacherDashboard() {
     return "<option value='" + escapeHtml(exam.id) + "'>" +
       escapeHtml(formatDateRange(exam)) + "</option>";
   }).join("");
-  teacherStudentSubjectsCache = results[3].data || [];
+  teacherStudentSubjectsCache = results[2].data || [];
 
   // 只查詢有授課權限且學生實際有修習的班級／科目組合；每批最多 200 位學生。
   const activeSubjectsByStudent = new Map();
@@ -7325,19 +7362,6 @@ async function renderTeacherDashboard() {
     }
     teacherScoresByStudentExamSubject.get(key).push(item);
   });
-
-  if (!teacherAssignmentsCache.length) {
-    appRoot.innerHTML =
-      "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1><small>教師專區</small></div>" +
-        "<div class='parent-top-actions'>" +
-          (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
-        "</div></div>" +
-      "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>" +
-      buildParentBottomNav();
-    bindParentActionButtons();
-    if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
-    return;
-  }
 
   teacherSelectedExamId = teacherExamsCache.length ? String(teacherExamsCache[0].id) : "";
   renderTeacherResults();
