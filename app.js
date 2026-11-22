@@ -6985,10 +6985,17 @@ async function renderParentDashboard() {
   // 家長端僅顯示本週彙總，不呈現每日或逐堂明細。
   const taiwanToday = getTaiwanDateTime();
   const todayISO = taiwanToday.year + "-" + taiwanToday.month + "-" + taiwanToday.day;
-  const weekStartDate = new Date(todayISO + "T00:00:00Z");
-  const weekday = weekStartDate.getUTCDay();
-  const isParentAttendanceReleased = weekday === 6 && Number(taiwanToday.hour) >= 20;
-  weekStartDate.setUTCDate(weekStartDate.getUTCDate() + (weekday === 0 ? -6 : 1 - weekday));
+  const currentDate = new Date(todayISO + "T00:00:00Z");
+  const weekday = currentDate.getUTCDay();
+  // 家長端持續顯示最近一次週六 20:00 已發布的出缺席週，直到下次發布。
+  const latestReleasedSaturday = new Date(currentDate);
+  const daysSinceSaturday = (weekday + 1) % 7;
+  latestReleasedSaturday.setUTCDate(latestReleasedSaturday.getUTCDate() - daysSinceSaturday);
+  if (weekday === 6 && Number(taiwanToday.hour) < 20) {
+    latestReleasedSaturday.setUTCDate(latestReleasedSaturday.getUTCDate() - 7);
+  }
+  const weekStartDate = new Date(latestReleasedSaturday);
+  weekStartDate.setUTCDate(weekStartDate.getUTCDate() - 5);
   const weekStartISO = weekStartDate.toISOString().slice(0, 10);
   weekStartDate.setUTCDate(weekStartDate.getUTCDate() + 6);
   const weekEndISO = weekStartDate.toISOString().slice(0, 10);
@@ -7094,8 +7101,7 @@ async function renderParentDashboard() {
   });
 
   function buildParentAttendanceSummary(student) {
-    // 出缺席與週成績統一於台灣時間每週日 20:00 公告。
-    if (!isParentAttendanceReleased) return "";
+    // 顯示最近一次週六 20:00 已發布的週資料，直到下次週六更新。
     if (parentAttendanceLoadError) {
       return "<div class='parent-attendance-error' role='alert'>本週出缺席資料暫時無法讀取，請稍後再試。</div>";
     }
