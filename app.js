@@ -3896,9 +3896,10 @@ function renderStudents() {
   $("studentClassFilter").value = classFilter;
   $("studentSubjectFilter").value = subjectFilter;
   $("studentKeywordFilter").value = keywordFilter;
+  // 學生清單每次篩選重繪才會更換；搜尋時沿用已取得的列，避免重複 DOM 查詢與陣列建立。
+  const studentRows = Array.from(content.querySelectorAll(".student-management-table tbody tr[data-student-search]"));
   function applyStudentKeyword() {
     const keyword = $("studentKeywordFilter").value.trim().toLocaleLowerCase();
-    const studentRows = Array.from(content.querySelectorAll(".student-management-table tbody tr[data-student-search]"));
     let visibleCount = 0;
     studentRows.forEach(function (row) {
       const matched = !keyword || row.dataset.studentSearch.includes(keyword);
