@@ -1127,7 +1127,7 @@ async function cleanupPreviousWeekExclusions() {
   // 管理資料載入時已建立日期排序索引；週期性檢查直接重用，避免重複排序。
   const datedExams = examsByDateDescCache.filter(exam => exam.start_date || exam.end_date);
 
-  // 必須有本週與上一週兩筆考試，且本週成績已到週六 20:00 開放時間。
+  // 必須有本週與上一週兩筆考試，且本週成績已到週六 18:00 開放時間。
   if (datedExams.length < 2 || !hasLatestExamReachedReleaseTime(datedExams[0])) {
     return;
   }
@@ -1224,7 +1224,7 @@ async function loadAdminData() {
   teacherProfilesCache = Array.from(teacherMap.values());
   teacherProfilesByIdCache = new Map(teacherProfilesCache.map(profile => [String(profile.id), profile]));
 
-  // 新一週成績於週六 20:00 開放時，自動清除上一週的已排除提醒名單。
+  // 新一週成績於週六 18:00 開放時，自動清除上一週的已排除提醒名單。
   try {
     await cleanupPreviousWeekExclusions();
   } catch (error) {
@@ -1446,7 +1446,7 @@ function renderAdminTab() {
 
 // ==================================================
 // 管理員專用：班級最高分預覽
-// 不受家長端週六 20:00 開放時間限制；不顯示其他學生個別成績。
+// 不受家長端週六 18:00 開放時間限制；不顯示其他學生個別成績。
 // ==================================================
 
 function renderAdminClassHighestPreview() {
@@ -1603,7 +1603,7 @@ function renderAdminClassHighestPreview() {
 
   content.innerHTML =
     "<h2 class='section-title'>班級最高分預覽</h2>" +
-    "<p class='muted'>管理員測試功能：可提前查看計算結果，不受家長端週六 20:00 開放時間限制。此頁只顯示各班各科各範圍的最高成績，不列出其他學生的個別成績。</p>" +
+    "<p class='muted'>管理員測試功能：可提前查看計算結果，不受家長端週六 18:00 開放時間限制。此頁只顯示各班各科各範圍的最高成績，不列出其他學生的個別成績。</p>" +
     "<div class='toolbar'>" +
       "<label for='classHighestPreviewExam'><strong>考試週期</strong></label>" +
       "<select id='classHighestPreviewExam'>" + examOptions + "</select>" +
