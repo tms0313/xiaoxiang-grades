@@ -130,10 +130,24 @@ function updateScoreCompositeIndex(score, previousKey) {
 }
 
 // 成績新增／刪除成功時，直接同步前端快取，避免為單筆異動重新下載全體成績與提醒排除資料。
-function addScoreToLocalCache(score) {
+function upsertScoreToLocalCache(score) {
   if (!score || score.id == null) return;
-  scoresCache.push(score);
-  scoresByIdCache.set(String(score.id), score);
+  const id = String(score.id);
+  const previous = scoresByIdCache.get(id);
+  if (previous) {
+    const previousKey = getScoreCompositeKey(
+      previous.student_id, previous.exam_id, previous.subject, previous.scope
+    );
+    if (scoresByStudentExamSubjectScopeCache.get(previousKey) === previous) {
+      scoresByStudentExamSubjectScopeCache.delete(previousKey);
+    }
+    const index = scoresCache.indexOf(previous);
+    if (index >= 0) scoresCache[index] = score;
+    else scoresCache.push(score);
+  } else {
+    scoresCache.push(score);
+  }
+  scoresByIdCache.set(id, score);
   updateScoreCompositeIndex(score);
   invalidateAdminHighestPreviewCache();
 }
@@ -3800,10 +3814,10 @@ async function saveScore(event) {
   saveButton.textContent = "儲存中……";
   try {
     const result = duplicate
-      ? await db.from("scores").update(payload).eq("id", duplicate.id)
-      : await db.from("scores").insert(payload);
+      ? await db.from("scores").update(payload).eq("id", duplicate.id).select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").single()
+      : await db.from("scores").insert(payload).select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").single();
     if (result.error) throw result.error;
-    await loadAdminData();
+    upsertScoreToLocalCache(result.data);
     scoreEntrySavedCount += 1;
     clearScoreEntryDraft();
     updateScoreStudentOptions(true);
