@@ -7015,11 +7015,11 @@ async function renderParentDashboard() {
   const todayISO = taiwanToday.year + "-" + taiwanToday.month + "-" + taiwanToday.day;
   const currentDate = new Date(todayISO + "T00:00:00Z");
   const weekday = currentDate.getUTCDay();
-  // 家長端持續顯示最近一次週六 20:00 已發布的出缺席週，直到下次發布。
+  // 家長端持續顯示最近一次週六 18:00 已發布的出缺席週，直到下次發布。
   const latestReleasedSaturday = new Date(currentDate);
   const daysSinceSaturday = (weekday + 1) % 7;
   latestReleasedSaturday.setUTCDate(latestReleasedSaturday.getUTCDate() - daysSinceSaturday);
-  if (weekday === 6 && Number(taiwanToday.hour) < 20) {
+  if (weekday === 6 && Number(taiwanToday.hour) < 18) {
     latestReleasedSaturday.setUTCDate(latestReleasedSaturday.getUTCDate() - 7);
   }
   const weekStartDate = new Date(latestReleasedSaturday);
@@ -7129,7 +7129,7 @@ async function renderParentDashboard() {
   });
 
   function buildParentAttendanceSummary(student) {
-    // 顯示最近一次週六 20:00 已發布的週資料，直到下次週六更新。
+    // 顯示最近一次週六 18:00 已發布的週資料，直到下次週六更新。
     if (parentAttendanceLoadError) {
       return "<div class='parent-attendance-error' role='alert'>本週出缺席資料暫時無法讀取，請稍後再試。</div>";
     }
@@ -7197,9 +7197,9 @@ async function renderParentDashboard() {
     const released = today > releaseDate || (
       today === releaseDate &&
       (
-        Number(taiwan.hour) > 20 ||
+        Number(taiwan.hour) > 18 ||
         (
-          Number(taiwan.hour) === 20 &&
+          Number(taiwan.hour) === 18 &&
           Number(taiwan.minute) >= 0
         )
       )
@@ -7347,7 +7347,7 @@ async function renderParentDashboard() {
           (
             released
               ? buildParentScoreTable(student, exam)
-              : "<div class='empty'>本次考試成績將於週六 20:00 開放查詢。</div>"
+              : "<div class='empty'>本次考試成績將於週六 18:00 開放查詢。</div>"
           ) +
           reviewButton +
         "</div>"
