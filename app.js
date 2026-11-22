@@ -3136,6 +3136,12 @@ function renderBulkScoreEntryRows() {
       control.value = Object.prototype.hasOwnProperty.call(draft, "grade")
         ? draft.grade
         : existing && existing.grade_level || "";
+      const input = row.querySelector("[data-bulk-score]");
+      const grade3Absent = grade3 && (control.value === "缺考" || control.value === "請假");
+      if (input) {
+        input.disabled = grade3Absent;
+        if (grade3Absent) input.value = "";
+      }
       return;
     }
     control.value = draft.status ||
@@ -3157,6 +3163,14 @@ function renderBulkScoreEntryRows() {
       const input = event.target.closest("tr").querySelector("[data-bulk-score]");
       input.disabled = event.target.value === "請假";
       if (input.disabled) input.value = "";
+    }
+    if (event.target.matches("[data-bulk-grade]") && grade3) {
+      const input = event.target.closest("tr").querySelector("[data-bulk-score]");
+      const absentOrLeave = event.target.value === "缺考" || event.target.value === "請假";
+      if (input) {
+        input.disabled = absentOrLeave;
+        if (absentOrLeave) input.value = "";
+      }
     }
     saveBulkScoreDraft(true);
   };
