@@ -117,7 +117,7 @@ function attendanceInjectStyles() {
     ".attendance-weekly-filter select{width:100%;height:40px;min-height:40px}",
     ".attendance-weekly-student{border:1px solid #dbe3eb;border-radius:9px;margin:8px 0;overflow:hidden;background:#fff}",
     ".attendance-weekly-student.has-alert{border-color:#e4b1b1}",
-    ".attendance-weekly-student summary{display:flex;flex-direction:column;gap:6px;padding:11px 12px;cursor:pointer;list-style:none}",
+    ".attendance-weekly-student summary{display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:8px;padding:11px 12px;cursor:pointer;list-style:none}",
     ".attendance-weekly-student summary::-webkit-details-marker{display:none}",
     ".attendance-weekly-student-name{font-weight:800;color:#23466b}",
     ".attendance-weekly-student-summary{font-size:13px;line-height:1.6;color:#4b5d70}",
@@ -240,7 +240,7 @@ function attendanceWeeklyOverviewWeekOptions() {
   const current = attendanceWeeklyOverviewGetWeek(attendanceTaipeiDateISO());
   const options = [];
   const cursor = new Date(current.start + "T00:00:00Z");
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 4; i++) {
     const start = cursor.toISOString().slice(0, 10);
     cursor.setUTCDate(cursor.getUTCDate() - 7);
     const endDate = new Date(start + "T00:00:00Z");
