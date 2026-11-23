@@ -1,6 +1,5 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
-const path = require('path');
 
 test('font-size audit: capture rendered text sizes on accessible pages', async ({ page }) => {
   await page.goto('/');
