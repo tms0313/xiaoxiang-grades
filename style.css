@@ -592,6 +592,9 @@ footer {
   margin-bottom: 10px;
 }
 .exam-calendar-heading strong { color: #23466b; font-size: 14px; }
+.exam-calendar-heading button[data-exam-calendar-nav] {
+  font-size: 20px !important;
+}
 .exam-calendar-heading button {
   width: 32px !important;
   height: 30px !important;
