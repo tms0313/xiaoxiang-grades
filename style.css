@@ -906,3 +906,48 @@ footer {
 
 /* 成績登錄輸入中即時標示未達 60 分 */
 .bulk-score-input.low-score,.term-bulk-table input[data-term-score].low-score{color:#d32626 !important;font-weight:800 !important;}
+
+/* ==============================
+   全站字體統一（2026-11-23）
+   字級標準：12 / 14 / 16 / 20 / 24px
+============================== */
+:root {
+  --font-xs: 12px;
+  --font-sm: 14px;
+  --font-base: 16px;
+  --font-lg: 20px;
+  --font-xl: 24px;
+}
+
+/* h3 原生預設 1.17em 產生 18.72px；明確改為規格字級 */
+h3 {
+  font-size: var(--font-lg) !important;
+}
+
+/* small 原生預設 0.833em 產生 13.3333px；明確改為 14px */
+small {
+  font-size: var(--font-sm) !important;
+}
+/* 教師／家長成績卡：科目名稱統一 20px */
+.parent-subject-name {
+  font-size: var(--font-lg) !important;
+}
+/* 成績卡中次要結果值統一 16px；主要分數 .parent-score-number 保留 24px */
+.parent-subject-result-value {
+  font-size: var(--font-base) !important;
+}
+/* 出缺席摘要標籤：20px 桌面，窄螢幕沿用 16px */
+.parent-attendance-stat-label {
+  font-size: var(--font-lg) !important;
+}
+.parent-attendance-stat-value small {
+  font-size: var(--font-sm) !important;
+}
+@media (max-width: 380px) {
+  .parent-attendance-stat-label {
+    font-size: var(--font-base) !important;
+  }
+  .parent-attendance-stat-value small {
+    font-size: var(--font-base) !important;
+  }
+}
