@@ -330,7 +330,9 @@ async function loadAttendanceWeeklyOverview() {
       String(a.session.session_date).localeCompare(String(b.session.session_date)) || String(a.session.start_time).localeCompare(String(b.session.start_time))
     );
     const lateTotal = studentRecords.reduce((sum, record) => sum + (record.attendance_status === "normal" ? Number(record.late_minutes || 0) : 0), 0);
-    const uncheckedCount = studentRecords.filter(record => record.attendance_status === "normal" && record.checkin_status === "not_checked_in").length;
+    const normalRecords = studentRecords.filter(record => record.attendance_status === "normal");
+    const uncheckedCount = normalRecords.filter(record => record.checkin_status === "not_checked_in").length;
+    const checkedInSummary = normalRecords.length > 0 && normalRecords.every(record => record.checkin_status === "checked_in") ? "已打卡" : "—";
     const leaveCount = studentRecords.filter(record => record.attendance_status === "leave" || record.attendance_status === "absent").length;
     const detailRows = studentRecords.map(record => {
       const status = record.attendance_status === "leave" || record.attendance_status === "absent" ? "請假" : "出席";
@@ -345,7 +347,7 @@ async function loadAttendanceWeeklyOverview() {
       "<summary><span class='attendance-weekly-student-name'>" + attendanceEscape(student.student_code) + "　" + attendanceEscape(student.full_name) + "</span>" +
       "<span class='attendance-weekly-student-summary'>" +
         (lateTotal ? "<strong class='attendance-weekly-alert'>遲到 " + lateTotal + " 分鐘</strong>" : "無遲到") + "　·　" +
-        (uncheckedCount ? "<strong class='attendance-weekly-alert'>未打卡 " + uncheckedCount + " 次</strong>" : "已打卡") +
+        (uncheckedCount ? "<strong class='attendance-weekly-alert'>未打卡 " + uncheckedCount + " 次</strong>" : checkedInSummary) +
         (leaveCount ? "　·　請假 " + leaveCount + " 次" : "") +
       "</span></summary>" +
       "<div class='attendance-weekly-details'>" +
