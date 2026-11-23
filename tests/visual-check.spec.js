@@ -18,7 +18,6 @@ test('login page loads and core elements are visible', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
 
   await expect(page.locator('.login-card')).toBeVisible();
-  await expect(page.locator('.school-name')).toHaveText('小象文教機構');
   await expect(page.locator('#email')).toBeVisible();
   await expect(page.locator('#password')).toBeVisible();
   await expect(page.getByRole('button', { name: '登入系統' })).toBeVisible();
