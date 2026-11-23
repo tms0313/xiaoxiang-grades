@@ -1,0 +1,10 @@
+{
+  "name": "xiaoxiang-grades-visual-check",
+  "private": true,
+  "scripts": {
+    "test:visual": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}
