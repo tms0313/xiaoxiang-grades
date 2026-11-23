@@ -108,7 +108,7 @@ function attendanceInjectStyles() {
     ".attendance-status-message.success{background:#e3f5e9;color:#20683d}",
     ".attendance-parent-summary{display:flex;flex-direction:column;gap:5px;margin:0 0 15px;padding:10px 12px;border-radius:9px;background:#f5f7fa;font-size:14px;line-height:1.55}",
     ".attendance-parent-summary .attendance-alert{color:#bd3030;font-weight:800}",
-    "@media(max-width:600px){.attendance-session-grid{grid-template-columns:1fr}.attendance-session-btn{padding:12px}.attendance-parent-summary{font-size:13px}}"
+    "@media(max-width:600px){.attendance-session-grid{grid-template-columns:1fr}.attendance-session-btn{padding:12px}.attendance-parent-summary{font-size:13px}}",
     ".attendance-weekly-overview{margin:0 0 18px;padding:14px;border:1px solid #d7e0e9;border-radius:10px;background:#fff}",
     ".attendance-weekly-overview h3{margin:0 0 12px;color:#23466b}",
     ".attendance-weekly-filters{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}",
