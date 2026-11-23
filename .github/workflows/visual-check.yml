@@ -1,0 +1,31 @@
+name: Visual Smoke Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  visual-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright test package
+        run: npm install
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run visual smoke test
+        run: npm run test:visual
+      - name: Upload screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-check-results
+          path: |
+            screenshots/
+            playwright-report/
+            test-results/
+          retention-days: 14
