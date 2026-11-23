@@ -4175,13 +4175,19 @@ async function deleteStudent(id) {
     // 刪除學生後同步受影響的本地快取，避免重新載入整套管理資料。
     studentsCache = studentsCache.filter(item => String(item.id) !== String(id));
     studentSubjectsCache = studentSubjectsCache.filter(item => String(item.student_id) !== String(id));
-    scoresCache = scoresCache.filter(item => String(item.student_id) !== String(id));
+    scoresCache = scoresCache.filter(item => {
+      if (String(item.student_id) !== String(id)) return true;
+      scoresByIdCache.delete(String(item.id));
+      scoresByStudentExamSubjectScopeCache.delete(
+        getScoreCompositeKey(item.student_id, item.exam_id, item.subject, item.scope)
+      );
+      return false;
+    });
     guardianLinksCache = guardianLinksCache.filter(item => String(item.student_id) !== String(id));
     missingExclusionsCache = missingExclusionsCache.filter(item => String(item.student_id) !== String(id));
     rebuildAdminEntityIndexes();
     rebuildActiveSubjectsByStudentCache();
     rebuildGuardianBindingIndexes();
-    rebuildScoresByIdCache();
     invalidateAdminHighestPreviewCache();
     renderStudents();
     showMessage("學生資料已刪除。", "success");
