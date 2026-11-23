@@ -345,7 +345,7 @@ async function loadAttendanceWeeklyOverview() {
       "<summary><span class='attendance-weekly-student-name'>" + attendanceEscape(student.student_code) + "　" + attendanceEscape(student.full_name) + "</span>" +
       "<span class='attendance-weekly-student-summary'>" +
         (lateTotal ? "<strong class='attendance-weekly-alert'>遲到 " + lateTotal + " 分鐘</strong>" : "無遲到") + "　·　" +
-        (uncheckedCount ? "<strong class='attendance-weekly-alert'>未打卡 " + uncheckedCount + " 次</strong>" : "無未打卡") +
+        (uncheckedCount ? "<strong class='attendance-weekly-alert'>未打卡 " + uncheckedCount + " 次</strong>" : "已打卡") +
         (leaveCount ? "　·　請假／缺席 " + leaveCount + " 次" : "") +
       "</span></summary>" +
       "<div class='attendance-weekly-details'>" +
