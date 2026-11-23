@@ -10,3 +10,20 @@
   cursor: pointer;
   font-size: 16px;
 }
+
+/* 新增考試日期日曆：日期按鈕統一方角樣式，避免 iOS 原生形狀差異 */
+#examDateCalendar .exam-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+#examDateCalendar button.exam-calendar-day {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border-radius: 6px !important;
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+}
