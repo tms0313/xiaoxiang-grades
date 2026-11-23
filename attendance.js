@@ -346,9 +346,8 @@ async function loadAttendanceWeeklyOverview() {
     return "<details class='attendance-weekly-student" + (hasAlert ? " has-alert" : "") + "'>" +
       "<summary><span class='attendance-weekly-student-name'>" + attendanceEscape(student.student_code) + "　" + attendanceEscape(student.full_name) + "</span>" +
       "<span class='attendance-weekly-student-summary'>" +
-        (lateTotal ? "<strong class='attendance-weekly-alert'>遲到 " + lateTotal + " 分鐘</strong>" : "無遲到") + "　·　" +
-        (leaveCount ? "" : (uncheckedCount ? "<strong class='attendance-weekly-alert'>未打卡 " + uncheckedCount + " 次</strong>" : checkedInSummary)) +
-        (leaveCount ? "　·　請假 " + leaveCount + " 次" : "") +
+        (leaveCount ? "請假 " + leaveCount + " 次" : (lateTotal ? "<strong class='attendance-weekly-alert'>遲到 " + lateTotal + " 分鐘</strong>" : "無遲到") + "　·　" +
+        (uncheckedCount ? "<strong class='attendance-weekly-alert'>未打卡 " + uncheckedCount + " 次</strong>" : checkedInSummary)) +
       "</span></summary>" +
       "<div class='attendance-weekly-details'>" +
         (studentRecords.length ? "<div class='table-wrap'><table class='attendance-weekly-detail-table'><thead><tr><th>日期</th><th>時間</th><th>科目</th><th>出勤</th><th>遲到</th><th>打卡</th></tr></thead><tbody>" + detailRows + "</tbody></table></div>" : "<div class='empty'>本週尚無出缺席紀錄。</div>") +
