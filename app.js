@@ -4172,7 +4172,17 @@ async function deleteStudent(id) {
     const result = await db.from("students").delete().eq("id", id);
     if (result.error) throw result.error;
 
-    await loadAdminData();
+    // 刪除學生後同步受影響的本地快取，避免重新載入整套管理資料。
+    studentsCache = studentsCache.filter(item => String(item.id) !== String(id));
+    studentSubjectsCache = studentSubjectsCache.filter(item => String(item.student_id) !== String(id));
+    scoresCache = scoresCache.filter(item => String(item.student_id) !== String(id));
+    guardianLinksCache = guardianLinksCache.filter(item => String(item.student_id) !== String(id));
+    missingExclusionsCache = missingExclusionsCache.filter(item => String(item.student_id) !== String(id));
+    rebuildAdminEntityIndexes();
+    rebuildActiveSubjectsByStudentCache();
+    rebuildGuardianBindingIndexes();
+    rebuildScoresByIdCache();
+    invalidateAdminHighestPreviewCache();
     renderStudents();
     showMessage("學生資料已刪除。", "success");
 
