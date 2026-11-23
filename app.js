@@ -1426,22 +1426,51 @@ function renderAdminTab() {
     systemMessage.style.display = "none";
   }
 
-  document.querySelectorAll(".tab-btn").forEach(function (button) {
-    button.classList.toggle("active", button.dataset.tab === activeTab);
-  });
+  // 僅更新管理員導覽列，避免掃描其他頁面的按鈕；每次切換只執行一個頁面渲染器。
+  if (adminTabs) {
+    adminTabs.querySelectorAll(".tab-btn").forEach(function (button) {
+      button.classList.toggle("active", button.dataset.tab === activeTab);
+    });
+  }
 
-  if (activeTab === "overview") renderOverview();
-  if (activeTab === "highestPreview") renderAdminClassHighestPreview();
-  if (activeTab === "scores") renderScoreEntry();
-  if (activeTab === "termScores") renderTermExamEntry();
-  if (activeTab === "students") renderStudents();
-  if (activeTab === "attendance") renderAttendanceManagement();
-  if (activeTab === "guardians") renderGuardians();
-  if (activeTab === "teachers") renderTeacherManagement();
-  if (activeTab === "logs") renderLoginLogs();
-  if (activeTab === "reviews") renderStudentReviewRecords();
-  if (activeTab === "export") renderExport();
-  if (activeTab === "alumni") renderAlumniMockScores();
+  switch (activeTab) {
+    case "overview":
+      renderOverview();
+      break;
+    case "highestPreview":
+      renderAdminClassHighestPreview();
+      break;
+    case "scores":
+      renderScoreEntry();
+      break;
+    case "termScores":
+      renderTermExamEntry();
+      break;
+    case "students":
+      renderStudents();
+      break;
+    case "attendance":
+      renderAttendanceManagement();
+      break;
+    case "guardians":
+      renderGuardians();
+      break;
+    case "teachers":
+      renderTeacherManagement();
+      break;
+    case "logs":
+      renderLoginLogs();
+      break;
+    case "reviews":
+      renderStudentReviewRecords();
+      break;
+    case "export":
+      renderExport();
+      break;
+    case "alumni":
+      renderAlumniMockScores();
+      break;
+  }
 }
 
 // ==================================================
