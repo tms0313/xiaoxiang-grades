@@ -25,11 +25,13 @@ jobs:
         env:
           ADMIN_EMAIL: ${{ secrets.FONT_AUDIT_ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.FONT_AUDIT_ADMIN_PASSWORD }}
-          SECOND_EMAIL: ${{ secrets.FONT_AUDIT_SECOND_EMAIL }}
-          SECOND_PASSWORD: ${{ secrets.FONT_AUDIT_SECOND_PASSWORD }}
+          PARENT_EMAIL: ${{ secrets.FONT_AUDIT_PARENT_EMAIL }}
+          PARENT_PASSWORD: ${{ secrets.FONT_AUDIT_PARENT_PASSWORD }}
+          TEACHER_EMAIL: ${{ secrets.FONT_AUDIT_TEACHER_EMAIL }}
+          TEACHER_PASSWORD: ${{ secrets.FONT_AUDIT_TEACHER_PASSWORD }}
         run: |
           missing=0
-          for name in ADMIN_EMAIL ADMIN_PASSWORD SECOND_EMAIL SECOND_PASSWORD; do
+          for name in ADMIN_EMAIL ADMIN_PASSWORD PARENT_EMAIL PARENT_PASSWORD TEACHER_EMAIL TEACHER_PASSWORD; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing repository secret corresponding to ${name}"
               missing=1
@@ -45,8 +47,10 @@ jobs:
         env:
           FONT_AUDIT_ADMIN_EMAIL: ${{ secrets.FONT_AUDIT_ADMIN_EMAIL }}
           FONT_AUDIT_ADMIN_PASSWORD: ${{ secrets.FONT_AUDIT_ADMIN_PASSWORD }}
-          FONT_AUDIT_SECOND_EMAIL: ${{ secrets.FONT_AUDIT_SECOND_EMAIL }}
-          FONT_AUDIT_SECOND_PASSWORD: ${{ secrets.FONT_AUDIT_SECOND_PASSWORD }}
+          FONT_AUDIT_PARENT_EMAIL: ${{ secrets.FONT_AUDIT_PARENT_EMAIL }}
+          FONT_AUDIT_PARENT_PASSWORD: ${{ secrets.FONT_AUDIT_PARENT_PASSWORD }}
+          FONT_AUDIT_TEACHER_EMAIL: ${{ secrets.FONT_AUDIT_TEACHER_EMAIL }}
+          FONT_AUDIT_TEACHER_PASSWORD: ${{ secrets.FONT_AUDIT_TEACHER_PASSWORD }}
         run: npm run test:font-audit
       - name: Upload screenshots, inventory and report
         if: always()
