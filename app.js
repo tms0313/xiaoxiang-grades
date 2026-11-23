@@ -4242,7 +4242,7 @@ async function saveExam(event) {
   try {
     const result = id
       ? await db.from("exams").update(payload).eq("id", id)
-      : await db.from("exams").insert(payload);
+      : await db.from("exams").insert(payload).select("id, title, start_date, end_date").single();
 
     if (result.error) throw result.error;
 
@@ -4252,11 +4252,11 @@ async function saveExam(event) {
           ? { ...exam, ...payload }
           : exam;
       });
-      rebuildExamIndexes();
     } else {
-      // 新增考試需要取得資料庫產生的 ID，保留完整載入以同步新場次。
-      await loadAdminData();
+      // 新增場次回傳資料庫產生的 ID，直接同步本地快取，避免完整重載。
+      examsCache.push(result.data);
     }
+    rebuildExamIndexes();
     renderScoreEntry();
     showMessage(id ? "考試日期已更新。" : "考試場次已新增。", "success");
 
