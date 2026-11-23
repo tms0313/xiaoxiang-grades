@@ -4044,16 +4044,19 @@ async function saveStudent(event) {
 
   try {
     let studentId = id;
+    let savedStudent = null;
     if (id) {
       const result = await db.from("students").update(payload).eq("id", id);
       if (result.error) throw result.error;
+      savedStudent = { ...studentsByIdCache.get(String(id)), ...payload };
     } else {
       const result = await db.from("students")
         .insert(Object.assign({ is_active: true }, payload))
-        .select("id")
+        .select("id, student_code, full_name, class_name, is_active")
         .single();
       if (result.error) throw result.error;
       studentId = result.data.id;
+      savedStudent = result.data;
     }
 
     const selectedSubjects = Array.from(document.querySelectorAll("input[name='studentSubject']:checked"))
@@ -4068,7 +4071,20 @@ async function saveStudent(event) {
       .upsert(subjectRows, { onConflict: "student_id,subject" });
     if (subjectResult.error) throw subjectResult.error;
 
-    await loadAdminData();
+    // 學生資料及修課科目已成功寫入後，局部同步快取，避免再次讀取整套後台資料。
+    if (id) {
+      studentsCache = studentsCache.map(student =>
+        String(student.id) === String(studentId) ? savedStudent : student
+      );
+    } else {
+      studentsCache.push(savedStudent);
+    }
+    studentSubjectsCache = studentSubjectsCache.filter(item =>
+      String(item.student_id) !== String(studentId)
+    ).concat(subjectRows);
+    rebuildAdminEntityIndexes();
+    rebuildActiveSubjectsByStudentCache();
+
     clearStudentForm();
     renderStudents();
     showMessage(id ? "學生資料及修課科目已更新。" : "學生及修課科目已新增。", "success");
