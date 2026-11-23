@@ -111,11 +111,11 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
       .concat([{ role: 'parent', page: 'parent-home' }, { role: 'teacher', page: 'teacher-home' }]),
     totalTextElements: allRows.length, fontSizeGroups: grouped, rows: allRows, pageErrors
   };
-  fs.writeFileSync('font-audit/font-inventory.json', JSON.stringify(summary, null, 2));
+  fs.writeFileSync('font-audit-mobile/font-inventory.json', JSON.stringify(summary, null, 2));
   const headers = ['role','page','tag','className','id','text','fontSize','fontWeight','lineHeight','letterSpacing','width','height'];
   const cell = value => '"' + String(value ?? '').replace(/"/g, '""') + '"';
   const csv = [headers.join(','), ...allRows.map(row => headers.map(key => cell(row[key])).join(','))].join('\n');
-  fs.writeFileSync('font-audit/font-inventory.csv', '\uFEFF' + csv);
+  fs.writeFileSync('font-audit-mobile/font-inventory.csv', '\uFEFF' + csv);
   console.log('SITE TYPOGRAPHY AUDIT SUMMARY', JSON.stringify({
     totalTextElements: allRows.length,
     fontSizes: Object.fromEntries(Object.entries(grouped).map(([size, value]) => [size, value.count])),
