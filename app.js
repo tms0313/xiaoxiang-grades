@@ -7971,9 +7971,11 @@ async function initializeApp() {
 
 initializeApp();
 
-/* 全站一般表單控制項高度統一為 40px；密集成績表維持各自的緊湊高度 */
-style.textContent += "\n" +
-  "input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=submit]):not([type=button]):not([type=reset]),select,textarea { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; }" +
+/* 全站一般表單控制項統一為 40px；修正 padding/line-height 避免文字裁切，textarea 不強制單行高度 */
+style.textContent += "\\n" +
+  "input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=submit]):not([type=button]):not([type=reset]),select { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; line-height:normal !important; }" +
+  ".field input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.field select { padding-top:0 !important; padding-bottom:0 !important; line-height:normal !important; }" +
+  "textarea { box-sizing:border-box !important; height:auto !important; min-height:80px !important; max-height:none !important; line-height:1.5 !important; padding:10px 12px !important; }" +
   ".term-bulk-table input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.bulk-score-entry-table tbody td input,.bulk-score-entry-table tbody td select { height:28px !important; min-height:28px !important; max-height:28px !important; }" +
-  ".term-exam-overview-filters .field select,.term-exam-overview-filters .field input { height:40px !important; min-height:40px !important; max-height:40px !important; }" +
+  ".term-exam-overview-filters .field select,.term-exam-overview-filters .field input { height:40px !important; min-height:40px !important; max-height:40px !important; padding-top:0 !important; padding-bottom:0 !important; line-height:normal !important; }" +
   ".overview-table .overview-missing-select input,.export-select-all input,.export-period-item input,.student-subject-option input[type=checkbox] { height:auto !important; min-height:0 !important; max-height:none !important; }";
