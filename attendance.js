@@ -270,7 +270,7 @@ function renderAttendanceWeeklyOverview() {
             classOrder.map(name => "<option value='" + attendanceEscape(name) + "' " + (name === attendanceWeeklyOverviewClass ? "selected" : "") + ">" + attendanceEscape(name) + "</option>").join("") +
           "</select></div>" +
       "</div>" +
-      "<div id='attendanceWeeklyOverviewResults'><div class='empty'>請先選擇週次及班級。</div></div>" +
+      "<div id='attendanceWeeklyOverviewResults'><div class='empty'></div></div>" +
     "</div>";
   document.getElementById("attendanceWeeklyWeekSelect").addEventListener("change", function () {
     attendanceWeeklyOverviewWeek = this.value;
