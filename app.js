@@ -1119,8 +1119,8 @@ function hasLatestExamReachedReleaseTime(exam) {
 
   return today > releaseDate ||
     (today === releaseDate &&
-      (Number(now.hour) > 20 ||
-        (Number(now.hour) === 20 && Number(now.minute) >= 0)));
+      (Number(now.hour) > 18 ||
+        (Number(now.hour) === 18 && Number(now.minute) >= 0)));
 }
 
 async function cleanupPreviousWeekExclusions() {
