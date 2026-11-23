@@ -38,7 +38,7 @@ test('font-size audit: capture rendered text sizes on accessible pages', async (
   fs.writeFileSync('font-audit/font-sizes.json', JSON.stringify({ scannedAt: new Date().toISOString(), page: '/', rows, grouped }, null, 2));
   const headers = ['tag','className','id','text','fontSize','fontWeight','lineHeight'];
   const csvCell = value => '"' + String(value ?? '').replace(/"/g, '""') + '"';
-  const csv = [headers.join(','), ...rows.map(row => headers.map(key => csvCell(row[key]).join(',')))].join('\n');
+  const csv = [headers.join(','), ...rows.map(row => headers.map(key => csvCell(row[key])).join(','))].join('\n');
   fs.writeFileSync('font-audit/font-sizes.csv', '\uFEFF' + csv);
 
   console.log('FONT AUDIT SUMMARY', JSON.stringify(grouped, null, 2));
