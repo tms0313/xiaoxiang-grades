@@ -6940,8 +6940,13 @@ async function renderAlumniMockScores() {
 // ==================================================
 
 let parentDashboardRequestId = 0;
+let parentExamReleaseRefreshTimer = null;
 
 async function renderParentDashboard() {
+  if (parentExamReleaseRefreshTimer) {
+    window.clearTimeout(parentExamReleaseRefreshTimer);
+    parentExamReleaseRefreshTimer = null;
+  }
   const requestId = ++parentDashboardRequestId;
   document.body.classList.add("parent-page");
   const content = $("appRoot");
@@ -7478,6 +7483,34 @@ async function renderParentDashboard() {
       }
     });
   });
+
+  // 家長已登入時，若最新考試尚未到週六 18:00，於開放時間自動重新載入一次。
+  // 只安排最近一個未來發布時間，避免長時間輪詢或重複計時器。
+  const nextExamReleaseTimestamp = latestThreeExams.reduce(function (nextTimestamp, exam) {
+    if (!exam || !exam.end_date) return nextTimestamp;
+    const endDate = new Date(String(exam.end_date).slice(0, 10) + "T00:00:00Z");
+    if (Number.isNaN(endDate.getTime())) return nextTimestamp;
+    const daysUntilSaturday = (6 - endDate.getUTCDay() + 7) % 7;
+    endDate.setUTCDate(endDate.getUTCDate() + daysUntilSaturday);
+    // 台灣時間週六 18:00 等於 UTC 週六 10:00。
+    const releaseTimestamp = Date.UTC(
+      endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate(), 10, 0, 0
+    );
+    return releaseTimestamp > Date.now() && (!nextTimestamp || releaseTimestamp < nextTimestamp)
+      ? releaseTimestamp
+      : nextTimestamp;
+  }, null);
+
+  if (nextExamReleaseTimestamp) {
+    parentExamReleaseRefreshTimer = window.setTimeout(function () {
+      parentExamReleaseRefreshTimer = null;
+      if (currentMode === "parent" && currentUser) {
+        renderParentDashboard().catch(function (error) {
+          console.error("家長成績開放後自動更新失敗：", error);
+        });
+      }
+    }, Math.max(0, nextExamReleaseTimestamp - Date.now()));
+  }
 }
 
 // ==================================================
