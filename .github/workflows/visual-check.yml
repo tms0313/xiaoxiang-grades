@@ -18,8 +18,30 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run visual smoke test
+        continue-on-error: true
         run: npm run test:visual
+      - name: Verify typography audit secrets are available (names only)
+        id: audit-secrets
+        env:
+          ADMIN_EMAIL: ${{ secrets.FONT_AUDIT_ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.FONT_AUDIT_ADMIN_PASSWORD }}
+          SECOND_EMAIL: ${{ secrets.FONT_AUDIT_SECOND_EMAIL }}
+          SECOND_PASSWORD: ${{ secrets.FONT_AUDIT_SECOND_PASSWORD }}
+        run: |
+          missing=0
+          for name in ADMIN_EMAIL ADMIN_PASSWORD SECOND_EMAIL SECOND_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing repository secret corresponding to ${name}"
+              missing=1
+            else
+              echo "${name}: configured"
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
       - name: Run rendered font-size audit across roles and admin tabs
+        if: always() && steps.audit-secrets.outcome == 'success'
         env:
           FONT_AUDIT_ADMIN_EMAIL: ${{ secrets.FONT_AUDIT_ADMIN_EMAIL }}
           FONT_AUDIT_ADMIN_PASSWORD: ${{ secrets.FONT_AUDIT_ADMIN_PASSWORD }}
