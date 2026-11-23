@@ -27,3 +27,9 @@
   margin: 0;
   padding: 0;
 }
+
+
+/* 新增考試操作按鈕間距 */
+#examFormRow > button[type='submit'] {
+  margin-right: 10px !important;
+}
