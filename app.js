@@ -7979,3 +7979,8 @@ style.textContent += "\n" +
   ".term-bulk-table input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.bulk-score-entry-table tbody td input,.bulk-score-entry-table tbody td select { height:28px !important; min-height:28px !important; max-height:28px !important; }" +
   ".term-exam-overview-filters .field select,.term-exam-overview-filters .field input { height:40px !important; min-height:40px !important; max-height:40px !important; padding-top:0 !important; padding-bottom:0 !important; line-height:normal !important; }" +
   ".overview-table .overview-missing-select input,.export-select-all input,.export-period-item input,.student-subject-option input[type=checkbox] { height:auto !important; min-height:0 !important; max-height:none !important; }";
+
+/* 週成績總覽未登錄提醒批次操作按鈕：手機版文字放大，避免過小 */
+style.textContent += "\\n" +
+  "#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton { font-size:16px !important; line-height:1.35 !important; min-height:40px !important; padding:8px 12px !important; white-space:normal !important; }" +
+  "@media(max-width:600px){#overviewMissingBatchBar{gap:8px !important;align-items:flex-start !important}#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton{font-size:16px !important;min-height:40px !important;padding:8px 12px !important;max-width:100% !important}}";
