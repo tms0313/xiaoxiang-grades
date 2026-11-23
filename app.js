@@ -5388,12 +5388,12 @@ async function saveTeacherAssignment(event) {
       teacher_id: teacherId,
       class_name: className,
       subject: subject
-    });
+    }).select("id, teacher_id, class_name, subject").single();
     if (result.error) {
       if (result.error.code === "23505") throw new Error("這位教師已經有相同的授課權限。");
       throw result.error;
     }
-    await loadAdminData();
+    teacherAssignmentsCache.push(result.data);
     renderTeacherManagement();
     if ($("teacherAccountSelect")) $("teacherAccountSelect").value = teacherId;
     if ($("teacherClassSelect")) $("teacherClassSelect").value = className;
@@ -5436,7 +5436,9 @@ async function deleteTeacherAssignment(id, button) {
   try {
     const result = await db.from("teacher_assignments").delete().eq("id", id);
     if (result.error) throw result.error;
-    await loadAdminData();
+    teacherAssignmentsCache = teacherAssignmentsCache.filter(
+      item => String(item.id) !== String(id)
+    );
     renderTeacherManagement();
     showMessage("教師授課權限已移除。", "success", true);
 
