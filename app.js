@@ -7984,3 +7984,6 @@ style.textContent += "\n" +
 style.textContent += "\\n" +
   "#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton { font-size:16px !important; line-height:1.35 !important; min-height:40px !important; padding:8px 12px !important; white-space:normal !important; }" +
   "@media(max-width:600px){#overviewMissingBatchBar{gap:8px !important;align-items:flex-start !important}#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton{font-size:16px !important;min-height:40px !important;padding:8px 12px !important;max-width:100% !important}}";
+
+/* Login log date control: enforce 40px height on iOS Safari */
+style.textContent += "\\n#loginLogDate { height:40px !important; min-height:40px !important; max-height:40px !important; box-sizing:border-box !important; padding:0 8px !important; font-size:16px !important; line-height:40px !important; -webkit-appearance:none !important; appearance:none !important; }";
