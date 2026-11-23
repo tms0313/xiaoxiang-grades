@@ -201,6 +201,144 @@ async function loadAttendanceCalendarMarks() {
   renderAttendanceCalendar();
 }
 
+
+// =========================================================
+// 管理員：每週學生個別出缺席摘要（週次先選、班級後選）
+// =========================================================
+let attendanceWeeklyOverviewRequestId = 0;
+let attendanceWeeklyOverviewWeek = "";
+let attendanceWeeklyOverviewClass = "";
+
+function attendanceWeeklyOverviewGetWeek(dateISO) {
+  const d = new Date(dateISO + "T00:00:00Z");
+  const day = d.getUTCDay();
+  d.setUTCDate(d.getUTCDate() + (day === 0 ? -6 : 1 - day));
+  const start = d.toISOString().slice(0, 10);
+  d.setUTCDate(d.getUTCDate() + 6);
+  return { start, end: d.toISOString().slice(0, 10) };
+}
+
+function attendanceWeeklyOverviewWeekOptions() {
+  const current = attendanceWeeklyOverviewGetWeek(attendanceTaipeiDateISO());
+  const options = [];
+  const cursor = new Date(current.start + "T00:00:00Z");
+  for (let i = 0; i < 12; i++) {
+    const start = cursor.toISOString().slice(0, 10);
+    cursor.setUTCDate(cursor.getUTCDate() - 7);
+    const endDate = new Date(start + "T00:00:00Z");
+    endDate.setUTCDate(endDate.getUTCDate() + 6);
+    options.push({ start, end: endDate.toISOString().slice(0, 10), label: start + " ～ " + endDate.toISOString().slice(0, 10) });
+  }
+  return options;
+}
+
+function renderAttendanceWeeklyOverview() {
+  const host = document.getElementById("attendanceWeeklyOverview");
+  if (!host) return;
+  const options = attendanceWeeklyOverviewWeekOptions();
+  if (!attendanceWeeklyOverviewWeek) attendanceWeeklyOverviewWeek = options[0].start;
+  const week = options.find(item => item.start === attendanceWeeklyOverviewWeek) || options[0];
+  attendanceWeeklyOverviewWeek = week.start;
+  host.innerHTML =
+    "<div class='attendance-weekly-overview'>" +
+      "<h3>每週學生出缺席追蹤</h3>" +
+      "<div class='attendance-weekly-filters'>" +
+        "<div class='attendance-weekly-filter'><label for='attendanceWeeklyWeekSelect'>① 選擇週次</label>" +
+          "<select id='attendanceWeeklyWeekSelect'>" + options.map(item =>
+            "<option value='" + item.start + "' " + (item.start === week.start ? "selected" : "") + ">" + item.label + "</option>"
+          ).join("") + "</select></div>" +
+        "<div class='attendance-weekly-filter'><label for='attendanceWeeklyClassSelect'>② 選擇班級</label>" +
+          "<select id='attendanceWeeklyClassSelect'><option value=''>請選擇班級</option>" +
+            classOrder.map(name => "<option value='" + attendanceEscape(name) + "' " + (name === attendanceWeeklyOverviewClass ? "selected" : "") + ">" + attendanceEscape(name) + "</option>").join("") +
+          "</select></div>" +
+      "</div>" +
+      "<div id='attendanceWeeklyOverviewResults'><div class='empty'>請先選擇週次及班級。</div></div>" +
+    "</div>";
+  document.getElementById("attendanceWeeklyWeekSelect").addEventListener("change", function () {
+    attendanceWeeklyOverviewWeek = this.value;
+    loadAttendanceWeeklyOverview();
+  });
+  document.getElementById("attendanceWeeklyClassSelect").addEventListener("change", function () {
+    attendanceWeeklyOverviewClass = this.value;
+    loadAttendanceWeeklyOverview();
+  });
+  if (attendanceWeeklyOverviewClass) loadAttendanceWeeklyOverview();
+}
+
+async function loadAttendanceWeeklyOverview() {
+  const host = document.getElementById("attendanceWeeklyOverviewResults");
+  if (!host) return;
+  const requestId = ++attendanceWeeklyOverviewRequestId;
+  const weekStart = attendanceWeeklyOverviewWeek;
+  const className = attendanceWeeklyOverviewClass;
+  if (!className) {
+    host.innerHTML = "<div class='empty'>請先選擇班級，查看該班學生本週個別紀錄。</div>";
+    return;
+  }
+  const week = attendanceWeeklyOverviewGetWeek(weekStart);
+  host.innerHTML = "<div class='empty'>正在載入本週學生紀錄……</div>";
+  const [studentsResult, sessionsResult] = await Promise.all([
+    db.from("students").select("id,student_code,full_name,class_name").eq("class_name", className).eq("is_active", true).order("student_code", { ascending: true }),
+    db.from("attendance_sessions").select("id,session_date,class_name,subject,start_time").eq("class_name", className).gte("session_date", week.start).lte("session_date", week.end).order("session_date", { ascending: true }).order("start_time", { ascending: true })
+  ]);
+  if (requestId !== attendanceWeeklyOverviewRequestId) return;
+  if (studentsResult.error || sessionsResult.error) {
+    host.innerHTML = "<div class='attendance-status-message error'>讀取每週出缺席摘要失敗：" + attendanceEscape((studentsResult.error || sessionsResult.error).message) + "</div>";
+    return;
+  }
+  const students = studentsResult.data || [];
+  const sessions = sessionsResult.data || [];
+  let records = [];
+  if (sessions.length) {
+    const recordsResult = await db.from("attendance_records").select("session_id,student_id,attendance_status,late_minutes,checkin_status").in("session_id", sessions.map(item => item.id));
+    if (requestId !== attendanceWeeklyOverviewRequestId) return;
+    if (recordsResult.error) {
+      host.innerHTML = "<div class='attendance-status-message error'>讀取學生每週紀錄失敗：" + attendanceEscape(recordsResult.error.message) + "</div>";
+      return;
+    }
+    records = recordsResult.data || [];
+  }
+  const sessionsById = new Map(sessions.map(session => [String(session.id), session]));
+  const recordsByStudent = new Map();
+  records.forEach(record => {
+    const session = sessionsById.get(String(record.session_id));
+    if (!session) return;
+    const sid = String(record.student_id);
+    if (!recordsByStudent.has(sid)) recordsByStudent.set(sid, []);
+    recordsByStudent.get(sid).push({ ...record, session });
+  });
+  const cards = students.map(student => {
+    const studentRecords = (recordsByStudent.get(String(student.id)) || []).sort((a,b) =>
+      String(a.session.session_date).localeCompare(String(b.session.session_date)) || String(a.session.start_time).localeCompare(String(b.session.start_time))
+    );
+    const lateTotal = studentRecords.reduce((sum, record) => sum + (record.attendance_status === "normal" ? Number(record.late_minutes || 0) : 0), 0);
+    const uncheckedCount = studentRecords.filter(record => record.attendance_status === "normal" && record.checkin_status === "not_checked_in").length;
+    const leaveCount = studentRecords.filter(record => record.attendance_status === "leave" || record.attendance_status === "absent").length;
+    const detailRows = studentRecords.map(record => {
+      const status = record.attendance_status === "leave" || record.attendance_status === "absent" ? "請假／缺席" : "出席";
+      const late = record.attendance_status === "normal" && Number(record.late_minutes || 0) > 0
+        ? "<strong class='attendance-weekly-alert'>" + Number(record.late_minutes) + " 分鐘</strong>" : "0 分鐘";
+      const checkin = record.attendance_status !== "normal" ? "—" : record.checkin_status === "not_checked_in"
+        ? "<strong class='attendance-weekly-alert'>未打卡</strong>" : record.checkin_status === "checked_in" ? "已打卡" : "—";
+      return "<tr><td>" + attendanceEscape(record.session.session_date) + "</td><td>" + attendanceEscape(record.session.start_time) + "</td><td>" + attendanceEscape(record.session.subject) + "</td><td>" + status + "</td><td>" + late + "</td><td>" + checkin + "</td></tr>";
+    }).join("");
+    const hasAlert = lateTotal > 0 || uncheckedCount > 0 || leaveCount > 0;
+    return "<details class='attendance-weekly-student" + (hasAlert ? " has-alert" : "") + "'>" +
+      "<summary><span class='attendance-weekly-student-name'>" + attendanceEscape(student.student_code) + "　" + attendanceEscape(student.full_name) + "</span>" +
+      "<span class='attendance-weekly-student-summary'>" +
+        (lateTotal ? "<strong class='attendance-weekly-alert'>遲到 " + lateTotal + " 分鐘</strong>" : "無遲到") + "　·　" +
+        (uncheckedCount ? "<strong class='attendance-weekly-alert'>未打卡 " + uncheckedCount + " 次</strong>" : "無未打卡") +
+        (leaveCount ? "　·　請假／缺席 " + leaveCount + " 次" : "") +
+      "</span></summary>" +
+      "<div class='attendance-weekly-details'>" +
+        (studentRecords.length ? "<div class='table-wrap'><table class='attendance-weekly-detail-table'><thead><tr><th>日期</th><th>時間</th><th>科目</th><th>出勤</th><th>遲到</th><th>打卡</th></tr></thead><tbody>" + detailRows + "</tbody></table></div>" : "<div class='empty'>本週尚無出缺席紀錄。</div>") +
+      "</div></details>";
+  }).join("");
+  host.innerHTML = students.length ? cards : "<div class='empty'>此班目前沒有啟用中的學生。</div>";
+}
+
+// 在原有出缺席管理頁面上方加入週次／班級篩選與學生個別週摘要。
+
 function renderAttendanceManagement() {
   attendanceInjectStyles();
   const content = $("adminContent");
@@ -225,6 +363,7 @@ function renderAttendanceManagement() {
   content.innerHTML =
     "<h2 class='section-title'>出缺席管理</h2>" +
     
+    "<div id='attendanceWeeklyOverview'></div>" +
     "<div id='attendanceCalendar' class='attendance-calendar' aria-label='出缺席登錄日期日曆'></div>" +
     "<div class='panel'>" +
       "<h3>當日課程</h3>" +
@@ -240,6 +379,7 @@ function renderAttendanceManagement() {
     "</div>";
 
   if (!attendanceCalendarMonth) attendanceCalendarMonth = attendanceSelectedDate.slice(0, 7);
+  renderAttendanceWeeklyOverview();
   renderAttendanceCalendar();
   loadAttendanceCalendarMarks();
 
