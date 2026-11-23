@@ -5824,7 +5824,7 @@ async function renderLoginLogs() {
       "<div class='toolbar' style='display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0'>" +
         "<input id='loginLogKeyword' type='search' class='form-control' placeholder='搜尋家長／學生／教師／Email／帳號' style='flex:1;min-width:220px' autocomplete='off'>" +
         "<label for='loginLogDate' class='muted' style='white-space:nowrap'>登入日期</label>" +
-        "<input id='loginLogDate' type='date' class='form-control' style='width:auto;min-width:150px'>" +
+        "<input id='loginLogDate' type='date' class='form-control' style='width:auto;min-width:150px;height:40px;min-height:40px;box-sizing:border-box;font-size:16px;line-height:normal'>" +
         "<span id='loginLogResultCount' class='muted' style='white-space:nowrap'></span>" +
       "</div>" +
       "<div class='table-wrap'><table class='login-log-table'><thead><tr><th>登入身分</th><th>登入時間</th></tr></thead>" +
