@@ -19,6 +19,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run visual smoke test
         run: npm run test:visual
+      - name: Run rendered font-size audit
+        run: npm run test:font-audit
       - name: Upload screenshots and report
         if: always()
         uses: actions/upload-artifact@v4
@@ -26,6 +28,7 @@ jobs:
           name: visual-check-results
           path: |
             screenshots/
+            font-audit/
             playwright-report/
             test-results/
           retention-days: 14
