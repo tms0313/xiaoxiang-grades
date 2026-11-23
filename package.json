@@ -2,7 +2,9 @@
   "name": "xiaoxiang-grades-visual-check",
   "private": true,
   "scripts": {
-    "test:visual": "playwright test"
+    "test:visual": "playwright test",
+    "test:font-audit": "playwright test tests/font-audit.spec.js",
+    "test:all": "playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1"
