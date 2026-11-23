@@ -109,6 +109,24 @@ function attendanceInjectStyles() {
     ".attendance-parent-summary{display:flex;flex-direction:column;gap:5px;margin:0 0 15px;padding:10px 12px;border-radius:9px;background:#f5f7fa;font-size:14px;line-height:1.55}",
     ".attendance-parent-summary .attendance-alert{color:#bd3030;font-weight:800}",
     "@media(max-width:600px){.attendance-session-grid{grid-template-columns:1fr}.attendance-session-btn{padding:12px}.attendance-parent-summary{font-size:13px}}"
+    ".attendance-weekly-overview{margin:0 0 18px;padding:14px;border:1px solid #d7e0e9;border-radius:10px;background:#fff}",
+    ".attendance-weekly-overview h3{margin:0 0 12px;color:#23466b}",
+    ".attendance-weekly-filters{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}",
+    ".attendance-weekly-filter{flex:1 1 220px;min-width:0}",
+    ".attendance-weekly-filter label{margin:0 0 6px;font-weight:700}",
+    ".attendance-weekly-filter select{width:100%;height:40px;min-height:40px}",
+    ".attendance-weekly-student{border:1px solid #dbe3eb;border-radius:9px;margin:8px 0;overflow:hidden;background:#fff}",
+    ".attendance-weekly-student.has-alert{border-color:#e4b1b1}",
+    ".attendance-weekly-student summary{display:flex;flex-direction:column;gap:6px;padding:11px 12px;cursor:pointer;list-style:none}",
+    ".attendance-weekly-student summary::-webkit-details-marker{display:none}",
+    ".attendance-weekly-student-name{font-weight:800;color:#23466b}",
+    ".attendance-weekly-student-summary{font-size:13px;line-height:1.6;color:#4b5d70}",
+    ".attendance-weekly-alert{color:#c62828;font-weight:800}",
+    ".attendance-weekly-details{padding:0 10px 10px}",
+    ".attendance-weekly-detail-table{width:100%;min-width:560px;border-collapse:collapse}",
+    ".attendance-weekly-detail-table th,.attendance-weekly-detail-table td{padding:7px 8px;text-align:left;border-bottom:1px solid #e7edf3;font-size:13px}",
+    ".attendance-weekly-detail-table th{background:#f5f7fa;color:#526477}",
+    "@media(max-width:600px){.attendance-weekly-overview{padding:10px}.attendance-weekly-student summary{padding:10px}.attendance-weekly-student-summary{font-size:12px}}",
   ].join("");
   document.head.appendChild(style);
 }
