@@ -7970,3 +7970,10 @@ async function initializeApp() {
 }
 
 initializeApp();
+
+/* 全站一般表單控制項高度統一為 40px；密集成績表維持各自的緊湊高度 */
+style.textContent += "\\n" +
+  "input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=submit]):not([type=button]):not([type=reset]),select,textarea { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; }" +
+  ".term-bulk-table input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.bulk-score-entry-table tbody td input,.bulk-score-entry-table tbody td select { height:28px !important; min-height:28px !important; max-height:28px !important; }" +
+  ".term-exam-overview-filters .field select,.term-exam-overview-filters .field input { height:40px !important; min-height:40px !important; max-height:40px !important; }" +
+  ".overview-table .overview-missing-select input,.export-select-all input,.export-period-item input,.student-subject-option input[type=checkbox] { height:auto !important; min-height:0 !important; max-height:none !important; }";
