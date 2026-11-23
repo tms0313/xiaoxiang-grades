@@ -42,7 +42,7 @@ jobs:
           if [ "$missing" -ne 0 ]; then
             exit 1
           fi
-      - name: Run rendered font-size audit across roles and admin tabs
+      - name: Run desktop and mobile rendered font-size audits across roles and admin tabs
         if: always() && steps.audit-secrets.outcome == 'success'
         env:
           FONT_AUDIT_ADMIN_EMAIL: ${{ secrets.FONT_AUDIT_ADMIN_EMAIL }}
@@ -60,6 +60,7 @@ jobs:
           path: |
             screenshots/
             font-audit/
+            font-audit-mobile/
             playwright-report/
             test-results/
           retention-days: 14
