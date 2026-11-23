@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "test:visual": "playwright test",
-    "test:font-audit": "playwright test tests/font-audit.spec.js",
+    "test:font-audit": "playwright test tests/font-audit.spec.js tests/font-audit-mobile.spec.js",
     "test:all": "playwright test"
   },
   "devDependencies": {
