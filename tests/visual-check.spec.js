@@ -18,14 +18,14 @@ test('login page loads and core elements are visible', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
 
   await expect(page.locator('.login-card')).toBeVisible();
-  await expect(page.locator('h1')).toHaveText('成績管理系統');
+  await expect(page.locator('h1')).toHaveText('小象文教機構');
   await expect(page.locator('#email')).toBeVisible();
   await expect(page.locator('#password')).toBeVisible();
   await expect(page.getByRole('button', { name: '登入系統' })).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
-  expect(overflow, 'mobile layout should not horizontally overflow').toBeFalsy();
+  expect(overflow, 'mobile layout should not have horizontal overflow').toBeFalsy();
   for (const selector of ['#email', '#password', '#loginForm button']) {
     const box = await page.locator(selector).boundingBox();
     expect(box).not.toBeNull();
