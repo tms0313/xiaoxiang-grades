@@ -333,7 +333,7 @@ async function loadAttendanceWeeklyOverview() {
     const uncheckedCount = studentRecords.filter(record => record.attendance_status === "normal" && record.checkin_status === "not_checked_in").length;
     const leaveCount = studentRecords.filter(record => record.attendance_status === "leave" || record.attendance_status === "absent").length;
     const detailRows = studentRecords.map(record => {
-      const status = record.attendance_status === "leave" || record.attendance_status === "absent" ? "請假／缺席" : "出席";
+      const status = record.attendance_status === "leave" || record.attendance_status === "absent" ? "請假" : "出席";
       const late = record.attendance_status === "normal" && Number(record.late_minutes || 0) > 0
         ? "<strong class='attendance-weekly-alert'>" + Number(record.late_minutes) + " 分鐘</strong>" : "0 分鐘";
       const checkin = record.attendance_status !== "normal" ? "—" : record.checkin_status === "not_checked_in"
@@ -346,7 +346,7 @@ async function loadAttendanceWeeklyOverview() {
       "<span class='attendance-weekly-student-summary'>" +
         (lateTotal ? "<strong class='attendance-weekly-alert'>遲到 " + lateTotal + " 分鐘</strong>" : "無遲到") + "　·　" +
         (uncheckedCount ? "<strong class='attendance-weekly-alert'>未打卡 " + uncheckedCount + " 次</strong>" : "已打卡") +
-        (leaveCount ? "　·　請假／缺席 " + leaveCount + " 次" : "") +
+        (leaveCount ? "　·　請假 " + leaveCount + " 次" : "") +
       "</span></summary>" +
       "<div class='attendance-weekly-details'>" +
         (studentRecords.length ? "<div class='table-wrap'><table class='attendance-weekly-detail-table'><thead><tr><th>日期</th><th>時間</th><th>科目</th><th>出勤</th><th>遲到</th><th>打卡</th></tr></thead><tbody>" + detailRows + "</tbody></table></div>" : "<div class='empty'>本週尚無出缺席紀錄。</div>") +
