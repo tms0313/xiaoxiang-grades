@@ -3,8 +3,10 @@ const fs = require('fs');
 
 const ADMIN_EMAIL = process.env.FONT_AUDIT_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.FONT_AUDIT_ADMIN_PASSWORD;
-const SECOND_EMAIL = process.env.FONT_AUDIT_SECOND_EMAIL;
-const SECOND_PASSWORD = process.env.FONT_AUDIT_SECOND_PASSWORD;
+const PARENT_EMAIL = process.env.FONT_AUDIT_PARENT_EMAIL;
+const PARENT_PASSWORD = process.env.FONT_AUDIT_PARENT_PASSWORD;
+const TEACHER_EMAIL = process.env.FONT_AUDIT_TEACHER_EMAIL;
+const TEACHER_PASSWORD = process.env.FONT_AUDIT_TEACHER_PASSWORD;
 
 const ADMIN_TABS = [
   ['overview', '週成績總覽'], ['highestPreview', '班級最高分預覽'],
@@ -17,8 +19,8 @@ const ADMIN_TABS = [
 
 test('rendered typography inventory across admin, parent and teacher pages', async ({ page }) => {
   test.setTimeout(180000);
-  expect([ADMIN_EMAIL, ADMIN_PASSWORD, SECOND_EMAIL, SECOND_PASSWORD].every(Boolean),
-    'All four FONT_AUDIT GitHub Secrets must be configured').toBeTruthy();
+  expect([ADMIN_EMAIL, ADMIN_PASSWORD, PARENT_EMAIL, PARENT_PASSWORD, TEACHER_EMAIL, TEACHER_PASSWORD].every(Boolean),
+    'All six FONT_AUDIT GitHub Secrets must be configured').toBeTruthy();
 
   fs.mkdirSync('font-audit', { recursive: true });
   const allRows = [];
@@ -81,14 +83,14 @@ test('rendered typography inventory across admin, parent and teacher pages', asy
     await collect('admin', tab);
   }
 
-  // Dual-role account: audit parent view, then switch to teacher view.
+  // Dedicated parent account: audit parent view independently.
   await page.getByRole('button', { name: '登出' }).click();
-  await login(SECOND_EMAIL, SECOND_PASSWORD);
+  await login(PARENT_EMAIL, PARENT_PASSWORD);
   await collect('parent', 'parent-home');
-  const modeButton = page.locator('#switchAccountModeButton');
-  await expect(modeButton).toBeVisible({ timeout: 30000 });
-  await modeButton.click();
-  await page.waitForTimeout(1800);
+
+  // Dedicated teacher account: audit teacher view independently.
+  await page.getByRole('button', { name: '登出' }).click();
+  await login(TEACHER_EMAIL, TEACHER_PASSWORD);
   await collect('teacher', 'teacher-home');
 
   const grouped = {};
