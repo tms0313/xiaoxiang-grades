@@ -5822,7 +5822,7 @@ async function renderLoginLogs() {
         "<span class='login-log-legend-item'><i class='login-log-legend-swatch login-log-legend-teacher'></i>老師</span>" +
       "</div>" +
       "<div class='toolbar' style='display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0'>" +
-        "<input id='loginLogKeyword' type='search' class='form-control' placeholder='搜尋家長／學生／教師／Email／帳號' style='flex:1;min-width:220px' autocomplete='off'>" +
+        "<input id='loginLogKeyword' type='search' class='form-control' placeholder='搜尋家長／教師' style='flex:1;min-width:160px' autocomplete='off'>" +
         "<label for='loginLogDate' class='muted' style='white-space:nowrap'>登入日期</label>" +
         "<input id='loginLogDate' type='date' class='form-control' style='width:auto;min-width:150px;height:40px;min-height:40px;box-sizing:border-box;font-size:16px;line-height:normal'>" +
         "<span id='loginLogResultCount' class='muted' style='white-space:nowrap'></span>" +
@@ -7986,4 +7986,4 @@ style.textContent += "\\n" +
   "@media(max-width:600px){#overviewMissingBatchBar{gap:8px !important;align-items:flex-start !important}#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton{font-size:16px !important;min-height:40px !important;padding:8px 12px !important;max-width:100% !important}}";
 
 /* Login log date control: enforce 40px height on iOS Safari */
-style.textContent += "\\n#loginLogDate { height:40px !important; min-height:40px !important; max-height:40px !important; box-sizing:border-box !important; padding:0 8px !important; font-size:16px !important; line-height:40px !important; -webkit-appearance:none !important; appearance:none !important; }";
+style.textContent += "\\n#loginLogDate { display:inline-flex !important; align-items:center !important; height:40px !important; min-height:40px !important; max-height:40px !important; box-sizing:border-box !important; padding:0 8px !important; font-size:16px !important; line-height:normal !important; -webkit-appearance:none !important; appearance:none !important; overflow:hidden !important; } #loginLogDate::-webkit-date-and-time-value { height:40px !important; line-height:40px !important; margin:0 !important; padding:0 !important; } #loginLogDate::-webkit-calendar-picker-indicator { margin:0 !important; padding:0 !important; }";
