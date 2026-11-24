@@ -58,7 +58,8 @@
 #examDateCalendar .attendance-calendar-empty { height:44px; }
 #examDateCalendar .exam-calendar-hint { margin:7px 0 0; color:#64748b; font-size:14px; }
 
-/* 週成績登錄：出席狀態下拉框尺寸比照出缺席管理 */
+/* 週成績登錄：成績與出席狀態控制項尺寸比照出缺席管理的出席／遲到分鐘欄位 */
+.bulk-score-entry-table input[data-bulk-score],
 .bulk-score-entry-table select[data-bulk-status] {
   display: block !important;
   box-sizing: border-box !important;
