@@ -83,6 +83,57 @@ test('rendered typography inventory across admin, parent and teacher pages', asy
     await link.click();
     await page.waitForTimeout(1400);
 
+    // Measure alumni mock-score controls in the same Chromium session and compare with term-score controls.
+    if (tab === 'alumni') {
+      const selectors = [
+        '#alumniAcademicYear', '#alumniStudentName', '#alumniExamScope',
+        '#alumniExamRange', '#alumniChinese', '#alumniMath',
+        '#alumniEnglish', '#alumniSocial', '#alumniScience'
+      ];
+      const comparison = await page.evaluate(() => {
+        const inspect = selector => {
+          const el = document.querySelector(selector);
+          if (!el) return { selector, missing: true };
+          const s = getComputedStyle(el);
+          const r = el.getBoundingClientRect();
+          return {
+            selector,
+            rectHeight: Number(r.height.toFixed(2)),
+            offsetHeight: el.offsetHeight,
+            cssHeight: s.height,
+            minHeight: s.minHeight,
+            maxHeight: s.maxHeight,
+            boxSizing: s.boxSizing,
+            paddingTop: s.paddingTop,
+            paddingBottom: s.paddingBottom,
+            borderTopWidth: s.borderTopWidth,
+            borderBottomWidth: s.borderBottomWidth,
+            lineHeight: s.lineHeight,
+            borderRadius: s.borderRadius,
+            appearance: s.appearance,
+            transform: s.transform
+          };
+        };
+        return {
+          alumni: [
+            '#alumniAcademicYear', '#alumniStudentName', '#alumniExamScope',
+            '#alumniExamRange', '#alumniChinese', '#alumniMath',
+            '#alumniEnglish', '#alumniSocial', '#alumniScience'
+          ].map(inspect),
+          browser: {
+            userAgent: navigator.userAgent,
+            devicePixelRatio: window.devicePixelRatio,
+            innerWidth: window.innerWidth,
+            outerWidth: window.outerWidth,
+            visualViewportScale: window.visualViewport ? window.visualViewport.scale : null,
+            documentZoom: getComputedStyle(document.documentElement).zoom
+          }
+        };
+      });
+      fs.writeFileSync('font-audit/alumni-control-dimensions.json', JSON.stringify(comparison, null, 2));
+      console.log('ALUMNI MOCK SCORE CONTROL DIMENSIONS', JSON.stringify(comparison, null, 2));
+    }
+
     // Measure real browser-rendered dimensions on the term score page.
     if (tab === 'termScores') {
       await page.locator('#termAcademicYear').fill('115');
