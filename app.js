@@ -8040,5 +8040,5 @@ style.textContent += "\\n" +
   ".bulk-score-entry-table tbody td:nth-child(3) input[data-bulk-score],.bulk-score-entry-table tbody td:nth-child(4) select[data-bulk-status],.bulk-score-entry-table tbody td:nth-child(4) select[data-bulk-grade] { display:block !important; width:120px !important; min-width:120px !important; max-width:120px !important; margin:0 auto !important; }" +
   ".bulk-score-entry-table thead th:nth-child(3),.bulk-score-entry-table thead th:nth-child(4) { text-align:left !important; padding-left:20px !important; box-sizing:border-box !important; }" +
   ".bulk-score-entry-table tbody td:nth-child(5) [data-save-bulk-row] { margin:0 !important; }",
-  ".bulk-score-entry-table tbody td [data-save-bulk-row] { font-size:18px !important; }";
+  "#appRoot .bulk-score-entry-table tbody td button[data-save-bulk-row] { font-size:18px !important; }";
 
