@@ -18,7 +18,7 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run visual smoke test
-        run: npm run test:visual
+        run: npx playwright test tests/visual-check.spec.js
       - name: Verify typography audit secrets are available (names only)
         id: audit-secrets
         env:
@@ -39,10 +39,13 @@ jobs:
             fi
           done
           if [ "$missing" -ne 0 ]; then
-            exit 1
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Typography audits skipped: configure all six FONT_AUDIT_* repository secrets to enable desktop and mobile role-based audits."
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Run desktop and mobile rendered font-size audits across roles and admin tabs
-        if: always() && steps.audit-secrets.outcome == 'success'
+        if: steps.audit-secrets.outputs.available == 'true'
         env:
           FONT_AUDIT_ADMIN_EMAIL: ${{ secrets.FONT_AUDIT_ADMIN_EMAIL }}
           FONT_AUDIT_ADMIN_PASSWORD: ${{ secrets.FONT_AUDIT_ADMIN_PASSWORD }}
