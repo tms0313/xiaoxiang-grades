@@ -5833,7 +5833,6 @@ async function renderLoginLogs() {
     if (clearButton) clearButton.addEventListener("click", clearAllLoginLogs);
 
     const keywordInput = $("loginLogKeyword");
-    const keywordInput = $("loginLogKeyword");
     const resultCount = $("loginLogResultCount");
     const logRows = Array.from(content.querySelectorAll("#loginLogRows tr[data-log-search]"));
     const applyLogFilters = function () {
@@ -5848,11 +5847,6 @@ async function renderLoginLogs() {
     };
     if (keywordInput) keywordInput.addEventListener("input", applyLogFilters);
     applyLogFilters();
-      }
-      if (clear) { selectedDate = ""; dateTrigger.textContent = "選擇日期"; dateCalendar.hidden = true; applyLogFilters(); }
-    });
-    applyLogFilters();
-
   } catch (error) {
     content.innerHTML =
       "<h2 class='section-title'>登入紀錄</h2>" +
