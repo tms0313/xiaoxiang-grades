@@ -28,6 +28,7 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
   fs.mkdirSync('font-audit', { recursive: true });
   const allRows = [];
   const controlRows = [];
+  const loginControlRows = [];
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   page.on('console', msg => { if (msg.type() === 'error') pageErrors.push(msg.text()); });
@@ -35,6 +36,25 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
   async function login(email, password) {
     await page.goto('/');
     await expect(page.locator('#loginForm')).toBeVisible();
+    if (loginControlRows.length === 0) {
+      const loginControls = await page.locator('#loginForm input').evaluateAll(elements =>
+        elements.filter(el => el.type !== 'hidden').map(el => {
+          const s = getComputedStyle(el);
+          const r = el.getBoundingClientRect();
+          return {
+            role: 'public', page: 'login', tag: 'input', type: el.type || 'text',
+            id: el.id || '', name: el.name || '',
+            label: el.labels ? [...el.labels].map(x => x.textContent.trim()).join(' ') : '',
+            renderedHeight: Number(r.height.toFixed(2)),
+            cssHeight: s.height, minHeight: s.minHeight, maxHeight: s.maxHeight,
+            boxSizing: s.boxSizing, paddingTop: s.paddingTop, paddingBottom: s.paddingBottom,
+            borderTopWidth: s.borderTopWidth, borderBottomWidth: s.borderBottomWidth,
+            borderRadius: s.borderRadius, transform: s.transform, multiline: false
+          };
+        })
+      );
+      loginControlRows.push(...loginControls);
+    }
     await page.locator('#email').fill(email);
     await page.locator('#password').fill(password);
     await page.getByRole('button', { name: '登入系統' }).click();
@@ -138,6 +158,7 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
       });
     }
   }
+  controlRows.push(...loginControlRows);
   const singleLineControls = controlRows.filter(row => !row.multiline);
   const controlViolations = singleLineControls.filter(row => row.renderedHeight !== 40);
   const controlReport = {
