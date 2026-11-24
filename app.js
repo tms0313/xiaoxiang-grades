@@ -7967,6 +7967,17 @@ style.textContent += "\n" +
   "textarea { box-sizing:border-box !important; height:auto !important; min-height:80px !important; max-height:none !important; line-height:1.5 !important; padding:10px 12px !important; }" +
   ".term-bulk-table input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.bulk-score-entry-table tbody td input:not([type=checkbox]),.bulk-score-entry-table tbody td select { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; border-radius:8px !important; }" +
   ".term-exam-overview-filters .field select,.term-exam-overview-filters .field input { height:40px !important; min-height:40px !important; max-height:40px !important; padding-top:0 !important; padding-bottom:0 !important; line-height:normal !important; }" +
+  "/* 段考成績表：明確覆蓋各層既有規則，讓姓名與輸入框共用同一 40px 垂直中心 */" +
+  "#termExamRoster .term-roster-wrap .term-bulk-table { border-collapse:separate !important; border-spacing:0 !important; }" +
+  "#termExamRoster .term-roster-wrap .term-bulk-table tbody tr { height:52px !important; }" +
+  "#termExamRoster .term-roster-wrap .term-bulk-table tbody td { box-sizing:border-box !important; height:52px !important; padding:6px 6px !important; vertical-align:middle !important; line-height:1.3 !important; }" +
+  "#termExamRoster .term-roster-wrap .term-bulk-table tbody td.term-student-name { display:table-cell !important; height:52px !important; padding:6px 8px !important; vertical-align:middle !important; line-height:1.3 !important; }" +
+  "#termExamRoster .term-roster-wrap .term-bulk-table tbody td.term-student-name .term-student-name-text { display:inline-block !important; vertical-align:middle !important; line-height:1.3 !important; }" +
+  "#termExamRoster .term-roster-wrap .term-bulk-table tbody td.term-student-name small { display:inline-block !important; vertical-align:middle !important; line-height:1.3 !important; }" +
+  "#termExamRoster .term-roster-wrap .term-bulk-table tbody td .term-completion-mark { display:inline-flex !important; vertical-align:middle !important; }" +
+  "#termExamRoster .term-roster-wrap .term-bulk-table tbody td input[data-term-score],#termExamRoster .term-roster-wrap .term-bulk-table tbody td input[data-term-class-rank],#termExamRoster .term-roster-wrap .term-bulk-table tbody td input[data-term-school-rank] { display:block !important; position:relative !important; top:0 !important; float:none !important; margin:0 auto !important; box-sizing:border-box !important; width:76px !important; height:40px !important; min-height:40px !important; max-height:40px !important; padding:0 8px !important; border:1px solid #ccd4df !important; border-radius:8px !important; line-height:normal !important; vertical-align:middle !important; transform:none !important; }" +
+  "#termExamRoster .term-roster-wrap .term-bulk-table tbody td.term-total-cell { height:52px !important; padding:6px !important; vertical-align:middle !important; line-height:40px !important; }" +
+  
   ".overview-table .overview-missing-select input,.export-select-all input,.export-period-item input,.student-subject-option input[type=checkbox] { height:auto !important; min-height:0 !important; max-height:none !important; }";
 
 /* 週成績總覽未登錄提醒批次操作按鈕：手機版文字放大，避免過小 */
