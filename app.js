@@ -3165,6 +3165,19 @@ function renderBulkScoreEntryRows() {
     "<div class='table-wrap'><table class='bulk-score-entry-table' style='min-width:620px'><thead><tr><th>編號</th><th>學生</th>" +
     (grade3Math ? "<th>數學分數</th><th>模擬考等級</th>" : grade3 ? "<th>答對題數</th><th>模擬考等級</th>" : "<th>成績</th><th>出席狀態</th>") +
     "<th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
+  const scoreEntryTable = root.querySelector(".bulk-score-entry-table");
+  if (scoreEntryTable) {
+    // 直接在表格元素鎖定尺寸，避免全站 table-wrap 的 100% 寬度規則把欄距再次撐開。
+    scoreEntryTable.style.setProperty("width", "820px", "important");
+    scoreEntryTable.style.setProperty("min-width", "820px", "important");
+    scoreEntryTable.style.setProperty("max-width", "none", "important");
+    scoreEntryTable.style.setProperty("table-layout", "fixed", "important");
+    const columnWidths = [140, 160, 160, 160, 200];
+    scoreEntryTable.querySelectorAll("thead th, tbody td").forEach(function (cell) {
+      const index = cell.cellIndex;
+      if (columnWidths[index]) cell.style.setProperty("width", columnWidths[index] + "px", "important");
+    });
+  }
   // 等級與出席狀態在同一次 DOM 遍歷中初始化，避免重複查詢相同表格。
   root.querySelectorAll("[data-bulk-score]").forEach(function (input) {
     updateScoreInputWarning(input, !grade3 || grade3Math);
