@@ -3009,16 +3009,16 @@ function renderExamDateCalendar() {
   const year = examCalendarMonth.getFullYear(), month = examCalendarMonth.getMonth();
   const offset = new Date(year, month, 1).getDay(), count = new Date(year, month + 1, 0).getDate();
   const start = $("examStart").value, end = $("examEnd").value, cells = [];
-  for (let i = 0; i < offset; i++) cells.push("<span class='exam-calendar-empty'></span>");
+  for (let i = 0; i < offset; i++) cells.push("<span class='attendance-calendar-empty'></span>");
   for (let day = 1; day <= count; day++) {
     const date = year + "-" + String(month + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0");
     const selected = date === start || date === end, inRange = start && end && date > start && date < end;
-    cells.push("<button type='button' class='exam-calendar-day" + (selected ? " selected" : "") + (inRange ? " in-range" : "") + "' data-exam-calendar-date='" + date + "'>" + day + "</button>");
+    cells.push("<button type='button' class='attendance-calendar-day" + (selected ? " selected" : "") + (inRange ? " in-range" : "") + "' data-exam-calendar-date='" + date + "'>" + day + "</button>");
   }
-  panel.innerHTML = "<div class='exam-calendar-heading'><button type='button' data-exam-calendar-nav='-1' aria-label='上個月'>‹</button><strong>" +
+  panel.innerHTML = "<div class='attendance-calendar-heading'><button type='button' data-exam-calendar-nav='-1' aria-label='上個月'>‹</button><strong>" +
     year + " 年 " + (month + 1) + " 月</strong><button type='button' data-exam-calendar-nav='1' aria-label='下個月'>›</button></div>" +
-    "<div class='exam-calendar-weekdays'><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>" +
-    "<div class='exam-calendar-days'>" + cells.join("") + "</div><p class='exam-calendar-hint'>" +
+    "<div class='attendance-calendar-weekdays'><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>" +
+    "<div class='attendance-calendar-days'>" + cells.join("") + "</div><p class='exam-calendar-hint'>" +
     (examCalendarSelectingEnd ? "請選擇結束日期" : "請選擇開始日期") + "</p>";
   panel.hidden = !examCalendarOpen;
 }
@@ -7962,6 +7962,7 @@ initializeApp();
 /* 全站一般表單控制項統一為 40px；修正 padding/line-height 避免文字裁切，textarea 不強制單行高度 */
 style.textContent += "\n" +
   "input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=submit]):not([type=button]):not([type=reset]),select { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; line-height:normal !important; }" +
+  "#termExamRoster .term-bulk-table tbody td input[data-term-score],#termExamRoster .term-bulk-table tbody td input[data-term-class-rank],#termExamRoster .term-bulk-table tbody td input[data-term-school-rank] { display:block !important; box-sizing:border-box !important; width:76px !important; height:40px !important; min-height:40px !important; max-height:40px !important; padding:0 8px !important; border:1px solid #ccd4df !important; border-radius:8px !important; line-height:normal !important; }" +
   ".field input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.field select { padding-top:0 !important; padding-bottom:0 !important; line-height:normal !important; }" +
   "textarea { box-sizing:border-box !important; height:auto !important; min-height:80px !important; max-height:none !important; line-height:1.5 !important; padding:10px 12px !important; }" +
   ".term-bulk-table input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.bulk-score-entry-table tbody td input:not([type=checkbox]),.bulk-score-entry-table tbody td select { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; border-radius:8px !important; }" +
