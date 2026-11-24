@@ -744,6 +744,7 @@ style.textContent = [
   ".guardian-status-unbound { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:auto; min-width:58px; height:30px; min-height:30px; margin:0; padding:0 9px; border-radius:6px; font-size: 14px; font-weight:800; line-height:30px; white-space:nowrap; vertical-align:middle; background:#e8f1fb !important; color:#1d4e89 !important; border:1px solid #b8d1ed; }",
 
   ".low-score { color:#d32626; font-weight:400; }",
+  ".parent-score-list .low-score { color:#d32626 !important; font-weight:800 !important; }",
   ".grade-tag { display:inline-block; padding:4px 9px; border-radius:6px; background:#e8eff8; color:#315d86; font-weight:800; white-space:nowrap; }",
   ".grade-absent { color:#d32626 !important; background:#fde8e8 !important; font-weight:900 !important; }",
   ".grade-leave { color:#8a5a00 !important; background:#fff0cf !important; font-weight:900 !important; }",
@@ -6990,7 +6991,7 @@ async function renderParentDashboard() {
       " .parent-attendance-stat-label{color:#647487;font-size: 16px !important;font-weight:700;line-height:1.45}" +
       ".parent-attendance-stat-value{color:#31506c;font-size: 20px;font-weight:800;line-height:1.35;font-variant-numeric:tabular-nums}" +
       " .parent-attendance-stat-value small{font-size: 16px !important;font-weight:700}" +
-      ".parent-attendance-stat-value.attendance-alert{color:#bd3030;font-weight:400}" +
+      ".parent-attendance-stat-value.attendance-alert{color:#bd3030;font-weight:800}" +
       ".parent-attendance-stat-value.attendance-alert small{font-weight:400}" +
       ".parent-attendance-empty,.parent-attendance-error{margin:0 0 16px;padding:11px 13px;border:1px solid #dce5ed;border-radius:10px;background:#f5f8fb;color:#647487;font-size: 14px;line-height:1.6}" +
       ".parent-attendance-error{border-color:#f0d0d0;background:#fff5f5;color:#a32626}" +
