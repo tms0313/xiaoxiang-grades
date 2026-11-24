@@ -1360,7 +1360,7 @@ async function renderDashboard() {
 // ==================================================
 
 const ADMIN_TAB_KEYS = new Set([
-  "overview", "highestPreview", "reviews", "scores", "termScores",
+  "overview", "reviews", "scores", "termScores",
   "students", "attendance", "guardians", "teachers",
   "alumni", "export", "logs"
 ]);
@@ -1388,7 +1388,6 @@ function renderAdminDashboard() {
       "<div id='systemMessage' class='system-message'></div>" +
       "<div class='tabs' id='adminTabs'>" +
         "<a class='tab-btn' href='#admin/overview' data-tab='overview'>週成績總覽</a>" +
-        "<a class='tab-btn' href='#admin/highestPreview' data-tab='highestPreview'>班級最高分預覽</a>" +
         "<a class='tab-btn' href='#admin/reviews' data-tab='reviews'>週考檢閱紀錄</a>" +
         "<a class='tab-btn' href='#admin/scores' data-tab='scores'>週成績登錄</a><a class='tab-btn' href='#admin/termScores' data-tab='termScores'>段考成績登錄</a>" +
         "<a class='tab-btn' href='#admin/students' data-tab='students'>學生管理</a>" +
@@ -1436,9 +1435,6 @@ function renderAdminTab() {
   switch (activeTab) {
     case "overview":
       renderOverview();
-      break;
-    case "highestPreview":
-      renderAdminClassHighestPreview();
       break;
     case "scores":
       renderScoreEntry();
