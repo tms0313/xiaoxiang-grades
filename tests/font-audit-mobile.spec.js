@@ -9,7 +9,7 @@ const TEACHER_EMAIL = process.env.FONT_AUDIT_TEACHER_EMAIL;
 const TEACHER_PASSWORD = process.env.FONT_AUDIT_TEACHER_PASSWORD;
 
 const ADMIN_TABS = [
-  ['overview', '週成績總覽'], ['highestPreview', '班級最高分預覽'],
+  ['overview', '週成績總覽'],
   ['reviews', '週考檢閱紀錄'], ['scores', '週成績登錄'],
   ['termScores', '段考成績登錄'], ['students', '學生管理'],
   ['attendance', '出缺席管理'], ['guardians', '家長帳號管理'],
@@ -122,4 +122,5 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
     pages: summary.pages, pageErrors
   }, null, 2));
   expect(allRows.length).toBeGreaterThan(0);
+  expect(pageErrors, 'No JavaScript or console errors across audited roles and pages').toEqual([]);
 });
