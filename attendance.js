@@ -131,7 +131,7 @@ function attendanceInjectStyles() {
     ".attendance-weekly-detail-table{width:100%;min-width:560px;border-collapse:collapse}",
     ".attendance-weekly-detail-table th,.attendance-weekly-detail-table td{padding:7px 8px;text-align:left;border-bottom:1px solid #e7edf3;font-size: 16px}",
     ".attendance-weekly-detail-table th{background:#f5f7fa;color:#526477}",
-    "@media(max-width:600px){.attendance-weekly-overview{padding:10px}.attendance-weekly-student summary{padding:10px}.attendance-weekly-student-summary{font-size: 12px}}",
+    "@media(max-width:600px){.attendance-weekly-overview{padding:10px}.attendance-weekly-student summary{padding:10px}.attendance-weekly-student-summary{font-size: 14px}}",
   ].join("");
   document.head.appendChild(style);
 }
