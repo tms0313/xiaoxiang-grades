@@ -124,7 +124,7 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
     pages: summary.pages, pageErrors
   }, null, 2));
   const fontSizeViolations = allRows.filter(row => !ALLOWED_FONT_SIZES.has(row.fontSize));
-  fs.writeFileSync('font-audit/font-size-violations.json', JSON.stringify(fontSizeViolations, null, 2));
+  fs.writeFileSync('font-audit-mobile/font-size-violations.json', JSON.stringify(fontSizeViolations, null, 2));
   console.log('TYPOGRAPHY WHITELIST CHECK', JSON.stringify({ allowed: [...ALLOWED_FONT_SIZES], violations: fontSizeViolations.length, examples: fontSizeViolations.slice(0, 30) }, null, 2));
   expect(allRows.length).toBeGreaterThan(0);
   expect(fontSizeViolations, 'Every visible text element must use 14, 16, 18, 20 or 24px').toEqual([]);
