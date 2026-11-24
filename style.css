@@ -155,3 +155,9 @@ input[type="number"]::-webkit-outer-spin-button {
 #appRoot #termExamRoster .term-bulk-table tbody td.term-student-name small {
   font-size: 14px !important;
 }
+
+
+/* 段考成績登錄：學生姓名純黑；學生編號維持原有顏色 */
+#appRoot #termExamRoster .term-bulk-table tbody td.term-student-name .term-student-name-text {
+  color: #000000 !important;
+}
