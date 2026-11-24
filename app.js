@@ -559,6 +559,7 @@ style.textContent = [
   ".alumni-score-table th { text-align:center; white-space:nowrap; }",
   ".alumni-score-table th { padding:8px 9px; }",
   ".alumni-score-table td { padding:5px 9px; line-height:1.25; }",
+  ".alumni-score-table tbody td,.alumni-score-table tbody td * { font-size:18px !important; }",
   ".alumni-filter-row { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); align-items:stretch; gap:8px; margin:0 0 14px; width:100%; }",
   ".alumni-filter-row select,.alumni-filter-row input { box-sizing:border-box; display:block; width:100%; min-width:0; max-width:none; height:40px; min-height:40px; margin:0; padding:9px 8px; border:1px solid #ccd4df; border-radius:8px; background:#fff; font-size: 14px; line-height:20px; }",
   ".alumni-filter-row > #alumniFilteredExportButton { align-self:start !important; justify-self:stretch; display:block; box-sizing:border-box; width:100%; height:40px !important; min-height:40px !important; margin:0 !important; padding:0 10px !important; line-height:40px !important; vertical-align:top; }",
