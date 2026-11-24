@@ -825,7 +825,7 @@ style.textContent = [
   ".parent-subject-result-value .parent-score-number { font-size: 24px; }",
   ".student-card .student-heading { gap:0 9px; margin-bottom:14px; }",
   ".student-card .student-name { font-size: 24px; }",
-  ".student-card .student-class { font-size: 16px; }",
+  ".student-card .student-class { font-size: 14px; }",
   ".parent-page .parent-top-actions { display:flex !important; flex:0 0 100%; justify-content:center; }",
   ".parent-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
   ".parent-bottom-nav .parent-action-btn { flex:1 1 50%; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:9px; color:#fff; font-size: 14px; font-weight:750; padding:5px 8px; }",
