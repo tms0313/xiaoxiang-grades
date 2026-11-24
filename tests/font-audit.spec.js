@@ -82,6 +82,68 @@ test('rendered typography inventory across admin, parent and teacher pages', asy
     await expect(link).toBeVisible();
     await link.click();
     await page.waitForTimeout(1400);
+
+    // Measure real browser-rendered dimensions on the term score page.
+    if (tab === 'termScores') {
+      await page.locator('#termAcademicYear').fill('115');
+      await page.locator('#termSemester').selectOption({ label: '上學期' });
+      await page.locator('#termExamNumber').selectOption('1');
+      const classOptions = await page.locator('#termClass option').evaluateAll(options =>
+        options.map(option => ({ value: option.value, label: option.textContent.trim() }))
+          .filter(option => option.value)
+      );
+      if (classOptions.length) {
+        await page.locator('#termClass').selectOption(classOptions[0].value);
+        await expect(page.locator('#termExamRoster .term-bulk-table tbody tr').first()).toBeVisible({ timeout: 30000 });
+        await page.waitForTimeout(500);
+
+        const dimensions = await page.evaluate(() => {
+          const inspect = element => {
+            const style = getComputedStyle(element);
+            const rect = element.getBoundingClientRect();
+            return {
+              selector: element.id ? '#' + element.id : element.getAttribute('data-term-score') !== null
+                ? '[data-term-score="' + element.getAttribute('data-term-score') + '"]'
+                : element.tagName.toLowerCase(),
+              rectHeight: Number(rect.height.toFixed(2)),
+              offsetHeight: element.offsetHeight,
+              clientHeight: element.clientHeight,
+              cssHeight: style.height,
+              minHeight: style.minHeight,
+              maxHeight: style.maxHeight,
+              boxSizing: style.boxSizing,
+              paddingTop: style.paddingTop,
+              paddingBottom: style.paddingBottom,
+              borderTopWidth: style.borderTopWidth,
+              borderBottomWidth: style.borderBottomWidth,
+              lineHeight: style.lineHeight,
+              borderRadius: style.borderRadius,
+              transform: style.transform
+            };
+          };
+          const year = document.querySelector('#termAcademicYear');
+          const scores = [...document.querySelectorAll('#termExamRoster .term-bulk-table tbody input[data-term-score]')];
+          const ranks = [...document.querySelectorAll('#termExamRoster .term-bulk-table tbody input[data-term-class-rank],#termExamRoster .term-bulk-table tbody input[data-term-school-rank]')];
+          return {
+            year: year ? inspect(year) : null,
+            scores: scores.slice(0, 7).map(inspect),
+            ranks: ranks.slice(0, 2).map(inspect),
+            userAgent: navigator.userAgent,
+            devicePixelRatio: window.devicePixelRatio,
+            zoom: getComputedStyle(document.documentElement).zoom
+          };
+        });
+        fs.writeFileSync('font-audit/term-score-control-dimensions.json', JSON.stringify(dimensions, null, 2));
+        console.log('TERM SCORE CONTROL DIMENSIONS', JSON.stringify(dimensions, null, 2));
+
+        expect(dimensions.year, 'The academic-year input must be present').not.toBeNull();
+        expect(dimensions.scores.length, 'Seven subject score fields must render').toBe(7);
+        for (const field of [...dimensions.scores, ...dimensions.ranks]) {
+          expect(field.rectHeight, field.selector + ' rendered height must equal the academic-year input').toBe(dimensions.year.rectHeight);
+          expect(field.boxSizing).toBe('border-box');
+        }
+      }
+    }
     await collect('admin', tab);
   }
 
