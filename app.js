@@ -809,14 +809,14 @@ style.textContent = [
   ".parent-page .panel { padding:16px 13px; margin-bottom:14px; }",
   ".parent-page .panel h3 { margin-bottom:14px; font-size: 20px !important; }",
   ".topbar { padding:14px; }",
-  ".topbar h1 { font-size: 24px; }",
+  "body:not(.teacher-page):not(.parent-page) .topbar h1 { font-size:20px !important; }",
   ".parent-brand h1 { font-size: 24px; }",
   ".student-card .student-heading { align-items:center; }",
   ".student-card .student-name { font-size: 24px; }",
   ".student-card .student-class { font-size: 14px; }",
   ".login-card { padding:24px; }",
   ".tabs { gap:5px; }",
-  ".tab-btn { padding:8px 10px; font-size: 14px; }",
+  "#adminTabs .tab-btn { padding:8px 10px; font-size:16px !important; }",
 
   /* 手機版維持科目左、成績右，縮小間距 */
   ".parent-subject-card { grid-template-columns:minmax(0,1fr) auto; gap:10px; padding:14px 12px; border-radius:11px; }",
