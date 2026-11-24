@@ -565,7 +565,7 @@ style.textContent = [
   ".alumni-filter-row select,.alumni-filter-row input { box-sizing:border-box; display:block; width:100%; min-width:0; max-width:none; height:40px; min-height:40px; margin:0; padding:9px 8px; border:1px solid #ccd4df; border-radius:8px; background:#fff; font-size: 18px !important; line-height:20px; }",
   ".alumni-filter-row > #alumniFilteredExportButton { font-size:18px !important; align-self:start !important; justify-self:stretch; display:block; box-sizing:border-box; width:100%; height:40px !important; min-height:40px !important; margin:0 !important; padding:0 10px !important; line-height:40px !important; vertical-align:top; }",
   "@media(max-width:900px) { .alumni-filter-row { grid-template-columns:repeat(3,minmax(0,1fr)); } }",
-  "@media(max-width:600px) { .alumni-filter-row { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; } .alumni-filter-row select,.alumni-filter-row input { padding:9px 7px; font-size: 18px !important; } }",
+  "@media(max-width:600px) { .alumni-filter-row { grid-template-columns:minmax(0,1fr); gap:8px; } .alumni-filter-row select,.alumni-filter-row input { width:100%; min-width:0; height:40px; min-height:40px; box-sizing:border-box; padding:0 10px; font-size:18px !important; line-height:1.3; } .alumni-filter-row > #alumniFilteredExportButton { width:100%; font-size:18px !important; } }",
   ".alumni-score-table th:nth-child(2),.alumni-score-table th:nth-child(3) { text-align:left; }",
   ".alumni-score-actions { display:flex; gap:3px; justify-content:center; }",
   ".alumni-score-actions .btn { flex:0 0 auto !important; width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size: 14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }",
@@ -874,6 +874,7 @@ style.textContent += "\n" +
   ".guardian-linked-student { padding:5px 8px !important; }" +
   ".student-card { margin:5px auto !important; }" +
   "@media(max-width:600px) { .teacher-score-row { min-height:0 !important; padding:5px 2px !important; } .student-card { margin:5px 0 !important; } }" +
+  ".overview-table tbody td:nth-child(7),.overview-table tbody td:nth-child(7) * { font-size:18px !important; }" +
   ".term-exam-overview-table tbody td:not(.action-cell),.term-exam-overview-table tbody td:not(.action-cell) * { font-size: 18px !important; }" +
   ".term-bulk-table tbody td,.term-bulk-table tbody td .term-student-name-text { font-size: 16px !important; } .term-bulk-table tbody td.term-total-cell { font-size: 18px !important; } .term-bulk-table tbody td input[data-term-score],.term-bulk-table tbody td input[data-term-class-rank],.term-bulk-table tbody td input[data-term-school-rank] { font-size: 18px !important; }" +
   ".term-bulk-table tbody td .term-student-name small { font-size: 14px !important; }" +
