@@ -106,6 +106,7 @@ function attendanceInjectStyles() {
     ".attendance-record-table .attendance-late-input.has-late-value{color:#d32626;font-weight:400}",
     ".attendance-record-table .attendance-checkin-select.is-unchecked{color:#d32626;font-weight:800}",
     ".attendance-record-table tbody td{padding:5px 8px!important;line-height:1.3!important;vertical-align:middle}",
+    ".attendance-record-table tbody td:nth-child(2) strong{font-weight:400!important}",
     ".attendance-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}",
     ".attendance-actions button{width:auto;min-height:36px;margin:0;padding:6px 12px;font-size: 14px;line-height:1.3}",
     ".attendance-status-message{margin:12px 0;padding:11px 13px;border-radius:8px;background:#edf4fa;color:#315d86}",
