@@ -146,3 +146,12 @@ input[type="number"]::-webkit-outer-spin-button {
 #appRoot #reviewRecordContent .student-record-table tbody td {
   color: #000000 !important;
 }
+
+
+/* 段考成績登錄：學生姓名 18px，學生編號維持 14px */
+#appRoot #termExamRoster .term-bulk-table tbody td.term-student-name .term-student-name-text {
+  font-size: 18px !important;
+}
+#appRoot #termExamRoster .term-bulk-table tbody td.term-student-name small {
+  font-size: 14px !important;
+}
