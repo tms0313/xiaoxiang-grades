@@ -33,3 +33,27 @@
 #examFormRow > button[type='submit'] {
   margin-right: 10px !important;
 }
+
+/* 週成績登錄日期區間日曆：尺寸與出缺席管理日曆一致 */
+#examDateCalendar {
+  width: 100%;
+  max-width: 400px;
+  margin: 6px 0 10px;
+  padding: 10px;
+  border: 1px solid #d7e0e9;
+  border-radius: 9px;
+  background: #fff;
+}
+#examDateCalendar .attendance-calendar-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+#examDateCalendar .attendance-calendar-heading strong { color:#23466b; font-size:20px; }
+#examDateCalendar .attendance-calendar-heading button { width:36px; height:34px; min-height:34px; margin:0; padding:0; border:0; border-radius:7px; background:#edf1f5; color:#315d86; font-size:20px; }
+#examDateCalendar .attendance-calendar-weekdays,#examDateCalendar .attendance-calendar-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; text-align:center; }
+#examDateCalendar .attendance-calendar-weekdays { margin-bottom:5px; color:#64748b; font-size:16px; font-weight:700; }
+#examDateCalendar .attendance-calendar-weekdays span { padding:3px 0; }
+#examDateCalendar .attendance-calendar-day { display:flex; align-items:center; justify-content:center; width:100%; height:44px; min-height:44px; margin:0; padding:2px; border:1px solid transparent; border-radius:6px; background:#fff; color:#263445; font-size:16px; }
+#examDateCalendar .attendance-calendar-day:hover { background:#edf3f9; }
+#examDateCalendar .attendance-calendar-day.selected { border-color:#315d86; background:#315d86; color:#fff; }
+#examDateCalendar .attendance-calendar-day.in-range { background:#e7eff8; color:#23466b; }
+#examDateCalendar .attendance-calendar-day.selected.in-range { background:#315d86; color:#fff; }
+#examDateCalendar .attendance-calendar-empty { height:44px; }
+#examDateCalendar .exam-calendar-hint { margin:7px 0 0; color:#64748b; font-size:14px; }
