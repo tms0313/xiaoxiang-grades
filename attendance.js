@@ -261,11 +261,11 @@ function renderAttendanceWeeklyOverview() {
     "<div class='attendance-weekly-overview'>" +
       "<h3>每週學生出缺席追蹤</h3>" +
       "<div class='attendance-weekly-filters'>" +
-        "<div class='attendance-weekly-filter'><label for='attendanceWeeklyWeekSelect'><span class='attendance-step-number'>①</span><span>選擇週次</span></label>" +
+        "<div class='attendance-weekly-filter'><label for='attendanceWeeklyWeekSelect'>選擇週次</label>" +
           "<select id='attendanceWeeklyWeekSelect'>" + options.map(item =>
             "<option value='" + item.start + "' " + (item.start === week.start ? "selected" : "") + ">" + item.label + "</option>"
           ).join("") + "</select></div>" +
-        "<div class='attendance-weekly-filter'><label for='attendanceWeeklyClassSelect'><span class='attendance-step-number'>②</span><span>選擇班級</span></label>" +
+        "<div class='attendance-weekly-filter'><label for='attendanceWeeklyClassSelect'>選擇班級</label>" +
           "<select id='attendanceWeeklyClassSelect'><option value=''>請選擇班級</option>" +
             classOrder.map(name => "<option value='" + attendanceEscape(name) + "' " + (name === attendanceWeeklyOverviewClass ? "selected" : "") + ">" + attendanceEscape(name) + "</option>").join("") +
           "</select></div>" +
