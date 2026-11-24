@@ -148,16 +148,24 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
           const r = el.getBoundingClientRect();
           return { left: r.left, right: r.right, width: r.width, center: r.left + r.width / 2, height: r.height };
         };
+        const scoreHeaderEl = document.querySelector('.bulk-score-entry-table thead th:nth-child(3)');
+        const statusHeaderEl = document.querySelector('.bulk-score-entry-table thead th:nth-child(4)');
         const scoreHeader = rect('.bulk-score-entry-table thead th:nth-child(3)');
         const scoreInput = rect('.bulk-score-entry-table tbody tr[data-bulk-student] td:nth-child(3) input[data-bulk-score]');
         const statusHeader = rect('.bulk-score-entry-table thead th:nth-child(4)');
         const statusSelect = rect('.bulk-score-entry-table tbody tr[data-bulk-student] td:nth-child(4) select[data-bulk-status]');
         const actionButton = rect('.bulk-score-entry-table tbody tr[data-bulk-student] td:nth-child(5) [data-save-bulk-row]');
         const table = rect('.bulk-score-entry-table');
+        const scoreHeaderStyle = scoreHeaderEl && getComputedStyle(scoreHeaderEl);
+        const statusHeaderStyle = statusHeaderEl && getComputedStyle(statusHeaderEl);
         return {
           tableWidth: table && table.width,
-          scoreHeaderInputCenterDelta: scoreHeader && scoreInput ? Math.abs(scoreHeader.center - scoreInput.center) : null,
-          statusHeaderSelectCenterDelta: statusHeader && statusSelect ? Math.abs(statusHeader.center - statusSelect.center) : null,
+          scoreHeaderInputLeftDelta: scoreHeader && scoreInput && scoreHeaderStyle ? Math.abs((scoreHeader.left + parseFloat(scoreHeaderStyle.paddingLeft)) - scoreInput.left) : null,
+          statusHeaderSelectLeftDelta: statusHeader && statusSelect && statusHeaderStyle ? Math.abs((statusHeader.left + parseFloat(statusHeaderStyle.paddingLeft)) - statusSelect.left) : null,
+          scoreHeaderTextAlign: scoreHeaderStyle && scoreHeaderStyle.textAlign,
+          statusHeaderTextAlign: statusHeaderStyle && statusHeaderStyle.textAlign,
+          scoreHeaderPaddingLeft: scoreHeaderStyle && scoreHeaderStyle.paddingLeft,
+          statusHeaderPaddingLeft: statusHeaderStyle && statusHeaderStyle.paddingLeft,
           scoreStatusCenterDistance: scoreHeader && statusHeader ? Math.abs(scoreHeader.center - statusHeader.center) : null,
           statusToActionGap: statusSelect && actionButton ? actionButton.left - statusSelect.right : null,
           scoreInputHeight: scoreInput && scoreInput.height,
@@ -166,8 +174,10 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
       });
       console.log('WEEKLY SCORE TABLE ALIGNMENT', JSON.stringify(alignment, null, 2));
       expect(alignment.tableWidth).toBe(820);
-      expect(alignment.scoreHeaderInputCenterDelta).toBeLessThanOrEqual(1);
-      expect(alignment.statusHeaderSelectCenterDelta).toBeLessThanOrEqual(1);
+      expect(alignment.scoreHeaderTextAlign).toBe('left');
+      expect(alignment.scoreHeaderInputLeftDelta).toBeLessThanOrEqual(1);
+      expect(alignment.statusHeaderTextAlign).toBe('left');
+      expect(alignment.statusHeaderSelectLeftDelta).toBeLessThanOrEqual(1);
       expect(alignment.scoreStatusCenterDistance).toBe(160);
       expect(alignment.statusToActionGap).toBeLessThanOrEqual(80);
       expect(alignment.scoreInputHeight).toBe(40);
