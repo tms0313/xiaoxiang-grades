@@ -28,7 +28,6 @@
   padding: 0;
 }
 
-
 /* 新增考試操作按鈕間距 */
 #examFormRow > button[type='submit'] {
   margin-right: 10px !important;
@@ -74,7 +73,6 @@
   border: 1px solid #ccd4df !important;
   border-radius: 8px !important;
   line-height: normal !important;
-  vertical-align: middle !important;
 }
 
 /* 全站數字輸入框：移除瀏覽器原生上下微調箭頭，保留數字輸入功能 */
@@ -87,3 +85,58 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none !important;
   margin: 0 !important;
 }
+
+/* 全站日期、成績輸入與出缺席欄位統一為 18px。
+   使用較高選擇器權重，確保可覆蓋 app.js 與 attendance.js 的既有局部字體設定。 */
+
+/* 日期：新增考試、週成績總覽、考試清單、教師週期、出缺席日曆及登入紀錄 */
+#appRoot #examFormRow .exam-date-range-field > label,
+#appRoot #examFormRow #examDateRangeDisplay,
+#appRoot #examDateCalendar .attendance-calendar-weekdays,
+#appRoot #examDateCalendar .attendance-calendar-day,
+#appRoot .exam-management-table tbody td:nth-child(1),
+#appRoot .exam-management-table tbody td:nth-child(2),
+#appRoot .overview-table tbody td:first-child,
+#appRoot #teacherExamSelect,
+#appRoot #attendanceWeeklyWeekSelect,
+#appRoot .attendance-calendar .attendance-calendar-weekdays,
+#appRoot .attendance-calendar .attendance-calendar-day,
+#appRoot .attendance-weekly-detail-table tbody td:first-child,
+#appRoot .login-log-calendar .login-log-calendar-weekdays,
+#appRoot .login-log-calendar .login-log-calendar-day,
+#appRoot .login-log-table tbody td:first-child {
+  font-size: 18px !important;
+}
+
+/* 成績登錄：週成績、段考成績、單筆成績編輯 */
+#appRoot .bulk-score-entry-table tbody td input[data-bulk-score],
+#appRoot .bulk-score-entry-table tbody td select[data-bulk-status],
+#appRoot .bulk-score-entry-table tbody td select[data-bulk-grade],
+#appRoot .term-bulk-table tbody td input[data-term-score],
+#appRoot .term-bulk-table tbody td input[data-term-class-rank],
+#appRoot .term-bulk-table tbody td input[data-term-school-rank],
+#appRoot .score-entry-fields input,
+#appRoot .score-entry-fields select,
+#appRoot .score-edit-dialog .field input,
+#appRoot .score-edit-dialog .field select {
+  font-size: 18px !important;
+}
+
+/* 出缺席管理：日期／課程資料、出席狀態、遲到分鐘、打卡狀態及每週摘要 */
+#appRoot .attendance-record-table th,
+#appRoot .attendance-record-table tbody td,
+#appRoot .attendance-record-table tbody td select,
+#appRoot .attendance-record-table tbody td input,
+#appRoot .attendance-session-panel .attendance-session-btn strong,
+#appRoot .attendance-session-panel .attendance-session-btn span,
+#appRoot .attendance-weekly-overview .attendance-weekly-filter label,
+#appRoot .attendance-weekly-overview .attendance-weekly-filter select,
+#appRoot .attendance-weekly-student-name,
+#appRoot .attendance-weekly-student-summary,
+#appRoot .attendance-weekly-detail-table th,
+#appRoot .attendance-weekly-detail-table tbody td,
+#appRoot .attendance-parent-summary {
+  font-size: 18px !important;
+}
+
+/* 以上字體規格同時套用於手機與桌面，不變更欄位高度及版面尺寸。 */
