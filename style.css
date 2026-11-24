@@ -76,3 +76,14 @@
   line-height: normal !important;
   vertical-align: middle !important;
 }
+
+/* 全站數字輸入框：移除瀏覽器原生上下微調箭頭，保留數字輸入功能 */
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
