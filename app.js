@@ -3921,6 +3921,18 @@ function renderStudents() {
     visibleStudents.push(student);
   });
 
+  // 學生管理清單依學生編號自然排序，確保 G101、G102、G103……按數字由小到大排列。
+  const studentCodeCollator = new Intl.Collator("en", {
+    numeric: true,
+    sensitivity: "base"
+  });
+  visibleStudents.sort(function (a, b) {
+    return studentCodeCollator.compare(
+      String(a.student_code || "").trim(),
+      String(b.student_code || "").trim()
+    ) || String(a.full_name || "").localeCompare(String(b.full_name || ""), "zh-Hant");
+  });
+
   const rows = visibleStudents.map(function (student) {
     const active = student.is_active !== false;
     return "<tr data-student-search='" + escapeHtml((String(student.student_code || "") + " " + String(student.full_name || "")).toLocaleLowerCase()) + "'>" +
