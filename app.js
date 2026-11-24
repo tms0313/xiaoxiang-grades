@@ -511,7 +511,7 @@ style.textContent = [
   ".topbar { background:#23466b; color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap; }",
   ".topbar h1 { font-size: 20px; margin:0; color:#fff; }",
   ".topbar small { color:#fff; }",
-  ".parent-action-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:38px; padding:8px 12px; border:1px solid rgba(255,255,255,.34); border-radius:9px; color:#fff; font-size: 14px; font-weight:800; letter-spacing:.2px; vertical-align:middle; transition:background .15s,transform .15s,box-shadow .15s; }",
+  ".parent-action-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:38px; padding:8px 12px; border:1px solid rgba(255,255,255,.34); border-radius:9px; color:#fff; font-size: 18px !important; font-weight:800; letter-spacing:.2px; vertical-align:middle; transition:background .15s,transform .15s,box-shadow .15s; }",
   ".parent-action-btn:hover { transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.18); }",
   ".parent-password-btn { background:#3c78a8; }",
   ".parent-password-btn:hover { background:#4b8bbd; }",
@@ -522,7 +522,7 @@ style.textContent = [
   ".parent-action-icon { width:18px; height:18px; flex:0 0 18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }",
   ".parent-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
   ".teacher-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex !important; align-items:center; justify-content:center; width:100%; padding:7px 10px calc(7px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
-  ".teacher-bottom-nav .parent-action-btn { flex:0 0 64px; width:64px; min-width:64px; min-height:52px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:10px; color:#fff; font-size: 14px; font-weight:750; padding:5px 6px; background:#a83e45; }",
+  ".teacher-bottom-nav .parent-action-btn { flex:0 0 64px; width:64px; min-width:64px; min-height:52px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:10px; color:#fff; font-size: 18px !important; font-weight:750; padding:5px 6px; background:#a83e45; }",
   ".teacher-bottom-nav .parent-action-icon { width:19px; height:19px; flex:0 0 19px; stroke-width:1.9; }",
   ".teacher-page { padding-bottom:88px; }",
   ".parent-page { padding-bottom:94px; }",
@@ -593,9 +593,9 @@ style.textContent = [
   ".login-log-table th:last-child,.login-log-table td:last-child { width:60%; white-space:nowrap; }",
   ".login-log-table th,.login-log-table td { padding:9px 8px; }",
   ".login-log-table td:first-child { font-size: 14px; }",
-  ".login-log-table .login-role-badge { font-size: 14px; }",
+  ".login-log-table .login-role-badge { font-size: 18px !important; }",
   "#clearLoginLogsButton { font-size: 16px; }",
-  ".login-role-badge { display:inline-block; padding:3px 8px; border-radius:6px; font-size: 14px; font-weight:800; white-space:nowrap; }",
+  ".login-role-badge { display:inline-block; padding:3px 8px; border-radius:6px; font-size: 18px !important; font-weight:800; white-space:nowrap; }",
   ".login-role-admin { color:#2457a6; background:#eaf2ff !important; }",
   ".login-role-parent { color:#9a5700; background:#fff4e5 !important; }",
   ".login-role-teacher { color:#237447; background:#e9f7ef !important; }",
@@ -618,7 +618,7 @@ style.textContent = [
   ".overview-table th:nth-child(8),.overview-table td:nth-child(8) { width:21%; }",
   ".overview-table .action-cell { min-width:100px; }",
   ".overview-table .action-buttons { gap:3px; }",
-  ".overview-table .overview-status-button { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:auto; min-width:58px; height:30px; min-height:30px; margin:0; padding:0 9px; border-radius:6px; font-size: 14px; font-weight:800; line-height:30px; white-space:nowrap; vertical-align:middle; }",
+  ".overview-table .overview-status-button { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:auto; min-width:58px; height:30px; min-height:30px; margin:0; padding:0 9px; border-radius:6px; font-size: 18px !important; font-weight:800; line-height:30px; white-space:nowrap; vertical-align:middle; }",
   ".overview-table .overview-status-leave { background:#e8f1fb !important; color:#1d4e89 !important; border:1px solid #b8d1ed; }",
   ".overview-table .overview-status-missing { background:#fde8e8 !important; color:#b42318 !important; border:1px solid #f4b8b8; }",
   ".overview-table .overview-missing-select { display:inline-flex; flex:0 0 auto; align-items:center; gap:4px; height:30px; margin-right:6px; font-size: 14px; line-height:30px; white-space:nowrap; box-sizing:border-box; }",
@@ -703,7 +703,7 @@ style.textContent = [
   ".student-management-table th:nth-child(5),.student-management-table td:nth-child(5) { width:30%; min-width:150px; }",
   ".student-status-active,.student-status-inactive { display:inline-block; padding:4px 8px; border-radius:6px; font-size: 18px !important; font-weight:800; white-space:nowrap; }",
   ".student-status-action { display:inline-flex; align-items:center; justify-content:center; gap:3px; min-width:42px; }",
-  ".student-status-enable-icon { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; font-size: 14px; font-weight:800; line-height:1; }",
+  ".student-status-enable-icon { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; font-size: 18px !important; font-weight:800; line-height:1; }",
   ".student-status-active { background:#e7f6ec; color:#237344; }",
   ".student-status-inactive { background:#f1f3f5; color:#697586; }",
   ".student-management-table .action-buttons { display:inline-flex; align-items:center; gap:9px; }",
@@ -830,7 +830,7 @@ style.textContent = [
   ".student-card .student-class { font-size: 14px; }",
   ".parent-page .parent-top-actions { display:flex !important; flex:0 0 100%; justify-content:center; }",
   ".parent-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
-  ".parent-bottom-nav .parent-action-btn { flex:1 1 50%; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:9px; color:#fff; font-size: 14px; font-weight:750; padding:5px 8px; }",
+  ".parent-bottom-nav .parent-action-btn { flex:1 1 50%; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:9px; color:#fff; font-size: 18px !important; font-weight:750; padding:5px 8px; }",
   ".parent-bottom-nav .parent-action-icon { width:19px; height:19px; flex:0 0 19px; stroke-width:1.9; }",
   ".parent-bottom-nav .parent-password-btn { background:#315f8b; }",
   ".parent-bottom-nav .parent-logout-btn { background:#a83e45; }",
@@ -873,7 +873,7 @@ style.textContent += "\n" +
   ".term-exam-overview-table tbody td:not(.action-cell),.term-exam-overview-table tbody td:not(.action-cell) * { font-size: 18px !important; }" +
   ".term-bulk-table tbody td,.term-bulk-table tbody td .term-student-name-text { font-size: 16px !important; } .term-bulk-table tbody td.term-total-cell { font-size: 18px !important; } .term-bulk-table tbody td input[data-term-score],.term-bulk-table tbody td input[data-term-class-rank],.term-bulk-table tbody td input[data-term-school-rank] { font-size: 18px !important; }" +
   ".term-bulk-table tbody td .term-student-name small { font-size: 14px !important; }" +
-  ".term-bulk-table tbody td .term-completion-mark { font-size: 14px !important; }" +
+  ".term-bulk-table tbody td .term-completion-mark { font-size: 18px !important; }" +
   "/* 模擬考等級與分數欄等高；週成績登錄學生列高比照週成績總覽 */" +
   ".bulk-score-entry-table tbody td [data-bulk-score],.bulk-score-entry-table tbody td [data-bulk-grade],.bulk-score-entry-table tbody td [data-bulk-status] { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; border-radius:8px !important; line-height:1.3 !important; }";
 
