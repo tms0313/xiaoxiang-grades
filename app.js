@@ -669,6 +669,7 @@ style.textContent = [
   ".teacher-score-student small { color:#8a96a5; font-size: 14px; font-weight:500; white-space:nowrap; }",
   ".teacher-score-value { display:flex; flex-direction:row; align-items:center; justify-content:flex-start; justify-self:end; flex-wrap:nowrap; gap:6px; width:150px; min-width:150px; max-width:none; flex-shrink:0; padding-left:14px; border-left:1px solid #e8edf3; text-align:left; white-space:nowrap; font-size: 20px; font-weight:900; }",
   ".teacher-score-value .parent-score-number { font-size: 24px; font-weight:900; }",
+  ".teacher-score-value .low-score { color:#d32626 !important; font-weight:900 !important; }",
   ".teacher-score-value .grade-tag { padding:4px 10px; font-size: 16px !important; }",
   ".teacher-score-value .grade-missing { padding:4px 10px; font-size: 16px; }",
   "@media(max-width:600px) { .teacher-class-panel { padding:10px; } .teacher-score-row { min-height:46px; column-gap:10px; padding:6px 2px; } .teacher-score-student { font-size: 20px; } .teacher-scope-heading { font-size: 20px; } .teacher-score-student small { font-size: 14px; } .teacher-score-value { justify-self:end; justify-content:flex-start; width:136px; min-width:136px; margin-left:auto; padding-left:10px; text-align:left; font-size: 20px; } .teacher-score-value .parent-score-number { font-size: 24px; } .teacher-score-value .grade-tag { font-size: 16px !important; } .teacher-score-value .grade-missing { font-size: 16px; } }",
