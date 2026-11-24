@@ -7990,7 +7990,7 @@ style.textContent += "\\n.login-log-calendar{width:100%;max-width:400px;margin:6
 
 /* 週成績登錄表：成績／出席狀態欄位置中對齊表頭，欄距比照出缺席管理的160px規格 */
 style.textContent += "\\n" +
-  ".bulk-score-entry-table { width:820px !important; min-width:820px !important; max-width:none !important; table-layout:fixed !important; }" +
+  ".table-wrap table.bulk-score-entry-table { width:820px !important; min-width:820px !important; max-width:none !important; table-layout:fixed !important; }" +
   ".bulk-score-entry-table th:nth-child(1),.bulk-score-entry-table td:nth-child(1) { width:140px !important; }" +
   ".bulk-score-entry-table th:nth-child(2),.bulk-score-entry-table td:nth-child(2) { width:160px !important; }" +
   ".bulk-score-entry-table th:nth-child(3),.bulk-score-entry-table td:nth-child(3) { width:160px !important; text-align:center !important; }" +
