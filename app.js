@@ -462,7 +462,7 @@ style.textContent = [
   ".field { margin-bottom:16px; }",
   ".field label { display:block; font-weight:700; margin-bottom:7px; }",
   "/* 每週出缺席追蹤：選擇週次／班級標籤與下拉選單間距比照學生管理表單 */",
-  ".attendance-weekly-filter { display:flex; flex-direction:column; align-items:stretch; gap:7px; min-width:0; }",
+  ".attendance-weekly-filter { display:flex; flex-direction:column; align-items:stretch; gap:0; min-width:0; }",
   ".attendance-weekly-filter > label { display:block !important; text-align:left !important; margin:0 0 7px 0 !important; padding:0 !important; line-height:1.5 !important; }",
   ".attendance-weekly-filter > select { display:block; margin:0 !important; }",
   ".exam-date-range-field > label { font-size: 16px !important; font-weight:700 !important; line-height:1.5 !important; }",
