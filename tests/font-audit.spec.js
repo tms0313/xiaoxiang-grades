@@ -26,6 +26,7 @@ test('rendered typography inventory across admin, parent and teacher pages', asy
 
   fs.mkdirSync('font-audit', { recursive: true });
   const allRows = [];
+  const controlRows = [];
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   page.on('console', msg => { if (msg.type() === 'error') pageErrors.push(msg.text()); });
@@ -70,6 +71,36 @@ test('rendered typography inventory across admin, parent and teacher pages', asy
         }).filter(Boolean);
     }, { role, pageLabel });
     allRows.push(...rows);
+
+    const controls = await page.evaluate(({ role, pageLabel }) => {
+      const excludedTypes = new Set(['hidden','checkbox','radio','file','submit','button','reset','image','range','color']);
+      const visible = el => {
+        const s = getComputedStyle(el);
+        return el.getClientRects().length > 0 && s.display !== 'none' &&
+          s.visibility !== 'hidden' && Number(s.opacity) !== 0;
+      };
+      return [...document.querySelectorAll('input,select,textarea')]
+        .filter(el => visible(el) && !(el.tagName === 'INPUT' && excludedTypes.has((el.type || 'text').toLowerCase())))
+        .map(el => {
+          const s = getComputedStyle(el);
+          const r = el.getBoundingClientRect();
+          return {
+            role, page: pageLabel, tag: el.tagName.toLowerCase(),
+            type: el.tagName === 'INPUT' ? (el.type || 'text').toLowerCase() : '',
+            id: el.id || '', name: el.name || '',
+            className: typeof el.className === 'string' ? el.className : '',
+            label: el.labels ? [...el.labels].map(x => x.textContent.trim()).join(' ').slice(0,100) : '',
+            renderedHeight: Number(r.height.toFixed(2)),
+            cssHeight: s.height, minHeight: s.minHeight, maxHeight: s.maxHeight,
+            boxSizing: s.boxSizing, paddingTop: s.paddingTop, paddingBottom: s.paddingBottom,
+            borderTopWidth: s.borderTopWidth, borderBottomWidth: s.borderBottomWidth,
+            borderRadius: s.borderRadius, transform: s.transform,
+            multiline: el.tagName === 'TEXTAREA'
+          };
+        });
+    }, { role, pageLabel });
+    controlRows.push(...controls);
+
     const safe = pageLabel.replace(/[^a-z0-9-]/gi, '-');
     await page.screenshot({ path: `font-audit/${role}-${safe}.png`, fullPage: true });
   }
@@ -219,6 +250,26 @@ test('rendered typography inventory across admin, parent and teacher pages', asy
       });
     }
   }
+  const singleLineControls = controlRows.filter(row => !row.multiline);
+  const controlViolations = singleLineControls.filter(row => row.renderedHeight !== 40);
+  const controlReport = {
+    auditedAt: new Date().toISOString(),
+    standardHeight: 40,
+    auditedPages: [...new Set(controlRows.map(row => row.role + ':' + row.page))],
+    totalSingleLineControls: singleLineControls.length,
+    totalTextareas: controlRows.filter(row => row.multiline).length,
+    violationCount: controlViolations.length,
+    controls: controlRows,
+    violations: controlViolations
+  };
+  fs.writeFileSync('font-audit/form-control-height-audit.json', JSON.stringify(controlReport, null, 2));
+  console.log('SITE FORM CONTROL HEIGHT AUDIT', JSON.stringify({
+    standardHeight: 40,
+    totalSingleLineControls: singleLineControls.length,
+    totalTextareas: controlReport.totalTextareas,
+    violationCount: controlViolations.length,
+    violations: controlViolations.slice(0, 100)
+  }, null, 2));
   const summary = {
     auditedAt: new Date().toISOString(),
     pages: ADMIN_TABS.map(([tab]) => ({ role: 'admin', page: tab }))
@@ -239,6 +290,7 @@ test('rendered typography inventory across admin, parent and teacher pages', asy
   fs.writeFileSync('font-audit/font-size-violations.json', JSON.stringify(fontSizeViolations, null, 2));
   console.log('TYPOGRAPHY WHITELIST CHECK', JSON.stringify({ allowed: [...ALLOWED_FONT_SIZES], violations: fontSizeViolations.length, examples: fontSizeViolations.slice(0, 30) }, null, 2));
   expect(allRows.length).toBeGreaterThan(0);
+  expect(controlViolations, 'All visible single-line dropdowns and manual inputs must render at exactly 40px').toEqual([]);
   expect(fontSizeViolations, 'Every visible text element must use 12, 14, 16, 20 or 24px').toEqual([]);
   expect(pageErrors, 'No JavaScript or console errors across audited roles and pages').toEqual([]);
 });
