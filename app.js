@@ -5823,8 +5823,9 @@ async function renderLoginLogs() {
       "</div>" +
       "<div class='toolbar' style='display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0'>" +
         "<input id='loginLogKeyword' type='search' class='form-control' placeholder='搜尋家長／教師' style='flex:1;min-width:160px' autocomplete='off'>" +
-        "<label for='loginLogDate' class='muted' style='white-space:nowrap'>登入日期</label>" +
-        "<input id='loginLogDate' type='date' class='form-control' style='width:auto;min-width:150px;height:40px;min-height:40px;box-sizing:border-box;font-size:16px;line-height:normal'>" +
+        "<label class='muted' style='white-space:nowrap'>登入日期</label>" +
+        "<button id='loginLogDateTrigger' type='button' class='btn btn-secondary btn-small'>選擇日期</button>" +
+        "<div id='loginLogCalendar' class='login-log-calendar' hidden></div>" +
         "<span id='loginLogResultCount' class='muted' style='white-space:nowrap'></span>" +
       "</div>" +
       "<div class='table-wrap'><table class='login-log-table'><thead><tr><th>登入身分</th><th>登入時間</th></tr></thead>" +
@@ -5835,17 +5836,20 @@ async function renderLoginLogs() {
     if (clearButton) clearButton.addEventListener("click", clearAllLoginLogs);
 
     const keywordInput = $("loginLogKeyword");
-    const dateInput = $("loginLogDate");
+    const dateTrigger = $("loginLogDateTrigger");
+    const dateCalendar = $("loginLogCalendar");
+    let selectedDate = "";
+    let calendarMonth = new Date();
     const resultCount = $("loginLogResultCount");
     const logRows = Array.from(content.querySelectorAll("#loginLogRows tr[data-log-search]"));
     const applyLogFilters = function () {
       const keyword = String(keywordInput && keywordInput.value || "").trim().toLocaleLowerCase();
-      const selectedDate = String(dateInput && dateInput.value || "");
+      const activeDate = selectedDate;
       let visibleCount = 0;
 
       logRows.forEach(row => {
         const matchesKeyword = !keyword || String(row.dataset.logSearch || "").includes(keyword);
-        const matchesDate = !selectedDate || row.dataset.logDate === selectedDate;
+        const matchesDate = !activeDate || row.dataset.logDate === activeDate;
         const visible = matchesKeyword && matchesDate;
         row.hidden = !visible;
         if (visible) visibleCount += 1;
@@ -5855,7 +5859,36 @@ async function renderLoginLogs() {
     };
 
     if (keywordInput) keywordInput.addEventListener("input", applyLogFilters);
-    if (dateInput) dateInput.addEventListener("change", applyLogFilters);
+    const renderLoginCalendar = function () {
+      if (!dateCalendar) return;
+      const year = calendarMonth.getFullYear(), month = calendarMonth.getMonth();
+      const firstDay = new Date(year, month, 1).getDay(), totalDays = new Date(year, month + 1, 0).getDate();
+      const weekdays = ["日","一","二","三","四","五","六"];
+      let cells = "";
+      for (let i = 0; i < firstDay; i++) cells += "<span class='login-log-calendar-empty'></span>";
+      for (let d = 1; d <= totalDays; d++) {
+        const iso = year + "-" + String(month + 1).padStart(2,"0") + "-" + String(d).padStart(2,"0");
+        cells += "<button type='button' class='login-log-calendar-day" + (iso === selectedDate ? " selected" : "") + "' data-login-log-date='" + iso + "'>" + d + "</button>";
+      }
+      dateCalendar.innerHTML = "<div class='login-log-calendar-heading'><button type='button' data-login-log-month='-1' aria-label='上一個月'>‹</button><strong>" + year + " 年 " + (month + 1) + " 月</strong><button type='button' data-login-log-month='1' aria-label='下一個月'>›</button></div><div class='login-log-calendar-weekdays'>" + weekdays.map(w => "<span>" + w + "</span>").join("") + "</div><div class='login-log-calendar-days'>" + cells + "</div><button type='button' class='login-log-calendar-clear' data-login-log-clear>清除日期</button>";
+      dateCalendar.hidden = false;
+    };
+    if (dateTrigger) dateTrigger.addEventListener("click", function () {
+      if (dateCalendar.hidden) renderLoginCalendar(); else dateCalendar.hidden = true;
+    });
+    if (dateCalendar) dateCalendar.addEventListener("click", function (event) {
+      const nav = event.target.closest("[data-login-log-month]");
+      const day = event.target.closest("[data-login-log-date]");
+      const clear = event.target.closest("[data-login-log-clear]");
+      if (nav) { calendarMonth.setMonth(calendarMonth.getMonth() + Number(nav.dataset.loginLogMonth)); renderLoginCalendar(); return; }
+      if (day) {
+        selectedDate = day.dataset.loginLogDate;
+        dateTrigger.textContent = selectedDate;
+        dateCalendar.hidden = true;
+        applyLogFilters();
+      }
+      if (clear) { selectedDate = ""; dateTrigger.textContent = "選擇日期"; dateCalendar.hidden = true; applyLogFilters(); }
+    });
     applyLogFilters();
 
   } catch (error) {
@@ -7985,5 +8018,5 @@ style.textContent += "\\n" +
   "#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton { font-size:16px !important; line-height:1.35 !important; min-height:40px !important; padding:8px 12px !important; white-space:normal !important; }" +
   "@media(max-width:600px){#overviewMissingBatchBar{gap:8px !important;align-items:flex-start !important}#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton{font-size:16px !important;min-height:40px !important;padding:8px 12px !important;max-width:100% !important}}";
 
-/* Login log date control: enforce 40px height on iOS Safari */
-style.textContent += "\\n#loginLogDate { display:inline-block !important; vertical-align:middle !important; width:150px !important; min-width:150px !important; max-width:150px !important; height:40px !important; min-height:40px !important; max-height:40px !important; box-sizing:border-box !important; padding:0 6px !important; font-size:16px !important; line-height:40px !important; -webkit-appearance:none !important; appearance:none !important; overflow:hidden !important; border-radius:8px !important; } #loginLogDate::-webkit-date-and-time-value { height:40px !important; line-height:40px !important; margin:0 !important; padding:0 !important; text-align:left !important; } #loginLogDate::-webkit-calendar-picker-indicator { width:16px !important; height:16px !important; margin:0 !important; padding:0 !important; }";
+/* Login log calendar uses attendance-style month grid, replacing the native date input */
+style.textContent += "\\n.login-log-calendar{width:100%;max-width:400px;margin:6px 0 10px;padding:10px;border:1px solid #d7e0e9;border-radius:9px;background:#fff}.login-log-calendar-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.login-log-calendar-heading strong{color:#23466b;font-size:20px}.login-log-calendar-heading button{width:36px;height:34px;min-height:34px;margin:0;padding:0;border:0;border-radius:7px;background:#edf1f5;color:#315d86;font-size:20px}.login-log-calendar-weekdays,.login-log-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}.login-log-calendar-weekdays{margin-bottom:5px;color:#64748b;font-size:16px;font-weight:700}.login-log-calendar-weekdays span{padding:3px 0}.login-log-calendar-day{display:flex;align-items:center;justify-content:center;width:100%;height:44px;min-height:44px;margin:0;padding:2px;border:1px solid transparent;border-radius:6px;background:#fff;color:#263445;font-size:16px}.login-log-calendar-day:hover{background:#edf3f9}.login-log-calendar-day.selected{border-color:#315d86;background:#315d86;color:#fff}.login-log-calendar-empty{height:44px}.login-log-calendar-clear{margin-top:8px;min-height:40px;padding:8px 12px;border:0;border-radius:7px;background:#edf1f5;color:#315d86;font-size:16px}";
