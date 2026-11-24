@@ -647,6 +647,8 @@ style.textContent = [
   ".teacher-assignment-table td:last-child { white-space:nowrap; }",
   ".teacher-assignment-table td:last-child .btn { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:27px !important; min-height:27px !important; padding:0 7px !important; font-size: 14px !important; font-weight:700 !important; line-height:27px !important; border-radius:5px !important; white-space:nowrap; }",
 
+  "/* 週考檢閱紀錄：檢閱時間欄位統一 18px，手機與桌面一致 */",
+  "#appRoot #reviewRecordContent .student-record-table th:last-child,#appRoot #reviewRecordContent .student-record-table td:last-child { font-size:18px !important; }",
   ".action-cell { min-width:155px; white-space:nowrap; }",
   ".action-buttons { display:flex; align-items:center; justify-content:flex-start; flex-wrap:nowrap; gap:5px; white-space:nowrap; }",
   ".action-buttons .btn { flex:0 0 auto; margin:0; }",
