@@ -60,7 +60,12 @@ function attendanceInjectStyles() {
   const style = document.createElement("style");
   style.id = "attendanceFeatureStyles";
   style.textContent = [
-    ".attendance-calendar{width:100%;max-width:400px;margin:6px 0 10px;padding:10px;border:1px solid #d7e0e9;border-radius:9px;background:#fff}",
+    ".attendance-day-layout{display:grid;grid-template-columns:minmax(360px,435px) minmax(0,1fr);gap:16px;align-items:start;margin-top:6px}",
+    ".attendance-day-layout>.panel{margin:0;min-width:0}",
+    ".attendance-calendar{width:100%;max-width:435px;margin:0;padding:10px;border:1px solid #d7e0e9;border-radius:9px;background:#fff;box-sizing:border-box}",
+    ".attendance-session-panel h3{margin-top:0}",
+    ".attendance-session-content-panel{margin-top:16px}",
+    "@media(max-width:760px){.attendance-day-layout{grid-template-columns:minmax(0,1fr);gap:12px}.attendance-calendar{max-width:100%}.attendance-session-content-panel{margin-top:12px}}",
     ".attendance-calendar-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}",
     ".attendance-calendar-heading strong{color:#23466b;font-size:20px}",
     ".attendance-calendar-heading button{width:36px;height:34px;min-height:34px;margin:0;padding:0;border:0;border-radius:7px;background:#edf1f5;color:#315d86;font-size:20px}",
@@ -383,19 +388,21 @@ function renderAttendanceManagement() {
     "<h2 class='section-title'>出缺席管理</h2>" +
     
     "<div id='attendanceWeeklyOverview'></div>" +
-    "<div id='attendanceCalendar' class='attendance-calendar' aria-label='出缺席登錄日期日曆'></div>" +
-    "<div class='panel'>" +
-      "<h3>當日課程</h3>" +
-      (sessions.length
-        ? "<div class='attendance-session-grid'>" + sessions.map((item, index) =>
-            "<button type='button' class='attendance-session-btn' data-attendance-session='" + index + "'>" +
-              "<strong>" + attendanceEscape(item.time) + "　" + attendanceEscape(item.className) + "</strong>" +
-              "<span>" + attendanceEscape(item.subject) + "</span>" +
-            "</button>"
-          ).join("") + "</div>"
-        : "<div class='empty'>當日沒有排定課程。</div>") +
-      "<div id='attendanceSessionContent'><div class='empty'>請選擇上方課程，載入學生名單。</div></div>" +
-    "</div>";
+    "<div class='attendance-day-layout'>" +
+      "<div id='attendanceCalendar' class='attendance-calendar' aria-label='出缺席登錄日期日曆'></div>" +
+      "<div class='panel attendance-session-panel'>" +
+        "<h3>當日課程</h3>" +
+        (sessions.length
+          ? "<div class='attendance-session-grid'>" + sessions.map((item, index) =>
+              "<button type='button' class='attendance-session-btn' data-attendance-session='" + index + "'>" +
+                "<strong>" + attendanceEscape(item.time) + "　" + attendanceEscape(item.className) + "</strong>" +
+                "<span>" + attendanceEscape(item.subject) + "</span>" +
+              "</button>"
+            ).join("") + "</div>"
+          : "<div class='empty'>當日沒有排定課程。</div>") +
+      "</div>" +
+    "</div>" +
+    "<div class='panel attendance-session-content-panel' id='attendanceSessionContent'><div class='empty'>請選擇上方課程，載入學生名單。</div></div>";
 
   if (!attendanceCalendarMonth) attendanceCalendarMonth = attendanceSelectedDate.slice(0, 7);
   renderAttendanceWeeklyOverview();
