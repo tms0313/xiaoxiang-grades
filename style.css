@@ -140,3 +140,9 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* 以上字體規格同時套用於手機與桌面，不變更欄位高度及版面尺寸。 */
+
+
+/* 週考檢閱紀錄：清單內班級、學生資料及檢閱時間統一使用純黑字體 */
+#appRoot #reviewRecordContent .student-record-table tbody td {
+  color: #000000 !important;
+}
