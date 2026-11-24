@@ -561,10 +561,11 @@ style.textContent = [
   ".alumni-score-table td { padding:5px 9px; line-height:1.25; }",
   ".alumni-score-table tbody td,.alumni-score-table tbody td * { font-size:18px !important; }",
   ".alumni-filter-row { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); align-items:stretch; gap:8px; margin:0 0 14px; width:100%; }",
-  ".alumni-filter-row select,.alumni-filter-row input { box-sizing:border-box; display:block; width:100%; min-width:0; max-width:none; height:40px; min-height:40px; margin:0; padding:9px 8px; border:1px solid #ccd4df; border-radius:8px; background:#fff; font-size: 14px; line-height:20px; }",
-  ".alumni-filter-row > #alumniFilteredExportButton { align-self:start !important; justify-self:stretch; display:block; box-sizing:border-box; width:100%; height:40px !important; min-height:40px !important; margin:0 !important; padding:0 10px !important; line-height:40px !important; vertical-align:top; }",
+  "#alumniHistoryTitle,#termExamOverviewTitle { font-size:18px !important; }",
+  ".alumni-filter-row select,.alumni-filter-row input { box-sizing:border-box; display:block; width:100%; min-width:0; max-width:none; height:40px; min-height:40px; margin:0; padding:9px 8px; border:1px solid #ccd4df; border-radius:8px; background:#fff; font-size: 18px !important; line-height:20px; }",
+  ".alumni-filter-row > #alumniFilteredExportButton { font-size:18px !important; align-self:start !important; justify-self:stretch; display:block; box-sizing:border-box; width:100%; height:40px !important; min-height:40px !important; margin:0 !important; padding:0 10px !important; line-height:40px !important; vertical-align:top; }",
   "@media(max-width:900px) { .alumni-filter-row { grid-template-columns:repeat(3,minmax(0,1fr)); } }",
-  "@media(max-width:600px) { .alumni-filter-row { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; } .alumni-filter-row select,.alumni-filter-row input { padding:9px 7px; font-size: 14px; } }",
+  "@media(max-width:600px) { .alumni-filter-row { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; } .alumni-filter-row select,.alumni-filter-row input { padding:9px 7px; font-size: 18px !important; } }",
   ".alumni-score-table th:nth-child(2),.alumni-score-table th:nth-child(3) { text-align:left; }",
   ".alumni-score-actions { display:flex; gap:3px; justify-content:center; }",
   ".alumni-score-actions .btn { flex:0 0 auto !important; width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size: 14px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }",
@@ -629,8 +630,8 @@ style.textContent = [
   ".overview-table .action-buttons .overview-exclude-reminder-btn { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:30px !important; min-height:30px !important; padding:0 9px !important; font-size: 14px !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }",
   "#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton { display:inline-flex !important; align-items:center !important; justify-content:center !important; box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; margin:0 !important; padding:0 12px !important; font-family:inherit !important; font-size:16px !important; font-weight:700 !important; line-height:20px !important; white-space:nowrap !important; vertical-align:middle !important; }",
   ".term-exam-overview-filters .field { min-width:0; display:flex; flex-direction:column; align-items:stretch; gap:5px; }",
-  ".term-exam-overview-filters .field label { display:block; height:auto !important; min-height:22px; margin:0 !important; padding:0 !important; line-height:1.5 !important; overflow:visible !important; white-space:nowrap; }",
-  ".term-exam-overview-filters .field select,.term-exam-overview-filters .field input { display:block !important; width:100% !important; min-width:0 !important; height:40px !important; min-height:40px !important; max-height:40px !important; box-sizing:border-box !important; padding:0 10px !important; font-family:inherit !important; font-size: 16px !important; font-weight:400 !important; line-height:normal !important; vertical-align:middle; text-overflow:clip; }",
+  ".term-exam-overview-filters .field label { display:block; font-size:18px !important; height:auto !important; min-height:22px; margin:0 !important; padding:0 !important; line-height:1.5 !important; overflow:visible !important; white-space:nowrap; }",
+  ".term-exam-overview-filters .field select,.term-exam-overview-filters .field input { display:block !important; width:100% !important; min-width:0 !important; height:40px !important; min-height:40px !important; max-height:40px !important; box-sizing:border-box !important; padding:0 10px !important; font-family:inherit !important; font-size: 18px !important; font-weight:400 !important; line-height:normal !important; vertical-align:middle; text-overflow:clip; }",
   ".term-exam-overview-filters .field select { overflow:visible !important; }",
   ".term-exam-overview-table td { padding:5px 10px; line-height:1.25; }",
   ".term-exam-overview-table { min-width:760px !important; table-layout:auto !important; }",
@@ -6438,7 +6439,7 @@ async function renderTermExamEntry() {
     "<div class='field'><label for='termSemester'>學期</label><select id='termSemester'><option value=''>請選擇學期</option><option value='上學期'>上學期</option><option value='下學期'>下學期</option></select></div>"+
     "<div class='field'><label for='termExamNumber'>段考</label><select id='termExamNumber'><option value=''>請選擇段考</option><option value='1'>第一次段考</option><option value='2'>第二次段考</option><option value='3'>第三次段考</option></select></div>"+
     "<div class='field'><label for='termClass'>班級</label><select id='termClass'><option value=''>請選擇班級</option>"+available(saved.year||"").map(x=>"<option value='"+x+"'>"+x+"</option>").join("")+"</select></div></div></div>"+
-    "<div id='termExamRoster'><div class='empty'>請先選擇學年度、學期、段考及班級。</div></div><div class='panel'><h3>段考成績總覽</h3><div id='termExamRecords'>資料載入中……</div></div>";
+    "<div id='termExamRoster'><div class='empty'>請先選擇學年度、學期、段考及班級。</div></div><div class='panel'><h3 id='termExamOverviewTitle'>段考成績總覽</h3><div id='termExamRecords'>資料載入中……</div></div>";
   $("termSemester").value=saved.semester||"";$("termExamNumber").value=saved.exam||"";$("termClass").value=available(saved.year||"").includes(saved.className)?saved.className:"";
   for(const id of ["termAcademicYear","termSemester","termExamNumber","termClass"]){$(id).addEventListener(id==="termAcademicYear"?"input":"change",()=>{if(id==="termAcademicYear")updateClasses();write(prefKey,criteria());renderRoster();});}
   try{
@@ -6538,7 +6539,7 @@ async function renderAlumniMockScores() {
         "</div>" +
       "</form>" +
     "</div>" +
-    "<h3 style='color:#23466b;margin:0 0 10px'>歷屆模考資料</h3>" +
+    "<h3 id='alumniHistoryTitle' style='color:#23466b;margin:0 0 10px'>歷屆模考資料</h3>" +
     "<div class='alumni-filter-row'>" +
       "<select id='alumniYearFilter' aria-label='依學年度查詢'><option value=''>全部學年度</option></select>" +
       "<input id='alumniNameFilter' type='text' placeholder='搜尋學生姓名' aria-label='搜尋學生姓名'>" +
