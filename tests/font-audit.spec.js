@@ -1,6 +1,8 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 
+const ALLOWED_FONT_SIZES = new Set(['14px', '16px', '18px', '20px', '24px']);
+
 const ADMIN_EMAIL = process.env.FONT_AUDIT_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.FONT_AUDIT_ADMIN_PASSWORD;
 const PARENT_EMAIL = process.env.FONT_AUDIT_PARENT_EMAIL;
@@ -120,6 +122,10 @@ test('rendered typography inventory across admin, parent and teacher pages', asy
     fontSizes: Object.fromEntries(Object.entries(grouped).map(([size, value]) => [size, value.count])),
     pages: summary.pages, pageErrors
   }, null, 2));
+  const fontSizeViolations = allRows.filter(row => !ALLOWED_FONT_SIZES.has(row.fontSize));
+  fs.writeFileSync('font-audit/font-size-violations.json', JSON.stringify(fontSizeViolations, null, 2));
+  console.log('TYPOGRAPHY WHITELIST CHECK', JSON.stringify({ allowed: [...ALLOWED_FONT_SIZES], violations: fontSizeViolations.length, examples: fontSizeViolations.slice(0, 30) }, null, 2));
   expect(allRows.length).toBeGreaterThan(0);
+  expect(fontSizeViolations, 'Every visible text element must use 14, 16, 18, 20 or 24px').toEqual([]);
   expect(pageErrors, 'No JavaScript or console errors across audited roles and pages').toEqual([]);
 });
