@@ -3568,7 +3568,7 @@ function renderScoreEntry() {
     "<div class='field exam-date-range-field'><label for='examDateRangeDisplay'>考試日期區間</label><div class='exam-date-range-control'>" +
     "<input id='examDateRangeDisplay' type='text' readonly aria-label='選擇考試開始與結束日期' placeholder='請選擇日期區間'>" +
     "<button type='button' class='exam-calendar-trigger' id='examCalendarTrigger' aria-label='開啟日期日曆'>▦</button>" +
-    "<div id='examDateCalendar' class='exam-date-calendar' hidden></div></div>" +
+    "<div id='examDateCalendar' class='attendance-calendar exam-date-calendar' hidden></div></div>" +
     "<input id='examStart' type='hidden'><input id='examEnd' type='hidden'></div>" +
     "<button class='btn btn-success' type='submit'>儲存考試</button>" +
     "<button class='btn btn-secondary' type='button' id='examCancel'>清除</button>" +
