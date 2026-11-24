@@ -450,6 +450,8 @@ style.textContent = [
   "body { margin:0; background:#f3f5f8; color:#263445; font-family:Arial,'Microsoft JhengHei',sans-serif; }",
   "* { box-sizing:border-box; }",
   "button,input,select { font:inherit; }",
+  "h3:not([class]):not([style*=\"font-size\"]) { font-size:18px; }",
+  "small { font-size:14px; }",
   "button { cursor:pointer; }",
 
   ".login-wrap { min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; }",
