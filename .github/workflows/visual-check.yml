@@ -18,7 +18,6 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run visual smoke test
-        continue-on-error: true
         run: npm run test:visual
       - name: Verify typography audit secrets are available (names only)
         id: audit-secrets
