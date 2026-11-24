@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 
-const ALLOWED_FONT_SIZES = new Set(['12px', '14px', '16px', '20px', '24px']);
+const ALLOWED_FONT_SIZES = new Set(['14px', '16px', '18px', '20px', '24px']);
 
 const ADMIN_EMAIL = process.env.FONT_AUDIT_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.FONT_AUDIT_ADMIN_PASSWORD;
