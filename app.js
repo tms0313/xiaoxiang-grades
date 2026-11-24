@@ -635,7 +635,7 @@ style.textContent = [
   ".term-exam-overview-table { min-width:760px !important; table-layout:auto !important; }",
   ".term-exam-overview-table th,.term-exam-overview-table td { height:auto !important; min-height:0 !important; max-height:none !important; padding:9px 10px !important; line-height:1.5 !important; vertical-align:middle !important; overflow:visible !important; text-overflow:clip !important; white-space:nowrap !important; font-size: 16px !important; }",
   ".term-exam-overview-table th { font-size: 14px !important; }",
-  ".term-exam-overview-table tbody td:not(.action-cell) { font-size: 16px !important; }",
+  ".term-exam-overview-table tbody td:not(.action-cell) { font-size: 18px !important; }",
   ".term-exam-overview-table th { font-weight:800 !important; }",
   ".term-exam-overview-table .action-cell { min-width:100px; }",
   ".term-exam-overview-table .action-buttons { gap:3px; }",
