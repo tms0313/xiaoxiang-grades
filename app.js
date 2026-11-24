@@ -860,7 +860,7 @@ style.textContent += "\n" +
 
 /* 全站學生名單：統一採用週成績登錄的緊湊列距 */
 style.textContent += "\n" +
-  ".overview-table tbody td,.student-management-table tbody td,.term-bulk-table tbody td,.term-exam-overview-table tbody td,.alumni-score-table tbody td,.student-record-table tbody td { padding:5px 8px !important; line-height:1.3 !important; }" +
+  ".overview-table tbody td,.student-management-table tbody td,.exam-management-table tbody td,.term-bulk-table tbody td,.term-exam-overview-table tbody td,.alumni-score-table tbody td,.student-record-table tbody td { padding:5px 8px !important; line-height:1.3 !important; }" +
   ".bulk-score-entry-table tbody td { padding:0 8px !important; line-height:1.2 !important; vertical-align:middle !important; }" +
   ".bulk-score-entry-table tbody td input:not([type=\"checkbox\"]),.bulk-score-entry-table tbody td select { box-sizing:border-box !important; width:100% !important; height:40px !important; min-height:40px !important; max-height:40px !important; padding:0 10px !important; border:1px solid #ccd4df !important; border-radius:8px !important; background:#fff !important; line-height:1.3 !important; }" +
   ".bulk-score-entry-table tbody td [data-save-bulk-row] { min-height:28px !important; padding:4px 9px !important; line-height:1.2 !important; }" +
