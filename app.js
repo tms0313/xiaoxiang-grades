@@ -517,6 +517,7 @@ style.textContent = [
   ".dashboard { width:min(1200px,94%); margin:30px auto; background:#fff; padding:28px; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
   ".tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; border-bottom:1px solid #e4e9ef; padding-bottom:15px; }",
   ".tab-btn { border:0; padding:10px 14px; border-radius:8px; background:#edf1f5; color:#34475b; font-weight:700; }",
+  ".tabs .tab-btn, #adminTabs .tab-btn, .parent-bottom-nav .parent-action-btn, .teacher-bottom-nav .parent-action-btn { text-decoration:none !important; }",
   ".tab-btn:hover { background:#315d86; color:#fff; }",
   ".tab-btn.active { background:#315d86; color:#fff; }",
 
