@@ -5823,9 +5823,6 @@ async function renderLoginLogs() {
       "</div>" +
       "<div class='toolbar' style='display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0'>" +
         "<input id='loginLogKeyword' type='search' class='form-control' placeholder='搜尋家長／教師' style='flex:1;min-width:160px' autocomplete='off'>" +
-        "<label class='muted' style='white-space:nowrap'>登入日期</label>" +
-        "<button id='loginLogDateTrigger' type='button' class='btn btn-secondary btn-small'>選擇日期</button>" +
-        "<div id='loginLogCalendar' class='login-log-calendar' hidden></div>" +
         "<span id='loginLogResultCount' class='muted' style='white-space:nowrap'></span>" +
       "</div>" +
       "<div class='table-wrap'><table class='login-log-table'><thead><tr><th>登入身分</th><th>登入時間</th></tr></thead>" +
@@ -5836,56 +5833,21 @@ async function renderLoginLogs() {
     if (clearButton) clearButton.addEventListener("click", clearAllLoginLogs);
 
     const keywordInput = $("loginLogKeyword");
-    const dateTrigger = $("loginLogDateTrigger");
-    const dateCalendar = $("loginLogCalendar");
-    let selectedDate = "";
-    let calendarMonth = new Date();
+    const keywordInput = $("loginLogKeyword");
     const resultCount = $("loginLogResultCount");
     const logRows = Array.from(content.querySelectorAll("#loginLogRows tr[data-log-search]"));
     const applyLogFilters = function () {
       const keyword = String(keywordInput && keywordInput.value || "").trim().toLocaleLowerCase();
-      const activeDate = selectedDate;
       let visibleCount = 0;
-
       logRows.forEach(row => {
         const matchesKeyword = !keyword || String(row.dataset.logSearch || "").includes(keyword);
-        const matchesDate = !activeDate || row.dataset.logDate === activeDate;
-        const visible = matchesKeyword && matchesDate;
-        row.hidden = !visible;
-        if (visible) visibleCount += 1;
+        row.hidden = !matchesKeyword;
+        if (matchesKeyword) visibleCount += 1;
       });
-
       if (resultCount) resultCount.textContent = "符合 " + visibleCount + "／" + logs.length + " 筆";
     };
-
     if (keywordInput) keywordInput.addEventListener("input", applyLogFilters);
-    const renderLoginCalendar = function () {
-      if (!dateCalendar) return;
-      const year = calendarMonth.getFullYear(), month = calendarMonth.getMonth();
-      const firstDay = new Date(year, month, 1).getDay(), totalDays = new Date(year, month + 1, 0).getDate();
-      const weekdays = ["日","一","二","三","四","五","六"];
-      let cells = "";
-      for (let i = 0; i < firstDay; i++) cells += "<span class='login-log-calendar-empty'></span>";
-      for (let d = 1; d <= totalDays; d++) {
-        const iso = year + "-" + String(month + 1).padStart(2,"0") + "-" + String(d).padStart(2,"0");
-        cells += "<button type='button' class='login-log-calendar-day" + (iso === selectedDate ? " selected" : "") + "' data-login-log-date='" + iso + "'>" + d + "</button>";
-      }
-      dateCalendar.innerHTML = "<div class='login-log-calendar-heading'><button type='button' data-login-log-month='-1' aria-label='上一個月'>‹</button><strong>" + year + " 年 " + (month + 1) + " 月</strong><button type='button' data-login-log-month='1' aria-label='下一個月'>›</button></div><div class='login-log-calendar-weekdays'>" + weekdays.map(w => "<span>" + w + "</span>").join("") + "</div><div class='login-log-calendar-days'>" + cells + "</div><button type='button' class='login-log-calendar-clear' data-login-log-clear>清除日期</button>";
-      dateCalendar.hidden = false;
-    };
-    if (dateTrigger) dateTrigger.addEventListener("click", function () {
-      if (dateCalendar.hidden) renderLoginCalendar(); else dateCalendar.hidden = true;
-    });
-    if (dateCalendar) dateCalendar.addEventListener("click", function (event) {
-      const nav = event.target.closest("[data-login-log-month]");
-      const day = event.target.closest("[data-login-log-date]");
-      const clear = event.target.closest("[data-login-log-clear]");
-      if (nav) { calendarMonth.setMonth(calendarMonth.getMonth() + Number(nav.dataset.loginLogMonth)); renderLoginCalendar(); return; }
-      if (day) {
-        selectedDate = day.dataset.loginLogDate;
-        dateTrigger.textContent = selectedDate;
-        dateCalendar.hidden = true;
-        applyLogFilters();
+    applyLogFilters();
       }
       if (clear) { selectedDate = ""; dateTrigger.textContent = "選擇日期"; dateCalendar.hidden = true; applyLogFilters(); }
     });
