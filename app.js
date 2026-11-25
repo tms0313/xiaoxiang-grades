@@ -656,7 +656,7 @@ style.textContent = [
   ".parent-brand { display:flex; flex:1 1 100%; flex-direction:row; align-items:center; justify-content:center; text-align:center; }",
   ".parent-brand h1 { width:100%; margin:0; color:#fff; text-align:center; font-size: 24px; line-height:1.4; letter-spacing:.3px; font-weight:850; }",
   ".teacher-page .topbar h1 { font-size:24px !important; line-height:1.4; letter-spacing:.3px; font-weight:850; }",
-  ".teacher-dashboard { max-width:1050px; }",
+  ".teacher-dashboard { width:96% !important; max-width:none !important; margin:15px auto !important; }\n  ".teacher-page { background:#f3f5f8 !important; }\n  ".teacher-page .teacher-dashboard { background:#fff; border-radius:16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }",
   ".teacher-class-panel { margin-bottom:10px; padding:12px 15px; }",
   ".teacher-class-heading { margin:0 0 9px; padding-bottom:7px; border-bottom:2px solid #dce7f1; color:#23466b; font-size: 20px; }",
   ".teacher-subject-section { margin:8px 0 10px; }",
