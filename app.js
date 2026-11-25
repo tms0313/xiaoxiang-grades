@@ -7455,7 +7455,7 @@ async function renderParentDashboard() {
           (
             released
               ? buildParentScoreTable(student, exam)
-              : "<div class='empty'>本次考試成績將於週六 18:00 開放查詢。</div>"
+              : "<div class='empty'>本週考試成績將於週六 18:00 開放查詢。</div>"
           ) +
           reviewButton +
         "</div>"
