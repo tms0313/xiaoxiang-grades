@@ -6995,7 +6995,7 @@ async function renderParentDashboard() {
       ".parent-attendance-summary{margin:0 0 18px;padding:0}" +
       ".parent-attendance-summary-title{margin:0 0 10px;color:#526477;font-size: 20px;font-weight:800;line-height:1.4}" +
       ".parent-attendance-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}" +
-      ".parent-attendance-stat{display:flex;flex-direction:column;gap:5px;min-width:0;padding:12px 14px;border:1px solid #dce5ed;border-radius:10px;background:#f5f8fb}" +
+      ".parent-attendance-stat{display:flex;flex-direction:row;align-items:center;gap:7px;min-width:0;padding:12px 14px;border:1px solid #dce5ed;border-radius:10px;background:#f5f8fb}" +
       " .parent-attendance-stat-label{color:#647487;font-size: 16px !important;font-weight:700;line-height:1.45}" +
       ".parent-attendance-stat-value{color:#31506c;font-size: 20px;font-weight:800;line-height:1.35;font-variant-numeric:tabular-nums}" +
       " .parent-attendance-stat-value small{font-size: 16px !important;font-weight:700}" +
