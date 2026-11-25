@@ -7508,6 +7508,10 @@ async function renderTeacherDashboard() {
   const requestId = ++teacherDashboardRequestId;
   document.body.classList.remove("parent-page");
   document.body.classList.add("teacher-page");
+  // 教師查詢頁背景直接套用至 html、body 與應用根節點，避免外層畫布沿用深藍背景。
+  document.documentElement.style.setProperty("background-color", "#f3f5f8", "important");
+  document.body.style.setProperty("background-color", "#f3f5f8", "important");
+  appRoot.style.setProperty("background-color", "#f3f5f8", "important");
   showLoading("正在載入教師授課資料……");
 
   // 先取得教師授課範圍，後續學生與修課查詢只載入相關班級／科目。
