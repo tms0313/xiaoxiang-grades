@@ -1037,8 +1037,8 @@ async function loadCurrentProfile() {
   currentProfile = result.data;
 
 
-  if (currentProfile.role === "teacher" && currentUser.app_metadata && currentUser.app_metadata.must_change_password === true) {
-    renderTeacherFirstLoginPasswordChange();
+  if (["teacher", "parent"].includes(currentProfile.role) && currentUser.app_metadata && currentUser.app_metadata.must_change_password === true) {
+    renderFirstLoginPasswordChange();
     return;
   }
 
@@ -4522,7 +4522,7 @@ function renderGuardians() {
         "<div class='field'><label>家長 Email／手機號碼</label><input id='newParentAccount' type='text' placeholder='請輸入 Email 或 0912345678' autocomplete='off' required></div>" +
         "<div class='field'><label>綁定學生</label><select id='newParentStudent' required><option value=''>請選擇學生</option>" + studentOptions + "</select></div>" +
       "</div>" +
-      "<p class='muted'>初始密碼：123456。家長首次登入後，請自行修改密碼。</p>" +
+      "<p class='muted'>系統會產生一次性隨機臨時密碼。家長首次登入時，必須先設定自己的新密碼。</p>" +
       "<button class='btn btn-success' type='submit' id='createParentButton'>建立家長帳號</button>" +
       "</form></div>" +
 
@@ -4889,7 +4889,7 @@ async function createParentAccount(event) {
     "登入帳號：" + loginLabel + "\n" +
     "綁定學生：" + student.full_name + "\n" +
     "班級：" + student.class_name + "\n" +
-    "初始密碼：123456\n\n" +
+    "初始密碼：系統將自動產生一次性隨機密碼，首次登入必須修改。\n\n" +
     "確認建立家長帳號嗎？"
   )) return;
 
@@ -7814,14 +7814,17 @@ function renderTeacherResults() {
 // 16. 修改自己的登入密碼
 // ==================================================
 
-function renderTeacherFirstLoginPasswordChange() {
+function renderFirstLoginPasswordChange() {
+  const isParent = currentProfile && currentProfile.role === "parent";
+  const sectionTitle = isParent ? "家長查詢專區" : "教師專區 僅供查詢";
+  const accessDescription = isParent ? "進入家長成績與出缺席查詢前，請先完成密碼設定。" : "完成修改前，無法進入教師成績查詢。";
   appRoot.innerHTML =
-    "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1><small>首次登入安全設定</small></div>" +
+    "<div class='topbar'><div><h1>小象文教機構｜" + sectionTitle + "</h1><small>首次登入安全設定</small></div>" +
       "<button class='tab-btn logout-action' id='teacherFirstLoginLogout'>登出</button></div>" +
     "<main class='dashboard' style='max-width:560px'>" +
       "<div class='panel'>" +
         "<h2>首次登入請更改密碼</h2>" +
-        "<p class='muted'>目前使用的是管理員提供的臨時密碼。為保障帳號安全，請先設定至少 8 個字元的新密碼；完成修改前，無法進入教師成績查詢。</p>" +
+        "<p class='muted'>目前使用的是系統產生的一次性臨時密碼。為保障帳號安全，請先設定至少 8 個字元的新密碼；" + accessDescription + "</p>" +
         "<form id='teacherFirstLoginPasswordForm'>" +
           "<div class='field'><label for='teacherFirstNewPassword'>新密碼（至少 8 個字元）</label><input id='teacherFirstNewPassword' type='password' autocomplete='new-password' minlength='8' required></div>" +
           "<div class='field'><label for='teacherFirstConfirmPassword'>再次輸入新密碼</label><input id='teacherFirstConfirmPassword' type='password' autocomplete='new-password' minlength='8' required></div>" +
