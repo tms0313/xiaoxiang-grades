@@ -8017,7 +8017,7 @@ style.textContent += "\n" +
 
 
 /* 管理員手機版清單資料文字統一 18px；僅限管理後台，不影響家長／教師成績查詢頁 */
-style.textContent += "\\n" +
+style.textContent += "\n" +
   "@media(max-width:600px){" +
     "#adminContent .overview-table tbody td,#adminContent .overview-table tbody td *{font-size:18px!important;}" +
     "#adminContent .student-record-table tbody td,#adminContent .student-record-table tbody td *{font-size:18px!important;}" +
