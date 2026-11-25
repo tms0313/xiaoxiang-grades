@@ -4522,7 +4522,7 @@ function renderGuardians() {
         "<div class='field'><label>家長 Email／手機號碼</label><input id='newParentAccount' type='text' placeholder='請輸入 Email 或 0912345678' autocomplete='off' required></div>" +
         "<div class='field'><label>綁定學生</label><select id='newParentStudent' required><option value=''>請選擇學生</option>" + studentOptions + "</select></div>" +
       "</div>" +
-      "<p class='muted'>系統會產生一次性隨機臨時密碼。家長首次登入時，必須先設定自己的新密碼。</p>" +
+      "<p class='muted'>家長帳號初始密碼為 123456。首次登入時，必須先設定至少 8 個字元的新密碼。</p>" +
       "<button class='btn btn-success' type='submit' id='createParentButton'>建立家長帳號</button>" +
       "</form></div>" +
 
@@ -4889,7 +4889,7 @@ async function createParentAccount(event) {
     "登入帳號：" + loginLabel + "\n" +
     "綁定學生：" + student.full_name + "\n" +
     "班級：" + student.class_name + "\n" +
-    "初始密碼：系統將自動產生一次性隨機密碼，首次登入必須修改。\n\n" +
+    "初始密碼：123456（首次登入必須修改為至少 8 個字元的新密碼）。\n\n" +
     "確認建立家長帳號嗎？"
   )) return;
 
@@ -4921,24 +4921,12 @@ async function createParentAccount(event) {
     renderGuardians();
 
     const passwordText = data.initialPassword;
-    let copied = false;
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(passwordText);
-        copied = true;
-      }
-    } catch (copyError) {
-      console.warn("複製初始密碼失敗：", copyError);
-    }
-
     alert(
       "家長帳號建立成功！\n\n" +
       "登入帳號：" + loginLabel + "\n" +
       "綁定學生：" + student.full_name + "\n" +
-      "初始密碼：" + passwordText + "\n\n" +
-      (copied
-        ? "初始密碼已複製，可以直接貼到 LINE 傳給家長。"
-        : "請記下初始密碼，並透過 LINE 提供給家長。")
+      "初始密碼：123456\n\n" +
+      "請將初始密碼提供給家長。家長首次登入時，必須先設定至少 8 個字元的新密碼。"
     );
 
     showMessage(
