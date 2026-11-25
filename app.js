@@ -5659,7 +5659,7 @@ async function resetParentPassword(parentUserId) {
 
   try {
     const result = await db.functions.invoke("admin-reset-parent-password", {
-      body: { parentId: parentUserId }
+      body: { parentUserId: parentUserId }
     });
     if (result.error) {
       const detail = result.data && result.data.error ? result.data.error : result.error.message;
