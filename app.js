@@ -804,8 +804,6 @@ style.textContent = [
   ".loading-message { position:fixed; top:15px; right:15px; z-index:9999; background:#23466b; color:#fff; padding:12px 18px; border-radius:8px; box-shadow:0 3px 12px rgba(0,0,0,.2); }",
   ".student-card { max-width:920px; border:1px solid #dce5ee; border-radius:15px; padding:25px 26px; margin:22px auto; background:#fff; box-shadow:0 4px 16px rgba(35,70,107,.045); }",
   ".student-card .student-heading { display:flex; align-items:center; flex-wrap:wrap; gap:10px 14px; margin:0 0 20px; padding:0 0 16px; border-bottom:1px solid #e6edf4; color:#23466b; line-height:1.4; }",
-  ".student-card .student-name { font-size: 24px; font-weight:850; letter-spacing:.4px; color:#1e4165; }",
-  ".student-card .student-class { display:inline-flex; align-items:center; min-height:31px; padding:5px 13px; border-radius:8px; background:#edf4fa; color:#315d86; font-size: 14px; font-weight:800; }",
   ".student-card .student-name { font-size: 24px; font-weight:850; letter-spacing:.3px; color:#1e4165; }",
   ".student-card .student-class { display:inline-flex; align-items:center; min-height:28px; padding:4px 11px; border-radius:7px; background:#edf4fa; color:#315d86; font-size: 14px; font-weight:800; }",
   ".footer { text-align:center; color:#8995a2; padding:25px; font-size: 14px; }",
