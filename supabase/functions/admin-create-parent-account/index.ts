@@ -8,13 +8,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function makeTemporaryPassword() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$";
-  const random = new Uint32Array(18);
-  crypto.getRandomValues(random);
-  return Array.from(random, value => alphabet[value % alphabet.length]).join("");
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -178,7 +171,7 @@ Deno.serve(async (req) => {
 
     // 使用 Email Provider 建立帳號
     // 手機帳號使用內部別名，不使用 Phone Auth
-    const initialPassword = makeTemporaryPassword();
+    const initialPassword = "123456";
     const { data: created, error: createError } =
       await adminClient.auth.admin.createUser({
         email: internalEmail,
@@ -196,7 +189,7 @@ Deno.serve(async (req) => {
 
     createdUserId = created.user.id;
 
-    // 新建家長帳號必須在首次登入時更改臨時密碼。
+    // 新建家長帳號使用既有初始密碼 123456，首次登入必須強制更改。
     const { error: metadataError } = await adminClient.auth.admin.updateUserById(
       createdUserId,
       {
