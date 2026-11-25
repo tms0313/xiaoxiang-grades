@@ -7235,24 +7235,26 @@ async function renderParentDashboard() {
   });
 
   function buildParentAttendanceSummary(student) {
-    // 顯示最近一次週六 18:00 已發布的週資料，直到下次週六更新。
+    // 顯示最近一次週六 18:00 已發布的出缺席週，並明確標示實際統計日期。
+    const periodLabel = weekStartISO.replace(/-/g, "/").slice(5) + "～" + weekEndISO.replace(/-/g, "/").slice(5);
     if (parentAttendanceLoadError) {
-      return "<div class='parent-attendance-error' role='alert'>本週出缺席資料暫時無法讀取，請稍後再試。</div>";
+      return "<div class='parent-attendance-error' role='alert'>統計期間（" + periodLabel + "）的出缺席資料暫時無法讀取，請稍後再試。</div>";
     }
     const summary = parentAttendanceByStudent.get(String(student.id));
     if (!summary || summary.recordCount === 0) {
-      return "<div class='parent-attendance-empty'>本週尚無出缺席紀錄。</div>";
+      return "<div class='parent-attendance-empty'>統計期間（" + periodLabel + "）尚無出缺席紀錄。</div>";
     }
     return (
-      "<section class='parent-attendance-summary' aria-label='本週出缺席摘要'>" +
+      "<section class='parent-attendance-summary' aria-label='出缺席統計：" + periodLabel + "'>" +
+        "<h3 class='parent-attendance-summary-title'>出缺席統計（" + periodLabel + "）</h3>" +
         "<div class='parent-attendance-summary-grid'>" +
           "<div class='parent-attendance-stat'>" +
-            "<span class='parent-attendance-stat-label'>本週遲到</span>" +
+            "<span class='parent-attendance-stat-label'>統計期間遲到</span>" +
             "<span class='parent-attendance-stat-value" + (summary.lateMinutes > 0 ? " attendance-alert" : "") + "'>" +
               summary.lateMinutes + " <small>分鐘</small></span>" +
           "</div>" +
           "<div class='parent-attendance-stat'>" +
-            "<span class='parent-attendance-stat-label'>本週未打卡</span>" +
+            "<span class='parent-attendance-stat-label'>統計期間未打卡</span>" +
             "<span class='parent-attendance-stat-value" + (summary.uncheckedCount > 0 ? " attendance-alert" : "") + "'>" +
               summary.uncheckedCount + " <small>次</small></span>" +
           "</div>" +
