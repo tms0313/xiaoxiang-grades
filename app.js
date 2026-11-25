@@ -7962,7 +7962,7 @@ style.textContent += "\n" +
   ".field input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.field select { padding-top:0 !important; padding-bottom:0 !important; line-height:normal !important; }" +
   "textarea { box-sizing:border-box !important; height:auto !important; min-height:80px !important; max-height:none !important; line-height:1.5 !important; padding:10px 12px !important; }" +
   ".term-bulk-table input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.bulk-score-entry-table tbody td input:not([type=checkbox]),.bulk-score-entry-table tbody td select { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; border-radius:8px !important; }" +
-  ".term-exam-overview-filters .field select,.term-exam-overview-filters .field input { height:40px !important; min-height:40px !important; max-height:40px !important; padding-top:0 !important; padding-bottom:0 !important; line-height:normal !important; }" +
+  ".term-exam-overview-filters .field select,.term-exam-overview-filters .field input { padding-top:0 !important; padding-bottom:0 !important; }" +
   "/* 段考成績表：明確覆蓋各層既有規則，讓姓名與輸入框共用同一 40px 垂直中心 */" +
   "#termExamRoster .term-roster-wrap .term-bulk-table { border-collapse:separate !important; border-spacing:0 !important; }" +
   "#termExamRoster .term-roster-wrap .term-bulk-table tbody tr { height:46px !important; }" +
@@ -7979,7 +7979,7 @@ style.textContent += "\n" +
 
 /* 週成績總覽未登錄提醒批次操作按鈕：手機版文字放大，避免過小 */
 style.textContent += "\n" +
-  "#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton { display:inline-flex !important; align-items:center !important; justify-content:center !important; box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; padding:0 12px !important; font-size:16px !important; line-height:20px !important; white-space:nowrap !important; flex:0 0 auto !important; }" +
+  "#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton { flex:0 0 auto !important; }" +
   "@media(max-width:600px){#overviewMissingBatchBar{gap:8px !important;align-items:flex-start !important;flex-wrap:wrap !important}#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton{max-width:100% !important}}";
 
 /* Login log calendar uses attendance-style month grid, replacing the native date input */
