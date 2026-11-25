@@ -1,10 +1,10 @@
 -- 小象成績查詢系統：家長端班級最高分統計
 -- 僅回傳家長已綁定學生所在班級的彙總最高值與該筆最高成績的等級，
 -- 不回傳其他學生的姓名或個別成績。
+--
+-- 家長端週成績、出缺席摘要與班級最高分統一於每週六 18:00（台灣時間）開放。
 
-DROP FUNCTION IF EXISTS public.get_parent_class_scope_highest_scores();
-
-CREATE FUNCTION public.get_parent_class_scope_highest_scores()
+CREATE OR REPLACE FUNCTION public.get_parent_class_scope_highest_scores()
 RETURNS TABLE (
   student_id uuid,
   exam_id uuid,
