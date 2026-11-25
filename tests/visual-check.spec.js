@@ -11,6 +11,16 @@ test('login page loads and core elements are visible', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/小象文教機構/);
 
+  // 確認共用工具模組已在主程式執行前載入，且原有全域函式名稱可正常呼叫。
+  const utilityChecks = await page.evaluate(() => ({
+    dollar: typeof window.$ === 'function',
+    escapeHtml: typeof window.escapeHtml === 'function',
+    formatDate: typeof window.formatDate === 'function',
+    fetchAllRows: typeof window.fetchAllRows === 'function',
+    normalizeTaiwanMobile: typeof window.normalizeTaiwanMobile === 'function'
+  }));
+  expect(utilityChecks).toEqual({ dollar: true, escapeHtml: true, formatDate: true, fetchAllRows: true, normalizeTaiwanMobile: true });
+
   // 確認抽離後的動態樣式已由 index.html 載入，且核心登入畫面樣式仍生效。
   const appStylesLoaded = await page.evaluate(() => {
     const styleElement = [...document.querySelectorAll('style')].find(el =>
