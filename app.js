@@ -5030,7 +5030,6 @@ async function removeGuardianBinding(guardianId, studentId) {
 function renderTeacherManagement() {
   const content = $("adminContent");
   const teacherById = teacherProfilesByIdCache;
-  const teacherRoleIds = teacherRoleIdsCache;
   const teacherOptions = teacherProfilesCache.map(function (profile) {
     return "<option value='" + escapeHtml(profile.id) + "'>" +
       escapeHtml(profile.email || profile.display_name || profile.id) +
