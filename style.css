@@ -148,16 +148,11 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 
-/* 段考成績登錄：學生姓名 18px，學生編號維持 14px */
+/* 段考成績登錄：學生姓名 18px 純黑；學生編號維持 14px 及原有顏色 */
 #appRoot #termExamRoster .term-bulk-table tbody td.term-student-name .term-student-name-text {
   font-size: 18px !important;
+  color: #000000 !important;
 }
 #appRoot #termExamRoster .term-bulk-table tbody td.term-student-name small {
   font-size: 14px !important;
-}
-
-
-/* 段考成績登錄：學生姓名純黑；學生編號維持原有顏色 */
-#appRoot #termExamRoster .term-bulk-table tbody td.term-student-name .term-student-name-text {
-  color: #000000 !important;
 }
