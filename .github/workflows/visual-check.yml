@@ -17,6 +17,14 @@ jobs:
         run: npm install
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check attendance.js
+          node --check playwright.config.js
+          node --check tests/visual-check.spec.js
+          node --check tests/font-audit.spec.js
+          node --check tests/font-audit-mobile.spec.js
       - name: Run visual smoke test
         run: npx playwright test tests/visual-check.spec.js
       - name: Verify typography audit secrets are available (names only)
