@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
       }
       const { data: authUser, error: authUserError } = await adminClient.auth.admin.getUserById(callerData.user.id);
       if (authUserError || !authUser.user) {
-        return json({ success: false, error: "無法讀取教師帳號資料" }, 400);
+        return json({ success: false, error: "無法讀取登入帳號資料" }, 400);
       }
       const { error: metadataError } = await adminClient.auth.admin.updateUserById(callerData.user.id, {
         app_metadata: { ...(authUser.user.app_metadata || {}), must_change_password: false }
