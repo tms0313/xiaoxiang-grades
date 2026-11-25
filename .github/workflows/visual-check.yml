@@ -23,6 +23,7 @@ jobs:
         run: |
           node --check app.js
           node --check attendance.js
+          node --check app-styles.js
           node --check playwright.config.js
           node --check tests/visual-check.spec.js
           node --check tests/font-audit.spec.js
