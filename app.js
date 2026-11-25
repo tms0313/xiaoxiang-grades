@@ -4802,11 +4802,11 @@ async function editParentAccount(parentId) {
   const newAccount = isPhoneAccount ? phone : email;
 
   if (!confirm(
-    "確認修改家長資料嗎？\\n\\n" +
-    "原姓名：" + (parent.display_name || "—") + "\\n" +
-    "新姓名：" + displayName + "\\n\\n" +
-    "原" + accountLabel + "：" + oldAccount + "\\n" +
-    "新" + accountLabel + "：" + newAccount + "\\n\\n" +
+    "確認修改家長資料嗎？\n\n" +
+    "原姓名：" + (parent.display_name || "—") + "\n" +
+    "新姓名：" + displayName + "\n\n" +
+    "原" + accountLabel + "：" + oldAccount + "\n" +
+    "新" + accountLabel + "：" + newAccount + "\n\n" +
     "家長密碼及學生綁定不會變更。"
   )) return;
 
