@@ -59,8 +59,8 @@ Deno.serve(async (req) => {
     const teacherId = String(body.teacherId || "").trim();
 
     if (action === "complete_password_change") {
-      if (callerProfile.role !== "teacher") {
-        return json({ success: false, error: "只有教師帳號可以完成此操作" }, 403);
+      if (!["teacher", "parent"].includes(callerProfile.role)) {
+        return json({ success: false, error: "只有教師或家長帳號可以完成此操作" }, 403);
       }
       const { data: authUser, error: authUserError } = await adminClient.auth.admin.getUserById(callerData.user.id);
       if (authUserError || !authUser.user) {
