@@ -7777,7 +7777,7 @@ function renderTeacherResults() {
     ).join("");
 
   appRoot.innerHTML =
-    "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1></div>" +
+    "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1></div></div>" +
     "<main class='dashboard teacher-dashboard'><div class='toolbar teacher-toolbar'>" +
       "<div class='teacher-filter-group'><label for='teacherExamSelect'><strong>考試週期</strong></label>" +
       "<select id='teacherExamSelect'>" + (examOptions || "<option value=''>目前沒有考試週期</option>") + "</select></div>" +
