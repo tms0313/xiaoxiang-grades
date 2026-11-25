@@ -11,6 +11,21 @@ test('login page loads and core elements are visible', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/小象文教機構/);
 
+  // 確認抽離後的動態樣式已由 index.html 載入，且核心登入畫面樣式仍生效。
+  const appStylesLoaded = await page.evaluate(() => {
+    const styleElement = [...document.querySelectorAll('style')].find(el =>
+      el.textContent.includes('.login-card { width:min(420px,100%)')
+    );
+    return {
+      loaded: Boolean(styleElement),
+      bodyBackground: getComputedStyle(document.body).backgroundColor,
+      loginCardRadius: getComputedStyle(document.querySelector('.login-card')).borderRadius
+    };
+  });
+  expect(appStylesLoaded.loaded, 'app-styles.js should inject the extracted style block').toBeTruthy();
+  expect(appStylesLoaded.bodyBackground).toBe('rgb(243, 245, 248)');
+  expect(appStylesLoaded.loginCardRadius).toBe('18px');
+
   // Capture the rendered page before assertions to preserve evidence if a check fails.
   await page.screenshot({ path: 'screenshots/login-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
