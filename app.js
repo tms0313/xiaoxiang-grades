@@ -5963,6 +5963,8 @@ async function renderStudentReviewRecords(selectedExamId) {
       const reviewMap = cachedReviewMap;
       const selectedClass = classSelect.value;
       let visibleCount = 0;
+      let eligibleCount = 0;
+      let noScoreCount = 0;
       let reviewedCount = 0;
       const rowHtml = [];
       const reviewClassOrder = { "國一班": 1, "國二班": 2, "國三班": 3 };
@@ -5980,13 +5982,24 @@ async function renderStudentReviewRecords(selectedExamId) {
         if (selectedClass && student.class_name !== selectedClass) return;
 
         visibleCount++;
-        const record = reviewMap.get(String(student.id));
-        if (record) reviewedCount++;
+        const hasWeeklyScore = scoresCache.some(function(score) {
+          return String(score.student_id) === String(student.id) &&
+            String(score.exam_id) === String(selectedExamId);
+        });
+        const record = hasWeeklyScore ? reviewMap.get(String(student.id)) : null;
+        if (!hasWeeklyScore) {
+          noScoreCount++;
+        } else {
+          eligibleCount++;
+          if (record) reviewedCount++;
+        }
 
-        const status = record
-          ? "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#e3f5e9;color:#20683d;font-size: 18px;line-height:30px;font-weight:800;white-space:nowrap'>已檢閱</span>"
-          : "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#fde8e8;color:#a32626;font-size: 18px;line-height:30px;font-weight:800;white-space:nowrap'>未檢閱</span>";
-        const reviewedAt = record && record.reviewed_at
+        const status = !hasWeeklyScore
+          ? "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#eef1f5;color:#64748b;font-size: 18px;line-height:30px;font-weight:800;white-space:nowrap'>無成績</span>"
+          : record
+            ? "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#e3f5e9;color:#20683d;font-size: 18px;line-height:30px;font-weight:800;white-space:nowrap'>已檢閱</span>"
+            : "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#fde8e8;color:#a32626;font-size: 18px;line-height:30px;font-weight:800;white-space:nowrap'>未檢閱</span>";
+        const reviewedAt = hasWeeklyScore && record && record.reviewed_at
           ? new Date(record.reviewed_at).toLocaleString("zh-TW", {
               timeZone: "Asia/Taipei",
               year: "numeric",
@@ -6007,9 +6020,9 @@ async function renderStudentReviewRecords(selectedExamId) {
         "</tr>");
       });
 
-      const pendingCount = visibleCount - reviewedCount;
-      const completionRate = visibleCount
-        ? Math.round(reviewedCount / visibleCount * 100)
+      const pendingCount = eligibleCount - reviewedCount;
+      const completionRate = eligibleCount
+        ? Math.round(reviewedCount / eligibleCount * 100)
         : 0;
       const rows = rowHtml.join("");
 
@@ -6019,7 +6032,7 @@ async function renderStudentReviewRecords(selectedExamId) {
           "<div class='panel' style='margin:0;padding:7px 10px;text-align:center'><div class='muted' style='line-height:1.2'>未檢閱</div><div style='font-size: 20px;line-height:1.2;font-weight:900;color:#bd4242'>" + pendingCount + "</div></div>" +
           "<div class='panel' style='margin:0;padding:7px 10px;text-align:center'><div class='muted' style='line-height:1.2'>完成率</div><div style='font-size: 20px;line-height:1.2;font-weight:900;color:#315d86'>" + completionRate + "%</div></div>" +
         "</div>" +
-        "<p class='muted'>統計範圍：目前在學學生，共 " + visibleCount + " 人。</p>" +
+        "<p class='muted'>目前在學學生共 " + visibleCount + " 人；有週考成績 " + eligibleCount + " 人，無成績 " + noScoreCount + " 人（無成績不列入檢閱人數及完成率計算）。</p>" +
         "<div class='table-wrap'><table class='student-record-table' style='min-width:620px'><thead><tr>" +
           "<th>班級</th><th>學生編號</th><th>學生姓名</th><th>檢閱狀態</th><th>檢閱時間</th>" +
         "</tr></thead><tbody>" +
