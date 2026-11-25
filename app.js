@@ -1041,7 +1041,10 @@ async function loadCurrentProfile() {
 
 async function recordSuccessfulLogin() {
   try {
-    await db.from("login_events").insert({ user_id: currentUser.id });
+    const result = await db.from("login_events").insert({ user_id: currentUser.id });
+    if (result.error) {
+      console.warn("登入紀錄寫入失敗", result.error);
+    }
   } catch (error) {
     console.warn("登入紀錄寫入失敗", error);
   }
