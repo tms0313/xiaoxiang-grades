@@ -655,6 +655,7 @@ style.textContent = [
   ".parent-page .dashboard { max-width:1000px; padding:22px 24px; }",
   ".parent-brand { display:flex; flex:1 1 100%; flex-direction:row; align-items:center; justify-content:center; text-align:center; }",
   ".parent-brand h1 { width:100%; margin:0; color:#fff; text-align:center; font-size: 24px; line-height:1.4; letter-spacing:.3px; font-weight:850; }",
+  ".teacher-page .topbar h1 { font-size:24px !important; line-height:1.4; letter-spacing:.3px; font-weight:850; }",
   ".teacher-dashboard { max-width:1050px; }",
   ".teacher-class-panel { margin-bottom:10px; padding:12px 15px; }",
   ".teacher-class-heading { margin:0 0 9px; padding-bottom:7px; border-bottom:2px solid #dce7f1; color:#23466b; font-size: 20px; }",
