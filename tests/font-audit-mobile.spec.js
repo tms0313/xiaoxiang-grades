@@ -126,7 +126,7 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
     await page.screenshot({ path: `font-audit-mobile/${role}-${safe}.png`, fullPage: true });
   }
 
-  // Admin account: visit all twelve dashboard tabs and collect visible text styles.
+  // Admin account: visit every dashboard tab and collect visible text styles.
   await login(ADMIN_EMAIL, ADMIN_PASSWORD);
   await expect(page.locator('#adminTabs')).toBeVisible();
   for (const [tab] of ADMIN_TABS) {
@@ -250,6 +250,6 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
   console.log('TYPOGRAPHY WHITELIST CHECK', JSON.stringify({ allowed: [...ALLOWED_FONT_SIZES], violations: fontSizeViolations.length, examples: fontSizeViolations.slice(0, 30) }, null, 2));
   expect(allRows.length).toBeGreaterThan(0);
   expect(controlViolations, 'All visible single-line dropdowns and manual inputs must render at exactly 40px').toEqual([]);
-  expect(fontSizeViolations, 'Every visible text element must use 12, 14, 16, 20 or 24px').toEqual([]);
+  expect(fontSizeViolations, 'Every visible text element must use 14, 16, 18, 20 or 24px').toEqual([]);
   expect(pageErrors, 'No JavaScript or console errors across audited roles and pages').toEqual([]);
 });
