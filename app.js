@@ -53,8 +53,6 @@ const GRADE_OPTIONS = ["A++", "A+", "A", "B++", "B+", "B", "C", "缺考", "請�
 
 let currentUser = null;
 let currentProfile = null;
-let currentHasTeacher = false;
-let currentMode = "";
 let profileRolesCache = [];
 let teacherRoleIdsCache = new Set();
 let studentsCache = [];
@@ -987,8 +985,6 @@ async function handleLogout() {
 
   currentUser = null;
   currentProfile = null;
-  currentHasTeacher = false;
-  currentMode = "";
   profileRolesCache = [];
   teacherRoleIdsCache = new Set();
   studentsCache = [];
@@ -1031,19 +1027,6 @@ async function loadCurrentProfile() {
 
   currentProfile = result.data;
 
-  const extraRoleResult = await db
-    .from("profile_roles")
-    .select("role")
-    .eq("user_id", currentUser.id)
-    .eq("role", "teacher")
-    .maybeSingle();
-
-  if (extraRoleResult.error) {
-    showMessage("讀取額外身分失敗：" + extraRoleResult.error.message, "error");
-    return;
-  }
-
-  currentHasTeacher = currentProfile.role === "teacher" || !!extraRoleResult.data;
 
   if (currentProfile.role === "teacher" && currentUser.app_metadata && currentUser.app_metadata.must_change_password === true) {
     renderTeacherFirstLoginPasswordChange();
@@ -1057,16 +1040,7 @@ async function loadCurrentProfile() {
     return;
   }
 
-  if (currentProfile.role === "parent" && currentHasTeacher) {
-    currentMode = "";
-    renderModeChooser();
-  } else {
-    currentMode = currentProfile.role === "teacher" ? "teacher" : currentProfile.role;
-    await recordSuccessfulLogin();
-  }
-
-  if (currentProfile.role === "parent" && currentHasTeacher) return;
-
+  await recordSuccessfulLogin();
   await renderDashboard();
 }
 
@@ -1080,41 +1054,6 @@ async function recordSuccessfulLogin() {
     console.warn("登入紀錄寫入失敗", error);
   }
 }
-
-function renderModeChooser() {
-  document.body.classList.remove("parent-page", "teacher-page");
-  appRoot.innerHTML =
-    "<div class='topbar'><div><h1>小象文教機構</h1><small>請選擇登入模式</small></div>" +
-    "<button class='tab-btn logout-action' id='modeLogoutButton'>登出</button></div>" +
-    "<main class='dashboard' style='max-width:560px'>" +
-      "<div class='panel'><h2>選擇使用身分</h2>" +
-        "<p class='muted'>此帳號同時具有家長及教師身分，請選擇本次要使用的功能。</p>" +
-        "<div class='form-grid'>" +
-          "<button class='btn btn-success' id='chooseParentMode' type='button'>家長查詢</button>" +
-          "<button class='btn' id='chooseTeacherMode' type='button'>教師查詢</button>" +
-        "</div>" +
-      "</div>" +
-    "</main><div class='footer'>© 小象文教機構</div>";
-
-  $("modeLogoutButton").addEventListener("click", handleLogout);
-  $("chooseParentMode").addEventListener("click", async function () {
-    currentMode = "parent";
-    await recordSuccessfulLogin();
-    await renderDashboard();
-  });
-  $("chooseTeacherMode").addEventListener("click", async function () {
-    currentMode = "teacher";
-    await recordSuccessfulLogin();
-    await renderDashboard();
-  });
-}
-
-function switchAccountMode() {
-  if (!currentHasTeacher || currentProfile.role !== "parent") return;
-  currentMode = currentMode === "teacher" ? "parent" : "teacher";
-  renderDashboard();
-}
-
 
 
 // ==================================================
@@ -1366,7 +1305,7 @@ async function renderDashboard() {
       await loadAdminData();
       if (requestId !== dashboardRenderRequestId) return;
       renderAdminDashboard();
-    } else if (currentProfile.role === "teacher" || currentMode === "teacher") {
+    } else if (currentProfile.role === "teacher") {
       await renderTeacherDashboard();
       if (requestId !== dashboardRenderRequestId) return;
     } else {
@@ -7032,7 +6971,7 @@ async function renderParentDashboard() {
       "<div class='topbar'>" +
         "<div class='parent-brand'><h1>小象文教機構 成績查詢系統</h1></div>" +
         "<div class='parent-top-actions'>" +
-          (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換教師模式</button>" : "") +
+           +
         "</div>" +
       "</div>" +
       "<main class='dashboard'>" +
@@ -7041,7 +6980,6 @@ async function renderParentDashboard() {
       buildParentBottomNav();
 
     bindParentActionButtons();
-    if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
     return;
   }
 
@@ -7482,7 +7420,7 @@ async function renderParentDashboard() {
     "<div class='topbar'>" +
       "<div class='parent-brand'><h1>小象文教機構 成績查詢系統</h1></div>" +
       "<div class='parent-top-actions'>" +
-        (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換教師模式</button>" : "") +
+         +
       "</div>" +
     "</div>" +
     "<main class='dashboard'>" +
@@ -7492,7 +7430,6 @@ async function renderParentDashboard() {
     buildParentBottomNav();
 
   bindParentActionButtons();
-  if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
 
   content.querySelectorAll(".parent-review-btn").forEach(function (button) {
     button.addEventListener("click", async function () {
@@ -7548,7 +7485,7 @@ async function renderParentDashboard() {
   if (nextExamReleaseTimestamp) {
     parentExamReleaseRefreshTimer = window.setTimeout(function () {
       parentExamReleaseRefreshTimer = null;
-      if (currentMode === "parent" && currentUser) {
+      if (currentProfile && currentProfile.role === "parent" && currentUser) {
         renderParentDashboard().catch(function (error) {
           console.error("家長成績開放後自動更新失敗：", error);
         });
@@ -7593,12 +7530,11 @@ async function renderTeacherDashboard() {
     appRoot.innerHTML =
       "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1><small>教師專區</small></div>" +
         "<div class='parent-top-actions'>" +
-          (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
+           +
         "</div></div>" +
       "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>" +
       buildParentBottomNav();
     bindParentActionButtons();
-    if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
     return;
   }
 
@@ -7839,7 +7775,7 @@ function renderTeacherResults() {
   appRoot.innerHTML =
     "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1></div>" +
       "<div class='parent-top-actions'>" +
-        (currentHasTeacher ? "<button class='tab-btn' id='switchAccountModeButton' type='button'>切換家長模式</button>" : "") +
+         +
       "</div></div>" +
     "<main class='dashboard teacher-dashboard'><div class='toolbar teacher-toolbar'>" +
       "<div class='teacher-filter-group'><label for='teacherExamSelect'><strong>考試週期</strong></label>" +
@@ -7854,7 +7790,6 @@ function renderTeacherResults() {
     buildParentBottomNav();
 
   bindParentActionButtons();
-  if ($("switchAccountModeButton")) $("switchAccountModeButton").addEventListener("click", switchAccountMode);
   if ($("teacherExamSelect")) {
     $("teacherExamSelect").value = teacherSelectedExamId;
     $("teacherExamSelect").addEventListener("change", function () {
