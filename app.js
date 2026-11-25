@@ -1047,6 +1047,10 @@ async function recordSuccessfulLogin() {
   }
 }
 
+// ==================================================
+// 5. 重新讀取資料
+// ==================================================
+
 function hasLatestExamReachedReleaseTime(exam) {
   if (!exam || !exam.end_date) return false;
 
