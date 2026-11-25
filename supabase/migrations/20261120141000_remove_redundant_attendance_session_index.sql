@@ -1,4 +1,4 @@
--- 小象資料庫效能優化：移除重複索引
--- attendance_records_unique_student 的唯一索引以 session_id 為首欄，
--- 已可支援依 session_id 查詢，故單欄 session_id 索引為冗餘。
-DROP INDEX IF EXISTS public.attendance_records_session_idx;
+-- 小象資料庫效能整理：移除未使用的重複課堂索引。
+-- 線上統計確認 attendance_records_session_idx 正在被使用，
+-- 因此保留該索引，改刪除未使用的重複索引 idx_attendance_records_session。
+DROP INDEX IF EXISTS public.idx_attendance_records_session;
