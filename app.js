@@ -655,6 +655,7 @@ style.textContent = [
   ".parent-page .dashboard { max-width:1000px; padding:22px 24px; }",
   ".parent-brand { display:flex; flex:1 1 100%; flex-direction:row; align-items:center; justify-content:center; text-align:center; }",
   ".parent-brand h1 { width:100%; margin:0; color:#fff; text-align:center; font-size: 24px; line-height:1.4; letter-spacing:.3px; font-weight:850; }",
+  ".teacher-page .topbar h1 { font-size:24px !important; line-height:1.4; letter-spacing:.3px; font-weight:850; }",
   ".teacher-dashboard { max-width:1050px; }",
   ".teacher-class-panel { margin-bottom:10px; padding:12px 15px; }",
   ".teacher-class-heading { margin:0 0 9px; padding-bottom:7px; border-bottom:2px solid #dce7f1; color:#23466b; font-size: 20px; }",
@@ -6943,7 +6944,7 @@ async function renderParentDashboard() {
       ".parent-attendance-stat-value{color:#31506c;font-size: 20px;font-weight:800;line-height:1.35;font-variant-numeric:tabular-nums}" +
       " .parent-attendance-stat-value small{font-size: 20px !important;font-weight:800 !important}" +
       ".parent-attendance-stat-value.attendance-alert{color:#bd3030;font-weight:800}" +
-      ".parent-attendance-stat-value.attendance-alert small{font-weight:800 !important}" +
+      ".parent-attendance-stat-value.attendance-alert small{color:inherit !important;font-weight:800 !important;opacity:1 !important}" +
       ".parent-attendance-empty,.parent-attendance-error{margin:0 0 16px;padding:11px 13px;border:1px solid #dce5ed;border-radius:10px;background:#f5f8fb;color:#647487;font-size: 14px;line-height:1.6}" +
       ".parent-attendance-error{border-color:#f0d0d0;background:#fff5f5;color:#a32626}" +
       "@media(max-width:380px){.parent-attendance-summary-grid{gap:7px}.parent-attendance-stat{padding:10px}.parent-attendance-stat-label{font-size: 16px}.parent-attendance-stat-value{font-size: 20px}.parent-attendance-stat-value small{font-size: 16px}}";
@@ -6970,9 +6971,6 @@ async function renderParentDashboard() {
     content.innerHTML =
       "<div class='topbar'>" +
         "<div class='parent-brand'><h1>小象文教機構 成績查詢系統</h1></div>" +
-        "<div class='parent-top-actions'>" +
-           +
-        "</div>" +
       "</div>" +
       "<main class='dashboard'>" +
         "<div class='system-message'>目前尚未綁定學生，請聯絡管理員協助處理。</div>" +
@@ -7419,9 +7417,6 @@ async function renderParentDashboard() {
   content.innerHTML =
     "<div class='topbar'>" +
       "<div class='parent-brand'><h1>小象文教機構 成績查詢系統</h1></div>" +
-      "<div class='parent-top-actions'>" +
-         +
-      "</div>" +
     "</div>" +
     "<main class='dashboard'>" +
       studentCards +
@@ -7529,9 +7524,6 @@ async function renderTeacherDashboard() {
     teacherScoresByStudentExamSubject = new Map();
     appRoot.innerHTML =
       "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1><small>教師專區</small></div>" +
-        "<div class='parent-top-actions'>" +
-           +
-        "</div></div>" +
       "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>" +
       buildParentBottomNav();
     bindParentActionButtons();
@@ -7774,9 +7766,6 @@ function renderTeacherResults() {
 
   appRoot.innerHTML =
     "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1></div>" +
-      "<div class='parent-top-actions'>" +
-         +
-      "</div></div>" +
     "<main class='dashboard teacher-dashboard'><div class='toolbar teacher-toolbar'>" +
       "<div class='teacher-filter-group'><label for='teacherExamSelect'><strong>考試週期</strong></label>" +
       "<select id='teacherExamSelect'>" + (examOptions || "<option value=''>目前沒有考試週期</option>") + "</select></div>" +
