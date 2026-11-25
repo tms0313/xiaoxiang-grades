@@ -53,7 +53,6 @@ const GRADE_OPTIONS = ["A++", "A+", "A", "B++", "B+", "B", "C", "缺考", "請�
 
 let currentUser = null;
 let currentProfile = null;
-let currentMode = "";
 let studentsCache = [];
 let examsCache = [];
 let examsByIdCache = new Map();
@@ -984,7 +983,6 @@ async function handleLogout() {
 
   currentUser = null;
   currentProfile = null;
-  currentMode = "";
   studentsCache = [];
   examsCache = [];
   rebuildExamIndexes();
@@ -1037,7 +1035,6 @@ async function loadCurrentProfile() {
     return;
   }
 
-  currentMode = currentProfile.role;
   await recordSuccessfulLogin();
   await renderDashboard();
 }
@@ -1275,7 +1272,7 @@ async function renderDashboard() {
       await loadAdminData();
       if (requestId !== dashboardRenderRequestId) return;
       renderAdminDashboard();
-    } else if (currentProfile.role === "teacher" || currentMode === "teacher") {
+    } else if (currentProfile.role === "teacher") {
       await renderTeacherDashboard();
       if (requestId !== dashboardRenderRequestId) return;
     } else {
@@ -5034,7 +5031,6 @@ async function removeGuardianBinding(guardianId, studentId) {
 function renderTeacherManagement() {
   const content = $("adminContent");
   const teacherById = teacherProfilesByIdCache;
-  const teacherRoleIds = teacherRoleIdsCache;
   const teacherOptions = teacherProfilesCache.map(function (profile) {
     return "<option value='" + escapeHtml(profile.id) + "'>" +
       escapeHtml(profile.email || profile.display_name || profile.id) +
@@ -7376,7 +7372,7 @@ async function renderParentDashboard() {
   if (nextExamReleaseTimestamp) {
     parentExamReleaseRefreshTimer = window.setTimeout(function () {
       parentExamReleaseRefreshTimer = null;
-      if (currentMode === "parent" && currentUser) {
+      if (currentProfile && currentProfile.role === "parent" && currentUser) {
         renderParentDashboard().catch(function (error) {
           console.error("家長成績開放後自動更新失敗：", error);
         });
