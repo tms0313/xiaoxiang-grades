@@ -846,14 +846,14 @@ style.textContent = [
   ".student-card .student-name { font-size: 24px; }",
   ".student-card .student-class { font-size: 14px; }",
   ".parent-page .parent-top-actions { display:flex !important; flex:0 0 100%; justify-content:center; }",
-  ".parent-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1000; display:flex; width:100%; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.98); border-top:1px solid #dce4ed; box-shadow:0 -4px 18px rgba(31,55,82,.12); }",
+
   ".parent-bottom-nav .parent-action-btn { flex:1 1 50%; min-width:0; min-height:56px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; border-radius:9px; color:#fff; font-size: 18px !important; font-weight:750; padding:5px 8px; }",
   ".parent-bottom-nav .parent-action-icon { width:19px; height:19px; flex:0 0 19px; stroke-width:1.9; }",
   ".parent-bottom-nav .parent-password-btn { background:#315f8b; }",
   ".parent-bottom-nav .parent-logout-btn { background:#a83e45; }",
   ".parent-bottom-nav .parent-action-btn:hover { transform:none; box-shadow:none; }",
   ".teacher-bottom-nav .parent-action-btn { flex:1 1 100%; }",
-  ".teacher-page { padding-bottom:88px; }",
+
 
   ".student-management-table { min-width:650px; }",
   ".overview-table { min-width:1050px; }",
