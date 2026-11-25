@@ -57,10 +57,11 @@ AS $function$
       AND (
         (exam.end_date::date
           + ((6 - EXTRACT(DOW FROM exam.end_date::date)::integer + 7) % 7)
-        )::timestamp + TIME '20:00'
+        )::timestamp + TIME '18:00'
       ) <= (now() AT TIME ZONE 'Asia/Taipei')
       AND score.grade_level IS DISTINCT FROM '請假'
       AND score.grade_level IS DISTINCT FROM '缺考'
+      AND COALESCE(score.scope, '') NOT ILIKE '%補考%'
       AND (
         CASE
           WHEN own_student.class_name = '國三班' AND score.subject <> '數學'

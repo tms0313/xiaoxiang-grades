@@ -719,7 +719,7 @@ async function clearAttendanceSessionRecords() {
   const sessionId = attendanceSavedSessionId;
   const sessionLabel = attendanceSelectedDate + " " + attendanceSelectedSession.time +
     " " + attendanceSelectedSession.className + " " + attendanceSelectedSession.subject;
-  if (!confirm("確定清除「" + sessionLabel + "」整堂出缺席紀錄嗎？\\n本堂所有學生紀錄都會刪除，但不影響學生資料及其他課堂紀錄。此操作無法復原。")) return;
+  if (!confirm("確定清除「" + sessionLabel + "」整堂出缺席紀錄嗎？\n本堂所有學生紀錄都會刪除，但不影響學生資料及其他課堂紀錄。此操作無法復原。")) return;
 
   const button = $("attendanceClearSessionButton");
   const message = $("attendanceSaveMessage");
