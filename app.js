@@ -897,7 +897,7 @@ style.textContent += "\n" +
 
 
 /* 僅調整管理員手機版學生管理清單前四欄，不影響教師／家長成績頁 */
-style.textContent += "\\n@media(max-width:600px){.student-management-table tbody td:nth-child(-n+4){font-size:18px!important;}}";
+style.textContent += "\n@media(max-width:600px){.student-management-table tbody td:nth-child(-n+4){font-size:18px!important;}}";
 
 document.head.appendChild(style);
 
