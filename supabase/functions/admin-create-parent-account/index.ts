@@ -8,7 +8,12 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const INITIAL_PASSWORD = "123456";
+function makeTemporaryPassword() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$";
+  const random = new Uint32Array(18);
+  crypto.getRandomValues(random);
+  return Array.from(random, value => alphabet[value % alphabet.length]).join("");
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -173,10 +178,11 @@ Deno.serve(async (req) => {
 
     // 使用 Email Provider 建立帳號
     // 手機帳號使用內部別名，不使用 Phone Auth
+    const initialPassword = makeTemporaryPassword();
     const { data: created, error: createError } =
       await adminClient.auth.admin.createUser({
         email: internalEmail,
-        password: INITIAL_PASSWORD,
+        password: initialPassword,
         email_confirm: true,
       });
 
@@ -189,6 +195,20 @@ Deno.serve(async (req) => {
     }
 
     createdUserId = created.user.id;
+
+    // 新建家長帳號必須在首次登入時更改臨時密碼。
+    const { error: metadataError } = await adminClient.auth.admin.updateUserById(
+      createdUserId,
+      {
+        app_metadata: {
+          ...(created.user.app_metadata || {}),
+          must_change_password: true
+        }
+      }
+    );
+    if (metadataError) {
+      throw new Error("設定首次登入安全狀態失敗：" + metadataError.message);
+    }
 
     // 建立或更新 Profile
     // 避免 Auth Trigger 已先建立 Profile 時發生主鍵重複
@@ -236,7 +256,7 @@ Deno.serve(async (req) => {
       email: email,
       phone: phone,
       displayName: displayName,
-      initialPassword: INITIAL_PASSWORD,
+      initialPassword: initialPassword,
       studentId: studentId,
       message: "家長帳號建立成功",
     });
