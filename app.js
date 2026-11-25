@@ -895,6 +895,10 @@ style.textContent += "\n" +
   "/* 模擬考等級與分數欄等高；週成績登錄學生列高比照週成績總覽 */" +
   ".bulk-score-entry-table tbody td [data-bulk-score],.bulk-score-entry-table tbody td [data-bulk-grade],.bulk-score-entry-table tbody td [data-bulk-status] { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; border-radius:8px !important; line-height:1.3 !important; }";
 
+
+/* 僅調整管理員手機版學生管理清單前四欄，不影響教師／家長成績頁 */
+style.textContent += "\\n@media(max-width:600px){.student-management-table tbody td:nth-child(-n+4){font-size:18px!important;}}";
+
 document.head.appendChild(style);
 
 // ==================================================
