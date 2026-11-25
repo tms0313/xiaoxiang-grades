@@ -7249,12 +7249,12 @@ async function renderParentDashboard() {
         "<h3 class='parent-attendance-summary-title'>出缺席統計（" + periodLabel + "）</h3>" +
         "<div class='parent-attendance-summary-grid'>" +
           "<div class='parent-attendance-stat'>" +
-            "<span class='parent-attendance-stat-label'>統計期間遲到</span>" +
+            "<span class='parent-attendance-stat-label'>遲到</span>" +
             "<span class='parent-attendance-stat-value" + (summary.lateMinutes > 0 ? " attendance-alert" : "") + "'>" +
               summary.lateMinutes + " <small>分鐘</small></span>" +
           "</div>" +
           "<div class='parent-attendance-stat'>" +
-            "<span class='parent-attendance-stat-label'>統計期間未打卡</span>" +
+            "<span class='parent-attendance-stat-label'>未打卡</span>" +
             "<span class='parent-attendance-stat-value" + (summary.uncheckedCount > 0 ? " attendance-alert" : "") + "'>" +
               summary.uncheckedCount + " <small>次</small></span>" +
           "</div>" +
