@@ -63,6 +63,69 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
     await page.waitForTimeout(1200);
   }
 
+  async function assertAdminListDataFont18(tab) {
+    const targets = {
+      overview: { table: '.overview-table', columns: 'all', label: '週成績總覽' },
+      reviews: { table: '.student-record-table', columns: 'all', label: '週考檢閱紀錄' },
+      scores: { table: '.bulk-score-entry-table', columns: 'first-two', label: '週成績登錄學生清單' },
+      alumni: { table: '.alumni-score-table', columns: 'all', label: '模擬考成績總覽' }
+    };
+    const target = targets[tab];
+    if (!target) return;
+
+    const audit = await page.evaluate(({ tableSelector, columns }) => {
+      const table = document.querySelector('#adminContent ' + tableSelector);
+      if (!table) return { tableFound: false, rowCount: 0, checkedElements: [], violations: [] };
+      const rows = [...table.querySelectorAll('tbody tr')].filter(row =>
+        row.getClientRects().length > 0 && getComputedStyle(row).display !== 'none'
+      );
+      const checkedElements = [];
+      for (const row of rows) {
+        const cells = [...row.querySelectorAll('td')].filter((cell, index) =>
+          columns !== 'first-two' || index < 2
+        );
+        for (const cell of cells) {
+          const elements = [cell, ...cell.querySelectorAll('*')];
+          for (const element of elements) {
+            const style = getComputedStyle(element);
+            const rect = element.getBoundingClientRect();
+            const text = (element.innerText || element.textContent || '').replace(/\\s+/g, ' ').trim();
+            if (!text || !element.getClientRects().length || style.display === 'none' ||
+                style.visibility === 'hidden' || Number(style.opacity) === 0) continue;
+            checkedElements.push({
+              tag: element.tagName.toLowerCase(),
+              className: typeof element.className === 'string' ? element.className : '',
+              text: text.slice(0, 100),
+              fontSize: style.fontSize,
+              width: Math.round(rect.width),
+              height: Math.round(rect.height)
+            });
+          }
+        }
+      }
+      return {
+        tableFound: true,
+        rowCount: rows.length,
+        checkedElements,
+        violations: checkedElements.filter(element => element.fontSize !== '18px')
+      };
+    }, { tableSelector: target.table, columns: target.columns });
+
+    console.log('MOBILE ADMIN LIST 18PX AUDIT', JSON.stringify({
+      page: target.label,
+      tableFound: audit.tableFound,
+      rowCount: audit.rowCount,
+      checkedCount: audit.checkedElements.length,
+      violationCount: audit.violations.length,
+      violations: audit.violations.slice(0, 20)
+    }, null, 2));
+
+    expect(audit.tableFound, target.label + ' table must render').toBeTruthy();
+    expect(audit.rowCount, target.label + ' must render data rows for a real 18px check').toBeGreaterThan(0);
+    expect(audit.checkedElements.length, target.label + ' must contain visible data text').toBeGreaterThan(0);
+    expect(audit.violations, target.label + ' every visible data value must render at exactly 18px on mobile').toEqual([]);
+  }
+
   async function collect(role, pageLabel) {
     const rows = await page.evaluate(({ role, pageLabel }) => {
       const visible = el => {
@@ -184,6 +247,7 @@ test('MOBILE typography inventory across admin, parent and teacher pages', async
       expect(alignment.statusSelectHeight).toBe(40);
     }
 
+    await assertAdminListDataFont18(tab);
     await collect('admin', tab);
   }
 
