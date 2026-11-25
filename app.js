@@ -7523,9 +7523,6 @@ async function renderTeacherDashboard() {
     teacherScoresByStudentExamSubject = new Map();
     appRoot.innerHTML =
       "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1><small>教師專區</small></div>" +
-        "<div class='parent-top-actions'>" +
-           +
-        "</div></div>" +
       "<main class='dashboard'><div class='system-message' style='display:block'>目前尚未設定授課權限，請聯絡管理員。</div></main>" +
       buildParentBottomNav();
     bindParentActionButtons();
@@ -7768,9 +7765,6 @@ function renderTeacherResults() {
 
   appRoot.innerHTML =
     "<div class='topbar'><div><h1>小象文教機構｜教師專區 僅供查詢</h1></div>" +
-      "<div class='parent-top-actions'>" +
-         +
-      "</div></div>" +
     "<main class='dashboard teacher-dashboard'><div class='toolbar teacher-toolbar'>" +
       "<div class='teacher-filter-group'><label for='teacherExamSelect'><strong>考試週期</strong></label>" +
       "<select id='teacherExamSelect'>" + (examOptions || "<option value=''>目前沒有考試週期</option>") + "</select></div>" +
