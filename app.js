@@ -8014,3 +8014,13 @@ style.textContent += "\n" +
   ".bulk-score-entry-table tbody td:nth-child(5) [data-save-bulk-row] { margin:0 !important; }" +
   "#appRoot .bulk-score-entry-table tbody td button[data-save-bulk-row] { font-size:18px !important; }";
 
+
+
+/* 管理員手機版清單資料文字統一 18px；僅限管理後台，不影響家長／教師成績查詢頁 */
+style.textContent += "\n" +
+  "@media(max-width:600px){" +
+    "#adminContent .overview-table tbody td,#adminContent .overview-table tbody td *{font-size:18px!important;}" +
+    "#adminContent .student-record-table tbody td,#adminContent .student-record-table tbody td *{font-size:18px!important;}" +
+    "#adminContent .bulk-score-entry-table tbody td:nth-child(-n+2),#adminContent .bulk-score-entry-table tbody td:nth-child(-n+2) *{font-size:18px!important;}" +
+    "#adminContent .alumni-score-table tbody td,#adminContent .alumni-score-table tbody td *{font-size:18px!important;}" +
+  "}";
