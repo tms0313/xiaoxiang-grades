@@ -5995,7 +5995,7 @@ async function renderStudentReviewRecords(selectedExamId) {
         }
 
         const status = !hasWeeklyScore
-          ? "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#e6f4ff;color:#315d86;font-size: 18px;line-height:30px;font-weight:800;white-space:nowrap'>無成績</span>"
+          ? "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#fff4df;color:#315d86;font-size: 18px;line-height:30px;font-weight:800;white-space:nowrap'>無成績</span>"
           : record
             ? "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#e3f5e9;color:#20683d;font-size: 18px;line-height:30px;font-weight:800;white-space:nowrap'>已檢閱</span>"
             : "<span class='review-status-badge' style='display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 7px;border-radius:6px;background:#fde8e8;color:#a32626;font-size: 18px;line-height:30px;font-weight:800;white-space:nowrap'>未檢閱</span>";
