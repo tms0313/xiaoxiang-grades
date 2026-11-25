@@ -23,9 +23,10 @@ test('login page loads and core elements are visible', async ({ page }) => {
     renderStudents: typeof window.renderStudents === 'function',
     saveStudent: typeof window.saveStudent === 'function',
     toggleStudentStatus: typeof window.toggleStudentStatus === 'function',
-    deleteStudent: typeof window.deleteStudent === 'function'
+    deleteStudent: typeof window.deleteStudent === 'function',
+    renderTermExamEntry: typeof window.renderTermExamEntry === 'function'
   }));
-  expect(utilityChecks).toEqual({ dollar: true, escapeHtml: true, formatDate: true, fetchAllRows: true, normalizeTaiwanMobile: true, renderExport: true, exportCsv: true, renderStudents: true, saveStudent: true, toggleStudentStatus: true, deleteStudent: true });
+  expect(utilityChecks).toEqual({ dollar: true, escapeHtml: true, formatDate: true, fetchAllRows: true, normalizeTaiwanMobile: true, renderExport: true, exportCsv: true, renderStudents: true, saveStudent: true, toggleStudentStatus: true, deleteStudent: true, renderTermExamEntry: true });
 
   // 確認抽離後的動態樣式已由 index.html 載入，且核心登入畫面樣式仍生效。
   const appStylesLoaded = await page.evaluate(() => {
