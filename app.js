@@ -1072,7 +1072,10 @@ async function loadCurrentProfile() {
 
 async function recordSuccessfulLogin() {
   try {
-    await db.from("login_events").insert({ user_id: currentUser.id });
+    const result = await db.from("login_events").insert({ user_id: currentUser.id });
+    if (result.error) {
+      console.warn("登入紀錄寫入失敗", result.error);
+    }
   } catch (error) {
     console.warn("登入紀錄寫入失敗", error);
   }
@@ -1352,8 +1355,9 @@ async function refreshOverviewData() {
 let dashboardRenderRequestId = 0;
 
 async function renderDashboard() {
-  // 每次重新進入任一角色頁面，都讓前一個家長頁面載入請求失效。
+  // 每次重新進入任一角色頁面，都讓前一個角色頁面的載入請求失效。
   parentDashboardRequestId++;
+  teacherDashboardRequestId++;
   const requestId = ++dashboardRenderRequestId;
   showLoading("正在載入系統資料……");
 
@@ -4801,11 +4805,11 @@ async function editParentAccount(parentId) {
   const newAccount = isPhoneAccount ? phone : email;
 
   if (!confirm(
-    "確認修改家長資料嗎？\\n\\n" +
-    "原姓名：" + (parent.display_name || "—") + "\\n" +
-    "新姓名：" + displayName + "\\n\\n" +
-    "原" + accountLabel + "：" + oldAccount + "\\n" +
-    "新" + accountLabel + "：" + newAccount + "\\n\\n" +
+    "確認修改家長資料嗎？\n\n" +
+    "原姓名：" + (parent.display_name || "—") + "\n" +
+    "新姓名：" + displayName + "\n\n" +
+    "原" + accountLabel + "：" + oldAccount + "\n" +
+    "新" + accountLabel + "：" + newAccount + "\n\n" +
     "家長密碼及學生綁定不會變更。"
   )) return;
 
@@ -5658,7 +5662,7 @@ async function resetParentPassword(parentUserId) {
 
   try {
     const result = await db.functions.invoke("admin-reset-parent-password", {
-      body: { parentId: parentUserId }
+      body: { parentUserId: parentUserId }
     });
     if (result.error) {
       const detail = result.data && result.data.error ? result.data.error : result.error.message;
