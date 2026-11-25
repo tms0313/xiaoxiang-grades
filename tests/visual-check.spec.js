@@ -17,9 +17,11 @@ test('login page loads and core elements are visible', async ({ page }) => {
     escapeHtml: typeof window.escapeHtml === 'function',
     formatDate: typeof window.formatDate === 'function',
     fetchAllRows: typeof window.fetchAllRows === 'function',
-    normalizeTaiwanMobile: typeof window.normalizeTaiwanMobile === 'function'
+    normalizeTaiwanMobile: typeof window.normalizeTaiwanMobile === 'function',
+    renderExport: typeof window.renderExport === 'function',
+    exportCsv: typeof window.exportCsv === 'function'
   }));
-  expect(utilityChecks).toEqual({ dollar: true, escapeHtml: true, formatDate: true, fetchAllRows: true, normalizeTaiwanMobile: true });
+  expect(utilityChecks).toEqual({ dollar: true, escapeHtml: true, formatDate: true, fetchAllRows: true, normalizeTaiwanMobile: true, renderExport: true, exportCsv: true });
 
   // 確認抽離後的動態樣式已由 index.html 載入，且核心登入畫面樣式仍生效。
   const appStylesLoaded = await page.evaluate(() => {
