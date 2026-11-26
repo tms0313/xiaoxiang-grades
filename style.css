@@ -167,14 +167,11 @@ input[type="number"]::-webkit-outer-spin-button {
 #appRoot .existing-weekly-scores-table tbody td {
   font-size: 18px !important;
 }
-#appRoot .existing-weekly-scores-table thead th {
-  padding: 11px 12px !important;
-  line-height: 1.5;
-  vertical-align: middle;
-}
+/* 列距完全比照出缺席紀錄表格：5px 8px、1.3 行高 */
+#appRoot .existing-weekly-scores-table thead th,
 #appRoot .existing-weekly-scores-table tbody td {
-  padding: 10px 12px !important;
-  line-height: 1.5;
+  padding: 5px 8px !important;
+  line-height: 1.3 !important;
   vertical-align: middle;
 }
 #appRoot .existing-weekly-scores-table tbody td input[data-existing-value],
