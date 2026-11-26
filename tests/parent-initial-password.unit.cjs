@@ -50,11 +50,11 @@ test("parent initial password is always six numeric digits, including leading ze
 });
 
 test("generator rejects values outside the unbiased six-digit range", () => {
-  const harness = loadGenerator([0xffffffff, 0x1_0000_0000 % 1000000]);
+  const harness = loadGenerator([0xffffffff, 42]);
 
   const password = harness.generate();
 
   assert.match(password, /^\d{6}$/);
-  assert.equal(password, "483648");
+  assert.equal(password, "000042");
   assert.equal(harness.calls, 2);
 });
