@@ -8,7 +8,8 @@
     "test:all": "playwright test",
     "test:script-loading": "playwright test tests/script-loading.spec.js",
     "test:admin-management": "node --test tests/admin-management.unit.cjs",
-    "test:parent-initial-password": "node --test tests/parent-initial-password.unit.cjs"
+    "test:parent-initial-password": "node --test tests/parent-initial-password.unit.cjs",
+    "test:teacher-management": "node --test tests/teacher-management.unit.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1"
