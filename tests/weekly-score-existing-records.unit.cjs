@@ -35,3 +35,18 @@ test('weekly score entry separates existing-score lookup from scope-required add
   assert.match(source, /新增成績的考試範圍/);
   assert.match(source, /renderExistingWeeklyScores\(\);\s*renderBulkScoreEntryRows\(\);/);
 });
+
+
+test('existing and new weekly score tables share the same column order and widths', () => {
+  const renderer = source.slice(source.indexOf('function renderExistingWeeklyScores()'), source.indexOf('async function saveExistingWeeklyScore'));
+  const bulkStart = source.indexOf('function renderBulkScoreEntryRows()');
+  const bulkEnd = source.indexOf('function renderExistingWeeklyScores()', bulkStart);
+  const bulk = source.slice(bulkStart, bulkEnd);
+  for (const table of [renderer, bulk]) {
+    assert.match(table, /<th>編號<\\/th><th>學生<\\/th><th>考試範圍<\\/th>/);
+    assert.match(table, /weekly-score-layout-table/);
+    assert.match(table, /\[120, 140, 160, 140, 140, 200\]/);
+  }
+  assert.match(renderer, /student\\.student_code/);
+  assert.match(renderer, /item\\.scope/);
+});
