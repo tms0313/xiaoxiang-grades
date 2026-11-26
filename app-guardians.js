@@ -93,6 +93,7 @@ async function loadParentPasswordStatuses() {
   } catch (error) {
     if (requestId !== parentPasswordStatusRequestId) return;
     console.error("讀取家長密碼狀態失敗：", error);
+    parentPasswordStatusesCache = new Map();
     parentPasswordStatusLoadState = "error";
     applyParentPasswordStatusResults();
   }
@@ -288,7 +289,7 @@ function renderGuardians() {
         "<div class='field'><label>家長 Email／手機號碼</label><input id='newParentAccount' type='text' placeholder='請輸入 Email 或 0912345678' autocomplete='off' required></div>" +
         "<div class='field'><label>綁定學生</label><select id='newParentStudent' required><option value=''>請選擇學生</option>" + studentOptions + "</select></div>" +
       "</div>" +
-      "<p class='muted'>系統會產生一次性隨機臨時密碼。家長首次登入時，必須先設定自己的新密碼。</p>" +
+      "<p class='muted'>系統會產生六位數字初始密碼。家長首次登入時，必須先設定自己的新密碼。</p>" +
       "<button class='btn btn-success' type='submit' id='createParentButton'>建立家長帳號</button>" +
       "</form></div>" +
 
@@ -658,7 +659,7 @@ async function createParentAccount(event) {
     "登入帳號：" + loginLabel + "\n" +
     "綁定學生：" + student.full_name + "\n" +
     "班級：" + student.class_name + "\n" +
-    "初始密碼：系統將自動產生一次性隨機密碼，首次登入必須修改。\n\n" +
+    "初始密碼：系統將自動產生六位數字密碼，首次登入必須修改。\n\n" +
     "確認建立家長帳號嗎？"
   )) return;
 
