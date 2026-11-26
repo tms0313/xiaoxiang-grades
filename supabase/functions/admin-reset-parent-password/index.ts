@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     }
 
     // 從請求標頭明確取得 JWT；此 Client 未啟用持久化 Session，不能依賴 getUser() 自動讀取 Session。
-    const accessToken = authHeader.replace(/^Bearer\\s+/i, "");
+    const accessToken = authHeader.replace(/^Bearer\s+/i, "");
 
     // 驗證目前登入者
     const userClient = createClient(supabaseUrl, anonKey, {
