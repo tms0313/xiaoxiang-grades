@@ -20,10 +20,10 @@ const EXPECTED_LOCAL_SCRIPTS = [
 
 test('all local application scripts are versioned, present and loaded in dependency order', async ({ page }) => {
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  const scriptTags = [...html.matchAll(/<script\\b[^>]*\\bsrc=["']([^"']+)["'][^>]*><\\/script>/gi)]
+  const scriptTags = [...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*><\/script>/gi)]
     .map(match => match[1]);
   const localScripts = scriptTags
-    .filter(src => !/^https?:\\/\\//i.test(src))
+    .filter(src => !/^https?:\/\//i.test(src))
     .map(src => ({ src, file: path.basename(new URL(src, 'https://local.test/').pathname) }));
 
   expect(localScripts.map(item => item.file)).toEqual(EXPECTED_LOCAL_SCRIPTS);
