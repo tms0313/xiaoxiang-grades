@@ -241,22 +241,23 @@ function renderBulkScoreEntryRows() {
         "<td><select data-bulk-status><option value='normal'>正常</option><option value='請假'>請假</option></select></td>";
     }
     return "<tr data-bulk-student='" + escapeHtml(student.id) + "'>" +
+      "<td>" + escapeHtml(student.student_code || "") + "</td>" +
       "<td>" + escapeHtml(student.full_name) + (existing ? " <span class='muted'>（已有成績）</span>" : "") + "</td>" +
       "<td><input class='bulk-scope-display' data-bulk-scope type='text' value='" + escapeHtml(scope) + "' readonly aria-label='考試範圍'></td>" +
       fields + "<td><button class='btn btn-small' type='button' data-save-bulk-row>單筆儲存</button></td></tr>";
   }).join("");
   root.innerHTML = "<div class='muted' style='margin-bottom:10px'>共 " + students.length + " 位學生；只會儲存有填寫資料的學生。</div>" +
-    "<div class='table-wrap'><table class='bulk-score-entry-table weekly-score-layout-table'><thead><tr><th>學生</th><th>考試範圍</th>" +
+    "<div class='table-wrap'><table class='bulk-score-entry-table weekly-score-layout-table'><thead><tr><th>編號</th><th>學生</th><th>考試範圍</th>" +
     (grade3Math ? "<th>數學分數</th><th>模擬考等級</th>" : grade3 ? "<th>答對題數</th><th>模擬考等級</th>" : "<th>成績</th><th>出席狀態</th>") +
     "<th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
   const scoreEntryTable = root.querySelector(".bulk-score-entry-table");
   if (scoreEntryTable) {
     // 直接在表格元素鎖定尺寸，避免全站 table-wrap 的 100% 寬度規則把欄距再次撐開。
-    scoreEntryTable.style.setProperty("width", grade3 ? "920px" : "780px", "important");
-    scoreEntryTable.style.setProperty("min-width", grade3 ? "920px" : "780px", "important");
+    scoreEntryTable.style.setProperty("width", grade3 ? "1040px" : "900px", "important");
+    scoreEntryTable.style.setProperty("min-width", grade3 ? "1040px" : "900px", "important");
     scoreEntryTable.style.setProperty("max-width", "none", "important");
     scoreEntryTable.style.setProperty("table-layout", "fixed", "important");
-    const columnWidths = grade3 ? [140, 160, 140, 140, 140, 200] : [140, 160, 140, 140, 200];
+    const columnWidths = grade3 ? [120, 140, 160, 140, 140, 140, 200] : [120, 140, 160, 140, 140, 200];
     scoreEntryTable.querySelectorAll("thead th, tbody td").forEach(function (cell) {
       const index = cell.cellIndex;
       if (columnWidths[index]) cell.style.setProperty("width", columnWidths[index] + "px", "important");
