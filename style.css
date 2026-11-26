@@ -168,10 +168,14 @@ input[type="number"]::-webkit-outer-spin-button {
   font-size: 18px !important;
 }
 /* 列距完全比照出缺席紀錄表格：5px 8px、1.3 行高 */
-#appRoot .existing-weekly-scores-table thead th,
-#appRoot .existing-weekly-scores-table tbody td {
+#appRoot .existing-weekly-scores-table thead th {
   padding: 5px 8px !important;
   line-height: 1.3 !important;
+  vertical-align: middle;
+}
+#appRoot .existing-weekly-scores-table tbody td {
+  padding: 2px 8px !important;
+  line-height: 1.2 !important;
   vertical-align: middle;
 }
 #appRoot .existing-weekly-scores-table tbody td input[data-existing-value],
