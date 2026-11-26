@@ -800,7 +800,7 @@ function renderScoreEntry() {
     "<div class='field'><label>科目</label><select id='scoreSubject' required><option value=''>請選擇科目</option>" +
     SUBJECTS.map(subject => "<option value='" + escapeHtml(subject) + "'>" + escapeHtml(subject) + "</option>").join("") + "</select></div>" +
     "<div class='field'><label>新增成績的考試範圍</label><input id='scoreScope' placeholder='例如：第 1～2 課、XX(補考)'></div></div>" +
-    "<p class='muted'>選擇四項條件後，系統會列出該班實際修讀此科目的在學學生。可逐位儲存，也可填寫多位學生後一次儲存。</p>" +
+    "<p class='muted'>選擇考試週期、班級及科目後，會先列出所有既有成績；新增或補登成績時，再填寫考試範圍。</p>" +
     "<h4>既有成績查詢與修改</h4><div id='existingWeeklyScoresContent'><div class='empty'>請先選擇考試週期、班級及科目。</div></div>" +"<h4>新增／補登成績</h4><div id='bulkScoreEntryContent'><div class='empty'>請選擇考試週期、班級、科目並填寫考試範圍。</div></div>" +
     "<div class='toolbar'><button class='btn btn-success' type='button' id='saveBulkScoresButton'>儲存已填寫的成績</button></div>" +
     "<div id='bulkScoreEntryMessage' class='system-message' role='status'></div></div>";
