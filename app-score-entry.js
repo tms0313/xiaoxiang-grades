@@ -391,6 +391,15 @@ function renderExistingWeeklyScores() {
       const input = select.closest("tr").querySelector("[data-existing-value]");
       input.disabled = this.value === "請假";
       if (input.disabled) input.value = "";
+      updateScoreInputWarning(input, !isGrade3Class(className) || isGrade3Math(className, subject));
+    });
+  });
+  // 既有成績修改欄位也要在載入及每次輸入時即時套用未達 60 分警示。
+  root.querySelectorAll("[data-existing-value]").forEach(function (input) {
+    const warningEnabled = !isGrade3Class(className) || isGrade3Math(className, subject);
+    updateScoreInputWarning(input, warningEnabled);
+    input.addEventListener("input", function () {
+      updateScoreInputWarning(input, warningEnabled);
     });
   });
 }
