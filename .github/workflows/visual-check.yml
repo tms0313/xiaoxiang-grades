@@ -23,6 +23,7 @@ jobs:
         run: |
           node --check app.js
           node --check app-utils.js
+          node --check tests/release-time.unit.cjs
           node --check app-export.js
           node --check app-students.js
           node --check app-term-exams.js
@@ -36,6 +37,8 @@ jobs:
           node --check tests/visual-check.spec.js
           node --check tests/font-audit.spec.js
           node --check tests/font-audit-mobile.spec.js
+      - name: Run release-time boundary tests
+        run: node --test tests/release-time.unit.cjs
       - name: Run visual smoke test
         run: npx playwright test tests/visual-check.spec.js
       - name: Verify typography audit secrets are available (names only)

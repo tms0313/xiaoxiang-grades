@@ -57,6 +57,47 @@ function formatDateRange(exam) {
   return start + "～" + end;
 }
 
+
+/**
+ * 依考試結束日期計算該週六台灣時間 18:00 的發布時間。
+ * 考試日期以 YYYY-MM-DD 台灣日曆日期處理，發布瞬間以 UTC timestamp 表示。
+ */
+function getExamReleaseTimestamp(exam) {
+  if (!exam || !exam.end_date) return null;
+
+  const dateText = String(exam.end_date).slice(0, 10);
+  const match = dateText.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const endDate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    endDate.getUTCFullYear() !== year ||
+    endDate.getUTCMonth() !== month - 1 ||
+    endDate.getUTCDate() !== day
+  ) return null;
+
+  const daysUntilSaturday = (6 - endDate.getUTCDay() + 7) % 7;
+  endDate.setUTCDate(endDate.getUTCDate() + daysUntilSaturday);
+
+  // 台灣時間 UTC+8；週六 18:00 對應 UTC 週六 10:00。
+  return Date.UTC(
+    endDate.getUTCFullYear(),
+    endDate.getUTCMonth(),
+    endDate.getUTCDate(),
+    10, 0, 0, 0
+  );
+}
+
+function isExamReleasedAt(exam, now) {
+  const releaseTimestamp = getExamReleaseTimestamp(exam);
+  if (releaseTimestamp === null) return false;
+  const currentTimestamp = now instanceof Date ? now.getTime() : Number(now);
+  return Number.isFinite(currentTimestamp) && currentTimestamp >= releaseTimestamp;
+}
+
 function isGrade3Class(className) {
   return String(className || "").includes("國三");
 }
