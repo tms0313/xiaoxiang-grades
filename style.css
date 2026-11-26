@@ -218,3 +218,19 @@ input[type="number"]::-webkit-outer-spin-button {
 #appRoot .weekly-score-layout-table thead th,#appRoot .weekly-score-layout-table tbody td { padding:2px 8px!important; line-height:1.2!important; vertical-align:middle; font-size:18px!important; }
 #appRoot .weekly-score-layout-table tbody input,#appRoot .weekly-score-layout-table tbody select { display:block; box-sizing:border-box!important; height:40px!important; min-height:40px!important; max-height:40px!important; margin:0!important; border-radius:8px!important; font-size:18px!important; }
 #appRoot .weekly-score-layout-table tbody button { font-size:18px!important; border-radius:8px!important; }
+/* 新增／補登成績的考試範圍：唯讀、可反白複製，沿用全站 40px 控制項高度 */
+#appRoot .bulk-score-entry-table tbody td input[data-bulk-scope] {
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  padding:0 8px;
+  border:1px solid #c5d9eb;
+  background:#E6F4FF;
+  color:#315D86;
+  font-weight:600;
+  cursor:text;
+  user-select:text;
+  -webkit-user-select:text;
+}
+
