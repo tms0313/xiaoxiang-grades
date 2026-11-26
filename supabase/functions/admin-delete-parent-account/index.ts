@@ -1,4 +1,3 @@
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -55,7 +54,7 @@ Deno.serve(async (req) => {
     );
 
     // 驗證目前登入者
-    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const token = authHeader.replace(/^Bearer\\s+/i, "");
     const { data: userData, error: userError } =
       await userClient.auth.getUser(token);
 
@@ -130,8 +129,27 @@ Deno.serve(async (req) => {
       }, 409);
     }
 
+    // 後端必須再次確認沒有學生綁定，不能只依賴前端快取檢查。
+    // guardian_students 的 guardian_id 外鍵目前為 ON DELETE CASCADE，
+    // 若略過此檢查，直接刪除 Auth 帳號會連帶刪除家長綁定資料。
+    const { data: existingBinding, error: bindingError } =
+      await adminClient
+        .from("guardian_students")
+        .select("student_id")
+        .eq("guardian_id", parentId)
+        .limit(1)
+        .maybeSingle();
+
+    if (bindingError) throw bindingError;
+
+    if (existingBinding) {
+      return json({
+        success: false,
+        error: "此家長帳號仍綁定學生，請先解除所有學生綁定後再刪除。",
+      }, 409);
+    }
+
     // 永久刪除 Supabase Auth 帳號
-    // 相關 profiles、家長綁定等資料依資料庫外鍵設定處理
     const { error: deleteError } =
       await adminClient.auth.admin.deleteUser(parentId);
 
