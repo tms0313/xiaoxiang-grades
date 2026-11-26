@@ -35,6 +35,7 @@ jobs:
           node --check app-styles.js
           node --check playwright.config.js
           node --check tests/visual-check.spec.js
+          node --check tests/script-loading.spec.js
           node --check tests/font-audit.spec.js
           node --check tests/font-audit-mobile.spec.js
       - name: Run release-time boundary tests
