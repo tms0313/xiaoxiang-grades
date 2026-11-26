@@ -221,16 +221,29 @@ input[type="number"]::-webkit-outer-spin-button {
 /* 新增／補登成績的考試範圍：唯讀、可反白複製，沿用全站 40px 控制項高度 */
 #appRoot .bulk-score-entry-table tbody td input[data-bulk-scope] {
   display:block;
+  box-sizing:border-box;
   width:100%;
   min-width:0;
   max-width:100%;
+  height:40px;
+  min-height:40px;
+  max-height:40px;
   padding:0 8px;
   border:1px solid #c5d9eb;
   background:#E6F4FF;
   color:#315D86;
-  font-weight:600;
+  font-size:18px !important;
+  font-weight:400 !important;
+  line-height:1.2;
   cursor:text;
   user-select:text;
   -webkit-user-select:text;
+}
+
+/* 成績輸入低於 60 分時即時以紅字粗體標示；涵蓋新增／補登及既有成績修改。 */
+#appRoot .bulk-score-entry-table tbody td input[data-bulk-score].low-score,
+#appRoot .existing-weekly-scores-table tbody td input[data-existing-value].low-score {
+  color:#dc2626 !important;
+  font-weight:700 !important;
 }
 
