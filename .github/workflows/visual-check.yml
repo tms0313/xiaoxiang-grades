@@ -28,6 +28,7 @@ jobs:
           node --check app-term-exams.js
           node --check app-alumni-mock.js
           node --check app-admin-audit.js
+          node --check app-guardians.js
           node --check attendance.js
           node --check app-styles.js
           node --check playwright.config.js
