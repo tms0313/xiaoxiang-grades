@@ -317,7 +317,7 @@ style.textContent = [
   ".password-management-table .action-buttons { display:flex; align-items:center; flex-wrap:nowrap; gap:4px; }",
   ".password-management-table .action-buttons .btn { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:27px !important; min-height:27px !important; padding:0 7px !important; font-size: 18px !important; line-height:27px !important; border-radius:5px !important; white-space:nowrap; }",
   ".guardian-status-unbound { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:auto; min-width:58px; height:30px; min-height:30px; margin:0; padding:0 9px; border-radius:6px; font-size: 14px; font-weight:800; line-height:30px; white-space:nowrap; vertical-align:middle; background:#e8f1fb !important; color:#1d4e89 !important; border:1px solid #b8d1ed; }",
-  ".parent-password-status-summary { margin:10px 0 12px; padding:10px 12px; border:1px solid #dce5ed; border-radius:8px; background:#f5f8fb; color:#31506c; font-size:16px; font-weight:800; line-height:1.7; }",
+  ".parent-password-status-summary { margin:10px 0 12px; padding:10px 12px; border:1px solid #dce5ed; border-radius:8px; background:#f5f8fb; color:#31506c; font-size:16px; font-weight:800; line-height:1.7; overflow-wrap:anywhere; }",
   ".parent-password-status { display:inline-flex; align-items:center; justify-content:center; min-height:30px; padding:4px 8px; border:1px solid transparent; border-radius:6px; font-size:14px; font-weight:800; line-height:1.4; white-space:normal; }",
   ".parent-password-status.is-pending { background:#fff4df; color:#8a5a00; border-color:#f0d59a; }",
   ".parent-password-status.is-warning { background:#fff0cf; color:#8a4b00; border-color:#e9c47b; }",
