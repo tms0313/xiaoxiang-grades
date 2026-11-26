@@ -39,6 +39,8 @@ jobs:
           node --check tests/font-audit-mobile.spec.js
       - name: Run release-time boundary tests
         run: node --test tests/release-time.unit.cjs
+      - name: Run application script-loading integration test
+        run: npm run test:script-loading
       - name: Run visual smoke test
         run: npx playwright test tests/visual-check.spec.js
       - name: Verify typography audit secrets are available (names only)
