@@ -15,6 +15,7 @@ const EXPECTED_LOCAL_SCRIPTS = [
   'app-guardians.js',
   'app-teachers.js',
   'app-styles.js',
+  'app-overview.js',
   'app.js'
 ];
 
@@ -68,6 +69,10 @@ test('all local application scripts are versioned, present and loaded in depende
     adminAudit: typeof window.renderLoginLogs === 'function',
     guardians: typeof window.renderGuardians === 'function',
     teachers: typeof window.renderTeacherManagement === 'function',
+    overview: typeof window.renderOverview === 'function' &&
+      typeof window.refreshOverviewData === 'function' &&
+      typeof window.editScore === 'function' &&
+      typeof window.deleteScore === 'function',
     appStyles: [...document.querySelectorAll('style')].some(style =>
       style.textContent.includes('.login-card { width:min(420px,100%)')
     )
@@ -83,6 +88,7 @@ test('all local application scripts are versioned, present and loaded in depende
     adminAudit: true,
     guardians: true,
     teachers: true,
+    overview: true,
     appStyles: true
   });
 });
