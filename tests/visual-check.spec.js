@@ -28,9 +28,19 @@ test('login page loads and core elements are visible', async ({ page }) => {
     renderAlumniMockScores: typeof window.renderAlumniMockScores === 'function',
     renderLoginLogs: typeof window.renderLoginLogs === 'function',
     clearAllLoginLogs: typeof window.clearAllLoginLogs === 'function',
-    renderStudentReviewRecords: typeof window.renderStudentReviewRecords === 'function'
+    renderStudentReviewRecords: typeof window.renderStudentReviewRecords === 'function',
+    renderGuardians: typeof window.renderGuardians === 'function',
+    deleteUnboundParentAccount: typeof window.deleteUnboundParentAccount === 'function',
+    editParentAccount: typeof window.editParentAccount === 'function',
+    createParentAccount: typeof window.createParentAccount === 'function',
+    saveGuardianBinding: typeof window.saveGuardianBinding === 'function',
+    removeGuardianBinding: typeof window.removeGuardianBinding === 'function',
+    renderPasswords: typeof window.renderPasswords === 'function',
+    getLinkedStudentNames: typeof window.getLinkedStudentNames === 'function',
+    resetParentPassword: typeof window.resetParentPassword === 'function',
+    deleteParentAccount: typeof window.deleteParentAccount === 'function'
   }));
-  expect(utilityChecks).toEqual({ dollar: true, escapeHtml: true, formatDate: true, fetchAllRows: true, normalizeTaiwanMobile: true, renderExport: true, exportCsv: true, renderStudents: true, saveStudent: true, toggleStudentStatus: true, deleteStudent: true, renderTermExamEntry: true, renderAlumniMockScores: true, renderLoginLogs: true, clearAllLoginLogs: true, renderStudentReviewRecords: true });
+  expect(utilityChecks).toEqual({ dollar: true, escapeHtml: true, formatDate: true, fetchAllRows: true, normalizeTaiwanMobile: true, renderExport: true, exportCsv: true, renderStudents: true, saveStudent: true, toggleStudentStatus: true, deleteStudent: true, renderTermExamEntry: true, renderAlumniMockScores: true, renderLoginLogs: true, clearAllLoginLogs: true, renderStudentReviewRecords: true, renderGuardians: true, deleteUnboundParentAccount: true, editParentAccount: true, createParentAccount: true, saveGuardianBinding: true, removeGuardianBinding: true, renderPasswords: true, getLinkedStudentNames: true, resetParentPassword: true, deleteParentAccount: true });
 
   // 確認抽離後的動態樣式已由 index.html 載入，且核心登入畫面樣式仍生效。
   const appStylesLoaded = await page.evaluate(() => {
