@@ -113,11 +113,27 @@ Deno.serve(async (req) => {
     });
 
     const temporaryPassword = generateTemporaryPassword();
+    const { data: authParent, error: getParentError } =
+      await adminClient.auth.admin.getUserById(parentUserId);
 
+    if (getParentError || !authParent.user) {
+      return jsonResponse({
+        error: "無法讀取家長登入帳號：" + (getParentError?.message || "找不到帳號"),
+      }, 400);
+    }
+
+    const passwordChangeRequiredAt = new Date().toISOString();
     const { error: resetError } =
       await adminClient.auth.admin.updateUserById(
         parentUserId,
-        { password: temporaryPassword },
+        {
+          password: temporaryPassword,
+          app_metadata: {
+            ...(authParent.user.app_metadata || {}),
+            must_change_password: true,
+            password_change_required_at: passwordChangeRequiredAt,
+          },
+        },
       );
 
     if (resetError) {
