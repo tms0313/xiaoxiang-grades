@@ -54,8 +54,8 @@ test('existing and new weekly score tables preserve their distinct identifiers a
   assert.match(bulk, /student\.student_code/);
   assert.match(bulk, /data-bulk-scope type='text' value='" \+ escapeHtml\(scope\) \+ "' readonly/);
   assert.match(bulk, /weekly-score-layout-table/);
-  assert.match(bulk, /\[140, 160, 140, 140, 200\]/);
-  assert.match(bulk, /\[140, 160, 140, 140, 140, 200\]/);
+  assert.match(bulk, /\[120, 140, 160, 140, 140, 200\]/);
+  assert.match(bulk, /\[120, 140, 160, 140, 140, 140, 200\]/);
 });
 
 
