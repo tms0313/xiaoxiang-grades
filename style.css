@@ -156,3 +156,49 @@ input[type="number"]::-webkit-outer-spin-button {
 #appRoot #termExamRoster .term-bulk-table tbody td.term-student-name small {
   font-size: 14px !important;
 }
+
+/* 週成績登錄：既有成績查詢與修改，沿用全站表格留白及表單控制項樣式 */
+#appRoot .existing-weekly-scores-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+#appRoot .existing-weekly-scores-table thead th {
+  padding: 11px 12px !important;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+#appRoot .existing-weekly-scores-table tbody td {
+  padding: 10px 12px !important;
+  line-height: 1.5;
+  vertical-align: middle;
+}
+#appRoot .existing-weekly-scores-table tbody td input[data-existing-value],
+#appRoot .existing-weekly-scores-table tbody td select[data-existing-status],
+#appRoot .existing-weekly-scores-table tbody td select[data-existing-grade] {
+  display: block;
+  box-sizing: border-box !important;
+  width: 110px !important;
+  min-width: 110px !important;
+  max-width: 110px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  border: 1px solid #ccd4df !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  color: #263445;
+  line-height: 1.4 !important;
+  font: inherit;
+}
+#appRoot .existing-weekly-scores-table tbody td input[data-existing-value]:disabled {
+  background: #f3f5f8 !important;
+  color: #64748b;
+  cursor: not-allowed;
+}
+#appRoot .existing-weekly-scores-table tbody td button[data-save-existing-score] {
+  min-height: 32px;
+  border-radius: 8px;
+}
