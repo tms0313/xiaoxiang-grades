@@ -51,7 +51,10 @@ test('all local application scripts are versioned, present and loaded in depende
   await expect(page.locator('#loginForm')).toBeVisible();
 
   const loadedFiles = scriptResponses.map(item => item.file);
-  expect(loadedFiles).toEqual(EXPECTED_LOCAL_SCRIPTS);
+  // HTTP response events may arrive in a different order from HTML script tags.
+  // The HTML order is asserted above; here verify complete, unique, successful responses.
+  expect([...loadedFiles].sort()).toEqual([...EXPECTED_LOCAL_SCRIPTS].sort());
+  expect(new Set(loadedFiles).size).toBe(EXPECTED_LOCAL_SCRIPTS.length);
   expect(scriptResponses.filter(item => item.status !== 200)).toEqual([]);
   expect(pageErrors).toEqual([]);
 
