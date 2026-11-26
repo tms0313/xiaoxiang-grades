@@ -66,7 +66,7 @@ function getExamReleaseTimestamp(exam) {
   if (!exam || !exam.end_date) return null;
 
   const dateText = String(exam.end_date).slice(0, 10);
-  const match = dateText.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+  const match = dateText.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return null;
 
   const year = Number(match[1]);
