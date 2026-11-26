@@ -163,6 +163,10 @@ input[type="number"]::-webkit-outer-spin-button {
   min-width: 760px;
   border-collapse: collapse;
 }
+#appRoot .existing-weekly-scores-table thead th,
+#appRoot .existing-weekly-scores-table tbody td {
+  font-size: 18px !important;
+}
 #appRoot .existing-weekly-scores-table thead th {
   padding: 11px 12px !important;
   line-height: 1.5;
@@ -191,7 +195,11 @@ input[type="number"]::-webkit-outer-spin-button {
   background: #fff !important;
   color: #263445;
   line-height: 1.4 !important;
-  font: inherit;
+  font-family: inherit;
+  font-size: 18px !important;
+}
+#appRoot .existing-weekly-scores-table tbody td button[data-save-existing-score] {
+  font-size: 18px !important;
 }
 #appRoot .existing-weekly-scores-table tbody td input[data-existing-value]:disabled {
   background: #f3f5f8 !important;
