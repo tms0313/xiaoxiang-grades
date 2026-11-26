@@ -241,22 +241,22 @@ function renderBulkScoreEntryRows() {
         "<td><select data-bulk-status><option value='normal'>正常</option><option value='請假'>請假</option></select></td>";
     }
     return "<tr data-bulk-student='" + escapeHtml(student.id) + "'>" +
-      "<td>" + escapeHtml(student.student_code || "") + "</td>" +
       "<td>" + escapeHtml(student.full_name) + (existing ? " <span class='muted'>（已有成績）</span>" : "") + "</td>" +
+      "<td><input class='bulk-scope-display' data-bulk-scope type='text' value='" + escapeHtml(scope) + "' readonly aria-label='考試範圍'></td>" +
       fields + "<td><button class='btn btn-small' type='button' data-save-bulk-row>單筆儲存</button></td></tr>";
   }).join("");
   root.innerHTML = "<div class='muted' style='margin-bottom:10px'>共 " + students.length + " 位學生；只會儲存有填寫資料的學生。</div>" +
-    "<div class='table-wrap'><table class='bulk-score-entry-table' style='min-width:620px'><thead><tr><th>編號</th><th>學生</th>" +
+    "<div class='table-wrap'><table class='bulk-score-entry-table weekly-score-layout-table'><thead><tr><th>學生</th><th>考試範圍</th>" +
     (grade3Math ? "<th>數學分數</th><th>模擬考等級</th>" : grade3 ? "<th>答對題數</th><th>模擬考等級</th>" : "<th>成績</th><th>出席狀態</th>") +
     "<th>操作</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
   const scoreEntryTable = root.querySelector(".bulk-score-entry-table");
   if (scoreEntryTable) {
     // 直接在表格元素鎖定尺寸，避免全站 table-wrap 的 100% 寬度規則把欄距再次撐開。
-    scoreEntryTable.style.setProperty("width", "820px", "important");
-    scoreEntryTable.style.setProperty("min-width", "820px", "important");
+    scoreEntryTable.style.setProperty("width", grade3 ? "920px" : "780px", "important");
+    scoreEntryTable.style.setProperty("min-width", grade3 ? "920px" : "780px", "important");
     scoreEntryTable.style.setProperty("max-width", "none", "important");
     scoreEntryTable.style.setProperty("table-layout", "fixed", "important");
-    const columnWidths = [140, 160, 160, 160, 200];
+    const columnWidths = grade3 ? [140, 160, 140, 140, 140, 200] : [140, 160, 140, 140, 200];
     scoreEntryTable.querySelectorAll("thead th, tbody td").forEach(function (cell) {
       const index = cell.cellIndex;
       if (columnWidths[index]) cell.style.setProperty("width", columnWidths[index] + "px", "important");
@@ -344,7 +344,8 @@ function renderExistingWeeklyScores() {
   }
   const gradeOptions = GRADE_OPTIONS.map(g => "<option value='" + escapeHtml(g) + "'>" + escapeHtml(g) + "</option>").join("");
   root.innerHTML = "<p class='muted'>共 " + rows.length + " 筆既有成績，依考試範圍分別列出。</p>" +
-    "<div class='table-wrap'><table class='existing-weekly-scores-table'><thead><tr><th>學生</th><th>考試範圍</th><th>成績／答對題數</th><th>等級／出席</th><th>操作</th></tr></thead><tbody>" +
+    "<div class='table-wrap'><table class='existing-weekly-scores-table weekly-score-layout-table'><thead><tr><th>編號</th><th>學生</th><th>考試範圍</th>" +
+    (isGrade3Class(className) ? "<th>成績／答對題數</th><th>模擬考等級</th>" : "<th>成績</th><th>出席狀態</th>") + "<th>操作</th></tr></thead><tbody>" +
     rows.map(function (item) {
       const student = studentsByIdCache.get(String(item.student_id));
       const grade3 = isGrade3Class(className);
@@ -354,12 +355,26 @@ function renderExistingWeeklyScores() {
       const status = grade3
         ? "<select data-existing-grade>" + gradeOptions + "</select>"
         : "<select data-existing-status><option value='normal'>正常</option><option value='請假'>請假</option></select>";
-      return "<tr data-existing-score-id='" + escapeHtml(item.id) + "'><td>" + escapeHtml(student.full_name) +
+      return "<tr data-existing-score-id='" + escapeHtml(item.id) + "'><td>" + escapeHtml(student.student_code || "") + "</td><td>" + escapeHtml(student.full_name) +
         "</td><td>" + escapeHtml(item.scope || "（未填寫）") + "</td><td><input data-existing-value type='number' min='0' " +
         (grade3 && !grade3Math ? "step='1'" : "max='100' step='0.1'") + " value='" +
         (value == null ? "" : escapeHtml(value)) + "' " + (absent ? "disabled" : "") + "></td><td>" +
         status + "</td><td><button class='btn btn-small' type='button' data-save-existing-score>儲存修改</button></td></tr>";
     }).join("") + "</tbody></table></div>";
+  const existingTable = root.querySelector(".existing-weekly-scores-table");
+  if (existingTable) {
+    const grade3 = isGrade3Class(className);
+    const tableWidth = grade3 ? "1040px" : "900px";
+    existingTable.style.setProperty("width", tableWidth, "important");
+    existingTable.style.setProperty("min-width", tableWidth, "important");
+    existingTable.style.setProperty("max-width", "none", "important");
+    existingTable.style.setProperty("table-layout", "fixed", "important");
+    const columnWidths = grade3 ? [120, 140, 160, 140, 140, 140, 200] : [120, 140, 160, 140, 140, 200];
+    existingTable.querySelectorAll("thead th, tbody td").forEach(function (cell) {
+      const width = columnWidths[cell.cellIndex];
+      if (width) cell.style.setProperty("width", width + "px", "important");
+    });
+  }
   root.querySelectorAll("[data-existing-grade]").forEach(function (select) {
     const item = scoresByIdCache.get(String(select.closest("tr").dataset.existingScoreId));
     select.value = item && item.grade_level || "";

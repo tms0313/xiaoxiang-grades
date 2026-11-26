@@ -173,12 +173,12 @@ test('rendered typography inventory across admin, parent and teacher pages', asy
         };
       });
       console.log('WEEKLY SCORE TABLE ALIGNMENT', JSON.stringify(alignment, null, 2));
-      expect(alignment.tableWidth).toBe(820);
+      expect(alignment.tableWidth).toBe(780);
       expect(alignment.scoreHeaderTextAlign).toBe('left');
       expect(alignment.scoreHeaderInputLeftDelta).toBeLessThanOrEqual(1);
       expect(alignment.statusHeaderTextAlign).toBe('left');
       expect(alignment.statusHeaderSelectLeftDelta).toBeLessThanOrEqual(1);
-      expect(alignment.scoreStatusCenterDistance).toBe(160);
+      expect(alignment.scoreStatusCenterDistance).toBe(140);
       expect(alignment.statusToActionGap).toBeLessThanOrEqual(80);
       expect(alignment.scoreInputHeight).toBe(40);
       expect(alignment.statusSelectHeight).toBe(40);

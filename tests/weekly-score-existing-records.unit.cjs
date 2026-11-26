@@ -35,3 +35,25 @@ test('weekly score entry separates existing-score lookup from scope-required add
   assert.match(source, /新增成績的考試範圍/);
   assert.match(source, /renderExistingWeeklyScores\(\);\s*renderBulkScoreEntryRows\(\);/);
 });
+
+
+test('existing and new weekly score tables preserve their distinct identifiers and aligned shared fields', () => {
+  const renderer = source.slice(source.indexOf('function renderExistingWeeklyScores()'), source.indexOf('async function saveExistingWeeklyScore'));
+  const bulkStart = source.indexOf('function renderBulkScoreEntryRows()');
+  const bulkEnd = source.indexOf('function renderExistingWeeklyScores()', bulkStart);
+  const bulk = source.slice(bulkStart, bulkEnd);
+
+  assert.ok(renderer.includes("<th>編號</th><th>學生</th><th>考試範圍</th>"));
+  assert.ok(renderer.includes("student.student_code"));
+  assert.ok(renderer.includes("item.scope"));
+  assert.match(renderer, /\[120, 140, 160, 140, 140, 200\]/);
+  assert.match(renderer, /\[120, 140, 160, 140, 140, 140, 200\]/);
+  assert.match(renderer, /weekly-score-layout-table/);
+
+  assert.ok(bulk.includes("<th>學生</th><th>考試範圍</th>"));
+  assert.doesNotMatch(bulk, /<th>編號<\/th>|student\.student_code/);
+  assert.match(bulk, /data-bulk-scope type='text' value='" \+ escapeHtml\(scope\) \+ "' readonly/);
+  assert.match(bulk, /weekly-score-layout-table/);
+  assert.match(bulk, /\[140, 160, 140, 140, 200\]/);
+  assert.match(bulk, /\[140, 160, 140, 140, 140, 200\]/);
+});
