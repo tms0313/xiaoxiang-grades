@@ -3633,21 +3633,29 @@ async function renderParentDashboard() {
   function buildParentAttendanceSummary(student) {
     // 顯示最近一次週六 18:00 已發布的出缺席週，並明確標示實際統計日期。
     const periodLabel = weekStartISO.replace(/-/g, "/").slice(5) + "～" + weekEndISO.replace(/-/g, "/").slice(5);
-    if (parentAttendanceLoadError) {
-      return "<div class='parent-attendance-error' role='alert'>統計期間（" + periodLabel + "）的出缺席資料暫時無法讀取，請稍後再試。</div>";
-    }
-    const summary = parentAttendanceByStudent.get(String(student.id));
-    if (!summary || summary.recordCount === 0) {
-      return "<div class='parent-attendance-empty'>統計期間（" + periodLabel + "）尚無出缺席紀錄。</div>";
-    }
-    return (
+    const sectionStart =
       "<section class='parent-attendance-summary' aria-label='出缺席統計：" + periodLabel + "'>" +
-        "<h3 class='parent-attendance-summary-title'>出缺席統計（" + periodLabel + "）</h3>" +
+        "<h3 class='parent-attendance-summary-title'>出缺席統計（" + periodLabel + "）</h3>";
+    if (parentAttendanceLoadError) {
+      return sectionStart +
+        "<div class='parent-attendance-error' role='alert'>出缺席資料暫時無法讀取，請稍後再試。</div>" +
+      "</section>";
+    }
+
+    // 即使本週尚無紀錄，也顯示摘要欄位，讓家長清楚知道目前沒有遲到或未打卡資料。
+    const summary = parentAttendanceByStudent.get(String(student.id)) || {
+      recordCount: 0,
+      lateMinutes: 0,
+      uncheckedCount: 0
+    };
+    const hasLate = summary.lateMinutes > 0;
+    return (
+      sectionStart +
         "<div class='parent-attendance-summary-grid'>" +
           "<div class='parent-attendance-stat'>" +
-            "<span class='parent-attendance-stat-label'>遲到</span>" +
-            "<span class='parent-attendance-stat-value" + (summary.lateMinutes > 0 ? " attendance-alert" : "") + "'>" +
-              summary.lateMinutes + " <small>分鐘</small></span>" +
+            "<span class='parent-attendance-stat-label'>" + (hasLate ? "遲到" : "本週無遲到紀錄") + "</span>" +
+            "<span class='parent-attendance-stat-value" + (hasLate ? " attendance-alert" : "") + "'>" +
+              (hasLate ? summary.lateMinutes + " <small>分鐘</small>" : "") + "</span>" +
           "</div>" +
           "<div class='parent-attendance-stat'>" +
             "<span class='parent-attendance-stat-label'>未打卡</span>" +
