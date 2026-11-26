@@ -53,7 +53,7 @@ function applyParentPasswordStatusResults() {
     if (profile.role !== "parent") return;
     const status = parentPasswordStatusesCache.get(String(profile.id));
     if (status === "not_logged_in_pending") counts.not_logged_in_pending += 1;
-    else if (status === "logged_in_pending" || status === "pending_login_unknown") counts.logged_in_pending += 1;
+    else if (status === "logged_in_pending") counts.logged_in_pending += 1;
     else if (status === "completed") counts.completed += 1;
     else counts.unknown += 1;
   });
@@ -990,6 +990,7 @@ async function resetParentPassword(parentUserId) {
       button.disabled = false;
       button.textContent = "重設密碼";
     }
+    await loadParentPasswordStatuses();
     showMessage("家長密碼已重設。臨時密碼：" + temporaryPassword.trim() + "。請將臨時密碼提供給家長。", "success");
   } catch (error) {
     if (button) {
