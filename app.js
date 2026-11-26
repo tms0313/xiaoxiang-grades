@@ -415,35 +415,7 @@ async function recordSuccessfulLogin() {
 // ==================================================
 
 function hasLatestExamReachedReleaseTime(exam) {
-  if (!exam || !exam.end_date) return false;
-
-  const endDate = new Date(String(exam.end_date).slice(0, 10) + "T00:00:00Z");
-  if (Number.isNaN(endDate.getTime())) return false;
-
-  const daysUntilSaturday = (6 - endDate.getUTCDay() + 7) % 7;
-  endDate.setUTCDate(endDate.getUTCDate() + daysUntilSaturday);
-
-  const releaseDate = endDate.getUTCFullYear() + "-" +
-    String(endDate.getUTCMonth() + 1).padStart(2, "0") + "-" +
-    String(endDate.getUTCDate()).padStart(2, "0");
-
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Taipei",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23"
-  }).formatToParts(new Date());
-  const now = {};
-  parts.forEach(part => { now[part.type] = part.value; });
-  const today = now.year + "-" + now.month + "-" + now.day;
-
-  return today > releaseDate ||
-    (today === releaseDate &&
-      (Number(now.hour) > 18 ||
-        (Number(now.hour) === 18 && Number(now.minute) >= 0)));
+  return isExamReleasedAt(exam, new Date());
 }
 
 async function cleanupPreviousWeekExclusions() {
@@ -3690,53 +3662,12 @@ async function renderParentDashboard() {
   const releasedExamCache = new Map();
 
   function isExamReleased(exam) {
-    if (!exam) return false;
-
-    const examKey = String(exam.id || "");
+    const examKey = String(exam && exam.id || "");
     if (examKey && releasedExamCache.has(examKey)) {
       return releasedExamCache.get(examKey);
     }
 
-    if (!exam.end_date) {
-      if (examKey) releasedExamCache.set(examKey, false);
-      return false;
-    }
-
-    const taiwan = getTaiwanDateTime();
-
-    const today =
-      taiwan.year + "-" + taiwan.month + "-" + taiwan.day;
-
-    // 考試日期是台灣日曆日期；使用 UTC 日期運算，避免家長裝置時區影響公告日。
-    const endDate = new Date(String(exam.end_date).slice(0, 10) + "T00:00:00Z");
-    if (Number.isNaN(endDate.getTime())) {
-      if (examKey) releasedExamCache.set(examKey, false);
-      return false;
-    }
-
-    const weekday = endDate.getUTCDay();
-    const daysUntilSaturday = (6 - weekday + 7) % 7;
-    endDate.setUTCDate(endDate.getUTCDate() + daysUntilSaturday);
-
-    const releaseDate =
-      endDate.getUTCFullYear() + "-" +
-      String(endDate.getUTCMonth() + 1).padStart(2, "0") + "-" +
-      String(endDate.getUTCDate()).padStart(2, "0");
-
-    if (today > releaseDate) return true;
-    if (today < releaseDate) return false;
-
-    const released = today > releaseDate || (
-      today === releaseDate &&
-      (
-        Number(taiwan.hour) > 18 ||
-        (
-          Number(taiwan.hour) === 18 &&
-          Number(taiwan.minute) >= 0
-        )
-      )
-    );
-
+    const released = isExamReleasedAt(exam, new Date());
     if (examKey) releasedExamCache.set(examKey, released);
     return released;
   }
@@ -3946,17 +3877,11 @@ async function renderParentDashboard() {
 
   // 家長已登入時，若最新考試尚未到週六 18:00，於開放時間自動重新載入一次。
   // 只安排最近一個未來發布時間，避免長時間輪詢或重複計時器。
+  const nowTimestamp = Date.now();
   const nextExamReleaseTimestamp = latestThreeExams.reduce(function (nextTimestamp, exam) {
-    if (!exam || !exam.end_date) return nextTimestamp;
-    const endDate = new Date(String(exam.end_date).slice(0, 10) + "T00:00:00Z");
-    if (Number.isNaN(endDate.getTime())) return nextTimestamp;
-    const daysUntilSaturday = (6 - endDate.getUTCDay() + 7) % 7;
-    endDate.setUTCDate(endDate.getUTCDate() + daysUntilSaturday);
-    // 台灣時間週六 18:00 等於 UTC 週六 10:00。
-    const releaseTimestamp = Date.UTC(
-      endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate(), 10, 0, 0
-    );
-    return releaseTimestamp > Date.now() && (!nextTimestamp || releaseTimestamp < nextTimestamp)
+    const releaseTimestamp = getExamReleaseTimestamp(exam);
+    return releaseTimestamp !== null && releaseTimestamp > nowTimestamp &&
+      (!nextTimestamp || releaseTimestamp < nextTimestamp)
       ? releaseTimestamp
       : nextTimestamp;
   }, null);
