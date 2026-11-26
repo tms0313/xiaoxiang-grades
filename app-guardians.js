@@ -5,7 +5,7 @@ let parentPasswordStatusLoadState = "idle";
 
 function getParentPasswordStatusPresentation(status) {
   const presentations = {
-    not_logged_in_pending: { label: "尚未登入／待更改", className: "is-pending" },
+    not_logged_in_pending: { label: "尚未以臨時密碼登入／待更改", className: "is-pending" },
     logged_in_pending: { label: "已登入／待更改", className: "is-warning" },
     completed: { label: "已完成更改", className: "is-complete" },
     never_logged_in_unknown: { label: "從未登入／無法判定", className: "is-unknown" },
@@ -14,7 +14,7 @@ function getParentPasswordStatusPresentation(status) {
     auth_missing: { label: "登入帳號不存在", className: "is-error" }
   };
   return presentations[status] || {
-    label: parentPasswordStatusLoadState === "error" ? "讀取失敗" : "查詢中",
+    label: parentPasswordStatusLoadState === "error" ? "讀取失敗" : (parentPasswordStatusLoadState === "success" ? "無法判定" : "查詢中"),
     className: parentPasswordStatusLoadState === "error" ? "is-error" : "is-loading"
   };
 }
@@ -59,7 +59,7 @@ function applyParentPasswordStatusResults() {
   });
 
   summary.textContent =
-    "尚未登入／待更改 " + counts.not_logged_in_pending + " 位　｜　" +
+    "尚未以臨時密碼登入 " + counts.not_logged_in_pending + " 位　｜　" +
     "已登入／待更改 " + counts.logged_in_pending + " 位　｜　" +
     "已完成更改 " + counts.completed + " 位　｜　" +
     "無法判定 " + counts.unknown + " 位";
