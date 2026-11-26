@@ -101,6 +101,8 @@ function createHarness({ studentUpdateError = null, subjectUpsertError = null } 
   };
 
   vm.runInNewContext(source, context, { filename: "app-students.js" });
+  // Keep this unit test focused on save recovery rather than rendering DOM markup.
+  context.renderStudents = () => {};
 
   return {
     context,
