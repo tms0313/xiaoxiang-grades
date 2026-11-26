@@ -4318,6 +4318,18 @@ async function changeOwnPassword() {
 
     if (result.error) throw result.error;
 
+    // 同步完成首次／一般密碼變更追蹤，讓舊帳號也能在這次改密碼後轉為已完成。
+    const statusUpdate = await db.functions.invoke("admin-manage-teacher-account", {
+      body: { action: "complete_password_change" }
+    });
+    if (statusUpdate.error || !statusUpdate.data || statusUpdate.data.success !== true) {
+      const detail = statusUpdate.data && statusUpdate.data.error
+        ? statusUpdate.data.error
+        : (statusUpdate.error ? statusUpdate.error.message : "狀態同步未完成");
+      showMessage("登入密碼已修改，但密碼狀態同步失敗：" + detail, "error");
+      return;
+    }
+
     showMessage("登入密碼已成功修改。", "success");
 
   } catch (error) {
