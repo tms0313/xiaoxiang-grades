@@ -32,6 +32,7 @@ jobs:
           node --check tests/parent-initial-password.unit.cjs
           node --check tests/teacher-management.unit.cjs
           node --check tests/admin-reset-parent-password.unit.cjs
+          node --check tests/weekly-score-existing-records.unit.cjs
           node --check app-export.js
           node --check app-students.js
           node --check app-term-exams.js
@@ -56,6 +57,8 @@ jobs:
         run: npm run test:teacher-management
       - name: Run admin parent password reset authentication tests
         run: npm run test:parent-password-reset
+      - name: Run weekly score existing-record lookup tests
+        run: npm run test:weekly-score-existing-records
       - name: Run application script-loading integration test
         run: npm run test:script-loading
       - name: Run visual smoke test
