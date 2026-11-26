@@ -3653,7 +3653,7 @@ async function renderParentDashboard() {
       sectionStart +
         "<div class='parent-attendance-summary-grid'>" +
           "<div class='parent-attendance-stat'>" +
-            "<span class='parent-attendance-stat-label'>" + (hasLate ? "遲到" : "本週無遲到紀錄") + "</span>" +
+            "<span class='parent-attendance-stat-label'>" + (hasLate ? "遲到" : "無遲到紀錄") + "</span>" +
             "<span class='parent-attendance-stat-value" + (hasLate ? " attendance-alert" : "") + "'>" +
               (hasLate ? summary.lateMinutes + " <small>分鐘</small>" : "") + "</span>" +
           "</div>" +
