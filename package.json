@@ -5,7 +5,8 @@
     "test:visual": "playwright test tests/visual-check.spec.js",
     "test:release-time": "node --test tests/release-time.unit.cjs",
     "test:font-audit": "playwright test tests/font-audit.spec.js tests/font-audit-mobile.spec.js",
-    "test:all": "playwright test"
+    "test:all": "playwright test",
+    "test:script-loading": "playwright test tests/script-loading.spec.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1"
