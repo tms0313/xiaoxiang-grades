@@ -25,6 +25,7 @@ jobs:
           node --check app-utils.js
           node --check app-export.js
           node --check app-students.js
+          node --check app-term-exams.js
           node --check attendance.js
           node --check app-styles.js
           node --check playwright.config.js
