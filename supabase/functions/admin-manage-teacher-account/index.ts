@@ -67,7 +67,11 @@ Deno.serve(async (req) => {
         return json({ success: false, error: "無法讀取登入帳號資料" }, 400);
       }
       const { error: metadataError } = await adminClient.auth.admin.updateUserById(callerData.user.id, {
-        app_metadata: { ...(authUser.user.app_metadata || {}), must_change_password: false }
+        app_metadata: {
+          ...(authUser.user.app_metadata || {}),
+          must_change_password: false,
+          password_changed_at: new Date().toISOString()
+        }
       });
       if (metadataError) return json({ success: false, error: "完成密碼設定失敗：" + metadataError.message }, 400);
       return json({ success: true, action });
