@@ -211,3 +211,10 @@ input[type="number"]::-webkit-outer-spin-button {
   min-height: 32px;
   border-radius: 8px;
 }
+
+
+/* 週成績登錄：既有與新增成績表格共用欄位及列距規格 */
+#appRoot .weekly-score-layout-table { border-collapse:collapse; table-layout:fixed!important; max-width:none!important; }
+#appRoot .weekly-score-layout-table thead th,#appRoot .weekly-score-layout-table tbody td { padding:2px 8px!important; line-height:1.2!important; vertical-align:middle; font-size:18px!important; }
+#appRoot .weekly-score-layout-table tbody input,#appRoot .weekly-score-layout-table tbody select { box-sizing:border-box!important; height:40px!important; min-height:40px!important; max-height:40px!important; border-radius:8px!important; font-size:18px!important; }
+#appRoot .weekly-score-layout-table tbody button { font-size:18px!important; border-radius:8px!important; }
