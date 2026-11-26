@@ -49,6 +49,9 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "請先登入管理員帳號" }, 401);
     }
 
+    // 從請求標頭明確取得 JWT；此 Client 未啟用持久化 Session，不能依賴 getUser() 自動讀取 Session。
+    const accessToken = authHeader.replace(/^Bearer\s+/i, "");
+
     // 驗證目前登入者
     const userClient = createClient(supabaseUrl, anonKey, {
       global: {
@@ -63,7 +66,7 @@ Deno.serve(async (req) => {
     const {
       data: { user },
       error: userError,
-    } = await userClient.auth.getUser();
+    } = await userClient.auth.getUser(accessToken);
 
     if (userError || !user) {
       return jsonResponse({ error: "登入驗證失敗，請重新登入" }, 401);
