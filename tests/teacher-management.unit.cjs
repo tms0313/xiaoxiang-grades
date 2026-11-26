@@ -78,7 +78,7 @@ test("teacher management no longer offers converting an existing parent account"
 test("independent teacher account and teaching assignment management remain available", () => {
   const { context, content } = createHarness();
 
-  assert.match(content.innerHTML, /建立獨立教師帳號/);
+  assert.match(content.innerHTML, /建立教師帳號/);
   assert.match(content.innerHTML, /教師帳號管理/);
   assert.match(content.innerHTML, /設定授課班級與科目/);
   assert.match(content.innerHTML, /教師授課權限清單/);
