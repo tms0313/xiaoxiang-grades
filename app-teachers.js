@@ -44,7 +44,7 @@ function renderTeacherManagement() {
 
   content.innerHTML =
     "<h2 class='section-title'>教師管理</h2>" +
-    "<div class='panel'><h3>建立獨立教師帳號</h3>" +
+    "<div class='panel'><h3>建立教師帳號</h3>" +
       "<p class='muted'>輸入教師 Email，系統會建立教師登入帳號並產生臨時密碼。教師登入後可自行修改密碼。</p>" +
       "<form id='createTeacherForm'><div class='form-grid'>" +
         "<div class='field'><label>教師 Email（登入帳號）</label><input id='newTeacherEmail' type='email' autocomplete='off' placeholder='請輸入教師 Email' required></div>" +
