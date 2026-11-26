@@ -43,10 +43,10 @@ test('existing and new weekly score tables share the same column order and width
   const bulkEnd = source.indexOf('function renderExistingWeeklyScores()', bulkStart);
   const bulk = source.slice(bulkStart, bulkEnd);
   for (const table of [renderer, bulk]) {
-    assert.match(table, /<th>編號<\\/th><th>學生<\\/th><th>考試範圍<\\/th>/);
+    assert.ok(table.includes("<th>編號</th><th>學生</th><th>考試範圍</th>"));
     assert.match(table, /weekly-score-layout-table/);
     assert.match(table, /\[120, 140, 160, 140, 140, 200\]/);
   }
-  assert.match(renderer, /student\\.student_code/);
-  assert.match(renderer, /item\\.scope/);
+  assert.ok(renderer.includes("student.student_code"));
+  assert.ok(renderer.includes("item.scope"));
 });
