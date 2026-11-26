@@ -7,7 +7,8 @@
     "test:font-audit": "playwright test tests/font-audit.spec.js tests/font-audit-mobile.spec.js",
     "test:all": "playwright test",
     "test:script-loading": "playwright test tests/script-loading.spec.js",
-    "test:admin-management": "node --test tests/admin-management.unit.cjs"
+    "test:admin-management": "node --test tests/admin-management.unit.cjs",
+    "test:admin-delete-parent-account": "node --test tests/admin-delete-parent-account.unit.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1"
