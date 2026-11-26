@@ -1,3 +1,103 @@
+
+let parentPasswordStatusesCache = new Map();
+let parentPasswordStatusRequestId = 0;
+let parentPasswordStatusLoadState = "idle";
+
+function getParentPasswordStatusPresentation(status) {
+  const presentations = {
+    not_logged_in_pending: { label: "尚未登入／待更改", className: "is-pending" },
+    logged_in_pending: { label: "已登入／待更改", className: "is-warning" },
+    completed: { label: "已完成更改", className: "is-complete" },
+    never_logged_in_unknown: { label: "從未登入／無法判定", className: "is-unknown" },
+    legacy_unknown: { label: "舊帳號／無法判定", className: "is-unknown" },
+    pending_login_unknown: { label: "待更改／登入時間不明", className: "is-warning" },
+    auth_missing: { label: "登入帳號不存在", className: "is-error" }
+  };
+  return presentations[status] || {
+    label: parentPasswordStatusLoadState === "error" ? "讀取失敗" : "查詢中",
+    className: parentPasswordStatusLoadState === "error" ? "is-error" : "is-loading"
+  };
+}
+
+function parentPasswordStatusBadge(parentId) {
+  const status = parentPasswordStatusesCache.get(String(parentId));
+  const presentation = getParentPasswordStatusPresentation(status);
+  return "<span class='parent-password-status " + presentation.className +
+    "' data-parent-password-status='" + escapeHtml(parentId) + "'>" +
+    escapeHtml(presentation.label) + "</span>";
+}
+
+function applyParentPasswordStatusResults() {
+  document.querySelectorAll("[data-parent-password-status]").forEach(function (element) {
+    const status = parentPasswordStatusesCache.get(String(element.dataset.parentPasswordStatus));
+    const presentation = getParentPasswordStatusPresentation(status);
+    element.className = "parent-password-status " + presentation.className;
+    element.textContent = presentation.label;
+  });
+
+  const summary = $("parentPasswordStatusSummary");
+  if (!summary) return;
+
+  if (parentPasswordStatusLoadState === "error") {
+    summary.textContent = "密碼狀態讀取失敗，請稍後重新整理。";
+    return;
+  }
+
+  const counts = {
+    not_logged_in_pending: 0,
+    logged_in_pending: 0,
+    completed: 0,
+    unknown: 0
+  };
+  profilesCache.forEach(function (profile) {
+    if (profile.role !== "parent") return;
+    const status = parentPasswordStatusesCache.get(String(profile.id));
+    if (status === "not_logged_in_pending") counts.not_logged_in_pending += 1;
+    else if (status === "logged_in_pending" || status === "pending_login_unknown") counts.logged_in_pending += 1;
+    else if (status === "completed") counts.completed += 1;
+    else counts.unknown += 1;
+  });
+
+  summary.textContent =
+    "尚未登入／待更改 " + counts.not_logged_in_pending + " 位　｜　" +
+    "已登入／待更改 " + counts.logged_in_pending + " 位　｜　" +
+    "已完成更改 " + counts.completed + " 位　｜　" +
+    "無法判定 " + counts.unknown + " 位";
+}
+
+async function loadParentPasswordStatuses() {
+  const requestId = ++parentPasswordStatusRequestId;
+  try {
+    const result = await db.functions.invoke("admin-parent-password-status", {
+      body: {}
+    });
+    if (requestId !== parentPasswordStatusRequestId) return;
+    if (result.error) {
+      throw new Error(result.data && result.data.error
+        ? result.data.error
+        : result.error.message);
+    }
+
+    const data = result.data || {};
+    if (data.success !== true || !Array.isArray(data.parentStatuses)) {
+      throw new Error(data.error || "密碼狀態資料格式不正確。");
+    }
+
+    parentPasswordStatusesCache = new Map(
+      data.parentStatuses.map(function (item) {
+        return [String(item.parentId), item.status];
+      })
+    );
+    parentPasswordStatusLoadState = "success";
+    applyParentPasswordStatusResults();
+  } catch (error) {
+    if (requestId !== parentPasswordStatusRequestId) return;
+    console.error("讀取家長密碼狀態失敗：", error);
+    parentPasswordStatusLoadState = "error";
+    applyParentPasswordStatusResults();
+  }
+}
+
 /* ==================================================
    小象文教機構｜家長帳號及學生綁定管理
    保留原有函式名稱、Supabase 呼叫與帳號安全流程。
@@ -79,6 +179,7 @@ function renderGuardians() {
             ? "<strong>" + escapeHtml(parentName) + "</strong><br><span class='muted'>" + escapeHtml(loginIdentity || "—") + "</span>"
             : "—") + "</td>" +
           "<td><span class='guardian-status-bound'>已綁定</span></td>" +
+          "<td>" + (parent ? parentPasswordStatusBadge(parent.id) : "—") + "</td>" +
           "<td class='action-cell'>" +
             "<div class='action-buttons'>" +
               (parent ? "<button class='btn btn-small' data-edit-parent='" + escapeHtml(parent.id) + "'>修改</button>" : "") +
@@ -109,6 +210,7 @@ function renderGuardians() {
           "<td>—</td>" +
           "<td><strong>" + escapeHtml(parentName) + "</strong><br><span class='muted'>" + escapeHtml(loginIdentity || "—") + "</span></td>" +
           "<td><span class='guardian-status-unbound'>尚未綁定學生</span></td>" +
+          "<td>" + parentPasswordStatusBadge(parent.id) + "</td>" +
           "<td class='action-cell'><div class='action-buttons'>" +
             "<button class='btn btn-small' data-edit-parent='" + escapeHtml(parent.id) + "'>修改</button>" +
             "<button class='btn btn-small' data-reset-parent='" + escapeHtml(parent.id) + "'>重設密碼</button>" +
@@ -134,6 +236,7 @@ function renderGuardians() {
           "<td>" + escapeHtml(student.full_name) + "</td>" +
           "<td>—</td>" +
           "<td><span class='guardian-status-unbound'>尚未綁定家長</span></td>" +
+          "<td>—</td>" +
           "<td class='action-cell'>請建立家長帳號並完成綁定</td>" +
         "</tr>"
     });
@@ -197,6 +300,8 @@ function renderGuardians() {
 
     "<div class='panel'>" +
       "<h3>既有家長帳號與學生綁定清單</h3>" +
+      "<p class='muted'>密碼狀態依系統追蹤紀錄判斷。舊帳號若缺少歷史紀錄，會顯示「無法判定」，不會推測是否仍使用原密碼。</p>" +
+      "<div id='parentPasswordStatusSummary' class='parent-password-status-summary'>密碼狀態統計載入中…</div>" +
       "<div class='toolbar guardian-filter-toolbar'>" +
         "<label for='guardianClass'><strong>班級：</strong></label>" +
         "<select id='guardianClass'>" +
@@ -210,9 +315,9 @@ function renderGuardians() {
         "<span id='guardianResultCount' class='muted' style='font-size: 14px'></span>" +
       "</div>" +
       "<div class='table-wrap'><table class='guardian-management-table'>" +
-        "<thead><tr><th>班級</th><th>學生姓名</th><th>家長名稱／帳號</th><th>綁定狀態</th><th>操作</th></tr></thead>" +
+        "<thead><tr><th>班級</th><th>學生姓名</th><th>家長名稱／帳號</th><th>綁定狀態</th><th>密碼狀態</th><th>操作</th></tr></thead>" +
         "<tbody id='guardianRows'>" +
-          (buildGuardianRows().html || "<tr><td colspan='5' class='empty'>目前沒有家長帳號資料</td></tr>") +
+          (buildGuardianRows().html || "<tr><td colspan='6' class='empty'>目前沒有家長帳號資料</td></tr>") +
         "</tbody>" +
       "</table></div>" +
     "</div>";
@@ -223,7 +328,7 @@ function renderGuardians() {
   function refreshGuardianRows() {
     const result = buildGuardianRows();
     $("guardianRows").innerHTML =
-      result.html || "<tr><td colspan='5' class='empty'>沒有符合條件的家長或學生</td></tr>";
+      result.html || "<tr><td colspan='6' class='empty'>沒有符合條件的家長或學生</td></tr>";
     const counter = $("guardianResultCount");
     if (counter) counter.textContent = "符合條件 " + result.count + " 筆";
   }
@@ -231,6 +336,7 @@ function renderGuardians() {
   $("guardianClass").addEventListener("change", refreshGuardianRows);
   $("guardianKeyword").addEventListener("input", refreshGuardianRows);
   refreshGuardianRows();
+  loadParentPasswordStatuses();
 
   content.onclick = async function (event) {
     const editButton = event.target.closest("[data-edit-parent]");
