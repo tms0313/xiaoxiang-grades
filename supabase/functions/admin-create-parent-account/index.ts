@@ -9,10 +9,17 @@ const corsHeaders = {
 };
 
 function makeTemporaryPassword() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$";
-  const random = new Uint32Array(18);
-  crypto.getRandomValues(random);
-  return Array.from(random, value => alphabet[value % alphabet.length]).join("");
+  // 保留既有規格：家長初始密碼固定為六位數字（允許前導 0）。
+  // 使用 Web Crypto 產生隨機值，並拒絕超出可均勻映射範圍的數值。
+  const range = 1_000_000;
+  const limit = Math.floor(0x1_0000_0000 / range) * range;
+  const random = new Uint32Array(1);
+
+  do {
+    crypto.getRandomValues(random);
+  } while (random[0] >= limit);
+
+  return String(random[0] % range).padStart(6, "0");
 }
 
 Deno.serve(async (req) => {
