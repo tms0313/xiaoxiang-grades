@@ -212,6 +212,9 @@ async function saveStudent(event) {
     submitButton.textContent = "儲存中…";
   }
 
+  let studentWriteCompleted = false;
+  let subjectWriteCompleted = false;
+
   try {
     let studentId = id;
     let savedStudent = null;
@@ -228,6 +231,7 @@ async function saveStudent(event) {
       studentId = result.data.id;
       savedStudent = result.data;
     }
+    studentWriteCompleted = true;
 
     const selectedSubjects = Array.from(document.querySelectorAll("input[name='studentSubject']:checked"))
       .map(checkbox => checkbox.value);
@@ -240,6 +244,7 @@ async function saveStudent(event) {
     const subjectResult = await db.from("student_subjects")
       .upsert(subjectRows, { onConflict: "student_id,subject" });
     if (subjectResult.error) throw subjectResult.error;
+    subjectWriteCompleted = true;
 
     // 學生資料及修課科目已成功寫入後，局部同步快取，避免再次讀取整套後台資料。
     if (id) {
@@ -260,7 +265,35 @@ async function saveStudent(event) {
     showMessage(id ? "學生資料及修課科目已更新。" : "學生及修課科目已新增。", "success");
 
   } catch (error) {
-    showMessage("學生資料儲存失敗：" + error.message, "error");
+    if (!studentWriteCompleted) {
+      showMessage("學生資料儲存失敗：" + error.message, "error");
+      return;
+    }
+
+    // 學生基本資料與修課科目分屬兩張資料表，第二階段失敗時必須重新讀取伺服器資料，
+    // 避免畫面仍保留舊快取，讓管理員誤以為兩階段都未寫入。
+    try {
+      await loadAdminData();
+      renderStudents();
+
+      if (!subjectWriteCompleted) {
+        showMessage(
+          "學生基本資料已儲存，但修課科目更新失敗；已重新同步最新資料。原因：" + error.message,
+          "error"
+        );
+      } else {
+        showMessage(
+          "資料已寫入，但畫面更新時發生錯誤；已重新同步最新資料。原因：" + error.message,
+          "error"
+        );
+      }
+    } catch (syncError) {
+      showMessage(
+        "學生基本資料可能已儲存，但後續處理失敗，且重新同步資料也失敗：" +
+        syncError.message + "。請重新整理後確認資料狀態。",
+        "error"
+      );
+    }
   } finally {
     if (submitButton && submitButton.isConnected) {
       submitButton.disabled = false;

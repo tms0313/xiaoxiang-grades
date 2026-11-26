@@ -24,6 +24,7 @@ jobs:
           node --check app.js
           node --check app-utils.js
           node --check tests/release-time.unit.cjs
+          node --check tests/admin-management.unit.cjs
           node --check app-export.js
           node --check app-students.js
           node --check app-term-exams.js
@@ -40,6 +41,8 @@ jobs:
           node --check tests/font-audit-mobile.spec.js
       - name: Run release-time boundary tests
         run: node --test tests/release-time.unit.cjs
+      - name: Run admin student save recovery tests
+        run: npm run test:admin-management
       - name: Run application script-loading integration test
         run: npm run test:script-loading
       - name: Run visual smoke test
