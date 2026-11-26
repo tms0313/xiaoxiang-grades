@@ -203,13 +203,15 @@ Deno.serve(async (req) => {
 
     createdUserId = created.user.id;
 
-    // 新建家長帳號必須在首次登入時更改臨時密碼。
+    // 新建家長帳號必須在首次登入時更改臨時密碼，並記錄此次要求更改的時間。
+    const passwordChangeRequiredAt = new Date().toISOString();
     const { error: metadataError } = await adminClient.auth.admin.updateUserById(
       createdUserId,
       {
         app_metadata: {
           ...(created.user.app_metadata || {}),
-          must_change_password: true
+          must_change_password: true,
+          password_change_required_at: passwordChangeRequiredAt
         }
       }
     );
