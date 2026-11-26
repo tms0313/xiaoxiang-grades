@@ -739,7 +739,7 @@ async function saveBulkScores() {
     message.textContent = "完成 " + saved + " 筆" + (failures.length ? "；失敗 " + failures.length + " 筆：" + failures.join("；") : "；全部成功。") +
       (failures.length ? " 失敗項目可修正後重新儲存。" : "") + cacheWarning;
     message.className = failures.length ? "system-message error" : "system-message success";
-    if (!failures.length) renderBulkScoreEntryRows();
+    if (!failures.length) { renderExistingWeeklyScores(); renderBulkScoreEntryRows(); }
   } catch (error) {
     message.textContent = "批次儲存中斷：已完成 " + saved + " 筆；" + error.message;
     message.className = "system-message error";
