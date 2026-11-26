@@ -7,13 +7,10 @@ const vm = require("node:vm");
 const source = fs.readFileSync(
   path.join(__dirname, "..", "supabase/functions/admin-delete-parent-account/index.ts"),
   "utf8"
-).replace(
-  /^import \{ createClient \} from "https:\/\/esm\.sh\/@supabase\/supabase-js\@2";\s*/m,
-  "const { createClient } = __supabaseMock;"
 )
-  .replace(/^import .+\\n/m, "")
+  .replace(/^import \{ createClient \} from "https:\/\/esm\.sh\/@supabase\/supabase-js\@2";\s*/m, "const { createClient } = __supabaseMock;")
   .replace(/: unknown/g, "")
-  .replace(/\\)!/g, ")");
+  .replace(/\)!/g, ")");
 
 const adminId = "11111111-1111-4111-8111-111111111111";
 const parentId = "22222222-2222-4222-8222-222222222222";
