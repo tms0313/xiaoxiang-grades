@@ -25,6 +25,7 @@ jobs:
           node --check app-utils.js
           node --check tests/release-time.unit.cjs
           node --check tests/admin-management.unit.cjs
+          node --check tests/admin-delete-parent-account.unit.cjs
           node --check app-export.js
           node --check app-students.js
           node --check app-term-exams.js
@@ -43,6 +44,8 @@ jobs:
         run: node --test tests/release-time.unit.cjs
       - name: Run admin student save recovery tests
         run: npm run test:admin-management
+      - name: Run admin parent deletion guard tests
+        run: npm run test:admin-delete-parent-account
       - name: Run application script-loading integration test
         run: npm run test:script-loading
       - name: Run visual smoke test
