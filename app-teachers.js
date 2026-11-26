@@ -6,7 +6,6 @@
 function renderTeacherManagement() {
   const content = $("adminContent");
   const teacherById = teacherProfilesByIdCache;
-  const teacherRoleIds = teacherRoleIdsCache;
   const teacherOptions = teacherProfilesCache.map(function (profile) {
     return "<option value='" + escapeHtml(profile.id) + "'>" +
       escapeHtml(profile.email || profile.display_name || profile.id) +
@@ -43,23 +42,8 @@ function renderTeacherManagement() {
       "</tr>";
     }).join("");
 
-  const eligibleParents = profilesCache.filter(profile =>
-    !teacherRoleIds.has(String(profile.id))
-  );
-  const eligibleParentOptions = eligibleParents.map(profile =>
-    "<option value='" + escapeHtml(profile.id) + "'>" +
-    escapeHtml(profile.display_name || profile.email || profile.id) +
-    "（" + escapeHtml(profile.email || "") + "）</option>"
-  ).join("");
-
   content.innerHTML =
     "<h2 class='section-title'>教師管理</h2>" +
-    "<div class='panel'><h3>既有家長帳號增加教師身分</h3>" +
-      "<p class='muted'>選擇已存在的家長帳號，即可保留原本 Email、密碼及孩子綁定，另外啟用教師查詢身分；不會建立新登入帳號。</p>" +
-      "<form id='addTeacherRoleForm'><div class='form-grid'>" +
-        "<div class='field'><label>既有家長帳號</label><select id='existingParentForTeacher' required><option value=''>請選擇家長帳號</option>" + eligibleParentOptions + "</select></div>" +
-      "</div><button class='btn btn-success' type='submit' " + (eligibleParents.length ? "" : "disabled") + ">增加教師身分</button></form>" +
-    "</div>" +
     "<div class='panel'><h3>建立獨立教師帳號</h3>" +
       "<p class='muted'>輸入教師 Email，系統會建立教師登入帳號並產生臨時密碼。教師登入後可自行修改密碼。</p>" +
       "<form id='createTeacherForm'><div class='form-grid'>" +
@@ -97,7 +81,6 @@ function renderTeacherManagement() {
     "</div>";
 
   $("createTeacherForm").addEventListener("submit", createTeacherAccount);
-  $("addTeacherRoleForm").addEventListener("submit", addTeacherRoleToParent);
   if ($("teacherAssignmentForm")) {
     $("teacherAssignmentForm").addEventListener("submit", saveTeacherAssignment);
     $("teacherAccountSelect").addEventListener("change", function () {
@@ -146,37 +129,6 @@ function renderTeacherManagement() {
       await removeAdditionalTeacherRole(removeRoleButton.dataset.removeTeacherRole);
     }
   };
-}
-
-async function addTeacherRoleToParent(event) {
-  event.preventDefault();
-  const userId = $("existingParentForTeacher").value;
-  const profile = parentProfilesByIdCache.get(String(userId));
-  if (!profile) {
-    showMessage("請選擇有效的既有家長帳號。", "error");
-    return;
-  }
-  if (!confirm(
-    "確定替這個既有家長帳號增加教師身分？\n\n" +
-    "帳號：" + (profile.email || profile.display_name || userId) +
-    "\n\n原本家長身分、密碼及孩子綁定都會保留。"
-  )) return;
-
-  try {
-    const result = await db.from("profile_roles").insert({
-      user_id: userId,
-      role: "teacher"
-    });
-    if (result.error) {
-      if (result.error.code === "23505") throw new Error("此帳號已經具有教師身分。");
-      throw result.error;
-    }
-    await loadAdminData();
-    renderTeacherManagement();
-    showMessage("已成功增加教師身分，原本家長帳號及綁定資料均保留。", "success");
-  } catch (error) {
-    showMessage("增加教師身分失敗：" + error.message, "error");
-  }
 }
 
 async function removeAdditionalTeacherRole(userId) {
