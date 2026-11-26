@@ -513,3 +513,30 @@ style.textContent += "\n" +
   "}";
 
 document.head.appendChild(style);
+
+
+/* Android 與窄螢幕家長端版面：抑制瀏覽器非預期文字膨脹，避免成績卡片欄位互相擠壓。 */
+style.textContent += "\\n" +
+  "html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }" +
+  "@media(max-width:600px) {" +
+    ".parent-page .student-card { min-width:0; width:100%; }" +
+    ".parent-page .parent-attendance-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }" +
+    ".parent-page .parent-attendance-stat { min-width:0; gap:5px; padding:10px 8px; flex-wrap:wrap; }" +
+    ".parent-page .parent-attendance-stat-label { min-width:0; overflow-wrap:anywhere; }" +
+    ".parent-page .parent-attendance-stat-value { min-width:0; white-space:nowrap; }" +
+    ".parent-page .parent-score-list { width:100%; min-width:0; }" +
+    ".parent-page .parent-subject-card { grid-template-columns:minmax(0,1fr) minmax(78px,38%); gap:8px; min-width:0; padding:12px 10px; }" +
+    ".parent-page .parent-subject-info { min-width:0; }" +
+    ".parent-page .parent-subject-name { overflow-wrap:anywhere; }" +
+    ".parent-page .parent-subject-scope { min-width:0; overflow-wrap:anywhere; word-break:normal; }" +
+    ".parent-page .parent-subject-result { box-sizing:border-box; min-width:0; max-width:none; padding-left:8px; }" +
+    ".parent-page .parent-subject-result-value { min-width:0; flex-wrap:wrap; gap:4px; font-size:20px; line-height:1.3; overflow-wrap:anywhere; }" +
+    ".parent-page .parent-subject-result-value .parent-score-number { font-size:20px; white-space:normal; }" +
+    ".parent-page .parent-subject-result-value .grade-tag { white-space:nowrap; }" +
+  "}" +
+  "@media(max-width:360px) {" +
+    ".parent-page .parent-subject-card { grid-template-columns:minmax(0,1fr) minmax(70px,36%); gap:6px; padding:10px 8px; }" +
+    ".parent-page .parent-subject-result { padding-left:6px; }" +
+    ".parent-page .parent-subject-result-value,.parent-page .parent-subject-result-value .parent-score-number { font-size:18px; }" +
+    ".parent-page .parent-attendance-stat { padding:9px 6px; }" +
+  "}";
