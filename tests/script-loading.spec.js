@@ -80,6 +80,8 @@ test('all local application scripts are versioned, present and loaded in depende
     scoreEntry: typeof window.renderScoreEntry === 'function' &&
       typeof window.renderBulkScoreEntryRows === 'function' &&
       typeof window.saveBulkScores === 'function' &&
+      typeof window.renderExistingWeeklyScores === 'function' &&
+      typeof window.saveExistingWeeklyScore === 'function' &&
       typeof window.saveExam === 'function' &&
       typeof window.deleteExam === 'function',
     overview: typeof window.renderOverview === 'function' &&
