@@ -10,7 +10,8 @@
     "test:admin-management": "node --test tests/admin-management.unit.cjs",
     "test:parent-initial-password": "node --test tests/parent-initial-password.unit.cjs",
     "test:teacher-management": "node --test tests/teacher-management.unit.cjs",
-    "test:parent-password-reset": "node --test tests/admin-reset-parent-password.unit.cjs"
+    "test:parent-password-reset": "node --test tests/admin-reset-parent-password.unit.cjs",
+    "test:weekly-score-existing-records": "node --test tests/weekly-score-existing-records.unit.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1"
