@@ -16,6 +16,7 @@ const EXPECTED_LOCAL_SCRIPTS = [
   'app-teachers.js',
   'app-styles.js',
   'app-overview.js',
+  'app-score-entry.js',
   'app.js'
 ];
 
@@ -69,6 +70,11 @@ test('all local application scripts are versioned, present and loaded in depende
     adminAudit: typeof window.renderLoginLogs === 'function',
     guardians: typeof window.renderGuardians === 'function',
     teachers: typeof window.renderTeacherManagement === 'function',
+    scoreEntry: typeof window.renderScoreEntry === 'function' &&
+      typeof window.renderBulkScoreEntryRows === 'function' &&
+      typeof window.saveBulkScores === 'function' &&
+      typeof window.saveExam === 'function' &&
+      typeof window.deleteExam === 'function',
     overview: typeof window.renderOverview === 'function' &&
       typeof window.refreshOverviewData === 'function' &&
       typeof window.editScore === 'function' &&
@@ -89,6 +95,7 @@ test('all local application scripts are versioned, present and loaded in depende
     guardians: true,
     teachers: true,
     overview: true,
+    scoreEntry: true,
     appStyles: true
   });
 });
