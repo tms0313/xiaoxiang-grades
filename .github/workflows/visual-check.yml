@@ -26,6 +26,7 @@ jobs:
           node --check tests/release-time.unit.cjs
           node --check tests/admin-management.unit.cjs
           node --check tests/parent-initial-password.unit.cjs
+          node --check tests/parent-password-status.unit.cjs
           node --check app-export.js
           node --check app-students.js
           node --check app-term-exams.js
@@ -46,6 +47,8 @@ jobs:
         run: npm run test:admin-management
       - name: Run parent initial password format tests
         run: npm run test:parent-initial-password
+      - name: Run parent password status tests
+        run: npm run test:parent-password-status
       - name: Run application script-loading integration test
         run: npm run test:script-loading
       - name: Run visual smoke test
