@@ -214,3 +214,27 @@ test('both manual logout and auth sign-out events use the shared cache reset', (
   assert.match(authSource, /async function handleLogout\(\)[\s\S]*?resetSessionStateAfterLogout\(\);/);
   assert.match(authSource, /if \(event === "SIGNED_OUT"\) \{\s*resetSessionStateAfterLogout\(\);/);
 });
+
+test('session guard accepts only the same active user and generation', () => {
+  const start = appSource.indexOf('function isCurrentAppSession(');
+  const end = appSource.indexOf('\n}', start);
+  assert.ok(start >= 0 && end > start, 'current-session guard helper must exist');
+  const helperSource = appSource.slice(start, end + 2);
+  const sandbox = {
+    appSessionGeneration: 12,
+    currentUser: { id: 'user-a' }
+  };
+  vm.runInNewContext(helperSource + `
+    globalThis.checks = {
+      current: isCurrentAppSession(12, 'user-a'),
+      staleGeneration: isCurrentAppSession(11, 'user-a'),
+      switchedUser: isCurrentAppSession(12, 'user-b')
+    };
+    currentUser = null;
+    globalThis.checks.signedOut = isCurrentAppSession(12, 'user-a');
+  `, sandbox);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(sandbox.checks)),
+    { current: true, staleGeneration: false, switchedUser: false, signedOut: false }
+  );
+});
