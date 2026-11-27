@@ -58,5 +58,5 @@ test('handles missing codes and empty input without throwing', () => {
     { student_code: 'A1', full_name: '丙' }
   ];
   assert.equal(sortStudents(input).length, 3);
-  assert.deepEqual(sortStudents(null), []);
+  assert.equal(sortStudents(null).length, 0);
 });
