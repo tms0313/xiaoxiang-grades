@@ -1238,12 +1238,15 @@ async function saveExam(event) {
     submitButton.textContent = "儲存中…";
   }
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = id
       ? await db.from("exams").update(payload).eq("id", id)
       : await db.from("exams").insert(payload).select("id, title, start_date, end_date").single();
 
     if (result.error) throw result.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
     if (id) {
       examsCache = examsCache.map(function (exam) {
@@ -1278,9 +1281,12 @@ async function deleteExam(id) {
     "若已有成績資料，資料庫可能會拒絕刪除。"
   )) return;
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db.from("exams").delete().eq("id", id);
     if (result.error) throw result.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
     examsCache = examsCache.filter(function (item) {
       return String(item.id) !== String(id);
