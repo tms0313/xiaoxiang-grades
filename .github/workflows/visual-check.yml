@@ -37,6 +37,8 @@ jobs:
           node --check tests/admin-reset-parent-password.unit.cjs
           node --check tests/weekly-score-existing-records.unit.cjs
           node --check tests/session-cache-reset.unit.cjs
+          node --check tests/weekly-score-entry-sort.unit.cjs
+          node --check tests/asset-cache-version.unit.cjs
           node --check app-export.js
           node --check app-students.js
           node --check app-term-exams.js
@@ -65,6 +67,10 @@ jobs:
         run: npm run test:weekly-score-existing-records
       - name: Run session cache reset regression tests
         run: npm run test:session-cache-reset
+      - name: Run weekly score entry sorting tests
+        run: npm run test:weekly-score-entry-sort
+      - name: Run static asset cache version test
+        run: npm run test:asset-cache-version
       - name: Run application script-loading integration test
         run: npm run test:script-loading
       - name: Run visual smoke test
