@@ -516,7 +516,7 @@ document.head.appendChild(style);
 
 
 /* Android 與窄螢幕家長端版面：抑制瀏覽器非預期文字膨脹，避免成績卡片欄位互相擠壓。 */
-style.textContent += "\\n" +
+style.textContent += "\n" +
   "html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }" +
   "@media(max-width:600px) {" +
     ".parent-page .student-card { min-width:0; width:100%; }" +
