@@ -59,7 +59,7 @@ test('existing and new weekly score tables preserve their distinct identifiers a
 });
 
 
-test('weekly score inputs apply live red bold warning below 60 and clear it at 60 or above', () => {
+test('weekly score inputs apply live red regular-weight warning below 60 and clear it at 60 or above', () => {
   const utils = fs.readFileSync(path.join(__dirname, '..', 'app-utils.js'), 'utf8');
   const styles = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
   assert.match(utils, /function updateScoreInputWarning\(input, enabled\)/);
