@@ -200,6 +200,8 @@ test('logout clears role caches, stops timers and invalidates pending requests',
 test('admin and overview requests discard results started under an earlier session', () => {
   assert.match(appSource, /let appSessionGeneration = 0;/);
   assert.match(authSource, /appSessionGeneration\+\+/);
+  assert.match(authSource, /const sessionGeneration = appSessionGeneration;[\s\S]*?profileUserId = currentUser && currentUser\.id/);
+  assert.match(authSource, /String\(currentUser\.id\) !== String\(profileUserId\)/);
   assert.match(adminDataSource, /const sessionGeneration = appSessionGeneration;/);
   assert.match(adminDataSource, /if \(sessionGeneration !== appSessionGeneration\) return;/);
   assert.match(overviewSource, /const sessionGeneration = appSessionGeneration;/);
