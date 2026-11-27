@@ -34,6 +34,13 @@ function createHarness({ studentUpdateError = null, subjectUpsertError = null } 
     String,
     Object,
     Error,
+    appSessionGeneration: 0,
+    currentUser: { id: "test-admin" },
+    isCurrentAppSession(generation, userId) {
+      return generation === this.appSessionGeneration &&
+        Boolean(this.currentUser) &&
+        String(this.currentUser.id) === String(userId);
+    },
     SUBJECTS: ["國文", "英文", "數學", "自然"],
     studentsCache: [{
       id: "student-1",
