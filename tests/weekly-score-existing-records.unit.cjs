@@ -190,3 +190,29 @@ test('deleting a student removes all of that student’s score index entries', (
   assert.match(handler, /rebuildActiveSubjectsByStudentCache\(\)/);
   assert.match(handler, /rebuildGuardianBindingIndexes\(\)/);
 });
+
+
+test('weekly score entry sorts student codes numerically, then names, without mutating its cache', () => {
+  const helperStart = source.indexOf('function sortWeeklyScoreEntryStudents(');
+  const helperEnd = source.indexOf('function renderBulkScoreEntryRows()', helperStart);
+  assert.ok(helperStart >= 0 && helperEnd > helperStart, 'weekly score sorting helper must exist');
+  const sandbox = {};
+  vm.runInNewContext(
+    source.slice(helperStart, helperEnd) +
+      '\nglobalThis.sortWeeklyScoreEntryStudents = sortWeeklyScoreEntryStudents;',
+    sandbox
+  );
+
+  const students = [
+    { id: '10', student_code: 'G10', full_name: '小十' },
+    { id: '2b', student_code: 'G2', full_name: '乙同學' },
+    { id: '1', student_code: 'G1', full_name: '小一' },
+    { id: '2a', student_code: 'G2', full_name: '甲同學' }
+  ];
+  const originalOrder = students.map(student => student.id);
+  const sorted = sandbox.sortWeeklyScoreEntryStudents(students);
+
+  assert.deepEqual(sorted.map(student => student.id), ['1', '2a', '2b', '10']);
+  assert.deepEqual(students.map(student => student.id), originalOrder, 'sorting must not mutate the cached source array');
+  assert.deepEqual(sandbox.sortWeeklyScoreEntryStudents(null), []);
+});
