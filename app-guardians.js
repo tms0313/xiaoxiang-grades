@@ -674,6 +674,8 @@ async function saveGuardianBinding(event) {
 
   button.disabled = true;
   button.textContent = "建立中……";
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db.from("guardian_students").insert({
       guardian_id: guardianId,
@@ -686,6 +688,7 @@ async function saveGuardianBinding(event) {
       }
       throw result.error;
     }
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
     // 新增綁定只影響家長綁定快取，無須重新載入整套管理端資料。
     guardianLinksCache.push({ guardian_id: guardianId, student_id: studentId });
@@ -694,9 +697,10 @@ async function saveGuardianBinding(event) {
     showMessage("家長與學生已成功綁定。", "success");
 
   } catch (error) {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     showMessage("建立綁定失敗：" + error.message, "error");
   } finally {
-    if (button.isConnected) {
+    if (isCurrentAppSession(sessionGeneration, sessionUserId) && button.isConnected) {
       button.disabled = false;
       button.textContent = "建立綁定";
     }
@@ -706,6 +710,8 @@ async function saveGuardianBinding(event) {
 async function removeGuardianBinding(guardianId, studentId) {
   if (!confirm("確定解除這筆家長與學生的綁定？")) return;
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db
       .from("guardian_students")
@@ -714,6 +720,7 @@ async function removeGuardianBinding(guardianId, studentId) {
       .eq("student_id", studentId);
 
     if (result.error) throw result.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
     // 解除綁定只同步對應的本機關聯資料與索引。
     guardianLinksCache = guardianLinksCache.filter(link =>
@@ -725,6 +732,7 @@ async function removeGuardianBinding(guardianId, studentId) {
     showMessage("已解除綁定。", "success");
 
   } catch (error) {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     showMessage("解除綁定失敗：" + error.message, "error");
   }
 }
