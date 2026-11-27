@@ -164,6 +164,8 @@ async function handleLogout() {
 }
 
 async function loadCurrentProfile() {
+  const sessionGeneration = appSessionGeneration;
+  const profileUserId = currentUser && currentUser.id;
   if (!currentUser) {
     loginPage();
     return;
@@ -172,8 +174,15 @@ async function loadCurrentProfile() {
   const result = await db
     .from("profiles")
     .select("role")
-    .eq("id", currentUser.id)
+    .eq("id", profileUserId)
     .maybeSingle();
+
+  // 若查詢期間已登出或換帳號，不採用舊使用者的 profile 結果。
+  if (
+    sessionGeneration !== appSessionGeneration ||
+    !currentUser ||
+    String(currentUser.id) !== String(profileUserId)
+  ) return;
 
   if (result.error) {
     showMessage("讀取使用者資料失敗：" + result.error.message, "error");
@@ -203,6 +212,11 @@ async function loadCurrentProfile() {
   }
 
   await recordSuccessfulLogin();
+  if (
+    sessionGeneration !== appSessionGeneration ||
+    !currentUser ||
+    String(currentUser.id) !== String(profileUserId)
+  ) return;
   await renderDashboard();
 }
 
