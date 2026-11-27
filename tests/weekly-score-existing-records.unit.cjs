@@ -214,5 +214,5 @@ test('weekly score entry sorts student codes numerically, then names, without mu
 
   assert.deepEqual(sorted.map(student => student.id), ['1', '2a', '2b', '10']);
   assert.deepEqual(students.map(student => student.id), originalOrder, 'sorting must not mutate the cached source array');
-  assert.deepEqual(sandbox.sortWeeklyScoreEntryStudents(null), []);
+  assert.deepEqual(Array.from(sandbox.sortWeeklyScoreEntryStudents(null)), []);
 });
