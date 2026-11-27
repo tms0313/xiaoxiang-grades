@@ -12,7 +12,9 @@
     "test:teacher-management": "node --test tests/teacher-management.unit.cjs",
     "test:parent-password-reset": "node --test tests/admin-reset-parent-password.unit.cjs",
     "test:weekly-score-existing-records": "node --test tests/weekly-score-existing-records.unit.cjs",
-    "test:session-cache-reset": "node --test tests/session-cache-reset.unit.cjs"
+    "test:session-cache-reset": "node --test tests/session-cache-reset.unit.cjs",
+    "test:weekly-score-entry-sort": "node --test tests/weekly-score-entry-sort.unit.cjs",
+    "test:asset-cache-version": "node --test tests/asset-cache-version.unit.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1"
