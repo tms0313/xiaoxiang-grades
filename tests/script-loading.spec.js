@@ -19,6 +19,7 @@ const EXPECTED_LOCAL_SCRIPTS = [
   'app-score-entry.js',
   'app-parent.js',
   'app-teacher-dashboard.js',
+  'app-admin-dashboard.js',
   'app.js'
 ];
 
@@ -72,6 +73,10 @@ test('all local application scripts are versioned, present and loaded in depende
     adminAudit: typeof window.renderLoginLogs === 'function',
     guardians: typeof window.renderGuardians === 'function',
     teachers: typeof window.renderTeacherManagement === 'function',
+    adminDashboard: typeof window.renderAdminDashboard === 'function' &&
+      typeof window.renderAdminTab === 'function' &&
+      typeof window.renderAdminClassHighestPreview === 'function' &&
+      typeof window.getAdminTabFromHash === 'function',
     teacherDashboard: typeof window.renderTeacherDashboard === 'function' &&
       typeof window.renderTeacherResults === 'function',
     parentDashboard: typeof window.renderParentDashboard === 'function' &&
@@ -107,6 +112,7 @@ test('all local application scripts are versioned, present and loaded in depende
     scoreEntry: true,
     parentDashboard: true,
     teacherDashboard: true,
+    adminDashboard: true,
     appStyles: true
   });
 });
