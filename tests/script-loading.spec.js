@@ -78,7 +78,11 @@ test('all local application scripts are versioned, present and loaded in depende
       typeof window.handleLogin === 'function' &&
       typeof window.handleLogout === 'function' &&
       typeof window.loadCurrentProfile === 'function' &&
-      typeof window.recordSuccessfulLogin === 'function',
+      typeof window.recordSuccessfulLogin === 'function' &&
+      typeof window.renderFirstLoginPasswordChange === 'function' &&
+      typeof window.saveTeacherFirstLoginPassword === 'function' &&
+      typeof window.changeOwnPassword === 'function' &&
+      typeof window.initializeApp === 'function',
     adminDashboard: typeof window.renderAdminDashboard === 'function' &&
       typeof window.renderAdminTab === 'function' &&
       typeof window.renderAdminClassHighestPreview === 'function' &&
