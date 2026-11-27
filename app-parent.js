@@ -518,6 +518,8 @@ async function renderParentDashboard() {
 
       button.disabled = true;
       button.textContent = "正在儲存……";
+      const sessionGeneration = appSessionGeneration;
+      const sessionUserId = currentUser && currentUser.id;
 
       try {
         const result = await db
@@ -531,10 +533,12 @@ async function renderParentDashboard() {
         if (result.error && result.error.code !== "23505") {
           throw new Error(result.error.message);
         }
+        if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
         button.textContent = "已完成本週成績查閱";
         button.disabled = true;
       } catch (error) {
+        if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
         button.disabled = false;
         button.textContent = "我已查閱本週成績";
         alert("儲存檢閱紀錄失敗：" + (error && error.message ? error.message : "請確認網路連線後重試。"));

@@ -34,6 +34,9 @@ function createHarness({ studentUpdateError = null, subjectUpsertError = null } 
     String,
     Object,
     Error,
+    appSessionGeneration: 0,
+    currentUser: { id: "test-admin" },
+    isCurrentAppSession: null,
     SUBJECTS: ["國文", "英文", "數學", "自然"],
     studentsCache: [{
       id: "student-1",
@@ -99,6 +102,13 @@ function createHarness({ studentUpdateError = null, subjectUpsertError = null } 
       }
     }
   };
+
+  // Use an arrow closure so the session guard reads the same context object
+  // that vm.runInNewContext exposes as the script's global scope.
+  context.isCurrentAppSession = (generation, userId) =>
+    generation === context.appSessionGeneration &&
+    Boolean(context.currentUser) &&
+    String(context.currentUser.id) === String(userId);
 
   vm.runInNewContext(source, context, { filename: "app-students.js" });
   // Keep this unit test focused on save recovery rather than rendering DOM markup.

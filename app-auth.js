@@ -79,6 +79,79 @@ async function handleLogin(event) {
   }
 }
 
+function resetSessionStateAfterLogout() {
+  // 先使所有舊帳號的非同步請求失效，再清除計時器與快取。
+  appSessionGeneration++;
+  dashboardRenderRequestId++;
+  parentDashboardRequestId++;
+  teacherDashboardRequestId++;
+  attendanceLoadRequestId++;
+  attendanceCalendarRequestId++;
+  attendanceWeeklyOverviewRequestId++;
+
+  if (overviewAutoRefreshTimer) clearInterval(overviewAutoRefreshTimer);
+  if (parentExamReleaseRefreshTimer) clearTimeout(parentExamReleaseRefreshTimer);
+  overviewAutoRefreshTimer = null;
+  parentExamReleaseRefreshTimer = null;
+  overviewAutoRefreshBusy = false;
+
+  currentUser = null;
+  currentProfile = null;
+  profileRolesCache = [];
+  teacherRoleIdsCache = new Set();
+
+  studentsCache = [];
+  examsCache = [];
+  rebuildExamIndexes();
+  profilesCache = [];
+  rebuildAdminEntityIndexes();
+
+  scoresCache = [];
+  rebuildScoresByIdCache();
+  invalidateAdminHighestPreviewCache();
+  missingExclusionsCache = [];
+
+  guardianLinksCache = [];
+  rebuildGuardianBindingIndexes();
+  studentSubjectsCache = [];
+  rebuildActiveSubjectsByStudentCache();
+
+  teacherProfilesCache = [];
+  teacherProfilesByIdCache = new Map();
+  teacherAssignmentsCache = [];
+  teacherStudentsCache = [];
+  teacherExamsCache = [];
+  teacherExamsByIdCache = new Map();
+  teacherExamOptionsCache = "";
+  teacherScoresCache = [];
+  teacherStudentSubjectsCache = [];
+  teacherPermittedSubjectsByClass = new Map();
+  teacherStudentsByClassSubject = new Map();
+  teacherScoresByStudentExamSubject = new Map();
+
+  scoreEntryStudentsByClassSubject = new Map();
+  bulkEntryExistingScoresByStudent = new Map();
+  bulkEntryScoreContextKey = "";
+  teacherSelectedExamId = "";
+  teacherSelectedClassName = "";
+  scoreEntrySavedCount = 0;
+
+  adminHighestPreviewExamId = "";
+  adminHighestPreviewClassName = "";
+  adminHighestPreviewSubject = "";
+  adminDataLoadMetrics = null;
+  activeTab = "overview";
+
+  attendanceSelectedDate = "";
+  attendanceSelectedSession = null;
+  attendanceLoadedStudents = [];
+  attendanceSavedSessionId = "";
+  attendanceCalendarMonth = "";
+  attendanceCalendarMarkedDates = new Set();
+  attendanceWeeklyOverviewWeek = "";
+  attendanceWeeklyOverviewClass = "";
+}
+
 async function handleLogout() {
   try {
     await db.auth.signOut();
@@ -86,25 +159,13 @@ async function handleLogout() {
     console.error("登出錯誤", error);
   }
 
-  currentUser = null;
-  currentProfile = null;
-  profileRolesCache = [];
-  teacherRoleIdsCache = new Set();
-  studentsCache = [];
-  examsCache = [];
-  rebuildExamIndexes();
-  profilesCache = [];
-  rebuildAdminEntityIndexes();
-  scoresCache = [];
-  rebuildScoresByIdCache();
-  invalidateAdminHighestPreviewCache();
-  guardianLinksCache = [];
-  rebuildGuardianBindingIndexes();
-
+  resetSessionStateAfterLogout();
   loginPage();
 }
 
 async function loadCurrentProfile() {
+  const sessionGeneration = appSessionGeneration;
+  const profileUserId = currentUser && currentUser.id;
   if (!currentUser) {
     loginPage();
     return;
@@ -113,8 +174,15 @@ async function loadCurrentProfile() {
   const result = await db
     .from("profiles")
     .select("role")
-    .eq("id", currentUser.id)
+    .eq("id", profileUserId)
     .maybeSingle();
+
+  // 若查詢期間已登出或換帳號，不採用舊使用者的 profile 結果。
+  if (
+    sessionGeneration !== appSessionGeneration ||
+    !currentUser ||
+    String(currentUser.id) !== String(profileUserId)
+  ) return;
 
   if (result.error) {
     showMessage("讀取使用者資料失敗：" + result.error.message, "error");
@@ -144,6 +212,11 @@ async function loadCurrentProfile() {
   }
 
   await recordSuccessfulLogin();
+  if (
+    sessionGeneration !== appSessionGeneration ||
+    !currentUser ||
+    String(currentUser.id) !== String(profileUserId)
+  ) return;
   await renderDashboard();
 }
 
@@ -291,12 +364,8 @@ async function initializeApp() {
 
   db.auth.onAuthStateChange(function (event, session) {
     if (event === "SIGNED_OUT") {
-      currentUser = null;
-      currentProfile = null;
-
-      if ($("appRoot")) {
-        loginPage();
-      }
+      resetSessionStateAfterLogout();
+      if ($("appRoot")) loginPage();
     }
   });
 }

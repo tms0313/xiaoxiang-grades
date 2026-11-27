@@ -141,12 +141,17 @@ async function removeAdditionalTeacherRole(userId) {
     "\n\n系統會一併移除教師授課指派，但會保留原本家長登入帳號、密碼及孩子綁定。"
   )) return;
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const assignmentDelete = await db.from("teacher_assignments").delete().eq("teacher_id", userId);
     if (assignmentDelete.error) throw assignmentDelete.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     const roleDelete = await db.from("profile_roles").delete().eq("user_id", userId).eq("role", "teacher");
     if (roleDelete.error) throw roleDelete.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     await loadAdminData();
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     renderTeacherManagement();
     showMessage("教師身分已移除，原本家長帳號及孩子綁定仍保留。", "success");
   } catch (error) {
@@ -164,6 +169,8 @@ async function createTeacherAccount(event) {
   button.disabled = true;
   button.textContent = "建立中……";
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db.functions.invoke("admin-create-teacher-account", {
       body: { email: email }
@@ -171,11 +178,13 @@ async function createTeacherAccount(event) {
     if (result.error) {
       throw new Error(result.data && result.data.error ? result.data.error : result.error.message);
     }
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     const data = result.data || {};
     if (!data.success || !data.temporaryPassword) {
       throw new Error(data.error || "教師帳號建立結果不完整，請確認 Edge Function 已部署。");
     }
     await loadAdminData();
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     renderTeacherManagement();
     const copyPassword = confirm(
       "教師帳號建立成功！\n\n登入帳號：" + (data.email || email) +
@@ -212,6 +221,8 @@ async function manageTeacherAccount(action, teacherId, email) {
     if (!confirm("確定重設這位教師的登入密碼？\n\n教師帳號：" + email)) return;
   }
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db.functions.invoke("admin-manage-teacher-account", {
       body: { action: action, teacherId: teacherId }
@@ -221,11 +232,13 @@ async function manageTeacherAccount(action, teacherId, email) {
       throw new Error(result.data && result.data.error ? result.data.error : result.error.message);
     }
 
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     const data = result.data || {};
     if (!data.success) throw new Error(data.error || "教師帳號操作失敗。");
 
     if (isDelete) {
       await loadAdminData();
+      if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
       renderTeacherManagement();
       showMessage("教師帳號已刪除，授課權限也已清除。", "success");
       return;
@@ -284,6 +297,8 @@ async function saveTeacherAssignment(event) {
 
   button.disabled = true;
   button.textContent = "新增中……";
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db.from("teacher_assignments").insert({
       teacher_id: teacherId,
@@ -294,6 +309,7 @@ async function saveTeacherAssignment(event) {
       if (result.error.code === "23505") throw new Error("這位教師已經有相同的授課權限。");
       throw result.error;
     }
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     teacherAssignmentsCache.push(result.data);
     renderTeacherManagement();
     if ($("teacherAccountSelect")) $("teacherAccountSelect").value = teacherId;
@@ -334,9 +350,12 @@ async function deleteTeacherAssignment(id, button) {
   const assignmentPanel = currentRow ? currentRow.closest(".panel") : null;
   const panelTop = assignmentPanel ? assignmentPanel.getBoundingClientRect().top : null;
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db.from("teacher_assignments").delete().eq("id", id);
     if (result.error) throw result.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     teacherAssignmentsCache = teacherAssignmentsCache.filter(
       item => String(item.id) !== String(id)
     );

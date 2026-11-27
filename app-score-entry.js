@@ -182,6 +182,15 @@ function saveBulkScoreDraft(immediate) {
   }
 }
 
+function sortWeeklyScoreEntryStudents(students) {
+  return (Array.isArray(students) ? students : []).slice().sort(function (a, b) {
+    const codeCompare = String(a.student_code || "").localeCompare(
+      String(b.student_code || ""), "zh-Hant", { numeric: true, sensitivity: "base" }
+    );
+    return codeCompare || String(a.full_name || "").localeCompare(String(b.full_name || ""), "zh-Hant");
+  });
+}
+
 function renderBulkScoreEntryRows() {
   const root = $("bulkScoreEntryContent");
   if (!root) return;
@@ -195,11 +204,9 @@ function renderBulkScoreEntryRows() {
     return;
   }
   // 班級／科目學生名單已在頁面初始化時分組，切換條件不再重掃全部修課與學生資料。
-  const students = (scoreEntryStudentsByClassSubject.get(JSON.stringify([className, subject])) || []).slice().sort(function (a, b) {
-    // 學生編號以數字感知排序，確保 G2 排在 G10 前；編號相同時再依姓名排序。
-    const codeCompare = String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant", { numeric: true, sensitivity: "base" });
-    return codeCompare || String(a.full_name || "").localeCompare(String(b.full_name || ""), "zh-Hant");
-  });
+  const students = sortWeeklyScoreEntryStudents(
+    scoreEntryStudentsByClassSubject.get(JSON.stringify([className, subject])) || []
+  );
   if (!students.length) {
     root.innerHTML = "<div class='empty'>此班目前沒有設定修讀「" + escapeHtml(subject) + "」的在學學生，請先至學生管理確認修課設定。</div>";
     return;
@@ -450,11 +457,14 @@ async function saveExistingWeeklyScore(row) {
   }
   button.disabled = true;
   button.textContent = "儲存中…";
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db.from("scores").update({
       score: score, correct_count: correctCount, grade_level: gradeLevel
     }).eq("id", id).select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").single();
     if (result.error) throw result.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     Object.assign(item, result.data);
     rebuildScoresByIdCache();
     updateScoreCompositeIndex(item);
@@ -462,6 +472,7 @@ async function saveExistingWeeklyScore(row) {
     renderExistingWeeklyScores();
     showMessage(student.full_name + "（" + item.scope + "）成績已更新。", "success", true);
   } catch (error) {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     showMessage(student.full_name + " 成績修改失敗：" + error.message, "error", true);
     button.disabled = false;
     button.textContent = "儲存修改";
@@ -469,6 +480,8 @@ async function saveExistingWeeklyScore(row) {
 }
 
 async function refreshScoreCacheForScope(examId, subject, scope) {
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   const result = await db
     .from("scores")
     .select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level")
@@ -479,6 +492,7 @@ async function refreshScoreCacheForScope(examId, subject, scope) {
   if (result.error) {
     throw new Error("成績已儲存，但同步本機成績快取失敗：" + result.error.message);
   }
+  if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return [];
 
   const refreshedRows = result.data || [];
   const normalizedExamId = String(examId);
@@ -570,6 +584,8 @@ async function saveSingleBulkScoreRow(row) {
     : null;
   if (duplicate && !confirm(student.full_name + " 已有相同考試、科目及範圍的成績，是否覆蓋？")) return;
   button.disabled = true; button.textContent = "儲存中";
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const payload = { student_id: studentId, exam_id: examId, subject, scope, score, correct_count: correctCount, grade_level: gradeLevel };
     const result = duplicate
@@ -577,6 +593,7 @@ async function saveSingleBulkScoreRow(row) {
       : await db.from("scores").insert(payload).select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").single();
     if (result.error) throw result.error;
     if (!result.data) throw new Error("成績已送出，但未取得儲存後的資料，請重新整理確認。");
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
     // 更新既有物件或附加新資料，維持共用條件索引與 ID 索引的一致性。
     if (duplicate) {
@@ -598,14 +615,19 @@ async function saveSingleBulkScoreRow(row) {
     message.textContent = student.full_name + " 的成績已" + (duplicate ? "覆蓋" : "儲存") + "成功。";
     message.className = "system-message success"; message.style.display = "block";
   } catch (error) {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     message.textContent = student.full_name + " 儲存失敗：" + error.message;
     message.className = "system-message error"; message.style.display = "block";
   } finally {
-    button.disabled = false; button.textContent = "單筆儲存";
+    if (isCurrentAppSession(sessionGeneration, sessionUserId)) {
+      button.disabled = false; button.textContent = "單筆儲存";
+    }
   }
 }
 
 async function saveBulkScores() {
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   const button = $("saveBulkScoresButton");
   const message = $("bulkScoreEntryMessage");
   if (button.disabled) return;
@@ -681,7 +703,9 @@ async function saveBulkScores() {
   if (bulkEntryScoreContextKey === "__stale__") {
     try {
       await refreshScoreCacheForScope(examId, subject, scope);
+      if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     } catch (refreshError) {
+      if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
       message.textContent = "目前無法確認資料庫最新成績，為避免重複寫入，請確認網路後重新整理管理頁再試。";
       message.className = "system-message error";
       message.style.display = "block";
@@ -740,6 +764,7 @@ async function saveBulkScores() {
           return { entry: entry, error: error };
         }
       }));
+      if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
       results.forEach(function (item) {
         if (item.error) {
@@ -758,7 +783,9 @@ async function saveBulkScores() {
     if (saved) {
       try {
         await refreshScoreCacheForScope(examId, subject, scope);
+        if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
       } catch (refreshError) {
+        if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
         console.warn(refreshError);
         // 無法確認遠端最終狀態時，鎖定成績索引；下次儲存必須先重新向資料庫讀取。
         bulkEntryScoreContextKey = "__stale__";
@@ -770,9 +797,11 @@ async function saveBulkScores() {
     message.className = failures.length ? "system-message error" : "system-message success";
     if (!failures.length) { renderExistingWeeklyScores(); renderBulkScoreEntryRows(); }
   } catch (error) {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     message.textContent = "批次儲存中斷：已完成 " + saved + " 筆；" + error.message;
     message.className = "system-message error";
   } finally {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     contextControls.forEach(control => { control.disabled = false; });
     rowSaveButtons.forEach(control => { control.disabled = false; });
     button.disabled = false;
@@ -1094,11 +1123,14 @@ async function saveScore(event) {
   };
   saveButton.disabled = true;
   saveButton.textContent = "儲存中……";
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = duplicate
       ? await db.from("scores").update(payload).eq("id", duplicate.id).select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").single()
       : await db.from("scores").insert(payload).select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").single();
     if (result.error) throw result.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     upsertScoreToLocalCache(result.data);
     scoreEntrySavedCount += 1;
     clearScoreEntryDraft();
@@ -1115,8 +1147,10 @@ async function saveScore(event) {
       "；科目：" + subject + "；範圍：" + scope + "；結果：" + savedResultText +
       "。本次頁面累計完成 " + scoreEntrySavedCount + " 筆。", "success", true);
   } catch (error) {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     showMessage("成績儲存失敗，原輸入資料已保留。原因：" + error.message, "error", true);
   } finally {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     saveButton.disabled = false;
     saveButton.textContent = "儲存成績";
   }
@@ -1211,12 +1245,15 @@ async function saveExam(event) {
     submitButton.textContent = "儲存中…";
   }
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = id
       ? await db.from("exams").update(payload).eq("id", id)
       : await db.from("exams").insert(payload).select("id, title, start_date, end_date").single();
 
     if (result.error) throw result.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
     if (id) {
       examsCache = examsCache.map(function (exam) {
@@ -1251,9 +1288,12 @@ async function deleteExam(id) {
     "若已有成績資料，資料庫可能會拒絕刪除。"
   )) return;
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db.from("exams").delete().eq("id", id);
     if (result.error) throw result.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
     examsCache = examsCache.filter(function (item) {
       return String(item.id) !== String(id);

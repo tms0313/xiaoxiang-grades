@@ -53,6 +53,16 @@ const GRADE_OPTIONS = ["A++", "A+", "A", "B++", "B+", "B", "C", "缺考", "請�
 
 let currentUser = null;
 let currentProfile = null;
+// 登出時遞增，用來丟棄尚未完成的舊帳號資料請求。
+let appSessionGeneration = 0;
+
+// 非同步寫入完成後，只有原登入工作階段仍有效時才可更新本機快取或畫面。
+function isCurrentAppSession(sessionGeneration, userId) {
+  return sessionGeneration === appSessionGeneration &&
+    Boolean(currentUser) &&
+    String(currentUser.id) === String(userId);
+}
+
 let profileRolesCache = [];
 let teacherRoleIdsCache = new Set();
 let studentsCache = [];
