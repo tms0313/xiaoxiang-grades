@@ -20,6 +20,7 @@ const EXPECTED_LOCAL_SCRIPTS = [
   'app-parent.js',
   'app-teacher-dashboard.js',
   'app-admin-dashboard.js',
+  'app-auth.js',
   'app.js'
 ];
 
