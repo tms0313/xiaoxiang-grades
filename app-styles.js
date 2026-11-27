@@ -512,6 +512,18 @@ style.textContent += "\n" +
     "#adminContent .alumni-score-table tbody td,#adminContent .alumni-score-table tbody td *{font-size:18px!important;}" +
   "}";
 
+/* 全站低分統一：低於 60 分只使用紅字，不加粗；覆蓋家長／教師頁各自的字重設定 */
+style.textContent += "\\n" +
+  ".low-score," +
+  ".parent-score-list .low-score," +
+  ".parent-score-number.low-score," +
+  ".parent-subject-result-value .low-score," +
+  ".teacher-score-value .low-score," +
+  ".teacher-page .teacher-score-value .parent-score-number.low-score {" +
+    "color:#d32626 !important;" +
+    "font-weight:400 !important;" +
+  "}";
+
 document.head.appendChild(style);
 
 
