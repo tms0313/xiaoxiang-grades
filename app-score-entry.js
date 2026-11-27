@@ -182,6 +182,15 @@ function saveBulkScoreDraft(immediate) {
   }
 }
 
+function sortWeeklyScoreEntryStudents(students) {
+  return (Array.isArray(students) ? students : []).slice().sort(function (a, b) {
+    const codeCompare = String(a.student_code || "").localeCompare(
+      String(b.student_code || ""), "zh-Hant", { numeric: true, sensitivity: "base" }
+    );
+    return codeCompare || String(a.full_name || "").localeCompare(String(b.full_name || ""), "zh-Hant");
+  });
+}
+
 function renderBulkScoreEntryRows() {
   const root = $("bulkScoreEntryContent");
   if (!root) return;
@@ -195,11 +204,9 @@ function renderBulkScoreEntryRows() {
     return;
   }
   // 班級／科目學生名單已在頁面初始化時分組，切換條件不再重掃全部修課與學生資料。
-  const students = (scoreEntryStudentsByClassSubject.get(JSON.stringify([className, subject])) || []).slice().sort(function (a, b) {
-    // 學生編號以數字感知排序，確保 G2 排在 G10 前；編號相同時再依姓名排序。
-    const codeCompare = String(a.student_code || "").localeCompare(String(b.student_code || ""), "zh-Hant", { numeric: true, sensitivity: "base" });
-    return codeCompare || String(a.full_name || "").localeCompare(String(b.full_name || ""), "zh-Hant");
-  });
+  const students = sortWeeklyScoreEntryStudents(
+    scoreEntryStudentsByClassSubject.get(JSON.stringify([className, subject])) || []
+  );
   if (!students.length) {
     root.innerHTML = "<div class='empty'>此班目前沒有設定修讀「" + escapeHtml(subject) + "」的在學學生，請先至學生管理確認修課設定。</div>";
     return;
