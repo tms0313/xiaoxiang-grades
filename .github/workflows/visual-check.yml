@@ -26,6 +26,9 @@ jobs:
           node --check app-score-entry.js
           node --check app-parent.js
           node --check app-teacher-dashboard.js
+          node --check app-admin-dashboard.js
+          node --check app-auth.js
+          node --check app-admin-data.js
           node --check app-utils.js
           node --check tests/release-time.unit.cjs
           node --check tests/admin-management.unit.cjs
