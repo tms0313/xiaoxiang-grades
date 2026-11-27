@@ -9,6 +9,7 @@ function hasLatestExamReachedReleaseTime(exam) {
 }
 
 async function cleanupPreviousWeekExclusions() {
+  const sessionGeneration = appSessionGeneration;
   // 管理資料載入時已建立日期排序索引；週期性檢查直接重用，避免重複排序。
   const datedExams = examsByDateDescCache.filter(exam => exam.start_date || exam.end_date);
 
@@ -31,6 +32,7 @@ async function cleanupPreviousWeekExclusions() {
     .eq("exam_id", previousExamId);
 
   if (result.error) throw result.error;
+  if (sessionGeneration !== appSessionGeneration) return;
 
   // 同步更新前端快取，避免本次畫面仍顯示已清除的名單。
   missingExclusionsCache = missingExclusionsCache.filter(
@@ -39,6 +41,7 @@ async function cleanupPreviousWeekExclusions() {
 }
 
 async function loadAdminData() {
+  const sessionGeneration = appSessionGeneration;
   const adminLoadStartedAt = performance.now();
   const adminQueriesStartedAt = performance.now();
   const measureAdminQuery = async (name, queryFactory) => {
@@ -58,6 +61,8 @@ async function loadAdminData() {
     measureAdminQuery("額外身分資料", () => db.from("profile_roles").select("user_id, role").eq("role", "teacher").order("user_id", { ascending: true })),
     measureAdminQuery("未登錄排除資料", () => db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope").order("id", { ascending: true }))
   ]);
+  // 登出或切換帳號後，丟棄舊帳號尚未完成的查詢結果。
+  if (sessionGeneration !== appSessionGeneration) return;
   const adminQueriesMs = performance.now() - adminQueriesStartedAt;
 
   const names = ["學生資料", "考試資料", "全部帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師授課權限", "額外身分資料", "未登錄排除資料"];
@@ -115,6 +120,7 @@ async function loadAdminData() {
   } catch (error) {
     console.error("清除上一週已排除提醒失敗：", error);
   }
+  if (sessionGeneration !== appSessionGeneration) return;
 
   adminDataLoadMetrics = {
     queryMs: adminQueriesMs,
