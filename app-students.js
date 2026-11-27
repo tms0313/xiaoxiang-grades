@@ -212,6 +212,8 @@ async function saveStudent(event) {
     submitButton.textContent = "儲存中…";
   }
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   let studentWriteCompleted = false;
   let subjectWriteCompleted = false;
 
@@ -231,6 +233,7 @@ async function saveStudent(event) {
       studentId = result.data.id;
       savedStudent = result.data;
     }
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     studentWriteCompleted = true;
 
     const selectedSubjects = Array.from(document.querySelectorAll("input[name='studentSubject']:checked"))
@@ -244,6 +247,7 @@ async function saveStudent(event) {
     const subjectResult = await db.from("student_subjects")
       .upsert(subjectRows, { onConflict: "student_id,subject" });
     if (subjectResult.error) throw subjectResult.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     subjectWriteCompleted = true;
 
     // 學生資料及修課科目已成功寫入後，局部同步快取，避免再次讀取整套後台資料。
@@ -265,6 +269,7 @@ async function saveStudent(event) {
     showMessage(id ? "學生資料及修課科目已更新。" : "學生及修課科目已新增。", "success");
 
   } catch (error) {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     if (!studentWriteCompleted) {
       showMessage("學生資料儲存失敗：" + error.message, "error");
       return;
@@ -295,7 +300,7 @@ async function saveStudent(event) {
       );
     }
   } finally {
-    if (submitButton && submitButton.isConnected) {
+    if (isCurrentAppSession(sessionGeneration, sessionUserId) && submitButton && submitButton.isConnected) {
       submitButton.disabled = false;
       submitButton.textContent = originalButtonText || "儲存學生資料";
     }
@@ -319,12 +324,15 @@ async function toggleStudentStatus(id) {
 
   if (!confirm("確定" + action + "學生「" + student.full_name + "」嗎？" + warning)) return;
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db.from("students")
       .update({ is_active: nextStatus })
       .eq("id", id);
 
     if (result.error) throw result.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
     // 學生狀態變更只影響學生快取與依賴學生狀態的索引，不必重載整套管理資料。
     student.is_active = nextStatus;
@@ -332,6 +340,7 @@ async function toggleStudentStatus(id) {
     renderStudents();
     showMessage("學生「" + student.full_name + "」已" + action + "。", "success");
   } catch (error) {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     showMessage(action + "學生失敗：" + error.message, "error");
   }
 }
@@ -342,9 +351,12 @@ async function deleteStudent(id) {
 
   if (!confirm("確定刪除學生「" + student.full_name + "」？\n\n若此學生仍有成績或家長綁定，資料庫可能會拒絕刪除。")) return;
 
+  const sessionGeneration = appSessionGeneration;
+  const sessionUserId = currentUser && currentUser.id;
   try {
     const result = await db.from("students").delete().eq("id", id);
     if (result.error) throw result.error;
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
 
     // 刪除學生後同步受影響的本地快取，避免重新載入整套管理資料。
     studentsCache = studentsCache.filter(item => String(item.id) !== String(id));
@@ -367,6 +379,7 @@ async function deleteStudent(id) {
     showMessage("學生資料已刪除。", "success");
 
   } catch (error) {
+    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
     showMessage("刪除失敗：" + error.message, "error");
   }
 }
