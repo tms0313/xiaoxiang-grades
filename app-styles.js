@@ -513,8 +513,9 @@ style.textContent += "\n" +
   "}";
 
 /* 全站低分統一：低於 60 分只使用紅字，不加粗；覆蓋家長／教師頁各自的字重設定 */
-style.textContent += "\\n" +
+style.textContent += "\n" +
   ".low-score," +
+  ".bulk-score-entry-table input.low-score," +
   ".parent-score-list .low-score," +
   ".parent-score-number.low-score," +
   ".parent-subject-result-value .low-score," +
