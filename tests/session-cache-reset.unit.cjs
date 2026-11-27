@@ -14,11 +14,13 @@ function loadLogoutReset() {
   const end = authSource.indexOf('async function handleLogout()', start);
   assert.ok(start >= 0 && end > start, 'logout reset helper must exist');
 
+  const clearedIntervals = [];
+  const clearedTimeouts = [];
   const sandbox = {
-    clearedIntervals: [],
-    clearedTimeouts: [],
-    clearInterval(value) { this.clearedIntervals.push(value); },
-    clearTimeout(value) { this.clearedTimeouts.push(value); }
+    clearedIntervals,
+    clearedTimeouts,
+    clearInterval(value) { clearedIntervals.push(value); },
+    clearTimeout(value) { clearedTimeouts.push(value); }
   };
   const declarations = `
     let appSessionGeneration = 7;
