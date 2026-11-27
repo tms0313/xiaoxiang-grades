@@ -24,10 +24,14 @@ function areRowsEqualByFields(previousRows, nextRows, fields) {
 }
 
 async function refreshOverviewData() {
+  const sessionGeneration = appSessionGeneration;
   const results = await Promise.all([
     fetchAllRows(() => db.from("scores").select("id, student_id, exam_id, subject, scope, score, correct_count, grade_level").order("id", { ascending: true })),
     fetchAllRows(() => db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope").order("id", { ascending: true }))
   ]);
+
+  // 登出或切換帳號後，不得讓舊總覽請求覆寫新帳號的快取。
+  if (sessionGeneration !== appSessionGeneration) return false;
 
   if (results[0].error) {
     throw new Error("成績資料讀取失敗：" + results[0].error.message);
@@ -66,6 +70,7 @@ async function refreshOverviewData() {
   } catch (error) {
     console.error("清除上一週已排除提醒失敗：", error);
   }
+  if (sessionGeneration !== appSessionGeneration) return false;
 
   return scoresChanged || exclusionsChanged ||
     !areRowsEqualByFields(
