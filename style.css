@@ -240,10 +240,10 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-user-select:text;
 }
 
-/* 成績輸入低於 60 分時即時以紅字粗體標示；涵蓋新增／補登及既有成績修改。 */
+/* 成績輸入低於 60 分時即時以紅字一般字重標示；涵蓋新增／補登及既有成績修改。 */
 #appRoot .bulk-score-entry-table tbody td input[data-bulk-score].low-score,
 #appRoot .existing-weekly-scores-table tbody td input[data-existing-value].low-score {
   color:#dc2626 !important;
-  font-weight:700 !important;
+  font-weight:400 !important;
 }
 
