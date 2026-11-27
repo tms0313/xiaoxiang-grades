@@ -36,6 +36,7 @@ jobs:
           node --check tests/teacher-management.unit.cjs
           node --check tests/admin-reset-parent-password.unit.cjs
           node --check tests/weekly-score-existing-records.unit.cjs
+          node --check tests/asset-cache-version.unit.cjs
           node --check app-export.js
           node --check app-students.js
           node --check app-term-exams.js
@@ -50,6 +51,8 @@ jobs:
           node --check tests/script-loading.spec.js
           node --check tests/font-audit.spec.js
           node --check tests/font-audit-mobile.spec.js
+      - name: Run static asset cache version test
+        run: npm run test:asset-cache-version
       - name: Run release-time boundary tests
         run: node --test tests/release-time.unit.cjs
       - name: Run admin student save recovery tests
