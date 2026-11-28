@@ -23,7 +23,7 @@ test('existing weekly scores are listed using exam, class and subject without sc
 
 test('existing records are editable in place and retain their scope identity', () => {
   const start = bulkSource.indexOf('async function saveExistingWeeklyScore');
-  const end = bulkSource.length;
+  const end = bulkSource.indexOf('async function refreshScoreCacheForScope', start);
   assert.ok(start >= 0 && end > start, 'existing-score save handler must exist');
   const handler = source.slice(start, end);
   assert.match(handler, /db\.from\("scores"\)\.update/);
