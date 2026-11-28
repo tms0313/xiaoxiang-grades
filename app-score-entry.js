@@ -293,6 +293,7 @@ function renderBulkScoreEntryRows() {
         input.disabled = grade3Leave;
         if (control.value === "缺考") input.value = "0";
         else if (grade3Leave) input.value = "";
+        updateScoreInputWarning(input, !grade3 || grade3Math);
       }
       return;
     }
@@ -303,6 +304,7 @@ function renderBulkScoreEntryRows() {
       input.disabled = control.value === "請假";
       if (control.value === "缺考") input.value = "0";
       else if (input.disabled) input.value = "";
+      updateScoreInputWarning(input, !grade3 || grade3Math);
     }
   });
   root.oninput = function (event) {
@@ -317,6 +319,7 @@ function renderBulkScoreEntryRows() {
       input.disabled = event.target.value === "請假";
       if (event.target.value === "缺考") input.value = "0";
       else if (input.disabled) input.value = "";
+      updateScoreInputWarning(input, !grade3 || grade3Math);
     }
     if (event.target.matches("[data-bulk-grade]") && grade3) {
       const input = event.target.closest("tr").querySelector("[data-bulk-score]");
@@ -325,6 +328,7 @@ function renderBulkScoreEntryRows() {
         input.disabled = absentOrLeave;
         if (event.target.value === "缺考") input.value = "0";
         else if (absentOrLeave) input.value = "";
+        updateScoreInputWarning(input, !grade3 || grade3Math);
       }
     }
     saveBulkScoreDraft(true);
@@ -399,6 +403,7 @@ function renderExistingWeeklyScores() {
       input.disabled = this.value === "請假";
       if (this.value === "缺考") input.value = "0";
       else if (input.disabled) input.value = "";
+      updateScoreInputWarning(input, !grade3 || grade3Math);
     });
   });
   root.querySelectorAll("[data-existing-status]").forEach(function (select) {
