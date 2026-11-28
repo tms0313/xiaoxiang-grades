@@ -297,11 +297,12 @@ function renderBulkScoreEntryRows() {
       return;
     }
     control.value = draft.status ||
-      (existing && existing.grade_level === "請假" ? "請假" : "normal");
+      (existing && (existing.grade_level === "請假" || existing.grade_level === "缺考") ? existing.grade_level : "normal");
     const input = row.querySelector("[data-bulk-score]");
     if (input) {
       input.disabled = control.value === "請假";
-      if (input.disabled) input.value = "";
+      if (control.value === "缺考") input.value = "0";
+      else if (input.disabled) input.value = "";
     }
   });
   root.oninput = function (event) {
@@ -314,7 +315,8 @@ function renderBulkScoreEntryRows() {
     if (event.target.matches("[data-bulk-status]")) {
       const input = event.target.closest("tr").querySelector("[data-bulk-score]");
       input.disabled = event.target.value === "請假";
-      if (input.disabled) input.value = "";
+      if (event.target.value === "缺考") input.value = "0";
+      else if (input.disabled) input.value = "";
     }
     if (event.target.matches("[data-bulk-grade]") && grade3) {
       const input = event.target.closest("tr").querySelector("[data-bulk-score]");
@@ -368,7 +370,7 @@ function renderExistingWeeklyScores() {
       const value = grade3Math ? item.score : grade3 ? item.correct_count : item.score;
       const status = grade3
         ? "<select data-existing-grade>" + gradeOptions + "</select>"
-        : "<select data-existing-status><option value='normal'>正常</option><option value='請假'>請假</option></select>";
+        : "<select data-existing-status><option value='normal'>正常</option><option value='缺考'>缺考</option><option value='請假'>請假</option></select>";
       return "<tr data-existing-score-id='" + escapeHtml(item.id) + "'><td>" + escapeHtml(student.student_code || "") + "</td><td>" + escapeHtml(student.full_name) +
         "</td><td>" + escapeHtml(item.scope || "（未填寫）") + "</td><td><input data-existing-value type='number' min='0' " +
         (grade3 && !grade3Math ? "step='1'" : "max='100' step='0.1'") + " value='" +
@@ -401,7 +403,9 @@ function renderExistingWeeklyScores() {
   });
   root.querySelectorAll("[data-existing-status]").forEach(function (select) {
     const item = scoresByIdCache.get(String(select.closest("tr").dataset.existingScoreId));
-    select.value = item && item.grade_level === "請假" ? "請假" : "normal";
+    select.value = item && (item.grade_level === "請假" || item.grade_level === "缺考") ? item.grade_level : "normal";
+    const initialInput = select.closest("tr").querySelector("[data-existing-value]");
+    if (select.value === "缺考" && initialInput) initialInput.value = "0";
     select.addEventListener("change", function () {
       const input = select.closest("tr").querySelector("[data-existing-value]");
       input.disabled = this.value === "請假";
