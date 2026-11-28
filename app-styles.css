@@ -1018,6 +1018,22 @@ input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file])
 #appRoot .bulk-score-entry-table tbody td button[data-save-bulk-row] {
   font-size:18px !important;
 }
-@media(max-width:600px){#adminContent .overview-table tbody td,#adminContent .overview-table tbody td *{font-size:18px!important;}#adminContent .student-record-table tbody td,#adminContent .student-record-table tbody td *{font-size:18px!important;}#adminContent .bulk-score-entry-table tbody td:nth-child(-n+2),#adminContent .bulk-score-entry-table tbody td:nth-child(-n+2) *{font-size:18px!important;}#adminContent .alumni-score-table tbody td,#adminContent .alumni-score-table tbody td *{font-size:18px!important;}}
+@media(max-width:600px) {
+#adminContent .overview-table tbody td,#adminContent .overview-table tbody td * {
+    font-size:18px!important;
+  }
+
+#adminContent .student-record-table tbody td,#adminContent .student-record-table tbody td * {
+    font-size:18px!important;
+  }
+
+#adminContent .bulk-score-entry-table tbody td:nth-child(-n+2),#adminContent .bulk-score-entry-table tbody td:nth-child(-n+2) * {
+    font-size:18px!important;
+  }
+
+#adminContent .alumni-score-table tbody td,#adminContent .alumni-score-table tbody td * {
+    font-size:18px!important;
+  }
+}
 .low-score,.bulk-score-entry-table input.low-score {color:#d32626 !important;font-weight:600 !important;}
 html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }@media(max-width:600px) {.parent-page .student-card { min-width:0; width:100%; }.parent-page .parent-attendance-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.parent-page .parent-attendance-stat { min-width:0; gap:5px; padding:10px 8px; flex-wrap:wrap; }.parent-page .parent-attendance-stat-label { min-width:0; overflow-wrap:anywhere; }.parent-page .parent-attendance-stat-value { min-width:0; white-space:nowrap; }.parent-page .parent-score-list { width:100%; min-width:0; }.parent-page .parent-subject-card { grid-template-columns:minmax(0,1fr) minmax(78px,38%); gap:8px; min-width:0; padding:12px 10px; }.parent-page .parent-subject-info { min-width:0; }.parent-page .parent-subject-name { overflow-wrap:anywhere; }.parent-page .parent-subject-scope { min-width:0; overflow-wrap:anywhere; word-break:normal; }.parent-page .parent-subject-result { box-sizing:border-box; min-width:0; max-width:none; padding-left:8px; }.parent-page .parent-subject-result-value { min-width:0; flex-wrap:wrap; gap:4px; font-size:20px; line-height:1.3; overflow-wrap:anywhere; }.parent-page .parent-subject-result-value .parent-score-number { font-size:20px; white-space:normal; }.parent-page .parent-subject-result-value .grade-tag { white-space:nowrap; }}@media(max-width:360px) {.parent-page .parent-subject-card { grid-template-columns:minmax(0,1fr) minmax(70px,36%); gap:6px; padding:10px 8px; }.parent-page .parent-subject-result { padding-left:6px; }.parent-page .parent-subject-result-value,.parent-page .parent-subject-result-value .parent-score-number { font-size:18px; }.parent-page .parent-attendance-stat { padding:9px 6px; }}
