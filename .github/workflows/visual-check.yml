@@ -50,7 +50,6 @@ jobs:
           node --check app-guardians.js
           node --check app-teachers.js
           node --check attendance.js
-          node --check app-styles.js
           node --check playwright.config.js
           node --check tests/visual-check.spec.js
           node --check tests/script-loading.spec.js
