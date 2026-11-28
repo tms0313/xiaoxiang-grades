@@ -16,6 +16,38 @@ vm.runInNewContext(
   sandbox
 );
 const buildPayload = sandbox.buildAttendanceRecordPayload;
+const summarySourceStart = source.indexOf('function buildAttendanceWeeklyOverviewSummary(');
+const summarySourceEnd = source.indexOf('function buildAttendanceRecordPayload(', summarySourceStart);
+assert.ok(summarySourceStart >= 0 && summarySourceEnd > summarySourceStart, 'weekly overview summary helper must exist');
+const summarySandbox = {};
+vm.runInNewContext(
+  source.slice(summarySourceStart, summarySourceEnd) +
+  String.fromCharCode(10) + 'globalThis.buildAttendanceWeeklyOverviewSummary = buildAttendanceWeeklyOverviewSummary;',
+  summarySandbox
+);
+const buildWeeklySummary = summarySandbox.buildAttendanceWeeklyOverviewSummary;
+
+test('weekly overview keeps leave, late minutes and missed check-ins visible together', () => {
+  const result = buildWeeklySummary({
+    leaveCount: 1,
+    lateTotal: 15,
+    uncheckedCount: 2,
+    checkedInSummary: '—'
+  });
+  assert.match(result, /請假 1 次/);
+  assert.match(result, /遲到 15 分鐘/);
+  assert.match(result, /未打卡 2 次/);
+});
+
+test('weekly overview shows zero-late and checked-in status when there are no alerts', () => {
+  const result = buildWeeklySummary({
+    leaveCount: 0,
+    lateTotal: 0,
+    uncheckedCount: 0,
+    checkedInSummary: '已打卡'
+  });
+  assert.equal(result, '無遲到　·　已打卡');
+});
 
 test('normal attendance requires an explicit checked-in or not-checked-in value', () => {
   for (const checkin of ['', 'unknown', null]) {
