@@ -15,7 +15,8 @@
     "test:session-cache-reset": "node --test tests/session-cache-reset.unit.cjs",
     "test:weekly-score-entry-sort": "node --test tests/weekly-score-entry-sort.unit.cjs",
     "test:asset-cache-version": "node --test tests/asset-cache-version.unit.cjs",
-    "test:low-score-role-styles": "node --test tests/low-score-role-styles.unit.cjs"
+    "test:low-score-role-styles": "node --test tests/low-score-role-styles.unit.cjs",
+    "test:attendance-record-validation": "node --test tests/attendance-record-validation.unit.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1"
