@@ -201,15 +201,13 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 #appRoot .existing-weekly-scores-table tbody td button[data-save-existing-score] {
   font-size: 18px !important;
+  min-height: 32px;
+  border-radius: 8px;
 }
 #appRoot .existing-weekly-scores-table tbody td input[data-existing-value]:disabled {
   background: #f3f5f8 !important;
   color: #64748b;
   cursor: not-allowed;
-}
-#appRoot .existing-weekly-scores-table tbody td button[data-save-existing-score] {
-  min-height: 32px;
-  border-radius: 8px;
 }
 
 
