@@ -45,15 +45,15 @@ function getParentAttendanceMonthlyPeriod(taiwanDateTime) {
   const firstSaturdayOffset = (6 - currentMonthFirst.getUTCDay() + 7) % 7;
   const releaseDate = new Date(currentMonthFirst);
   releaseDate.setUTCDate(releaseDate.getUTCDate() + firstSaturdayOffset);
-  const todayISO = today.getFullYear() + "-" +
-    String(today.getMonth() + 1).padStart(2, "0") + "-" +
+  const todayISO = today.getUTCFullYear() + "-" +
+    String(today.getUTCMonth() + 1).padStart(2, "0") + "-" +
     String(today.getUTCDate()).padStart(2, "0");
   const releaseISO = releaseDate.toISOString().slice(0, 10);
   const beforeCurrentRelease = todayISO < releaseISO ||
     (todayISO === releaseISO && Number(taiwanDateTime.hour) < 18);
 
   // 每月第一個週六 18:00 發布上個月統計，並持續顯示至下次月統計發布。
-  const releaseMonth = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 1));
+  const releaseMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
   if (beforeCurrentRelease) releaseMonth.setUTCMonth(releaseMonth.getUTCMonth() - 1);
   const reportMonth = new Date(Date.UTC(releaseMonth.getUTCFullYear(), releaseMonth.getUTCMonth() - 1, 1));
   const start = reportMonth.toISOString().slice(0, 10);
@@ -363,16 +363,14 @@ async function renderParentDashboard() {
   });
 
   const parentMonthlyAttendanceByStudent = new Map();
+  const parentMonthlyRecordsByStudent = new Map();
   parentMonthlyAttendanceRecords.forEach(function (record) {
     const key = String(record.student_id);
-    if (!parentMonthlyAttendanceByStudent.has(key)) {
-      parentMonthlyAttendanceByStudent.set(key, { lateMinutes: 0, uncheckedCount: 0 });
-    }
-    const summary = parentMonthlyAttendanceByStudent.get(key);
-    if (record.attendance_status === "normal") {
-      summary.lateMinutes += Math.max(0, Number(record.late_minutes) || 0);
-      if (record.checkin_status === "not_checked_in") summary.uncheckedCount++;
-    }
+    if (!parentMonthlyRecordsByStudent.has(key)) parentMonthlyRecordsByStudent.set(key, []);
+    parentMonthlyRecordsByStudent.get(key).push(record);
+  });
+  parentMonthlyRecordsByStudent.forEach(function (records, studentId) {
+    parentMonthlyAttendanceByStudent.set(studentId, summarizeParentAttendanceRecords(records));
   });
 
   function buildParentAttendanceSummary(student) {
