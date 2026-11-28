@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const source = fs.readFileSync(path.join(__dirname, '..', 'app-score-entry.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '..', 'app-score-entry-bulk.js'), 'utf8');
 const start = source.indexOf('function sortWeeklyScoreEntryStudents(');
 const end = source.indexOf('function renderBulkScoreEntryRows()', start);
 assert.ok(start >= 0 && end > start, 'weekly score sorting helper must exist');

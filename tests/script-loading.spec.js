@@ -17,6 +17,7 @@ const EXPECTED_LOCAL_SCRIPTS = [
   'app-styles.js',
   'app-overview.js',
   'app-score-entry.js',
+  'app-score-entry-bulk.js',
   'app-exam-management.js',
   'app-parent.js',
   'app-teacher-dashboard.js',
@@ -98,10 +99,12 @@ test('all local application scripts are versioned, present and loaded in depende
       typeof window.buildParentBottomNav === 'function' &&
       typeof window.bindParentActionButtons === 'function',
     scoreEntry: typeof window.renderScoreEntry === 'function' &&
-      typeof window.renderBulkScoreEntryRows === 'function' &&
-      typeof window.saveBulkScores === 'function' &&
       typeof window.renderExistingWeeklyScores === 'function' &&
       typeof window.saveExistingWeeklyScore === 'function',
+    bulkScoreEntry: typeof window.renderBulkScoreEntryRows === 'function' &&
+      typeof window.saveBulkScores === 'function' &&
+      typeof window.saveSingleBulkScoreRow === 'function' &&
+      typeof window.saveBulkScoreDraft === 'function',
     examManagement: typeof window.clearExamForm === 'function' &&
       typeof window.editExam === 'function' &&
       typeof window.saveExam === 'function' &&
@@ -127,6 +130,7 @@ test('all local application scripts are versioned, present and loaded in depende
     teachers: true,
     overview: true,
     scoreEntry: true,
+    bulkScoreEntry: true,
     examManagement: true,
     parentDashboard: true,
     teacherDashboard: true,

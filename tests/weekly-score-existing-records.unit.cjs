@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'app-score-entry.js'), 'utf8');
+const bulkSource = fs.readFileSync(path.join(__dirname, '..', 'app-score-entry-bulk.js'), 'utf8');
 
 test('existing weekly scores are listed using exam, class and subject without scope', () => {
   const start = source.indexOf('function renderExistingWeeklyScores()');
@@ -22,7 +23,7 @@ test('existing weekly scores are listed using exam, class and subject without sc
 
 test('existing records are editable in place and retain their scope identity', () => {
   const start = source.indexOf('async function saveExistingWeeklyScore');
-  const end = source.indexOf('async function refreshScoreCacheForScope', start);
+  const end = source.indexOf('function renderScoreEntry()', start);
   assert.ok(start >= 0 && end > start, 'existing-score save handler must exist');
   const handler = source.slice(start, end);
   assert.match(handler, /db\.from\("scores"\)\.update/);
@@ -32,16 +33,14 @@ test('existing records are editable in place and retain their scope identity', (
 
 test('weekly score entry separates existing-score lookup from scope-required additions', () => {
   assert.match(source, /既有成績查詢與修改/);
-  assert.match(source, /新增成績的考試範圍/);
+  assert.match(bulkSource, /data-bulk-scope/);
   assert.match(source, /renderExistingWeeklyScores\(\);\s*renderBulkScoreEntryRows\(\);/);
 });
 
 
 test('existing and new weekly score tables preserve their distinct identifiers and aligned shared fields', () => {
   const renderer = source.slice(source.indexOf('function renderExistingWeeklyScores()'), source.indexOf('async function saveExistingWeeklyScore'));
-  const bulkStart = source.indexOf('function renderBulkScoreEntryRows()');
-  const bulkEnd = source.indexOf('function renderExistingWeeklyScores()', bulkStart);
-  const bulk = source.slice(bulkStart, bulkEnd);
+  const bulk = bulkSource.slice(bulkSource.indexOf('function renderBulkScoreEntryRows()'));
 
   assert.ok(renderer.includes("<th>編號</th><th>學生</th><th>考試範圍</th>"));
   assert.ok(renderer.includes("student.student_code"));
@@ -66,16 +65,14 @@ test('weekly score inputs apply live red semibold warning below 60 and clear it 
   assert.match(utils, /input\.style\.setProperty\("color", "#d32626", "important"\)/);
   assert.match(utils, /input\.style\.setProperty\("font-weight", "600", "important"\)/);
   assert.match(utils, /input\.style\.removeProperty\("font-weight"\)/);
-  assert.match(source, /root\.querySelectorAll\("\[data-bulk-score\]"\)\.forEach\(function \(input\) \{\s*updateScoreInputWarning/);
-  assert.match(source, /input\.addEventListener\("input", function \(\) \{\s*updateScoreInputWarning\(input, warningEnabled\)/);
+  assert.match(bulkSource, /root\.querySelectorAll\("\[data-bulk-score\]"\)\.forEach\(function \(input\) \{\s*updateScoreInputWarning/);
+  assert.match(bulkSource, /input\.addEventListener\("input", function \(\) \{\s*updateScoreInputWarning\(input, warningEnabled\)/);
   assert.match(styles, /input\[data-bulk-score\]\.low-score[\s\S]*?color:\s*#dc2626\s*!important;[\s\S]*?font-weight:\s*600\s*!important;/);
   assert.match(styles, /input\[data-existing-value\]\.low-score/);
 });
 
 test('bulk weekly exam scope is 18px regular weight and remains readonly', () => {
-  const bulkStart = source.indexOf('function renderBulkScoreEntryRows()');
-  const bulkEnd = source.indexOf('function renderExistingWeeklyScores()', bulkStart);
-  const bulk = source.slice(bulkStart, bulkEnd);
+  const bulk = bulkSource.slice(bulkSource.indexOf('function renderBulkScoreEntryRows()'));
   const styles = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
   assert.match(bulk, /data-bulk-scope type='text'[\s\S]*?readonly/);
   assert.match(styles, /input\[data-bulk-scope\][\s\S]*?font-size:\s*18px\s*!important;[\s\S]*?font-weight:\s*600\s*!important;/);
@@ -158,8 +155,8 @@ test('score cache upsert and removal keep the ID and composite indexes consisten
 });
 
 test('bulk score cache refresh rebuilds both lookup indexes after replacing a scope', () => {
-  const start = source.indexOf('async function refreshScoreCacheForScope');
-  const end = source.indexOf('async function saveSingleBulkScoreRow', start);
+  const start = bulkSource.indexOf('async function refreshScoreCacheForScope');
+  const end = bulkSource.indexOf('async function saveSingleBulkScoreRow', start);
   assert.ok(start >= 0 && end > start, 'bulk score refresh helper must exist');
   const refresh = source.slice(start, end);
   assert.match(refresh, /scoresCache\.length = retainedCount/);
@@ -192,8 +189,8 @@ test('deleting a student removes all of that student’s score index entries', (
 });
 
 test('weekly score entry sorts student codes numerically, then names, without mutating its cache', () => {
-  const helperStart = source.indexOf('function sortWeeklyScoreEntryStudents(');
-  const helperEnd = source.indexOf('function renderBulkScoreEntryRows()', helperStart);
+  const helperStart = bulkSource.indexOf('function sortWeeklyScoreEntryStudents(');
+  const helperEnd = bulkSource.indexOf('function renderBulkScoreEntryRows()', helperStart);
   assert.ok(helperStart >= 0 && helperEnd > helperStart, 'weekly score sorting helper must exist');
   const sandbox = {};
   vm.runInNewContext(
