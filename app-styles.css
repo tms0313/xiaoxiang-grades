@@ -512,16 +512,70 @@ body.teacher-page .topbar { background:#23466b !important; }
 #grade3MathGrade, #gradeLevel, #scoreEditGrade, .bulk-score-entry-table select[data-bulk-grade] { border-radius:9px !important; }
 option[value='缺考'] { color:#d32626; font-weight:900; }
 option[value='請假'] { color:#8a5a00; font-weight:900; }
-.export-panel { border:1px solid #e2e8ef; border-radius:12px; padding:20px; background:#fff; }
-.export-panel-title { font-size: 20px; font-weight:800; color:#315d86; margin-bottom:15px; }
-.export-select-all { display:flex; align-items:center; gap:11px; padding:15px 16px; border:1px solid #d8e2ed; border-radius:10px; background:#f2f6fa; margin-bottom:12px; cursor:pointer; }
-.export-select-all input { width:19px; height:19px; accent-color:#315d86; cursor:pointer; }
-.export-select-all span { font-weight:800; color:#23466b; }
-.export-period-list { display:flex; flex-direction:column; gap:8px; }
-.export-period-item { display:flex; align-items:center; gap:12px; padding:13px 16px; border:1px solid #e3e9f0; border-radius:9px; background:#fff; cursor:pointer; transition:background .15s,border-color .15s; }
-.export-period-item:hover { background:#f7f9fc; border-color:#b9cadb; }
-.export-period-item:has(input:checked) { background:#f0f5fa; border-color:#9db5cc; }
-.export-period-item input { width:18px; height:18px; accent-color:#315d86; flex:0 0 auto; cursor:pointer; }
+.export-panel {
+  border:1px solid #e2e8ef;
+  border-radius:12px;
+  padding:20px;
+  background:#fff;
+}
+.export-panel-title {
+  font-size: 20px;
+  font-weight:800;
+  color:#315d86;
+  margin-bottom:15px;
+}
+.export-select-all {
+  display:flex;
+  align-items:center;
+  gap:11px;
+  padding:15px 16px;
+  border:1px solid #d8e2ed;
+  border-radius:10px;
+  background:#f2f6fa;
+  margin-bottom:12px;
+  cursor:pointer;
+}
+.export-select-all input {
+  width:19px;
+  height:19px;
+  accent-color:#315d86;
+  cursor:pointer;
+}
+.export-select-all span {
+  font-weight:800;
+  color:#23466b;
+}
+.export-period-list {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.export-period-item {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:13px 16px;
+  border:1px solid #e3e9f0;
+  border-radius:9px;
+  background:#fff;
+  cursor:pointer;
+  transition:background .15s,border-color .15s;
+}
+.export-period-item:hover {
+  background:#f7f9fc;
+  border-color:#b9cadb;
+}
+.export-period-item:has(input:checked) {
+  background:#f0f5fa;
+  border-color:#9db5cc;
+}
+.export-period-item input {
+  width:18px;
+  height:18px;
+  accent-color:#315d86;
+  flex:0 0 auto;
+  cursor:pointer;
+}
 .export-period-date { font-weight:700; color:#34475b; }
 .export-summary { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:15px 2px; color:#64748b; font-size: 14px; }
 .export-count { font-weight:800; color:#315d86; }
@@ -534,10 +588,23 @@ option[value='請假'] { color:#8a5a00; font-weight:900; }
   font-weight:800 !important;
   padding:0 5px !important;
 }
-.export-panel-title,.export-select-all span,.export-period-date { font-size: 16px !important; font-weight:700 !important; line-height:1.5; }
-.export-period-list { gap:3px !important; }
-.export-period-item { padding:7px 12px !important; gap:10px !important; min-height:0; }
-.export-period-item input { width:19px; height:19px; }
+.export-panel-title,.export-select-all span,.export-period-date {
+  font-size: 16px !important;
+  font-weight:700 !important;
+  line-height:1.5;
+}
+.export-period-list {
+  gap:3px !important;
+}
+.export-period-item {
+  padding:7px 12px !important;
+  gap:10px !important;
+  min-height:0;
+}
+.export-period-item input {
+  width:19px;
+  height:19px;
+}
 .export-summary { padding:9px 2px; }
 .login-card .field label { font-size: 20px !important; font-weight:800 !important; }
 .guardian-management-table .action-buttons .btn {
@@ -564,7 +631,15 @@ option[value='請假'] { color:#8a5a00; font-weight:900; }
 }
 .password-management-table .action-buttons .btn,.teacher-account-table .action-buttons .btn,[data-save-bulk-row] { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:30px !important; min-height:30px !important; padding:0 7px !important; font-size: 18px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; white-space:nowrap; }
 .term-roster-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin:8px 0 12px; color:#526477; font-size: 14px; } .term-draft-status { color:#237344; font-weight:700; } .term-roster-wrap { max-height:68vh; overflow:auto; border:1px solid #e2e8ef; border-radius:9px; } .term-bulk-table { min-width:1120px; table-layout:fixed; } .term-bulk-table th,.term-bulk-table td { padding:7px 6px; text-align:center; white-space:nowrap; } .term-bulk-table tbody td { padding-top:4px !important; padding-bottom:4px !important; font-size: 16px !important; } .term-bulk-table th:first-child,.term-bulk-table td:first-child { width:150px; text-align:left; position:sticky; left:0; z-index:2; background:#fff; } .term-bulk-table th:first-child { z-index:3; background:#f1f5f9; } .term-bulk-table tbody td.term-student-name,.term-bulk-table tbody tr:hover td.term-student-name,.term-bulk-table tbody tr:focus-within td.term-student-name { background:#fff !important; background-color:#fff !important; } .term-bulk-table th { position:sticky; top:0; z-index:1; background:#f1f5f9; } .term-bulk-table input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]) { width:76px; box-sizing:border-box; height:40px !important; min-height:40px !important; max-height:40px !important; padding:0 8px; text-align:center; border:1px solid #ccd4df; border-radius:8px !important; } .term-bulk-table input[data-term-score],.term-bulk-table input[data-term-class-rank],.term-bulk-table input[data-term-school-rank] { font-size:inherit; } .term-bulk-table .term-student-name { box-sizing:border-box; display:flex; align-items:center !important; gap:6px; height:40px; min-height:40px; padding:4px 6px !important; line-height:1.2 !important; margin:0; color:#23466b; font-weight:400 !important; white-space:nowrap; vertical-align:middle !important; } .term-student-name-text { flex:0 0 auto; font-weight:400 !important; } .term-student-name small { display:inline; color:#8491a0; font-size: 14px; font-weight:500; } .term-completion-mark { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:14px; height:14px; margin:0; padding:0; font-size: 14px; font-weight:900; line-height:1; } .term-completion-mark.is-complete { color:#168447; } .term-completion-mark.is-incomplete { color:#d32626; font-size: 14px; } .term-total-cell,.term-bulk-table tbody tr:hover .term-total-cell,.term-bulk-table tbody tr:focus-within .term-total-cell { font-weight:500; color:#23466b; background:#fff !important; background-color:#fff !important; box-shadow:none !important; filter:none !important; transition:none !important; } .term-bulk-actions { justify-content:flex-end; } .term-bulk-actions .btn { width:auto; min-width:150px; margin:0; }
-@media(max-width:600px) { .export-panel-title,.export-select-all span,.export-period-date { font-size: 16px !important; font-weight:700 !important; } .export-period-item { padding:6px 10px !important; } }
+@media (max-width:600px) {
+  .export-panel-title,.export-select-all span,.export-period-date {
+    font-size: 16px !important;
+    font-weight:700 !important;
+  }
+  .export-period-item {
+    padding:6px 10px !important;
+  }
+}
 .muted { color:#778494; font-size: 14px; }
 .empty { padding:25px; text-align:center; color:#8491a0; }
 .loading-message { position:fixed; top:15px; right:15px; z-index:9999; background:#23466b; color:#fff; padding:12px 18px; border-radius:8px; box-shadow:0 3px 12px rgba(0,0,0,.2); }
