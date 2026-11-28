@@ -17,7 +17,8 @@
     "test:asset-cache-version": "node --test tests/asset-cache-version.unit.cjs",
     "test:low-score-role-styles": "node --test tests/low-score-role-styles.unit.cjs",
     "test:attendance-record-validation": "node --test tests/attendance-record-validation.unit.cjs",
-    "test:parent-monthly-attendance": "node --test tests/parent-monthly-attendance.unit.cjs"
+    "test:parent-monthly-attendance": "node --test tests/parent-monthly-attendance.unit.cjs",
+    "test:role-separation": "node --test tests/role-separation.unit.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1"
