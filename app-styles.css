@@ -739,7 +739,10 @@ option[value='請假'] { color:#8a5a00; font-weight:900; }
 .export-download { width:100%; padding:13px 18px; font-size: 14px; }
 .export-download:disabled { opacity:.45; cursor:not-allowed; }
 .export-empty { padding:25px; text-align:center; color:#8491a0; background:#f8fafc; border-radius:9px; }
-.overview-table .action-buttons .btn,.student-management-table .action-buttons .btn,.exam-management-table .action-buttons .btn { font-size: 18px !important; font-weight:800 !important; }
+.overview-table .action-buttons .btn,.student-management-table .action-buttons .btn,.exam-management-table .action-buttons .btn {
+  font-size: 18px !important;
+  font-weight:800 !important;
+}
 .guardian-management-table .action-buttons .btn {
   font-size: 18px !important;
   font-weight:800 !important;
