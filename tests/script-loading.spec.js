@@ -17,6 +17,7 @@ const EXPECTED_LOCAL_SCRIPTS = [
   'app-styles.js',
   'app-overview.js',
   'app-score-entry.js',
+  'app-exam-management.js',
   'app-parent.js',
   'app-teacher-dashboard.js',
   'app-admin-dashboard.js',
@@ -100,7 +101,9 @@ test('all local application scripts are versioned, present and loaded in depende
       typeof window.renderBulkScoreEntryRows === 'function' &&
       typeof window.saveBulkScores === 'function' &&
       typeof window.renderExistingWeeklyScores === 'function' &&
-      typeof window.saveExistingWeeklyScore === 'function' &&
+      typeof window.saveExistingWeeklyScore === 'function',
+    examManagement: typeof window.clearExamForm === 'function' &&
+      typeof window.editExam === 'function' &&
       typeof window.saveExam === 'function' &&
       typeof window.deleteExam === 'function',
     overview: typeof window.renderOverview === 'function' &&
@@ -124,6 +127,7 @@ test('all local application scripts are versioned, present and loaded in depende
     teachers: true,
     overview: true,
     scoreEntry: true,
+    examManagement: true,
     parentDashboard: true,
     teacherDashboard: true,
     auth: true,
