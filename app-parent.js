@@ -48,6 +48,8 @@ function getParentAttendanceMonthlyPeriod(taiwanDateTime) {
   const todayISO = today.getUTCFullYear() + "-" +
     String(today.getUTCMonth() + 1).padStart(2, "0") + "-" +
     String(today.getUTCDate()).padStart(2, "0");
+  // 月統計自 2026/12/05（第一個週六）18:00 起正式發布；此前隱藏舊月份統計。
+  if (todayISO < "2026-12-05" || (todayISO === "2026-12-05" && Number(taiwanDateTime.hour) < 18)) return null;
   const releaseISO = releaseDate.toISOString().slice(0, 10);
   const beforeCurrentRelease = todayISO < releaseISO ||
     (todayISO === releaseISO && Number(taiwanDateTime.hour) < 18);
@@ -242,10 +244,12 @@ async function renderParentDashboard() {
       .select("id")
       .gte("session_date", weekStartISO)
       .lte("session_date", weekEndISO),
-    db.from("attendance_sessions")
-      .select("id")
-      .gte("session_date", monthlyAttendancePeriod.start)
-      .lte("session_date", monthlyAttendancePeriod.end)
+    monthlyAttendancePeriod
+      ? db.from("attendance_sessions")
+          .select("id")
+          .gte("session_date", monthlyAttendancePeriod.start)
+          .lte("session_date", monthlyAttendancePeriod.end)
+      : Promise.resolve({ data: [], error: null })
   ]);
 
   if (requestId !== parentDashboardRequestId) return;
@@ -380,7 +384,7 @@ async function renderParentDashboard() {
       lateMinutes: 0,
       uncheckedCount: 0
     };
-    const monthlySection =
+    const monthlySection = !monthlyAttendancePeriod ? "" :
       "<h3 class='parent-attendance-summary-title parent-attendance-month-title'>" +
         monthlyAttendancePeriod.month + "整月統計</h3>" +
       (parentMonthlyAttendanceLoadError
