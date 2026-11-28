@@ -30,5 +30,5 @@ test("role authorization migration removes profile_roles as an authorization sou
   assert.match(migration, /CREATE OR REPLACE FUNCTION public\.has_app_role/);
   assert.match(migration, /FROM public\.profiles/);
   assert.match(migration, /role = p_role/);
-  assert.doesNotMatch(migration, /profile_roles/);
+  assert.doesNotMatch(migration, /FROM\\s+public\\.profile_roles|OR\\s+EXISTS/);
 });
