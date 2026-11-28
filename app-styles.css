@@ -421,14 +421,41 @@ body.teacher-page .topbar { background:#23466b !important; }
   text-align:left !important;
   white-space:nowrap;
 }
-.exam-management-table { min-width:600px; table-layout:fixed; }
-.exam-management-table th:nth-child(1),.exam-management-table td:nth-child(1) { width:30%; }
-.exam-management-table th:nth-child(2),.exam-management-table td:nth-child(2) { width:30%; }
-.exam-management-table th:nth-child(3),.exam-management-table td:nth-child(3) { width:40%; }
-.exam-management-table .action-cell { min-width:100px; }
-.exam-management-table .action-buttons { gap:3px; }
-.exam-management-table .action-buttons .btn { padding:2px 3px; font-size: 14px; line-height:1.3; border-radius:5px; }
-.exam-management-table .action-buttons .btn { width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size: 18px !important; line-height:30px !important; border-radius:6px !important; }
+.exam-management-table {
+  min-width:600px;
+  table-layout:fixed;
+}
+.exam-management-table th:nth-child(1),.exam-management-table td:nth-child(1) {
+  width:30%;
+}
+.exam-management-table th:nth-child(2),.exam-management-table td:nth-child(2) {
+  width:30%;
+}
+.exam-management-table th:nth-child(3),.exam-management-table td:nth-child(3) {
+  width:40%;
+}
+.exam-management-table .action-cell {
+  min-width:100px;
+}
+.exam-management-table .action-buttons {
+  gap:3px;
+}
+.exam-management-table .action-buttons .btn {
+  padding:2px 3px;
+  font-size: 14px;
+  line-height:1.3;
+  border-radius:5px;
+}
+.exam-management-table .action-buttons .btn {
+  width:42px !important;
+  min-width:42px !important;
+  height:30px !important;
+  min-height:30px !important;
+  padding:0 !important;
+  font-size: 18px !important;
+  line-height:30px !important;
+  border-radius:6px !important;
+}
 .guardian-management-table { width:max-content; min-width:976px; table-layout:fixed; }
 .guardian-management-table th:nth-child(1),.guardian-management-table td:nth-child(1) { width:144px; white-space:nowrap; }
 .guardian-management-table th:nth-child(2),.guardian-management-table td:nth-child(2) { width:192px; }
