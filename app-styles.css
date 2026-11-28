@@ -396,7 +396,99 @@ body:not(.teacher-page):not(.parent-page) .topbar h1 { font-size:20px !important
 @media(max-width:600px){.student-management-table tbody td:nth-child(-n+4){font-size:18px!important;}}
 input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=submit]):not([type=button]):not([type=reset]),select { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; line-height:normal !important; }#termExamRoster .term-bulk-table tbody td input[data-term-score],#termExamRoster .term-bulk-table tbody td input[data-term-class-rank],#termExamRoster .term-bulk-table tbody td input[data-term-school-rank] { display:block !important; box-sizing:border-box !important; width:76px !important; height:40px !important; min-height:40px !important; max-height:40px !important; padding:0 8px !important; border:1px solid #ccd4df !important; border-radius:8px !important; line-height:normal !important; }.field input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.field select { padding-top:0 !important; padding-bottom:0 !important; line-height:normal !important; }textarea { box-sizing:border-box !important; height:auto !important; min-height:80px !important; max-height:none !important; line-height:1.5 !important; padding:10px 12px !important; }.term-bulk-table input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]),.bulk-score-entry-table tbody td input:not([type=checkbox]),.bulk-score-entry-table tbody td select { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; border-radius:8px !important; }.term-exam-overview-filters .field select,.term-exam-overview-filters .field input { height:40px !important; min-height:40px !important; max-height:40px !important; padding-top:0 !important; padding-bottom:0 !important; line-height:normal !important; }/* 段考成績表：明確覆蓋各層既有規則，讓姓名與輸入框共用同一 40px 垂直中心 */#termExamRoster .term-roster-wrap .term-bulk-table { border-collapse:separate !important; border-spacing:0 !important; }#termExamRoster .term-roster-wrap .term-bulk-table tbody tr { height:46px !important; }#termExamRoster .term-roster-wrap .term-bulk-table tbody td { box-sizing:border-box !important; height:46px !important; padding:3px 6px !important; vertical-align:middle !important; line-height:1.3 !important; }#termExamRoster .term-roster-wrap .term-bulk-table tbody td.term-student-name { display:table-cell !important; height:46px !important; padding:3px 8px !important; vertical-align:middle !important; line-height:1.3 !important; }#termExamRoster .term-roster-wrap .term-bulk-table tbody td.term-student-name .term-student-name-text { display:inline-block !important; vertical-align:middle !important; line-height:1.3 !important; }#termExamRoster .term-roster-wrap .term-bulk-table tbody td.term-student-name small { display:inline-block !important; vertical-align:middle !important; line-height:1.3 !important; }#termExamRoster .term-roster-wrap .term-bulk-table tbody td .term-completion-mark { display:inline-flex !important; vertical-align:middle !important; }#termExamRoster .term-roster-wrap .term-bulk-table tbody td input[data-term-score],#termExamRoster .term-roster-wrap .term-bulk-table tbody td input[data-term-class-rank],#termExamRoster .term-roster-wrap .term-bulk-table tbody td input[data-term-school-rank] { display:block !important; position:relative !important; top:0 !important; float:none !important; margin:0 auto !important; box-sizing:border-box !important; width:76px !important; height:40px !important; min-height:40px !important; max-height:40px !important; padding:0 8px !important; border:1px solid #ccd4df !important; border-radius:8px !important; line-height:normal !important; vertical-align:middle !important; transform:none !important; }#termAcademicYear { box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; padding:0 12px !important; line-height:20px !important; }#termExamRoster .term-roster-wrap .term-bulk-table tbody td.term-total-cell { height:46px !important; padding:3px 6px !important; vertical-align:middle !important; line-height:40px !important; }.overview-table .overview-missing-select input,.export-select-all input,.export-period-item input,.student-subject-option input[type=checkbox] { height:auto !important; min-height:0 !important; max-height:none !important; }
 #overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton { display:inline-flex !important; align-items:center !important; justify-content:center !important; box-sizing:border-box !important; height:40px !important; min-height:40px !important; max-height:40px !important; padding:0 12px !important; font-size:16px !important; line-height:20px !important; white-space:nowrap !important; flex:0 0 auto !important; }@media(max-width:600px){#overviewMissingBatchBar{gap:8px !important;align-items:flex-start !important;flex-wrap:wrap !important}#overviewMissingBatchBar #selectAllMissingButton,#overviewMissingBatchBar #clearMissingSelectionButton,#overviewMissingBatchBar #batchExcludeMissingButton{max-width:100% !important}}
-.login-log-calendar{width:100%;max-width:400px;margin:6px 0 10px;padding:10px;border:1px solid #d7e0e9;border-radius:9px;background:#fff}.login-log-calendar-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.login-log-calendar-heading strong{color:#23466b;font-size:20px}.login-log-calendar-heading button{width:36px;height:34px;min-height:34px;margin:0;padding:0;border:0;border-radius:7px;background:#edf1f5;color:#315d86;font-size:20px}.login-log-calendar-weekdays,.login-log-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}.login-log-calendar-weekdays{margin-bottom:5px;color:#64748b;font-size:16px;font-weight:700}.login-log-calendar-weekdays span{padding:3px 0}.login-log-calendar-day{display:flex;align-items:center;justify-content:center;width:100%;height:44px;min-height:44px;margin:0;padding:2px;border:1px solid transparent;border-radius:6px;background:#fff;color:#263445;font-size:16px}.login-log-calendar-day:hover{background:#edf3f9}.login-log-calendar-day.selected{border-color:#315d86;background:#315d86;color:#fff}.login-log-calendar-empty{height:44px}.login-log-calendar-clear{margin-top:8px;min-height:40px;padding:8px 12px;border:0;border-radius:7px;background:#edf1f5;color:#315d86;font-size:16px}
+.login-log-calendar {
+  width:100%;
+  max-width:400px;
+  margin:6px 0 10px;
+  padding:10px;
+  border:1px solid #d7e0e9;
+  border-radius:9px;
+  background:#fff
+}
+
+.login-log-calendar-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:8px
+}
+
+.login-log-calendar-heading strong {
+  color:#23466b;
+  font-size:20px
+}
+
+.login-log-calendar-heading button {
+  width:36px;
+  height:34px;
+  min-height:34px;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:7px;
+  background:#edf1f5;
+  color:#315d86;
+  font-size:20px
+}
+
+.login-log-calendar-weekdays,.login-log-calendar-days {
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:4px;
+  text-align:center
+}
+
+.login-log-calendar-weekdays {
+  margin-bottom:5px;
+  color:#64748b;
+  font-size:16px;
+  font-weight:700
+}
+
+.login-log-calendar-weekdays span {
+  padding:3px 0
+}
+
+.login-log-calendar-day {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:44px;
+  min-height:44px;
+  margin:0;
+  padding:2px;
+  border:1px solid transparent;
+  border-radius:6px;
+  background:#fff;
+  color:#263445;
+  font-size:16px
+}
+
+.login-log-calendar-day:hover {
+  background:#edf3f9
+}
+
+.login-log-calendar-day.selected {
+  border-color:#315d86;
+  background:#315d86;
+  color:#fff
+}
+
+.login-log-calendar-empty {
+  height:44px
+}
+
+.login-log-calendar-clear {
+  margin-top:8px;
+  min-height:40px;
+  padding:8px 12px;
+  border:0;
+  border-radius:7px;
+  background:#edf1f5;
+  color:#315d86;
+  font-size:16px
+}
 .table-wrap table.bulk-score-entry-table { width:820px !important; min-width:820px !important; max-width:none !important; table-layout:fixed !important; }.bulk-score-entry-table th:nth-child(1),.bulk-score-entry-table td:nth-child(1) { width:140px !important; }.bulk-score-entry-table th:nth-child(2),.bulk-score-entry-table td:nth-child(2) { width:160px !important; }.bulk-score-entry-table th:nth-child(3),.bulk-score-entry-table td:nth-child(3) { width:160px !important; text-align:center !important; }.bulk-score-entry-table th:nth-child(4),.bulk-score-entry-table td:nth-child(4) { width:160px !important; text-align:center !important; }.bulk-score-entry-table th:nth-child(5),.bulk-score-entry-table td:nth-child(5) { width:200px !important; text-align:left !important; padding-left:16px !important; }.bulk-score-entry-table tbody td:nth-child(3) input[data-bulk-score],.bulk-score-entry-table tbody td:nth-child(4) select[data-bulk-status],.bulk-score-entry-table tbody td:nth-child(4) select[data-bulk-grade] { display:block !important; width:120px !important; min-width:120px !important; max-width:120px !important; margin:0 auto !important; }.bulk-score-entry-table thead th:nth-child(3),.bulk-score-entry-table thead th:nth-child(4) { text-align:left !important; padding-left:20px !important; box-sizing:border-box !important; }.bulk-score-entry-table tbody td:nth-child(5) [data-save-bulk-row] { margin:0 !important; }#appRoot .bulk-score-entry-table tbody td button[data-save-bulk-row] { font-size:18px !important; }
 @media(max-width:600px){#adminContent .overview-table tbody td,#adminContent .overview-table tbody td *{font-size:18px!important;}#adminContent .student-record-table tbody td,#adminContent .student-record-table tbody td *{font-size:18px!important;}#adminContent .bulk-score-entry-table tbody td:nth-child(-n+2),#adminContent .bulk-score-entry-table tbody td:nth-child(-n+2) *{font-size:18px!important;}#adminContent .alumni-score-table tbody td,#adminContent .alumni-score-table tbody td *{font-size:18px!important;}}
 .low-score,.bulk-score-entry-table input.low-score {color:#d32626 !important;font-weight:600 !important;}
