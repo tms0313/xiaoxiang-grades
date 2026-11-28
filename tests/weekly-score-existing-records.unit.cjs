@@ -7,8 +7,8 @@ const source = fs.readFileSync(path.join(__dirname, '..', 'app-score-entry.js'),
 const bulkSource = fs.readFileSync(path.join(__dirname, '..', 'app-score-entry-bulk.js'), 'utf8');
 
 test('existing weekly scores are listed using exam, class and subject without scope', () => {
-  const start = source.indexOf('function renderExistingWeeklyScores()');
-  const end = source.indexOf('async function saveExistingWeeklyScore', start);
+  const start = bulkSource.indexOf('function renderExistingWeeklyScores()');
+  const end = bulkSource.indexOf('async function saveExistingWeeklyScore', start);
   assert.ok(start >= 0 && end > start, 'existing-score renderer must exist');
   const renderer = source.slice(start, end);
   assert.match(renderer, /const examId = \$\("scoreExam"\)\.value/);
@@ -22,8 +22,8 @@ test('existing weekly scores are listed using exam, class and subject without sc
 });
 
 test('existing records are editable in place and retain their scope identity', () => {
-  const start = source.indexOf('async function saveExistingWeeklyScore');
-  const end = source.indexOf('function renderScoreEntry()', start);
+  const start = bulkSource.indexOf('async function saveExistingWeeklyScore');
+  const end = bulkSource.length;
   assert.ok(start >= 0 && end > start, 'existing-score save handler must exist');
   const handler = source.slice(start, end);
   assert.match(handler, /db\.from\("scores"\)\.update/);
@@ -39,7 +39,7 @@ test('weekly score entry separates existing-score lookup from scope-required add
 
 
 test('existing and new weekly score tables preserve their distinct identifiers and aligned shared fields', () => {
-  const renderer = source.slice(source.indexOf('function renderExistingWeeklyScores()'), source.indexOf('async function saveExistingWeeklyScore'));
+  const renderer = bulkSource.slice(bulkSource.indexOf('function renderExistingWeeklyScores()'), bulkSource.indexOf('async function saveExistingWeeklyScore'));
   const bulk = bulkSource.slice(bulkSource.indexOf('function renderBulkScoreEntryRows()'));
 
   assert.ok(renderer.includes("<th>編號</th><th>學生</th><th>考試範圍</th>"));
@@ -158,7 +158,7 @@ test('bulk score cache refresh rebuilds both lookup indexes after replacing a sc
   const start = bulkSource.indexOf('async function refreshScoreCacheForScope');
   const end = bulkSource.indexOf('async function saveSingleBulkScoreRow', start);
   assert.ok(start >= 0 && end > start, 'bulk score refresh helper must exist');
-  const refresh = source.slice(start, end);
+  const refresh = bulkSource.slice(start, end);
   assert.match(refresh, /scoresCache\.length = retainedCount/);
   assert.match(refresh, /refreshedRows\.forEach/);
   assert.match(refresh, /rebuildScoresByIdCache\(\)/);
@@ -194,7 +194,7 @@ test('weekly score entry sorts student codes numerically, then names, without mu
   assert.ok(helperStart >= 0 && helperEnd > helperStart, 'weekly score sorting helper must exist');
   const sandbox = {};
   vm.runInNewContext(
-    source.slice(helperStart, helperEnd) +
+    bulkSource.slice(helperStart, helperEnd) +
       '\nglobalThis.sortWeeklyScoreEntryStudents = sortWeeklyScoreEntryStudents;',
     sandbox
   );
