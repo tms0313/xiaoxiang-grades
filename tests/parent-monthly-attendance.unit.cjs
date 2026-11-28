@@ -17,39 +17,41 @@ vm.runInNewContext(
   sandbox
 );
 
-test('monthly summary is not published before the first Saturday at 18:00', () => {
-  const result = sandbox.getParentAttendanceMonthlyPeriod({
-    year: '2026', month: '11', day: '07', hour: '17'
+test('monthly summary remains hidden until the initial December 5, 2026 18:00 release', () => {
+  const beforeRollout = sandbox.getParentAttendanceMonthlyPeriod({
+    year: '2026', month: '11', day: '28', hour: '09'
   });
-  assert.equal(result.month, '9月');
-  assert.equal(result.start, '2026-09-01');
-  assert.equal(result.end, '2026-09-30');
+  const beforeRelease = sandbox.getParentAttendanceMonthlyPeriod({
+    year: '2026', month: '12', day: '05', hour: '17'
+  });
+  assert.equal(beforeRollout, null);
+  assert.equal(beforeRelease, null);
 });
 
-test('monthly summary publishes the previous month at the first Saturday 18:00 boundary', () => {
+test('first monthly summary release publishes November at December 5, 2026 18:00', () => {
   const result = sandbox.getParentAttendanceMonthlyPeriod({
-    year: '2026', month: '11', day: '07', hour: '18'
+    year: '2026', month: '12', day: '05', hour: '18'
   });
-  assert.equal(result.month, '10月');
-  assert.equal(result.start, '2026-10-01');
-  assert.equal(result.end, '2026-10-31');
+  assert.equal(result.month, '11月');
+  assert.equal(result.start, '2026-11-01');
+  assert.equal(result.end, '2026-11-30');
 });
 
 test('published monthly summary remains the same until the next monthly release', () => {
   const afterRelease = sandbox.getParentAttendanceMonthlyPeriod({
-    year: '2026', month: '11', day: '28', hour: '09'
+    year: '2026', month: '12', day: '06', hour: '09'
   });
   const beforeNextRelease = sandbox.getParentAttendanceMonthlyPeriod({
-    year: '2026', month: '12', day: '04', hour: '23'
+    year: '2027', month: '01', day: '01', hour: '23'
   });
   const nextRelease = sandbox.getParentAttendanceMonthlyPeriod({
-    year: '2026', month: '12', day: '05', hour: '18'
+    year: '2027', month: '01', day: '02', hour: '18'
   });
-  assert.equal(afterRelease.month, '10月');
-  assert.equal(beforeNextRelease.month, '10月');
-  assert.equal(nextRelease.month, '11月');
-  assert.equal(nextRelease.start, '2026-11-01');
-  assert.equal(nextRelease.end, '2026-11-30');
+  assert.equal(afterRelease.month, '11月');
+  assert.equal(beforeNextRelease.month, '11月');
+  assert.equal(nextRelease.month, '12月');
+  assert.equal(nextRelease.start, '2026-12-01');
+  assert.equal(nextRelease.end, '2026-12-31');
 });
 
 test('monthly attendance totals include normal records only and count each missed check-in', () => {
