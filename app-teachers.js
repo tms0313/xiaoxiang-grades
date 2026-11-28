@@ -55,12 +55,9 @@ function renderTeacherManagement() {
       "<div class='table-wrap'><table class='teacher-account-table'><thead><tr><th>教師登入 Email</th><th>操作</th></tr></thead>" +
       "<tbody id='teacherAccountRows'>" +
         (teacherProfilesCache.map(function (profile) {
-          const actions = profile.isAdditionalTeacherRole
-            ? "<button class='btn btn-danger btn-small' data-remove-teacher-role='" + escapeHtml(profile.id) + "'>移除教師身分</button>"
-            : "<button class='btn btn-small' data-reset-teacher='" + escapeHtml(profile.id) + "'>重設密碼</button>" +
-              "<button class='btn btn-danger btn-small' data-delete-teacher='" + escapeHtml(profile.id) + "'>刪除帳號</button>";
-          return "<tr><td>" + escapeHtml(profile.email || profile.display_name || "—") +
-            (profile.isAdditionalTeacherRole ? " <span class='muted'>（家長兼教師）</span>" : "") + "</td>" +
+          const actions = "<button class='btn btn-small' data-reset-teacher='" + escapeHtml(profile.id) + "'>重設密碼</button>" +
+            "<button class='btn btn-danger btn-small' data-delete-teacher='" + escapeHtml(profile.id) + "'>刪除帳號</button>";
+          return "<tr><td>" + escapeHtml(profile.email || profile.display_name || "—") + "</td>" +
             "<td class='action-cell'><div class='action-buttons'>" + actions + "</div></td></tr>";
         }).join("") || "<tr><td colspan='2' class='empty'>目前沒有教師帳號</td></tr>") +
       "</tbody></table></div>" +
@@ -124,39 +121,7 @@ function renderTeacherManagement() {
       return;
     }
 
-    const removeRoleButton = event.target.closest("[data-remove-teacher-role]");
-    if (removeRoleButton) {
-      await removeAdditionalTeacherRole(removeRoleButton.dataset.removeTeacherRole);
-    }
   };
-}
-
-async function removeAdditionalTeacherRole(userId) {
-  const profile = teacherProfilesByIdCache.get(String(userId));
-  if (!profile || !profile.isAdditionalTeacherRole) return;
-  if (!profile) return;
-  if (!confirm(
-    "確定移除此帳號的教師身分？\n\n" +
-    "帳號：" + (profile.email || profile.display_name || userId) +
-    "\n\n系統會一併移除教師授課指派，但會保留原本家長登入帳號、密碼及孩子綁定。"
-  )) return;
-
-  const sessionGeneration = appSessionGeneration;
-  const sessionUserId = currentUser && currentUser.id;
-  try {
-    const assignmentDelete = await db.from("teacher_assignments").delete().eq("teacher_id", userId);
-    if (assignmentDelete.error) throw assignmentDelete.error;
-    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
-    const roleDelete = await db.from("profile_roles").delete().eq("user_id", userId).eq("role", "teacher");
-    if (roleDelete.error) throw roleDelete.error;
-    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
-    await loadAdminData();
-    if (!isCurrentAppSession(sessionGeneration, sessionUserId)) return;
-    renderTeacherManagement();
-    showMessage("教師身分已移除，原本家長帳號及孩子綁定仍保留。", "success");
-  } catch (error) {
-    showMessage("移除教師身分失敗：" + error.message, "error");
-  }
 }
 
 async function createTeacherAccount(event) {
