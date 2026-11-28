@@ -36,18 +36,18 @@ function bindParentActionButtons() {
 // ==================================================
 
 function getParentAttendanceMonthlyPeriod(taiwanDateTime) {
-  const today = new Date(
+  const today = new Date(Date.UTC(
     Number(taiwanDateTime.year),
     Number(taiwanDateTime.month) - 1,
     Number(taiwanDateTime.day)
-  );
-  const currentMonthFirst = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 1));
+  ));
+  const currentMonthFirst = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
   const firstSaturdayOffset = (6 - currentMonthFirst.getUTCDay() + 7) % 7;
   const releaseDate = new Date(currentMonthFirst);
   releaseDate.setUTCDate(releaseDate.getUTCDate() + firstSaturdayOffset);
   const todayISO = today.getFullYear() + "-" +
     String(today.getMonth() + 1).padStart(2, "0") + "-" +
-    String(today.getDate()).padStart(2, "0");
+    String(today.getUTCDate()).padStart(2, "0");
   const releaseISO = releaseDate.toISOString().slice(0, 10);
   const beforeCurrentRelease = todayISO < releaseISO ||
     (todayISO === releaseISO && Number(taiwanDateTime.hour) < 18);
