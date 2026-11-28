@@ -35,6 +35,47 @@ function bindParentActionButtons() {
 // 15. 家長端畫面
 // ==================================================
 
+function getParentAttendanceMonthlyPeriod(taiwanDateTime) {
+  const today = new Date(Date.UTC(
+    Number(taiwanDateTime.year),
+    Number(taiwanDateTime.month) - 1,
+    Number(taiwanDateTime.day)
+  ));
+  const currentMonthFirst = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+  const firstSaturdayOffset = (6 - currentMonthFirst.getUTCDay() + 7) % 7;
+  const releaseDate = new Date(currentMonthFirst);
+  releaseDate.setUTCDate(releaseDate.getUTCDate() + firstSaturdayOffset);
+  const todayISO = today.getUTCFullYear() + "-" +
+    String(today.getUTCMonth() + 1).padStart(2, "0") + "-" +
+    String(today.getUTCDate()).padStart(2, "0");
+  const releaseISO = releaseDate.toISOString().slice(0, 10);
+  const beforeCurrentRelease = todayISO < releaseISO ||
+    (todayISO === releaseISO && Number(taiwanDateTime.hour) < 18);
+
+  // 每月第一個週六 18:00 發布上個月統計，並持續顯示至下次月統計發布。
+  const releaseMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+  if (beforeCurrentRelease) releaseMonth.setUTCMonth(releaseMonth.getUTCMonth() - 1);
+  const reportMonth = new Date(Date.UTC(releaseMonth.getUTCFullYear(), releaseMonth.getUTCMonth() - 1, 1));
+  const start = reportMonth.toISOString().slice(0, 10);
+  const endDate = new Date(Date.UTC(reportMonth.getUTCFullYear(), reportMonth.getUTCMonth() + 1, 0));
+  const end = endDate.toISOString().slice(0, 10);
+  return {
+    month: String(reportMonth.getUTCMonth() + 1) + "月",
+    start: start,
+    end: end
+  };
+}
+
+function summarizeParentAttendanceRecords(records) {
+  return (records || []).reduce(function (summary, record) {
+    if (record.attendance_status === "normal") {
+      summary.lateMinutes += Math.max(0, Number(record.late_minutes) || 0);
+      if (record.checkin_status === "not_checked_in") summary.uncheckedCount++;
+    }
+    return summary;
+  }, { lateMinutes: 0, uncheckedCount: 0 });
+}
+
 let parentDashboardRequestId = 0;
 let parentExamReleaseRefreshTimer = null;
 
@@ -188,36 +229,65 @@ async function renderParentDashboard() {
   const weekStartISO = weekStartDate.toISOString().slice(0, 10);
   weekStartDate.setUTCDate(weekStartDate.getUTCDate() + 6);
   const weekEndISO = weekStartDate.toISOString().slice(0, 10);
+  const monthlyAttendancePeriod = getParentAttendanceMonthlyPeriod(taiwanToday);
 
   let parentAttendanceRecords = [];
   let parentAttendanceLoadError = null;
-  // 出缺席課程清單與成績資料互不依賴，合併等待以減少家長首頁一次網路往返。
-  const [parentDataRequests, attendanceSessionsResult] = await Promise.all([
+  let parentMonthlyAttendanceRecords = [];
+  let parentMonthlyAttendanceLoadError = null;
+  // 週統計與月統計分別查詢，月統計依每月第一個週六 18:00 的發布週期計算。
+  const [parentDataRequests, attendanceSessionsResult, monthlyAttendanceSessionsResult] = await Promise.all([
     parentDataRequestsPromise,
     db.from("attendance_sessions")
       .select("id")
       .gte("session_date", weekStartISO)
-      .lte("session_date", weekEndISO)
+      .lte("session_date", weekEndISO),
+    db.from("attendance_sessions")
+      .select("id")
+      .gte("session_date", monthlyAttendancePeriod.start)
+      .lte("session_date", monthlyAttendancePeriod.end)
   ]);
 
   if (requestId !== parentDashboardRequestId) return;
   if (attendanceSessionsResult.error) {
     parentAttendanceLoadError = attendanceSessionsResult.error;
+  }
+  if (monthlyAttendanceSessionsResult.error) {
+    parentMonthlyAttendanceLoadError = monthlyAttendanceSessionsResult.error;
+  }
+
+  const weeklySessionIds = attendanceSessionsResult.error
+    ? []
+    : (attendanceSessionsResult.data || []).map(item => item.id);
+  const monthlySessionIds = monthlyAttendanceSessionsResult.error
+    ? []
+    : (monthlyAttendanceSessionsResult.data || []).map(item => item.id);
+
+  const attendanceRecordRequests = await Promise.all([
+    weeklySessionIds.length
+      ? fetchAllRows(() => db.from("attendance_records")
+          .select("student_id,attendance_status,late_minutes,checkin_status")
+          .in("session_id", weeklySessionIds)
+          .in("student_id", studentIds))
+      : Promise.resolve({ data: [], error: null }),
+    monthlySessionIds.length
+      ? fetchAllRows(() => db.from("attendance_records")
+          .select("student_id,attendance_status,late_minutes,checkin_status")
+          .in("session_id", monthlySessionIds)
+          .in("student_id", studentIds))
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  if (requestId !== parentDashboardRequestId) return;
+
+  if (attendanceRecordRequests[0].error) {
+    parentAttendanceLoadError = attendanceRecordRequests[0].error;
   } else {
-    const attendanceSessionIds = (attendanceSessionsResult.data || []).map(item => item.id);
-    if (attendanceSessionIds.length) {
-      const attendanceRecordsResult = await fetchAllRows(() => db
-        .from("attendance_records")
-        .select("student_id,attendance_status,late_minutes,checkin_status")
-        .in("session_id", attendanceSessionIds)
-        .in("student_id", studentIds));
-      if (requestId !== parentDashboardRequestId) return;
-      if (attendanceRecordsResult.error) {
-        parentAttendanceLoadError = attendanceRecordsResult.error;
-      } else {
-        parentAttendanceRecords = attendanceRecordsResult.data || [];
-      }
-    }
+    parentAttendanceRecords = attendanceRecordRequests[0].data || [];
+  }
+  if (attendanceRecordRequests[1].error) {
+    parentMonthlyAttendanceLoadError = attendanceRecordRequests[1].error;
+  } else {
+    parentMonthlyAttendanceRecords = attendanceRecordRequests[1].data || [];
   }
 
   const scoresResult = parentDataRequests[0];
@@ -289,15 +359,49 @@ async function renderParentDashboard() {
     }
   });
 
+  const parentMonthlyAttendanceByStudent = new Map();
+  const parentMonthlyRecordsByStudent = new Map();
+  parentMonthlyAttendanceRecords.forEach(function (record) {
+    const key = String(record.student_id);
+    if (!parentMonthlyRecordsByStudent.has(key)) parentMonthlyRecordsByStudent.set(key, []);
+    parentMonthlyRecordsByStudent.get(key).push(record);
+  });
+  parentMonthlyRecordsByStudent.forEach(function (records, studentId) {
+    parentMonthlyAttendanceByStudent.set(studentId, summarizeParentAttendanceRecords(records));
+  });
+
   function buildParentAttendanceSummary(student) {
     // 顯示最近一次週六 18:00 已發布的出缺席週，並明確標示實際統計日期。
     const periodLabel = weekStartISO.replace(/-/g, "/").slice(5) + "～" + weekEndISO.replace(/-/g, "/").slice(5);
     const sectionStart =
       "<section class='parent-attendance-summary' aria-label='出缺席統計：" + periodLabel + "'>" +
         "<h3 class='parent-attendance-summary-title'>出缺席統計（" + periodLabel + "）</h3>";
+    const monthlySummary = parentMonthlyAttendanceByStudent.get(String(student.id)) || {
+      lateMinutes: 0,
+      uncheckedCount: 0
+    };
+    const monthlySection =
+      "<h3 class='parent-attendance-summary-title parent-attendance-month-title'>" +
+        monthlyAttendancePeriod.month + "整月統計</h3>" +
+      (parentMonthlyAttendanceLoadError
+        ? "<div class='parent-attendance-error' role='alert'>整月出缺席資料暫時無法讀取，請稍後再試。</div>"
+        : "<div class='parent-attendance-summary-grid'>" +
+            "<div class='parent-attendance-stat'>" +
+              "<span class='parent-attendance-stat-label'>遲到共計</span>" +
+              "<span class='parent-attendance-stat-value" + (monthlySummary.lateMinutes > 0 ? " attendance-alert" : "") + "'>" +
+                monthlySummary.lateMinutes + " <small>分鐘</small></span>" +
+            "</div>" +
+            "<div class='parent-attendance-stat'>" +
+              "<span class='parent-attendance-stat-label'>未打卡共計</span>" +
+              "<span class='parent-attendance-stat-value" + (monthlySummary.uncheckedCount > 0 ? " attendance-alert" : "") + "'>" +
+                monthlySummary.uncheckedCount + " <small>次</small></span>" +
+            "</div>" +
+          "</div>");
+
     if (parentAttendanceLoadError) {
       return sectionStart +
         "<div class='parent-attendance-error' role='alert'>出缺席資料暫時無法讀取，請稍後再試。</div>" +
+        monthlySection +
       "</section>";
     }
 
@@ -312,7 +416,7 @@ async function renderParentDashboard() {
       sectionStart +
         "<div class='parent-attendance-summary-grid'>" +
           "<div class='parent-attendance-stat'>" +
-            "<span class='parent-attendance-stat-label'>" + (hasLate ? "遲到" : "無遲到紀錄") + "</span>" +
+            "<div><span class='parent-attendance-stat-label'>" + (hasLate ? "遲到" : "無遲到紀錄") + "</span></div>" +
             "<span class='parent-attendance-stat-value" + (hasLate ? " attendance-alert" : "") + "'>" +
               (hasLate ? summary.lateMinutes + " <small>分鐘</small>" : "") + "</span>" +
           "</div>" +
@@ -322,6 +426,7 @@ async function renderParentDashboard() {
               summary.uncheckedCount + " <small>次</small></span>" +
           "</div>" +
         "</div>" +
+        monthlySection +
       "</section>"
     );
   }
