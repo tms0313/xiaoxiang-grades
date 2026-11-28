@@ -606,6 +606,32 @@ async function loadAttendanceSessionStudents() {
 
 let attendanceSaveInProgress = false;
 
+function buildAttendanceRecordPayload(rows) {
+  const payload = [];
+  for (const row of rows || []) {
+    const status = String(row.status || "");
+    const lateRaw = String(row.lateRaw == null ? "" : row.lateRaw);
+    const checkin = String(row.checkin || "");
+    const late = Number(lateRaw);
+    if (!["normal", "leave"].includes(status)) {
+      return { error: "出缺席狀態不正確，請重新確認。", payload: [] };
+    }
+    if (status === "normal" && !["checked_in", "not_checked_in"].includes(checkin)) {
+      return { error: "請先完成所有出席學生的打卡狀態選擇。", payload: [] };
+    }
+    if (lateRaw === "" || !Number.isInteger(late) || late < 0) {
+      return { error: "遲到分鐘必須是大於或等於 0 的整數。", payload: [] };
+    }
+    payload.push({
+      student_id: row.student_id,
+      attendance_status: status,
+      late_minutes: status === "normal" ? late : 0,
+      checkin_status: status === "normal" ? checkin : null
+    });
+  }
+  return { error: "", payload };
+}
+
 async function saveAttendanceSessionRecords() {
   const button = $("attendanceSaveButton");
   const message = $("attendanceSaveMessage");
@@ -614,33 +640,22 @@ async function saveAttendanceSessionRecords() {
   // 儲存期間固定使用本次選取的課堂快照，避免切換日期／課堂後寫入錯誤資料。
   const selectedDate = attendanceSelectedDate;
   const selectedSession = { ...attendanceSelectedSession };
-  const payload = [];
-  const rows = document.querySelectorAll("#attendanceSessionContent [data-attendance-row]");
-
-  for (const row of rows) {
-    const status = row.querySelector(".attendance-status-select").value;
-    const lateRaw = row.querySelector(".attendance-late-input").value;
-    const checkin = row.querySelector(".attendance-checkin-select").value;
-    const late = Number(lateRaw);
-
-    if (status === "normal" && !["checked_in", "not_checked_in"].includes(checkin)) {
-      message.className = "attendance-status-message error";
-      message.textContent = "請先完成所有出席學生的打卡狀態選擇。";
-      return;
-    }
-    if (lateRaw === "" || !Number.isInteger(late) || late < 0) {
-      message.className = "attendance-status-message error";
-      message.textContent = "遲到分鐘必須是大於或等於 0 的整數。";
-      return;
-    }
-
-    payload.push({
+  const rows = Array.from(
+    document.querySelectorAll("#attendanceSessionContent [data-attendance-row]"),
+    row => ({
       student_id: row.dataset.studentId,
-      attendance_status: status,
-      late_minutes: status === "normal" ? late : 0,
-      checkin_status: status === "normal" ? checkin : null
-    });
+      status: row.querySelector(".attendance-status-select").value,
+      lateRaw: row.querySelector(".attendance-late-input").value,
+      checkin: row.querySelector(".attendance-checkin-select").value
+    })
+  );
+  const validation = buildAttendanceRecordPayload(rows);
+  if (validation.error) {
+    message.className = "attendance-status-message error";
+    message.textContent = validation.error;
+    return;
   }
+  const payload = validation.payload;
 
   if (!payload.length) {
     message.className = "attendance-status-message error";

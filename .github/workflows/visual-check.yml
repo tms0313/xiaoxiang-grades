@@ -40,6 +40,7 @@ jobs:
           node --check tests/weekly-score-entry-sort.unit.cjs
           node --check tests/asset-cache-version.unit.cjs
           node --check tests/low-score-role-styles.unit.cjs
+          node --check tests/attendance-record-validation.unit.cjs
           node --check app-export.js
           node --check app-students.js
           node --check app-term-exams.js
@@ -74,6 +75,8 @@ jobs:
         run: npm run test:asset-cache-version
       - name: Run role-specific low-score style regression test
         run: npm run test:low-score-role-styles
+      - name: Run attendance record validation regression tests
+        run: npm run test:attendance-record-validation
       - name: Run application script-loading integration test
         run: npm run test:script-loading
       - name: Run visual smoke test
