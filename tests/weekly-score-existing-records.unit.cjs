@@ -10,7 +10,7 @@ test('existing weekly scores are listed using exam, class and subject without sc
   const start = bulkSource.indexOf('function renderExistingWeeklyScores()');
   const end = bulkSource.indexOf('async function saveExistingWeeklyScore', start);
   assert.ok(start >= 0 && end > start, 'existing-score renderer must exist');
-  const renderer = source.slice(start, end);
+  const renderer = bulkSource.slice(start, end);
   assert.match(renderer, /const examId = \$\("scoreExam"\)\.value/);
   assert.match(renderer, /const className = \$\("scoreClass"\)\.value/);
   assert.match(renderer, /const subject = \$\("scoreSubject"\)\.value/);
@@ -25,7 +25,7 @@ test('existing records are editable in place and retain their scope identity', (
   const start = bulkSource.indexOf('async function saveExistingWeeklyScore');
   const end = bulkSource.indexOf('async function refreshScoreCacheForScope', start);
   assert.ok(start >= 0 && end > start, 'existing-score save handler must exist');
-  const handler = source.slice(start, end);
+  const handler = bulkSource.slice(start, end);
   assert.match(handler, /db\.from\("scores"\)\.update/);
   assert.match(handler, /\.eq\("id", id\)/);
   assert.doesNotMatch(handler, /scope\s*:/);
