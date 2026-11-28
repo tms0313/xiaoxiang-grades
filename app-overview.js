@@ -123,7 +123,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       : grade3
         ? (
             score.grade_level === "缺考"
-              ? "<span class='low-score'>0 題</span>　" + gradeTag("缺考")
+              ? "0 題　" + gradeTag("缺考")
               : escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
                 " 題　" + gradeTag(score.grade_level)
           )
