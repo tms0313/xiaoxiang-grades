@@ -11,7 +11,6 @@ test('login page loads and core elements are visible', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/小象文教機構/);
 
-  // 確認共用工具模組已在主程式執行前載入，且原有全域函式名稱可正常呼叫。
   const utilityChecks = await page.evaluate(() => ({
     dollar: typeof window.$ === 'function',
     escapeHtml: typeof window.escapeHtml === 'function',
@@ -51,22 +50,29 @@ test('login page loads and core elements are visible', async ({ page }) => {
   }));
   expect(utilityChecks).toEqual({ dollar: true, escapeHtml: true, formatDate: true, fetchAllRows: true, normalizeTaiwanMobile: true, getExamReleaseTimestamp: true, isExamReleasedAt: true, renderExport: true, exportCsv: true, renderStudents: true, saveStudent: true, toggleStudentStatus: true, deleteStudent: true, renderTermExamEntry: true, renderAlumniMockScores: true, renderLoginLogs: true, clearAllLoginLogs: true, renderStudentReviewRecords: true, renderGuardians: true, deleteUnboundParentAccount: true, editParentAccount: true, createParentAccount: true, saveGuardianBinding: true, removeGuardianBinding: true, renderPasswords: true, getLinkedStudentNames: true, resetParentPassword: true, deleteParentAccount: true, renderTeacherManagement: true, addTeacherRoleToParent: false, removeAdditionalTeacherRole: true, createTeacherAccount: true, manageTeacherAccount: true, saveTeacherAssignment: true, deleteTeacherAssignment: true });
 
-  // 確認抽離後的動態樣式已由 index.html 載入，且核心登入畫面樣式仍生效。
+  // 樣式已改為獨立 CSS：確認 stylesheet 載入，且登入頁核心樣式仍生效。
   const appStylesLoaded = await page.evaluate(() => {
-    const styleElement = [...document.querySelectorAll('style')].find(el =>
-      el.textContent.includes('.login-card { width:min(420px,100%)')
+    const stylesheet = [...document.styleSheets].find(sheet =>
+      sheet.href && new URL(sheet.href).pathname.endsWith('/app-styles.css')
     );
+    let hasLoginCardRule = false;
+    try {
+      hasLoginCardRule = Boolean(stylesheet && [...stylesheet.cssRules].some(rule =>
+        rule.selectorText && rule.selectorText.includes('.login-card')
+      ));
+    } catch (error) {
+      hasLoginCardRule = false;
+    }
     return {
-      loaded: Boolean(styleElement),
+      loaded: Boolean(stylesheet) && hasLoginCardRule,
       bodyBackground: getComputedStyle(document.body).backgroundColor,
       loginCardRadius: getComputedStyle(document.querySelector('.login-card')).borderRadius
     };
   });
-  expect(appStylesLoaded.loaded, 'app-styles.js should inject the extracted style block').toBeTruthy();
+  expect(appStylesLoaded.loaded, 'app-styles.css should load the extracted stylesheet rules').toBeTruthy();
   expect(appStylesLoaded.bodyBackground).toBe('rgb(243, 245, 248)');
   expect(appStylesLoaded.loginCardRadius).toBe('18px');
 
-  // Capture the rendered page before assertions to preserve evidence if a check fails.
   await page.screenshot({ path: 'screenshots/login-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: 'screenshots/login-mobile.png', fullPage: true });
