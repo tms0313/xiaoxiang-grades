@@ -249,7 +249,7 @@ function renderBulkScoreEntryRows() {
         "<td><select data-bulk-grade><option value=''>選擇等級</option>" + gradeOptions + "</select></td>";
     } else {
       fields = "<td><input class='bulk-score-input' data-bulk-score type='number' min='0' max='100' step='0.1' placeholder='分數' value='" + escapeHtml(rawValue) + "'></td>" +
-        "<td><select data-bulk-status><option value='normal'>正常</option><option value='請假'>請假</option></select></td>";
+        "<td><select data-bulk-status><option value='normal'>正常</option><option value='缺考'>缺考</option><option value='請假'>請假</option></select></td>";
     }
     return "<tr data-bulk-student='" + escapeHtml(student.id) + "'>" +
       "<td>" + escapeHtml(student.student_code || "") + "</td>" +
@@ -288,10 +288,11 @@ function renderBulkScoreEntryRows() {
         ? draft.grade
         : existing && existing.grade_level || "";
       const input = row.querySelector("[data-bulk-score]");
-      const grade3Absent = grade3 && (control.value === "缺考" || control.value === "請假");
+      const grade3Leave = grade3 && control.value === "請假";
       if (input) {
-        input.disabled = grade3Absent;
-        if (grade3Absent) input.value = "";
+        input.disabled = grade3Leave;
+        if (control.value === "缺考") input.value = "0";
+        else if (grade3Leave) input.value = "";
       }
       return;
     }
@@ -317,10 +318,11 @@ function renderBulkScoreEntryRows() {
     }
     if (event.target.matches("[data-bulk-grade]") && grade3) {
       const input = event.target.closest("tr").querySelector("[data-bulk-score]");
-      const absentOrLeave = event.target.value === "缺考" || event.target.value === "請假";
+      const absentOrLeave = event.target.value === "請假";
       if (input) {
         input.disabled = absentOrLeave;
-        if (absentOrLeave) input.value = "";
+        if (event.target.value === "缺考") input.value = "0";
+        else if (absentOrLeave) input.value = "";
       }
     }
     saveBulkScoreDraft(true);
@@ -362,7 +364,7 @@ function renderExistingWeeklyScores() {
       const student = studentsByIdCache.get(String(item.student_id));
       const grade3 = isGrade3Class(className);
       const grade3Math = isGrade3Math(className, subject);
-      const absent = item.grade_level === "缺考" || item.grade_level === "請假";
+      const absent = item.grade_level === "請假";
       const value = grade3Math ? item.score : grade3 ? item.correct_count : item.score;
       const status = grade3
         ? "<select data-existing-grade>" + gradeOptions + "</select>"
@@ -392,8 +394,9 @@ function renderExistingWeeklyScores() {
     select.value = item && item.grade_level || "";
     select.addEventListener("change", function () {
       const input = select.closest("tr").querySelector("[data-existing-value]");
-      input.disabled = this.value === "缺考" || this.value === "請假";
-      if (input.disabled) input.value = "";
+      input.disabled = this.value === "請假";
+      if (this.value === "缺考") input.value = "0";
+      else if (input.disabled) input.value = "";
     });
   });
   root.querySelectorAll("[data-existing-status]").forEach(function (select) {
@@ -439,7 +442,9 @@ async function saveExistingWeeklyScore(row) {
       showMessage(student.full_name + "：請選擇模擬考等級。", "error", true); return;
     }
     gradeLevel = grade;
-    if (grade !== "缺考" && grade !== "請假") {
+    if (grade === "缺考") {
+      if (grade3Math) score = 0; else correctCount = 0;
+    } else if (grade !== "請假") {
       const value = Number(raw);
       if (!raw || !Number.isFinite(value) || value < 0 || (grade3Math ? value > 100 : !Number.isInteger(value))) {
         showMessage(student.full_name + "：成績格式錯誤。", "error", true); return;
@@ -448,6 +453,9 @@ async function saveExistingWeeklyScore(row) {
     }
   } else if (status === "請假") {
     gradeLevel = "請假";
+  } else if (status === "缺考") {
+    gradeLevel = "缺考";
+    score = 0;
   } else {
     const value = Number(raw);
     if (!raw || !Number.isFinite(value) || value < 0 || value > 100) {
@@ -558,7 +566,9 @@ async function saveSingleBulkScoreRow(row) {
       message.textContent = student.full_name + "：請選擇模擬考等級。";
       message.className = "system-message error"; message.style.display = "block"; return;
     }
-    if (grade !== "缺考" && grade !== "請假") {
+    if (grade === "缺考") {
+      if (grade3Math) score = 0; else correctCount = 0;
+    } else if (grade !== "請假") {
       const value = Number(raw);
       if (!raw || !Number.isFinite(value) || value < 0 || (grade3Math ? value > 100 : !Number.isInteger(value))) {
         message.textContent = student.full_name + "：成績格式錯誤。";
@@ -569,6 +579,9 @@ async function saveSingleBulkScoreRow(row) {
     gradeLevel = grade;
   } else if (status === "請假") {
     gradeLevel = "請假";
+  } else if (status === "缺考") {
+    gradeLevel = "缺考";
+    score = 0;
   } else {
     const value = Number(raw);
     if (!raw || !Number.isFinite(value) || value < 0 || value > 100) {
@@ -654,7 +667,7 @@ async function saveBulkScores() {
     const raw = input ? input.value.trim() : "";
     const grade = gradeSelect ? gradeSelect.value : "";
     const status = statusSelect ? statusSelect.value : "normal";
-    if (!raw && !grade && status !== "請假") return;
+    if (!raw && !grade && status !== "請假" && status !== "缺考") return;
     if (grade3Math || grade3) {
       if (!grade || !GRADE_OPTIONS.includes(grade)) {
         errors.push(row.children[1].textContent.trim() + "：請選擇等級");
@@ -667,18 +680,19 @@ async function saveBulkScores() {
           return;
         }
       }
-    } else if (status !== "請假") {
+    } else if (status !== "請假" && status !== "缺考") {
       const value = Number(raw);
       if (!raw || !Number.isFinite(value) || value < 0 || value > 100) {
         errors.push(row.children[1].textContent.trim() + "：請輸入 0～100 分");
         return;
       }
     }
-    const gradeLevel = grade3 ? grade : status === "請假" ? "請假" : null;
+    const gradeLevel = grade3 ? grade : status === "請假" || status === "缺考" ? status : null;
     const score = grade3Math
-      ? (grade === "缺考" || grade === "請假" ? null : Number(raw))
-      : grade3 ? null : status === "請假" ? null : Number(raw);
-    const correctCount = grade3 && !grade3Math && grade !== "缺考" && grade !== "請假" ? Number(raw) : null;
+      ? (grade === "缺考" ? 0 : grade === "請假" ? null : Number(raw))
+      : grade3 ? null : status === "缺考" ? 0 : status === "請假" ? null : Number(raw);
+    const correctCount = grade3 && !grade3Math
+      ? (grade === "缺考" ? 0 : grade === "請假" ? null : Number(raw)) : null;
     entries.push({ studentId, payload: {
       student_id: studentId, exam_id: examId, subject: subject, scope: scope,
       score: score, correct_count: correctCount, grade_level: gradeLevel
