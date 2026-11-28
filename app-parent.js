@@ -99,8 +99,8 @@ async function renderParentDashboard() {
       " .parent-attendance-stat-label{color:#647487;font-size: 16px !important;font-weight:700;line-height:1.45}" +
       ".parent-attendance-stat-value{color:#31506c;font-size: 20px;font-weight:800;line-height:1.35;font-variant-numeric:tabular-nums}" +
       " .parent-attendance-stat-value small{font-size: 20px !important;font-weight:800 !important}" +
-      ".parent-attendance-stat-value.attendance-alert{color:#bd3030;font-weight:800}" +
-      ".parent-attendance-stat-value.attendance-alert small{color:inherit !important;font-weight:800 !important;opacity:1 !important}" +
+      ".parent-attendance-stat-value.attendance-alert{color:#bd3030;font-weight:600}" +
+      ".parent-attendance-stat-value.attendance-alert small{color:inherit !important;font-weight:600 !important;opacity:1 !important}" +
       ".parent-attendance-empty,.parent-attendance-error{margin:0 0 16px;padding:11px 13px;border:1px solid #dce5ed;border-radius:10px;background:#f5f8fb;color:#647487;font-size: 14px;line-height:1.6}" +
       ".parent-attendance-error{border-color:#f0d0d0;background:#fff5f5;color:#a32626}" +
       "@media(max-width:380px){.parent-attendance-summary-grid{gap:7px}.parent-attendance-stat{padding:10px}.parent-attendance-stat-label{font-size: 16px}.parent-attendance-stat-value{font-size: 20px}.parent-attendance-stat-value small{font-size: 16px}}";
