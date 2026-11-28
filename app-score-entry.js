@@ -409,7 +409,8 @@ function renderExistingWeeklyScores() {
     select.addEventListener("change", function () {
       const input = select.closest("tr").querySelector("[data-existing-value]");
       input.disabled = this.value === "請假";
-      if (input.disabled) input.value = "";
+      if (this.value === "缺考") input.value = "0";
+      else if (input.disabled) input.value = "";
       updateScoreInputWarning(input, !isGrade3Class(className) || isGrade3Math(className, subject));
     });
   });
