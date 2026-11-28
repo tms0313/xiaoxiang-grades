@@ -352,8 +352,7 @@ async function loadAttendanceWeeklyOverview() {
     return "<details class='attendance-weekly-student" + (hasAlert ? " has-alert" : "") + "'>" +
       "<summary><span class='attendance-weekly-student-name'>" + attendanceEscape(student.student_code) + "　" + attendanceEscape(student.full_name) + "</span>" +
       "<span class='attendance-weekly-student-summary'>" +
-        (leaveCount ? "請假 " + leaveCount + " 次" : (lateTotal ? "<strong class='attendance-weekly-alert'>遲到 " + lateTotal + " 分鐘</strong>" : "無遲到") + "　·　" +
-        (uncheckedCount ? "<strong class='attendance-weekly-alert'>未打卡 " + uncheckedCount + " 次</strong>" : checkedInSummary)) +
+        buildAttendanceWeeklyOverviewSummary({ leaveCount, lateTotal, uncheckedCount, checkedInSummary }) +
       "</span></summary>" +
       "<div class='attendance-weekly-details'>" +
         (studentRecords.length ? "<div class='table-wrap'><table class='attendance-weekly-detail-table'><thead><tr><th>日期</th><th>時間</th><th>科目</th><th>出勤</th><th>遲到</th><th>打卡</th></tr></thead><tbody>" + detailRows + "</tbody></table></div>" : "<div class='empty'>本週尚無出缺席紀錄。</div>") +
@@ -605,6 +604,23 @@ async function loadAttendanceSessionStudents() {
 }
 
 let attendanceSaveInProgress = false;
+
+function buildAttendanceWeeklyOverviewSummary(values) {
+  const leaveCount = Number(values.leaveCount || 0);
+  const lateTotal = Number(values.lateTotal || 0);
+  const uncheckedCount = Number(values.uncheckedCount || 0);
+  const items = [];
+
+  if (leaveCount > 0) items.push("請假 " + leaveCount + " 次");
+  items.push(lateTotal > 0
+    ? "<strong class='attendance-weekly-alert'>遲到 " + lateTotal + " 分鐘</strong>"
+    : "無遲到");
+  items.push(uncheckedCount > 0
+    ? "<strong class='attendance-weekly-alert'>未打卡 " + uncheckedCount + " 次</strong>"
+    : (values.checkedInSummary || "—"));
+
+  return items.join("　·　");
+}
 
 function buildAttendanceRecordPayload(rows) {
   const payload = [];
