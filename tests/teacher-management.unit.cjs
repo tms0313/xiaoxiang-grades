@@ -45,11 +45,7 @@ function createHarness() {
     String,
     Object,
     SUBJECTS: ["國文", "英文", "數學", "自然"],
-    teacherProfilesCache: [{
-      id: "teacher-1",
-      email: "teacher@example.com",
-      isAdditionalTeacherRole: false
-    }],
+    teacherProfilesCache: [{ id: "teacher-1", email: "teacher@example.com" }],
     teacherProfilesByIdCache: new Map(),
     teacherAssignmentsCache: [],
     escapeHtml(value) {
@@ -86,8 +82,9 @@ test("independent teacher account and teaching assignment management remain avai
   assert.equal(typeof context.saveTeacherAssignment, "function");
 });
 
-test("legacy parent-and-teacher accounts can still have the teacher role removed", () => {
-  const { context } = createHarness();
+test("legacy extra teacher-role removal is no longer exposed", () => {
+  const { context, content } = createHarness();
 
-  assert.equal(typeof context.removeAdditionalTeacherRole, "function");
+  assert.doesNotMatch(content.innerHTML, /家長兼教師|移除教師身分/);
+  assert.equal(typeof context.removeAdditionalTeacherRole, "undefined");
 });

@@ -35,8 +35,6 @@ function loadLogoutReset() {
     let overviewAutoRefreshBusy = true;
     let currentUser = { id: 'old-user' };
     let currentProfile = { role: 'admin' };
-    let profileRolesCache = [{ role: 'teacher' }];
-    let teacherRoleIdsCache = new Set(['old-teacher']);
     let studentsCache = [{ id: 'old-student' }];
     let examsCache = [{ id: 'old-exam', start_date: '2026-01-01' }];
     let examsByIdCache = new Map([['old-exam', {}]]);
@@ -123,7 +121,7 @@ function loadLogoutReset() {
         appSessionGeneration, dashboardRenderRequestId, parentDashboardRequestId,
         teacherDashboardRequestId, attendanceLoadRequestId, attendanceCalendarRequestId,
         attendanceWeeklyOverviewRequestId, overviewAutoRefreshTimer, parentExamReleaseRefreshTimer,
-        overviewAutoRefreshBusy, currentUser, currentProfile, profileRolesCache, teacherRoleIdsCache,
+        overviewAutoRefreshBusy, currentUser, currentProfile,
         studentsCache, examsCache, examsByIdCache, examsByDateDescCache, profilesCache,
         studentsByIdCache, activeStudentsCache, explicitlyActiveStudentsCache,
         activeStudentsByClassCache, parentProfilesByIdCache, scoresCache, scoresByIdCache,
@@ -146,7 +144,7 @@ function loadLogoutReset() {
   return sandbox;
 }
 
-test('logout clears role caches, stops timers and invalidates pending requests', () => {
+test('logout clears active caches, stops timers and invalidates pending requests', () => {
   const sandbox = loadLogoutReset();
   const state = sandbox.snapshot;
 
@@ -166,8 +164,6 @@ test('logout clears role caches, stops timers and invalidates pending requests',
 
   assert.equal(state.currentUser, null);
   assert.equal(state.currentProfile, null);
-  assert.equal(state.profileRolesCache.length, 0);
-  assert.equal(state.teacherRoleIdsCache.size, 0);
   assert.equal(state.studentsCache.length, 0);
   assert.equal(state.examsCache.length, 0);
   assert.equal(state.profilesCache.length, 0);

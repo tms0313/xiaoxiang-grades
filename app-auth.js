@@ -97,8 +97,6 @@ function resetSessionStateAfterLogout() {
 
   currentUser = null;
   currentProfile = null;
-  profileRolesCache = [];
-  teacherRoleIdsCache = new Set();
 
   studentsCache = [];
   examsCache = [];

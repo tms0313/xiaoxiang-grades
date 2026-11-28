@@ -58,14 +58,13 @@ async function loadAdminData() {
     measureAdminQuery("家長綁定資料", () => db.from("guardian_students").select("guardian_id, student_id").order("guardian_id", { ascending: true }).order("student_id", { ascending: true })),
     measureAdminQuery("學生修課資料", () => db.from("student_subjects").select("student_id, subject, is_active").order("student_id", { ascending: true }).order("subject", { ascending: true })),
     measureAdminQuery("教師授課權限", () => db.from("teacher_assignments").select("id, teacher_id, class_name, subject").order("id", { ascending: true })),
-    measureAdminQuery("額外身分資料", () => db.from("profile_roles").select("user_id, role").eq("role", "teacher").order("user_id", { ascending: true })),
     measureAdminQuery("未登錄排除資料", () => db.from("score_missing_exclusions").select("id, exam_id, student_id, subject, scope").order("id", { ascending: true }))
   ]);
   // 登出或切換帳號後，丟棄舊帳號尚未完成的查詢結果。
   if (sessionGeneration !== appSessionGeneration) return;
   const adminQueriesMs = performance.now() - adminQueriesStartedAt;
 
-  const names = ["學生資料", "考試資料", "全部帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師授課權限", "額外身分資料", "未登錄排除資料"];
+  const names = ["學生資料", "考試資料", "全部帳號", "成績資料", "家長綁定資料", "學生修課資料", "教師授課權限", "未登錄排除資料"];
 
   for (let i = 0; i < results.length; i++) {
     if (results[i].error) {
@@ -85,33 +84,12 @@ async function loadAdminData() {
   studentSubjectsCache = results[5].data || [];
   rebuildActiveSubjectsByStudentCache();
   teacherAssignmentsCache = results[6].data || [];
-  profileRolesCache = results[7].data || [];
-  teacherRoleIdsCache = new Set(profileRolesCache.filter(item => item.role === "teacher").map(item => String(item.user_id)));
-  missingExclusionsCache = results[8].data || [];
+  missingExclusionsCache = results[7].data || [];
 
-  // 一次走訪帳號資料，同時建立家長清單與教師索引，避免重複 filter 全表。
-  const additionalTeacherIds = new Set(profileRolesCache.map(item => String(item.user_id)));
-  const parentProfiles = [];
-  const teacherMap = new Map();
-  allProfiles.forEach(profile => {
-    const profileId = String(profile.id);
-    if (profile.role === "parent") parentProfiles.push(profile);
-    if (profile.role === "teacher") {
-      teacherMap.set(profileId, {
-        ...profile,
-        isAdditionalTeacherRole: false
-      });
-    }
-    if (additionalTeacherIds.has(profileId)) {
-      teacherMap.set(profileId, {
-        ...profile,
-        isAdditionalTeacherRole: true
-      });
-    }
-  });
-  profilesCache = parentProfiles;
+  // 家長與教師使用 profiles.role 獨立分流，不再讀取額外身分表。
+  profilesCache = allProfiles.filter(profile => profile.role === "parent");
   rebuildAdminEntityIndexes();
-  teacherProfilesCache = Array.from(teacherMap.values());
+  teacherProfilesCache = allProfiles.filter(profile => profile.role === "teacher");
   teacherProfilesByIdCache = new Map(teacherProfilesCache.map(profile => [String(profile.id), profile]));
 
   // 新一週成績於週六 18:00 開放時，自動清除上一週的已排除提醒名單。

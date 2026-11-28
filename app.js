@@ -63,8 +63,6 @@ function isCurrentAppSession(sessionGeneration, userId) {
     String(currentUser.id) === String(userId);
 }
 
-let profileRolesCache = [];
-let teacherRoleIdsCache = new Set();
 let studentsCache = [];
 let examsCache = [];
 let examsByIdCache = new Map();
