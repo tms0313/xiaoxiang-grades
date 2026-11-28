@@ -62,10 +62,7 @@ function getParentAttendanceMonthlyPeriod(taiwanDateTime) {
   return {
     month: String(reportMonth.getUTCMonth() + 1) + "月",
     start: start,
-    end: end,
-    releaseDate: releaseMonth.getUTCFullYear() + "-" +
-      String(releaseMonth.getUTCMonth() + 1).padStart(2, "0") + "-" +
-      String(releaseDate.getUTCDate()).padStart(2, "0")
+    end: end
   };
 }
 
