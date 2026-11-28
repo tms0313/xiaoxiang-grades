@@ -14,7 +14,6 @@ const EXPECTED_LOCAL_SCRIPTS = [
   'app-admin-audit.js',
   'app-guardians.js',
   'app-teachers.js',
-  'app-styles.js',
   'app-overview.js',
   'app-score-entry.js',
   'app-score-entry-bulk.js',
@@ -44,11 +43,15 @@ test('all local application scripts are versioned, present and loaded in depende
   }
 
   const scriptResponses = [];
+  const styleResponses = [];
   const pageErrors = [];
   page.on('response', response => {
     const file = path.basename(new URL(response.url()).pathname);
     if (EXPECTED_LOCAL_SCRIPTS.includes(file)) {
       scriptResponses.push({ file, status: response.status() });
+    }
+    if (file === 'app-styles.css') {
+      styleResponses.push({ file, status: response.status() });
     }
   });
   page.on('pageerror', error => pageErrors.push(error.message));
@@ -65,6 +68,7 @@ test('all local application scripts are versioned, present and loaded in depende
   expect([...loadedFiles].sort()).toEqual([...EXPECTED_LOCAL_SCRIPTS].sort());
   expect(new Set(loadedFiles).size).toBe(EXPECTED_LOCAL_SCRIPTS.length);
   expect(scriptResponses.filter(item => item.status !== 200)).toEqual([]);
+  expect(styleResponses).toEqual([{ file: 'app-styles.css', status: 200 }]);
   expect(pageErrors).toEqual([]);
 
   const moduleEntrypoints = await page.evaluate(() => ({
@@ -113,8 +117,8 @@ test('all local application scripts are versioned, present and loaded in depende
       typeof window.refreshOverviewData === 'function' &&
       typeof window.editScore === 'function' &&
       typeof window.deleteScore === 'function',
-    appStyles: [...document.querySelectorAll('style')].some(style =>
-      style.textContent.includes('.login-card { width:min(420px,100%)')
+    appStyles: [...document.styleSheets].some(sheet =>
+      sheet.href && new URL(sheet.href).pathname.endsWith('/app-styles.css')
     )
   }));
 
