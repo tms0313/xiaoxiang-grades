@@ -150,10 +150,10 @@ function updateScoreInputWarning(input, enabled) {
     Number.isFinite(Number(value)) && Number(value) < 60;
   input.classList.toggle("low-score", isLow);
   // 週成績登錄使用 number input；直接設定重要性最高的行內樣式，
-  // 避免表格或瀏覽器輸入框樣式覆蓋低分的一般字重。
+  // 避免表格或瀏覽器輸入框樣式覆蓋低分的中粗體。
   if (isLow) {
     input.style.setProperty("color", "#d32626", "important");
-    input.style.setProperty("font-weight", "400", "important");
+    input.style.setProperty("font-weight", "600", "important");
   } else {
     input.style.removeProperty("color");
     input.style.removeProperty("font-weight");
