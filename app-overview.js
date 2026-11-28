@@ -112,7 +112,7 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       : grade3Math
       ? (
           score.grade_level === "缺考"
-            ? gradeTag("缺考")
+            ? "<span class='" + scoreClass(0, student.class_name, score.subject) + "'>0 分</span>　" + gradeTag("缺考")
             : "<span class='" +
               scoreClass(score.score, student.class_name, score.subject) +
               "'>" +
@@ -123,12 +123,14 @@ function renderOverview(preservedFilters, keepExcludedPanelOpen) {
       : grade3
         ? (
             score.grade_level === "缺考"
-              ? gradeTag("缺考")
+              ? "<span class='low-score'>0 題</span>　" + gradeTag("缺考")
               : escapeHtml(score.correct_count == null ? "—" : score.correct_count) +
                 " 題　" + gradeTag(score.grade_level)
           )
-        : "<span class='" + scoreClass(score.score, student.class_name, score.subject) + "'>" +
-          escapeHtml(score.score == null ? "—" : score.score) + "</span>";
+        : score.grade_level === "缺考"
+          ? "<span class='" + scoreClass(0, student.class_name, score.subject) + "'>0 分</span>　" + gradeTag("缺考")
+          : "<span class='" + scoreClass(score.score, student.class_name, score.subject) + "'>" +
+            escapeHtml(score.score == null ? "—" : score.score) + "</span>";
 
     return (
       "<tr>" +
