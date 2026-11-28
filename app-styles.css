@@ -187,19 +187,90 @@ tr:hover td { background:#fafbfd; }
   white-space:nowrap !important;
   vertical-align:middle !important;
 }
-.term-exam-overview-filters .field { min-width:0; display:flex; flex-direction:column; align-items:stretch; gap:5px; }
-.term-exam-overview-filters .field label { display:block; font-size:18px !important; height:auto !important; min-height:22px; margin:0 !important; padding:0 !important; line-height:1.5 !important; overflow:visible !important; white-space:nowrap; }
-.term-exam-overview-filters .field select,.term-exam-overview-filters .field input { display:block !important; width:100% !important; min-width:0 !important; height:40px !important; min-height:40px !important; max-height:40px !important; box-sizing:border-box !important; padding:0 10px !important; font-family:inherit !important; font-size: 18px !important; font-weight:400 !important; line-height:normal !important; vertical-align:middle; text-overflow:clip; }
-.term-exam-overview-filters .field select { overflow:visible !important; }
-.term-exam-overview-table td { padding:5px 10px; line-height:1.25; }
-.term-exam-overview-table { min-width:760px !important; table-layout:auto !important; }
-.term-exam-overview-table th,.term-exam-overview-table td { height:auto !important; min-height:0 !important; max-height:none !important; padding:9px 10px !important; line-height:1.5 !important; vertical-align:middle !important; overflow:visible !important; text-overflow:clip !important; white-space:nowrap !important; font-size: 18px !important; }
-.term-exam-overview-table th { font-size: 18px !important; }
-.term-exam-overview-table tbody td:not(.action-cell) { font-size: 18px !important; }
-.term-exam-overview-table th { font-weight:800 !important; }
-.term-exam-overview-table .action-cell { min-width:100px; }
-.term-exam-overview-table .action-buttons { gap:3px; }
-.term-exam-overview-table .action-buttons .btn { flex:0 0 auto !important; width:42px !important; min-width:42px !important; height:30px !important; min-height:30px !important; padding:0 !important; font-size:18px !important; font-weight:800 !important; line-height:30px !important; border-radius:6px !important; }
+.term-exam-overview-filters .field {
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:5px;
+}
+.term-exam-overview-filters .field label {
+  display:block;
+  font-size:18px !important;
+  height:auto !important;
+  min-height:22px;
+  margin:0 !important;
+  padding:0 !important;
+  line-height:1.5 !important;
+  overflow:visible !important;
+  white-space:nowrap;
+}
+.term-exam-overview-filters .field select,.term-exam-overview-filters .field input {
+  display:block !important;
+  width:100% !important;
+  min-width:0 !important;
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  box-sizing:border-box !important;
+  padding:0 10px !important;
+  font-family:inherit !important;
+  font-size: 18px !important;
+  font-weight:400 !important;
+  line-height:normal !important;
+  vertical-align:middle;
+  text-overflow:clip;
+}
+.term-exam-overview-filters .field select {
+  overflow:visible !important;
+}
+.term-exam-overview-table td {
+  padding:5px 10px;
+  line-height:1.25;
+}
+.term-exam-overview-table {
+  min-width:760px !important;
+  table-layout:auto !important;
+}
+.term-exam-overview-table th,.term-exam-overview-table td {
+  height:auto !important;
+  min-height:0 !important;
+  max-height:none !important;
+  padding:9px 10px !important;
+  line-height:1.5 !important;
+  vertical-align:middle !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  white-space:nowrap !important;
+  font-size: 18px !important;
+}
+.term-exam-overview-table th {
+  font-size: 18px !important;
+}
+.term-exam-overview-table tbody td:not(.action-cell) {
+  font-size: 18px !important;
+}
+.term-exam-overview-table th {
+  font-weight:800 !important;
+}
+.term-exam-overview-table .action-cell {
+  min-width:100px;
+}
+.term-exam-overview-table .action-buttons {
+  gap:3px;
+}
+.term-exam-overview-table .action-buttons .btn {
+  flex:0 0 auto !important;
+  width:42px !important;
+  min-width:42px !important;
+  height:30px !important;
+  min-height:30px !important;
+  padding:0 !important;
+  font-size:18px !important;
+  font-weight:800 !important;
+  line-height:30px !important;
+  border-radius:6px !important;
+}
 .teacher-account-table .action-buttons { display:inline-flex; align-items:center; flex-wrap:nowrap; gap:4px; white-space:nowrap; }
 .teacher-account-table .action-buttons .btn { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:27px !important; min-height:27px !important; padding:0 7px !important; font-size: 14px !important; font-weight:700 !important; line-height:27px !important; border-radius:5px !important; white-space:nowrap; }
 .teacher-assignment-table td:last-child { white-space:nowrap; }
